@@ -1,0 +1,15 @@
+# Python 暫存
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 環境與打包
+venv/
+dist/
+build/
+*.spec
+out/
+
+# 安全性
+*.pfx
+Sign_Tanuki.ps1
