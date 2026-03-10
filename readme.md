@@ -1,28 +1,16 @@
-# 狸桌寵 (Tanuki Desktop Pet) 🦝
+# Tanuki_PC_Pet
 
-這是一款基於 PyQt6 開發的桌面寵物程式，靈感來自於《賽馬娘》中的可愛角色。她們會在您的桌面上隨機漫步、更換裝扮，陪伴您的工作與學習。
+讓狸成為你的電腦桌寵
 
-## ✨ 特色
-- **多角色切換**：收錄 Symboli Rudolf, Tokai Teio, Tsurumaru Tsuyoshi 等多位角色。
-- **動態隨機行為**：具備移動、待機等動畫。
-- **輕量化設計**：資源佔用極低，不干擾主程式運作。
-- **數位簽章認證**：程式經過開發者數位簽署，提升執行安全性。
+Make Umamusume tanuki become your PC pet
 
-## 🚀 如何執行 (使用者)
-1. 前往 [Releases](../../releases) 下載最新的 `.zip` 檔案。
-2. 解壓縮後執行 `狸貓桌寵_TanukiPet.exe`。
-3. 如果出現 Windows SmartScreen 警告，請點選「詳細資訊」->「仍要執行」。
+Built with PyQt6
 
-## 👉 如何操作 (使用者)
-- 欣賞狸自己移動
-- 滑鼠左鍵拖曳狸
-- 游標移動到螢幕左下角等待進度條充電（約3秒），充電完畢就會跳出互動視窗
-- 互動視窗可召喚/收回狸、退出程式
 
-## 🛠️ 開發與編譯 (開發者)
-如果您想自行編譯，請確保已安裝 Python 3.10+，並執行：
-```bash
-pip install -r requirements.txt
-python lab_2.py
+本專案僅供個人學習與交流使用，素材版權歸原作者所有
 
-本程式代碼部分採用 MIT License 授權。素材版權歸屬於原始創作者或遊戲公司所有，請勿用於商業用途。
+
+このプロジェクトは個人的な学習およびコミュニケーション目的のみに使用してください。資料の著作権は原著者に帰属します。
+
+
+This project is for personal study and communication purposes only. The copyright of the materials belongs to the original author.
