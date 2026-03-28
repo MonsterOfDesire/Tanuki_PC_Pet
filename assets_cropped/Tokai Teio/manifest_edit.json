@@ -1,0 +1,423 @@
+{
+  "drag_original-sad.gif": {
+    "band": [
+      "normal",
+      "low",
+      "severe"
+    ],
+    "contexts": [
+      "drag"
+    ],
+    "weight": 1.0
+  },
+  "idle_dance_three-confidence.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_dance_uma-happy.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_dance_uma-hard-happy.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_dance_uma_drink-hard-happy.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_lie-cry.gif": {
+    "band": [
+      "low",
+      "severe"
+    ],
+    "contexts": [
+      "random",
+      "lie"
+    ],
+    "weight": 1.0
+  },
+  "idle_lie-exhausted.gif": {
+    "band": [
+      "severe"
+    ],
+    "contexts": [
+      "random",
+      "lie"
+    ],
+    "weight": 1.0
+  },
+  "idle_lie-happy.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random",
+      "lie"
+    ],
+    "weight": 1.0
+  },
+  "idle_lie-sad.gif": {
+    "band": [
+      "low"
+    ],
+    "contexts": [
+      "random",
+      "lie"
+    ],
+    "weight": 1.0
+  },
+  "idle_lie-sleep.gif": {
+    "band": [
+      "normal",
+      "low"
+    ],
+    "contexts": [
+      "random",
+      "lie"
+    ],
+    "weight": 1.0
+  },
+  "idle_side-cry.gif": {
+    "band": [
+      "severe"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_side-happy.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_side-sad.gif": {
+    "band": [
+      "low"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_side_eat_candy-cry.gif": {
+    "band": [
+      "severe",
+      "low"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_side_eat_candy-happy.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_side_face-happy.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_side_face-smile.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_side_face_hand-happy.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_side_face_hand-smile.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_side_face_stretch-happy.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_side_face_stretch-smile.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_side_rub-angry.gif": {
+    "band": [
+      "low"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_side_rub-cry.gif": {
+    "band": [
+      "severe"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_side_rub-happy.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_side_rub-sad.gif": {
+    "band": [
+      "normal",
+      "low"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_side_stretch-angry.gif": {
+    "band": [
+      "low"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_sit-happy.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random",
+      "sit"
+    ],
+    "weight": 1.0
+  },
+  "idle_sit-laugh.gif": {
+    "band": [
+      "nornal"
+    ],
+    "contexts": [
+      "random",
+      "sit"
+    ],
+    "weight": 1.0
+  },
+  "idle_stand-happy.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "idle_stand-sad.gif": {
+    "band": [
+      "low"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "move_jog-angry.gif": {
+    "band": [
+      "normal",
+      "low"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "move_jog-cry.gif": {
+    "band": [
+      "severe"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "move_jog-sad.gif": {
+    "band": [
+      "low"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "move_run-cry.gif": {
+    "band": [
+      "severe"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "move_run-effort.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "move_run-happy.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "move_run-sad.gif": {
+    "band": [
+      "low"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "move_sneak-happy.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "move_walk-cry.gif": {
+    "band": [
+      "low",
+      "severe"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "move_walk-happy.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "move_walk-sad.gif": {
+    "band": [
+      "low"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "move_walk_drink-cry.gif": {
+    "band": [
+      "low",
+      "severe"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "move_walk_drink-hard-happy.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "move_walk_drink-sad.gif": {
+    "band": [
+      "low"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  },
+  "move_walk_shake-happy.gif": {
+    "band": [
+      "normal"
+    ],
+    "contexts": [
+      "random"
+    ],
+    "weight": 1.0
+  }
+}

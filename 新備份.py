@@ -310,16 +310,6 @@ class TanukiPet(QWidget):
         self.setFixedSize(int(600 * scale), int(600 * scale))
         self.social_mode = "none"
         self.social_cooldown_end = 0
-        # --- 性格差異化參數設定 ---
-        self.social_distance = 600  # 預設感應距離
-        self.social_cooldown_duration = 5  # 預設冷卻時間(秒)
-
-        if self.name == "Tokai Teio":  # 帝寶：愛湊熱鬧，感應遠，冷卻短
-            self.social_distance = 600
-            self.social_cooldown_duration = 2
-        elif self.name == "Tsurumaru Tsuyoshi":  # 鶴寶：害羞體弱，感應近，冷卻長
-            self.social_distance = 350
-            self.social_cooldown_duration = 2
         self.current_action_tag = "stand"
         self.current_mood_tag = "happy"
 
@@ -343,7 +333,7 @@ class TanukiPet(QWidget):
         self.heart_anim.valueChanged.connect(self.animate_heart)
         self.heart_anim.finished.connect(lambda: setattr(self, 'show_heart', False))
         self.vy = 0.0; self.gravity = 1.2; self.bounce = -0.3
-        self.radius = (100 * scale); self.mass = 2 if self.is_adult else 0.8
+        self.radius = (100 * scale); self.mass = 2 if self.is_adult else 0.6
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setMouseTracking(True)
@@ -461,7 +451,9 @@ class TanukiPet(QWidget):
         else: self.star_timer.stop()
 
     def update_ai_behavior(self, all_pets):
-        if self.is_angry_locked: return
+        if self.is_angry_locked:
+            if self.current_purpose != "idle": self.change_state("idle", "stand")
+            return
 
         now = time.time()
         is_child = self.name in ["Tokai Teio", "Tsurumaru Tsuyoshi"]
@@ -473,55 +465,68 @@ class TanukiPet(QWidget):
                 dist = math.hypot(self.x() - rudolf.x(), self.y() - rudolf.y())
                 is_behind = (self.x() - rudolf.x()) * rudolf.direction < 0
 
-                # --- 1. 觸發判定 (使用性格變數) ---
-                if self.social_mode == "none" and dist < self.social_distance:
+                # --- 1. 觸發判定 (僅在 none 狀態時判定) ---
+                if self.social_mode == "none" and dist < 600:
                     r_p = rudolf.current_purpose
                     if r_p == "move" and is_behind:
                         self.social_mode = "following"
                         self.state_timer = random.randint(200, 400)
                         self.star_timer.start(30)
                     else:
-                        # 0.2.0 精確檢查：如果魯道夫目前的動作我有對應圖，才開啟模仿
                         if self.asset_manager.get_specific_frames(r_p, rudolf.current_action_tag,
                                                                   rudolf.current_mood_tag):
                             self.social_mode = "mimicking"
                             self.state_timer = random.randint(60, 80)
                             self.star_timer.start(30)
 
-                # --- 2. 執行行為 ---
+                # --- 2. 執行行為 (只要在社交模式中，每一幀都要跑，注意縮進與上面對齊) ---
                 if self.social_mode in ["following", "mimicking"]:
                     target_p = rudolf.current_purpose
                     target_a = rudolf.current_action_tag
                     target_m = rudolf.current_mood_tag
 
-                    # 同步素材邏輯
+                    # 同步素材
                     if (self.current_purpose != target_p or self.current_action_tag != target_a):
-                        # 0.2.0 情緒連貫機制
-                        res = self.asset_manager.get_frames_by_score(target_p, target_a, self.mood_score)
-                        if res and res[0] and res[1] == target_a:
-                            self.current_frames, self.current_purpose, self.current_action_tag, self.current_mood_tag = \
-                            res[0], target_p, res[1], res[2]
+                        # [關鍵修正]：先檢查是否有精確匹配的素材
+                        res_frames = self.asset_manager.get_specific_frames(target_p, target_a, target_m)
+
+                        if res_frames:
+                            # 如果有完全一樣的圖，直接換過去
+                            self.current_frames = res_frames
+                            self.current_purpose, self.current_action_tag, self.current_mood_tag = target_p, target_a, target_m
                             self.frame_index = 0
                         else:
-                            # 模仿不來，中斷社交
-                            self.social_mode = "none"
-                            self.social_cooldown_end = now + self.social_cooldown_duration
-                            self.change_state("idle")
-                            return
+                            # 如果沒有完全一樣的，嘗試用心情分數找
+                            res = self.asset_manager.get_frames_by_score(target_p, target_a, self.mood_score)
+                            if res and res[0] and res[1] == target_a:
+                                # 只有當動作類型(Action)匹配時才更換
+                                self.current_frames, self.current_purpose, self.current_action_tag, self.current_mood_tag = \
+                                res[0], target_p, res[1], res[2]
+                                self.frame_index = 0
+                            else:
+                                # 真的學不來（例如魯道夫在跳舞但小孩沒跳舞圖），就斷開模仿，不要抽搐
+                                self.social_mode = "none"
+                                self.social_cooldown_end = now + 2
+                                self.change_state("idle")  # 回到待機
+                                return
 
+                    # 同步位移
                     if target_p == "move":
                         self.direction = rudolf.direction
                         self.move_logic()
 
-                    # 狀態計時與距離斷開 (性格連動)
+                    # 狀態結束與斷開判定
                     self.state_timer -= 1
-                    if self.state_timer <= 0 or dist > (self.social_distance + 150):
+                    if self.state_timer <= 0 or dist > 700:
                         self.social_mode = "none"
-                        self.social_cooldown_end = now + self.social_cooldown_duration
+                        self.social_cooldown_end = now + 5
+
+                    # 模仿模式下，若魯道夫開始移動則斷開 (回歸原本設定)
                     elif self.social_mode == "mimicking" and target_p != "idle":
                         self.social_mode = "none"
-                        self.social_cooldown_end = now + self.social_cooldown_duration
-                    return
+                        self.social_cooldown_end = now + 5
+
+                    return  # 重要：社交中不跑下面的隨機 AI
 
         # --- 以下是一般隨機 AI 邏輯 ---
         if self.state == "move":
