@@ -390,6 +390,166 @@ class AssetManager:
     def has_action(self, purpose, action_type):
         return action_type in self.assets.get(purpose, {})
 
+class ConfigStore(QObject):
+    SAVE_DEBOUNCE_MS = 600
+    SNAPSHOT_MS = 30000
+
+    def __init__(self, config_path=None):
+        super().__init__()
+        self.config_path = config_path or AssetManager.get_resource_path("config.json")
+        self.dashboard = None
+        self.pets_dict = {}
+        self.loaded_state = self.load()
+        self.last_saved_payload = ""
+
+        self.save_timer = QTimer(self)
+        self.save_timer.setSingleShot(True)
+        self.save_timer.timeout.connect(self.save_now)
+
+        self.snapshot_timer = QTimer(self)
+        self.snapshot_timer.timeout.connect(self.save_snapshot)
+
+    def load(self):
+        if not os.path.exists(self.config_path):
+            return {}
+        try:
+            with open(self.config_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return data if isinstance(data, dict) else {}
+        except Exception as e:
+            print(f"讀取 config.json 失敗 {self.config_path}: {e}")
+            return {}
+
+    def bind(self, dashboard, pets_dict):
+        self.dashboard = dashboard
+        self.pets_dict = pets_dict
+        dashboard.config_store = self
+        self.apply_loaded_state()
+        self.last_saved_payload = ""
+        self.save_now(force=True)
+        self.snapshot_timer.start(self.SNAPSHOT_MS)
+
+    def schedule_save(self):
+        self.save_timer.start(self.SAVE_DEBOUNCE_MS)
+
+    def serialize_state(self, state):
+        return json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True)
+
+    def safe_index(self, value, default, size):
+        try:
+            index = int(value)
+        except (TypeError, ValueError):
+            index = default
+        return max(0, min(size - 1, index))
+
+    def clamp_pet_position(self, pet, x, y):
+        vr = get_total_virtual_geometry()
+        min_x = vr.left()
+        max_x = vr.right() - pet.width()
+        min_y = vr.top()
+        max_y = vr.bottom() - pet.height()
+        if max_x < min_x:
+            max_x = min_x
+        if max_y < min_y:
+            max_y = min_y
+        return (
+            max(min_x, min(max_x, int(x))),
+            max(min_y, min(max_y, int(y))),
+        )
+
+    def apply_loaded_state(self):
+        if not self.dashboard or not self.pets_dict:
+            return
+
+        dashboard_state = self.loaded_state.get("dashboard", {})
+        self.dashboard.set_care_enabled(dashboard_state.get("care_feature_enabled", self.dashboard.care_feature_enabled), save=False)
+        self.dashboard.teio_dur_idx = self.safe_index(
+            dashboard_state.get("teio_dur_idx", self.dashboard.teio_dur_idx),
+            self.dashboard.teio_dur_idx,
+            len(self.dashboard.teio_dur_list),
+        )
+        self.dashboard.tsuyoshi_dur_idx = self.safe_index(
+            dashboard_state.get("tsuyoshi_dur_idx", self.dashboard.tsuyoshi_dur_idx),
+            self.dashboard.tsuyoshi_dur_idx,
+            len(self.dashboard.tsuyoshi_dur_list),
+        )
+        self.dashboard.update_duration_buttons()
+        self.dashboard.apply_social_settings()
+
+        pets_state = self.loaded_state.get("pets", {})
+        for pet_name, info in self.pets_dict.items():
+            pet = info["pet"]
+            state = pets_state.get(pet_name, {})
+            pet.user_visible = bool(state.get("user_visible", pet.user_visible))
+
+            mood_score = state.get("mood_score")
+            if isinstance(mood_score, (int, float)):
+                pet.mood_score = max(0.0, min(100.0, float(mood_score)))
+                pet.mood_state = "depressed" if pet.mood_score < 20 else "unhappy" if pet.mood_score < 50 else "normal"
+
+            direction = state.get("direction")
+            if direction in (-1, 1):
+                pet.direction = direction
+
+            x = state.get("x", pet.x())
+            y = state.get("y", pet.y())
+            clamped_x, clamped_y = self.clamp_pet_position(pet, x, y)
+            pet.move(clamped_x, clamped_y)
+
+            if pet.user_visible:
+                pet.show()
+            else:
+                pet.hide()
+
+            toggle_button = info.get("toggle_button")
+            if toggle_button:
+                toggle_button.blockSignals(True)
+                toggle_button.setChecked(pet.user_visible)
+                toggle_button.blockSignals(False)
+
+    def capture_state(self):
+        dashboard_state = {}
+        if self.dashboard:
+            dashboard_state = {
+                "care_feature_enabled": bool(self.dashboard.care_feature_enabled),
+                "teio_dur_idx": int(self.dashboard.teio_dur_idx),
+                "tsuyoshi_dur_idx": int(self.dashboard.tsuyoshi_dur_idx),
+            }
+
+        pets_state = {}
+        for pet_name, info in self.pets_dict.items():
+            pet = info["pet"]
+            pets_state[pet_name] = {
+                "x": int(pet.x()),
+                "y": int(pet.y()),
+                "direction": int(pet.direction),
+                "mood_score": round(float(pet.mood_score), 2),
+                "user_visible": bool(getattr(pet, "user_visible", pet.isVisible())),
+            }
+
+        return {
+            "schema_version": 1,
+            "dashboard": dashboard_state,
+            "pets": pets_state,
+        }
+
+    def save_snapshot(self):
+        self.save_now(force=False)
+
+    def save_now(self, force=False):
+        if not self.dashboard or not self.pets_dict:
+            return
+        state = self.capture_state()
+        payload = self.serialize_state(state)
+        if not force and payload == self.last_saved_payload:
+            return
+        try:
+            with open(self.config_path, "w", encoding="utf-8") as f:
+                f.write(payload)
+            self.last_saved_payload = payload
+        except Exception as e:
+            print(f"寫入 config.json 失敗 {self.config_path}: {e}")
+
 class Dashboard(QWidget):
     DURATION_BTN_STYLE = (
         "QPushButton { background: #f3f3f3; color: #222; border-radius: 8px; padding: 6px 10px; border: 1px solid #999; }"
@@ -400,6 +560,7 @@ class Dashboard(QWidget):
     def __init__(self, target_rect, pets_dict):
         super().__init__()
         self.is_expanded = False
+        self.config_store = None
         self.care_feature_enabled = True  # c. 開啟/關閉大人照護功能
         self.teio_dur_list = [2, 5, 10, 20, 30]
         self.teio_dur_idx = 3  # 預設 20s (索引3)
@@ -440,8 +601,8 @@ class Dashboard(QWidget):
             btn = QPushButton(f"召喚 {info['name']}")
             btn.setFixedHeight(35)
             btn.setCheckable(True)
-            btn.setChecked(info["pet"].isVisible())
-            btn.toggled.connect(lambda checked, p=info["pet"]: p.show() if checked else p.hide())
+            btn.setChecked(info["pet"].user_visible)
+            btn.toggled.connect(lambda checked, p=info["pet"]: self.handle_pet_toggle(p, checked))
             btn.setStyleSheet(
                 "QPushButton { background: white; border-radius: 8px; padding: 8px; } QPushButton:checked { background: #aaffaa; }")
 
@@ -455,6 +616,7 @@ class Dashboard(QWidget):
 
             # 2. 【關鍵修正】先存入字典
             info["mood_bar"] = mood_bar
+            info["toggle_button"] = btn
 
             # 3. 再從字典讀取並加入佈局 (或是直接加入 mood_bar 變數也可以)
             v_box.addWidget(btn)
@@ -477,6 +639,7 @@ class Dashboard(QWidget):
         self.anim.setDuration(400)
         self.anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self.update_duration_buttons()
+        self.update_care_button_text()
     def refresh_mood_bars(self):
         for info in self.pets_dict.values():
             info["mood_bar"].setValue(int(info["pet"].mood_score))
@@ -486,9 +649,27 @@ class Dashboard(QWidget):
         label.setStyleSheet(self.SECTION_LABEL_STYLE)
         return label
 
-    def toggle_care(self):
-        self.care_feature_enabled = not self.care_feature_enabled
+    def update_care_button_text(self):
         self.btn_care.setText(f"照護功能: {'開啟' if self.care_feature_enabled else '關閉'}")
+
+    def set_care_enabled(self, enabled, save=True):
+        self.care_feature_enabled = bool(enabled)
+        self.update_care_button_text()
+        if save and self.config_store:
+            self.config_store.schedule_save()
+
+    def toggle_care(self):
+        self.set_care_enabled(not self.care_feature_enabled)
+
+    def handle_pet_toggle(self, pet, checked):
+        pet.user_visible = bool(checked)
+        if checked:
+            if not (pet.care_lock_mode == "hidden" and pet.is_under_care(time.time())):
+                pet.show()
+        else:
+            pet.hide()
+        if self.config_store:
+            self.config_store.schedule_save()
 
     def create_duration_selector(self, char, durations):
         row = QHBoxLayout()
@@ -511,6 +692,8 @@ class Dashboard(QWidget):
             self.tsuyoshi_dur_idx = index
         self.update_duration_buttons()
         self.apply_social_settings()
+        if self.config_store:
+            self.config_store.schedule_save()
 
     def update_duration_buttons(self):
         for idx, btn in enumerate(self.teio_duration_buttons):
@@ -605,6 +788,7 @@ class TanukiPet(QWidget):
         self.asset_manager = AssetManager(char_folder, scale_factor=scale)
         self.current_frames = []; self.frame_index = 0; self.direction = 1
         self.dragging = False; self.original_face_left = True
+        self.user_visible = True
         self.mood_score = 60.0; self.mood_state = "normal"; self.drag_start_time = 0
         self.click_count = 0
         self.is_angry_locked = False
@@ -1719,11 +1903,15 @@ class TanukiPet(QWidget):
                 else: self.mood_score = min(100, self.mood_score + 8); self.pop_heart(); self.apply_reaction(["happy", "smile"])
             elif dur > 5.0:
                 self.mood_score = max(0, self.mood_score - 25); self.apply_reaction(["scold", "hard-cry", "exhausted"], is_negative=True)
-            else: self.change_state("idle")
+            else:
+                self.change_state("idle")
+                if self.dashboard and self.dashboard.config_store:
+                    self.dashboard.config_store.schedule_save()
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    config_store = ConfigStore()
 
     assets_dir = AssetManager.get_resource_path("assets_cropped")
     if not os.path.exists(assets_dir): sys.exit()
@@ -1743,7 +1931,9 @@ if __name__ == "__main__":
         if os.path.exists(path):
             p = TanukiPet(fn, path, sc)
             p.move(500 + i * 100, 600)
-            if fn != "Symboli Rudolf": p.hide()
+            if fn != "Symboli Rudolf":
+                p.user_visible = False
+                p.hide()
             pets_dict[fn] = {"pet": p, "name": dn}
             pets_list.append(p)
 
@@ -1755,7 +1945,7 @@ if __name__ == "__main__":
     # 3. 重要：將 dash 實體回填給所有寵物，防止閃退
     for p in pets_list:
         p.dashboard = dash
-    dash.apply_social_settings()
+    config_store.bind(dash, pets_dict)
 
     # 4. 其他組件
     sensor = SensorZone(dash)
@@ -1772,6 +1962,8 @@ if __name__ == "__main__":
     logic_t = QTimer();
     logic_t.timeout.connect(lambda: [p.tick(pets_list) for p in pets_list]);
     logic_t.start(30)
+
+    app.aboutToQuit.connect(lambda: config_store.save_now(force=True))
 
     dash.show()
     sensor.show()

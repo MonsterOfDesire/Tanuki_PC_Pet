@@ -1,0 +1,45 @@
+{
+  "dashboard": {
+    "care_feature_enabled": false,
+    "teio_dur_idx": 0,
+    "tsuyoshi_dur_idx": 0
+  },
+  "pets": {
+    "Air Groove": {
+      "direction": -1,
+      "mood_score": 91.82,
+      "user_visible": true,
+      "x": 1205,
+      "y": 799
+    },
+    "Sirius Symboli": {
+      "direction": -1,
+      "mood_score": 100.0,
+      "user_visible": true,
+      "x": -1588,
+      "y": 799
+    },
+    "Symboli Rudolf": {
+      "direction": -1,
+      "mood_score": 100.0,
+      "user_visible": true,
+      "x": -721,
+      "y": 769
+    },
+    "Tokai Teio": {
+      "direction": -1,
+      "mood_score": 100.0,
+      "user_visible": true,
+      "x": -538,
+      "y": 829
+    },
+    "Tsurumaru Tsuyoshi": {
+      "direction": 1,
+      "mood_score": 66.84,
+      "user_visible": true,
+      "x": -1604,
+      "y": 859
+    }
+  },
+  "schema_version": 1
+}
