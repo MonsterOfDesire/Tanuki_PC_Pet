@@ -1,0 +1,281 @@
+import math
+import random
+
+from PyQt6.QtCore import Qt
+
+from .asset_manager import AssetManager
+from .geometry import DesktopGeometry, PetMovementState
+
+
+class PetBasicsMixin:
+    def get_effective_scale(self):
+        return self.base_scale * self.display_scale_multiplier
+
+    def apply_display_scale(self, multiplier):
+        multiplier = max(0.5, float(multiplier))
+        if abs(self.display_scale_multiplier - multiplier) < 0.001:
+            return
+
+        old_center_x = self.geometry().center().x()
+        old_bottom_y = self.y() + self.height()
+        old_visible = self.isVisible()
+        old_signature = (self.current_purpose, self.current_action_tag, self.current_mood_tag)
+
+        self.display_scale_multiplier = multiplier
+        self.asset_manager = AssetManager(self.character_path, scale_factor=self.get_effective_scale())
+        self.setFixedSize(int(600 * self.get_effective_scale()), int(600 * self.get_effective_scale()))
+        self.radius = (100 * self.get_effective_scale())
+
+        target_x = old_center_x - (self.width() // 2)
+        target_y = old_bottom_y - self.height()
+
+        if self.perched_window_hwnd and self.window_tracker:
+            surface = self.window_tracker.get_surface_by_hwnd(self.perched_window_hwnd)
+            if surface and self.window_tracker.can_pet_perch_on_surface(surface, self):
+                target_x = surface.clamp_actor_x(old_center_x - (self.width() // 2), self.width())
+                self.window_perch_offset_x = target_x - surface.rect.left()
+                target_y = self.get_window_perch_y(surface)
+            else:
+                self.detach_from_window_surface()
+        elif self.flight_mode == "to_window" and self.window_tracker:
+            surface = self.window_tracker.get_surface_by_hwnd(self.flight_target_hwnd)
+            if surface:
+                anchor_center_x = self.window_tracker.get_surface_visible_center_x(
+                    surface,
+                    actor_width=self.width(),
+                    preferred_center_x=old_center_x,
+                )
+                if anchor_center_x is not None:
+                    self.flight_target_x = surface.clamp_actor_x(anchor_center_x - (self.width() // 2), self.width())
+                    self.flight_target_y = self.get_window_perch_y(surface)
+                    self.window_perch_offset_x = self.flight_target_x - surface.rect.left()
+
+        clamped_x, clamped_y = DesktopGeometry.clamp_widget_position(self, target_x, target_y)
+        self.move(clamped_x, clamped_y)
+
+        purpose, action_type, mood = old_signature
+        frames = None
+        if purpose and action_type and mood:
+            frames = self.asset_manager.get_specific_frames(purpose, action_type, mood, mood_score=self.mood_score)
+        if frames:
+            self.apply_animation_result(purpose, (frames, action_type, mood))
+        elif self.state == "move":
+            self.change_state("move")
+        else:
+            self.change_state("idle", "stand")
+
+        if old_visible and self.user_visible:
+            self.show()
+        elif not self.user_visible:
+            self.hide()
+        self.refresh_movement_state()
+        self.update()
+
+    def reset_clicks(self):
+        self.click_count = 0
+
+    def unlock_interaction(self):
+        self.is_angry_locked = False
+        self.setCursor(Qt.CursorShape.ArrowCursor)
+        self.change_state("idle", "stand")
+
+    def update_bar_opacity(self, value):
+        self.bar_opacity = value
+        self.update()
+
+    def animate_heart(self, value):
+        self.heart_opacity = 1.0 - (value ** 2)
+        self.heart_y_offset = int(value * 60)
+        self.update()
+
+    def pop_heart(self):
+        if not self.heart_pixmap.isNull():
+            self.show_heart = True
+            self.heart_anim.start()
+
+    def is_debug_enabled(self):
+        return bool(self.dashboard and getattr(self.dashboard, "debug_enabled", False))
+
+    def get_debug_lines(self):
+        lines = [
+            f"{self.name} mood={int(self.mood_score)} state={self.state}",
+            f"{self.current_purpose}/{self.current_action_tag}/{self.current_mood_tag}",
+            f"intent={self.movement_state.intent} anchor={self.movement_state.anchor}",
+        ]
+        if self.perched_window_hwnd and self.window_tracker:
+            surface = self.window_tracker.get_surface_by_hwnd(self.perched_window_hwnd)
+            if surface:
+                lines.append(f"window={surface.title[:28]}")
+        elif self.flight_mode != "none":
+            lines.append(f"flight={self.flight_mode} -> ({int(self.flight_target_x)}, {int(self.flight_target_y)})")
+        elif self.care_mode != "none":
+            lines.append(f"care={self.care_mode}")
+        elif self.social_mode != "none":
+            lines.append(f"social={self.social_mode}")
+        return lines
+
+    def wrap_debug_lines(self, font_metrics, max_width):
+        wrapped = []
+        max_width = max(80, int(max_width))
+        for raw_line in self.get_debug_lines():
+            words = raw_line.split(" ")
+            if len(words) <= 1:
+                words = [raw_line]
+            current = ""
+            for word in words:
+                candidate = word if not current else f"{current} {word}"
+                if font_metrics.horizontalAdvance(candidate) <= max_width:
+                    current = candidate
+                    continue
+                if current:
+                    wrapped.append(current)
+                    current = ""
+                if font_metrics.horizontalAdvance(word) <= max_width:
+                    current = word
+                    continue
+                chunk = ""
+                for char in word:
+                    candidate_chunk = chunk + char
+                    if chunk and font_metrics.horizontalAdvance(candidate_chunk) > max_width:
+                        wrapped.append(chunk)
+                        chunk = char
+                    else:
+                        chunk = candidate_chunk
+                current = chunk
+            if current:
+                wrapped.append(current)
+        return wrapped
+
+    def get_social_cooldown_seconds(self):
+        if self.dashboard:
+            cooldown = self.dashboard.get_social_cooldown_seconds(self.name)
+            if cooldown:
+                return cooldown
+        return self.social_cooldown_duration
+
+    def get_social_duration_frames(self, mode):
+        if mode == "following":
+            return random.randint(200, 400)
+        if mode == "mimicking":
+            return random.randint(60, 80)
+        return 0
+
+    def get_child_tokens(self):
+        return self.CHILD_TOKEN_MAP.get(self.name, [self.name])
+
+    def distance_to(self, other):
+        return math.hypot(
+            self.geometry().center().x() - other.geometry().center().x(),
+            self.geometry().center().y() - other.geometry().center().y(),
+        )
+
+    def get_surface_snapshot(self):
+        return DesktopGeometry.get_surface_snapshot(self)
+
+    def refresh_movement_state(self, surface=None):
+        if surface is None:
+            surface = self.get_surface_snapshot()
+        if self.vy != 0:
+            intent = "falling"
+            locomotion = "airborne"
+            anchor = "air"
+            support_surface = "air"
+            edge_side = "none"
+        else:
+            if self.flight_mode != "none":
+                intent = f"flight:{self.flight_mode}"
+                locomotion = "moving"
+                anchor = "air"
+                support_surface = "air"
+                edge_side = "none"
+            elif self.perched_window_hwnd:
+                intent = "perched:window"
+                locomotion = "moving" if self.state == "move" else "idle"
+                anchor = "window_top"
+                support_surface = "window_top"
+                edge_side = "none"
+            elif self.edge_mode != "none":
+                intent = f"edge:{self.edge_mode}"
+                locomotion = "idle" if self.edge_mode == "perch" else "moving"
+                if self.edge_mode == "return_taskbar":
+                    anchor = "air"
+                    support_surface = "air"
+                else:
+                    anchor = f"{self.edge_side}_edge" if self.edge_side in {"left", "right"} else "edge"
+                    support_surface = "edge"
+                edge_side = self.edge_side
+            elif self.care_mode != "none":
+                intent = f"care:{self.care_mode}"
+                edge_side = "none"
+            elif self.social_mode != "none":
+                intent = f"social:{self.social_mode}"
+                edge_side = "none"
+            elif self.is_recovering:
+                intent = "recovery"
+                edge_side = "none"
+            else:
+                intent = self.state or "idle"
+                edge_side = "none"
+            if self.flight_mode == "none" and self.edge_mode == "none" and not self.perched_window_hwnd:
+                locomotion = "moving" if self.state == "move" else "idle"
+                support_surface = "desktop_floor" if surface.on_floor else "screen_space"
+                if surface.on_floor and surface.near_left_edge:
+                    anchor = "left_edge_ready"
+                elif surface.on_floor and surface.near_right_edge:
+                    anchor = "right_edge_ready"
+                else:
+                    anchor = "floor" if surface.on_floor else "air"
+        self.movement_state = PetMovementState(
+            intent=intent,
+            locomotion=locomotion,
+            anchor=anchor,
+            support_surface=support_surface,
+            edge_side=edge_side,
+            near_left_edge=surface.near_left_edge,
+            near_right_edge=surface.near_right_edge,
+            can_attach_edge=(
+                not self.dragging and
+                self.vy == 0 and
+                self.care_mode == "none" and
+                self.edge_mode == "none" and
+                self.flight_mode == "none" and
+                not self.perched_window_hwnd
+            ),
+            dock_edge=surface.dock_edge,
+        )
+        return self.movement_state
+
+    def get_edge_attach_target(self):
+        state = self.refresh_movement_state()
+        if not state.can_attach_edge:
+            return None
+        if state.anchor == "left_edge_ready":
+            return "left"
+        if state.anchor == "right_edge_ready":
+            return "right"
+        return None
+
+    def get_taskbar_walk_y(self):
+        surface = self.get_surface_snapshot()
+        if surface.dock_edge == "bottom" and surface.dock_thickness > 0:
+            return surface.screen_floor_top_y
+        return surface.floor_top_y
+
+    def get_airborne_top_bound(self, visible_ratio=0.35):
+        surface = self.get_surface_snapshot()
+        return surface.top_bound - int(self.height() * (1.0 - visible_ratio))
+
+    def get_window_perch_y(self, surface):
+        return max(self.get_airborne_top_bound(), surface.perch_y(self.height()))
+
+    def apply_drag_animation(self):
+        preferred_moods = ["sad", "exhausted", "angry", "scold", "awkward", "think", "cry", "hard-cry"]
+        result = self.asset_manager.get_contextual_result("drag", context="drag", preferred_moods=preferred_moods)
+        if not result:
+            result = self.asset_manager.get_frames_by_score(
+                "drag",
+                mood_score=self.mood_score,
+                is_adult=self.is_adult,
+                context="drag",
+            )
+        return self.apply_animation_result("drag", result)

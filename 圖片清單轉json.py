@@ -33,6 +33,6 @@ def excel_to_manifest_json(input_excel, output_json):
         json.dump(manifest, f, indent=2, ensure_ascii=False)
     print(f"JSON 轉換成功：{output_json}")
 
-input_excel = r"J:\TanukiProject\venv\assets_cropped\Air Groove\manifest_edit.xlsx"
-output_json = r"J:\TanukiProject\venv\assets_cropped\Air Groove\manifest_edit.json"
+input_excel = r"J:\TanukiProject\tanuki_app\assets_cropped\Air Groove\manifest_edit.xlsx"
+output_json = r"J:\TanukiProject\tanuki_app\assets_cropped\Air Groove\manifest_edit.json"
 excel_to_manifest_json(input_excel, output_json)

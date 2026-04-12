@@ -47,5 +47,5 @@ def generate_excel_with_logic(folder_path, output_excel):
     print(f"自動分類完成！Excel 檔案已生成：{output_excel}")
 
 # 使用範例
-folder_path = r"J:\TanukiProject\venv\assets_cropped\Tsurumaru Tsuyoshi"
+folder_path = r"J:\TanukiProject\tanuki_app\assets_cropped\Tsurumaru Tsuyoshi"
 generate_excel_with_logic(folder_path, "manifest_edit.xlsx")
