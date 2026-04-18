@@ -2,10 +2,8 @@ import json
 import os
 import re
 
-
-CONFIG_SCHEMA_VERSION = 2
-MANIFEST_SCHEMA_VERSION = 1
-VALID_BANDS = {"normal", "low", "severe"}
+from .config_rules import CONFIG_SCHEMA_VERSION, normalize_config_state
+from .manifest_rules import MANIFEST_SCHEMA_VERSION, normalize_manifest_entry
 
 
 def load_json_loose(path):
@@ -16,38 +14,6 @@ def load_json_loose(path):
     except json.JSONDecodeError:
         sanitized = re.sub(r",(\s*[}\]])", r"\1", raw)
         return json.loads(sanitized), ["已自動清理 trailing comma"]
-
-
-def normalize_manifest_entry(meta):
-    bands = []
-    for raw_band in meta.get("band", []):
-        if not isinstance(raw_band, str):
-            continue
-        normalized = raw_band.replace(".", ",")
-        for token in normalized.split(","):
-            band = token.strip()
-            if band in VALID_BANDS and band not in bands:
-                bands.append(band)
-
-    contexts = []
-    for raw_context in meta.get("contexts", []):
-        if not isinstance(raw_context, str):
-            continue
-        context = raw_context.strip()
-        if context and context not in contexts:
-            contexts.append(context)
-
-    try:
-        weight = float(meta.get("weight", 1.0))
-    except (TypeError, ValueError):
-        weight = 1.0
-
-    return {
-        "band": bands,
-        "contexts": contexts,
-        "weight": max(0.0, weight),
-    }
-
 
 def load_manifest_entries(manifest_path):
     if not os.path.exists(manifest_path):
@@ -74,7 +40,9 @@ def load_manifest_entries(manifest_path):
         if not isinstance(meta, dict):
             warnings.append(f"{file_name}: 不是物件，已忽略")
             continue
-        normalized[file_name] = normalize_manifest_entry(meta)
+        normalized_entry, entry_warnings = normalize_manifest_entry(meta, file_name=file_name)
+        normalized[file_name] = normalized_entry
+        warnings.extend(entry_warnings)
 
     if schema_version != MANIFEST_SCHEMA_VERSION:
         warnings.append(f"schema_version={schema_version}，目前預期 {MANIFEST_SCHEMA_VERSION}")
@@ -115,50 +83,6 @@ def scan_manifest_directory(assets_dir):
         "reports": reports,
     }
 
-
-def normalize_config_state(raw):
-    warnings = []
-    if not isinstance(raw, dict):
-        return {"schema_version": CONFIG_SCHEMA_VERSION, "dashboard": {}, "pets": {}}, ["config 根節點不是物件，已重設"]
-
-    schema_version = int(raw.get("schema_version", 1) or 1)
-    dashboard = raw.get("dashboard", {})
-    pets = raw.get("pets", {})
-    if not isinstance(dashboard, dict):
-        dashboard = {}
-        warnings.append("dashboard 區塊不是物件，已重設")
-    if not isinstance(pets, dict):
-        pets = {}
-        warnings.append("pets 區塊不是物件，已重設")
-
-    normalized = {
-        "schema_version": CONFIG_SCHEMA_VERSION,
-        "dashboard": {
-            "care_feature_enabled": bool(dashboard.get("care_feature_enabled", True)),
-            "teio_dur_idx": dashboard.get("teio_dur_idx", 3),
-            "tsuyoshi_dur_idx": dashboard.get("tsuyoshi_dur_idx", 2),
-            "time_scale_idx": dashboard.get("time_scale_idx", 0),
-            "display_scale_idx": dashboard.get("display_scale_idx", 0),
-            "debug_enabled": bool(dashboard.get("debug_enabled", False)),
-        },
-        "pets": {},
-    }
-
-    for pet_name, pet_state in pets.items():
-        if not isinstance(pet_state, dict):
-            warnings.append(f"{pet_name}: 狀態不是物件，已忽略")
-            continue
-        normalized["pets"][pet_name] = {
-            "x": pet_state.get("x", 0),
-            "y": pet_state.get("y", 0),
-            "user_visible": bool(pet_state.get("user_visible", True)),
-        }
-
-    if schema_version != CONFIG_SCHEMA_VERSION:
-        warnings.append(f"config schema {schema_version} 已升級到 {CONFIG_SCHEMA_VERSION}")
-    return normalized, warnings
-
-
 def validate_config_file(config_path):
     if not os.path.exists(config_path):
         return {"path": config_path, "ok": True, "warnings": ["找不到 config.json，會在首次儲存時建立"]}
@@ -196,4 +120,3 @@ def build_validation_report(assets_dir, config_path):
         lines.append("")
         lines.append("未發現明顯問題。")
     return "\n".join(lines), warnings
-

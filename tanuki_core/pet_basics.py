@@ -22,7 +22,12 @@ class PetBasicsMixin:
         old_signature = (self.current_purpose, self.current_action_tag, self.current_mood_tag)
 
         self.display_scale_multiplier = multiplier
-        self.asset_manager = AssetManager(self.character_path, scale_factor=self.get_effective_scale())
+        self.asset_manager = AssetManager(
+            self.character_path,
+            scale_factor=self.get_effective_scale(),
+            frame_cache=self.asset_manager.frame_cache,
+            store_cache=self.asset_manager.store_cache,
+        )
         self.setFixedSize(int(600 * self.get_effective_scale()), int(600 * self.get_effective_scale()))
         self.radius = (100 * self.get_effective_scale())
 
@@ -31,7 +36,8 @@ class PetBasicsMixin:
 
         if self.perched_window_hwnd and self.window_tracker:
             surface = self.window_tracker.get_surface_by_hwnd(self.perched_window_hwnd)
-            if surface and self.window_tracker.can_pet_perch_on_surface(surface, self):
+            actor_snapshot = self.window_tracker.build_actor_snapshot(self)
+            if surface and self.window_tracker.can_actor_perch_on_surface(surface, actor_snapshot):
                 target_x = surface.clamp_actor_x(old_center_x - (self.width() // 2), self.width())
                 self.window_perch_offset_x = target_x - surface.rect.left()
                 target_y = self.get_window_perch_y(surface)
@@ -94,7 +100,14 @@ class PetBasicsMixin:
             self.heart_anim.start()
 
     def is_debug_enabled(self):
-        return bool(self.dashboard and getattr(self.dashboard, "debug_enabled", False))
+        provider = getattr(self, "settings_provider", None)
+        return bool(provider and getattr(provider, "debug_enabled", False))
+
+    def is_care_feature_enabled(self):
+        provider = getattr(self, "settings_provider", None)
+        if provider is None:
+            return True
+        return bool(getattr(provider, "care_feature_enabled", True))
 
     def get_debug_lines(self):
         lines = [
@@ -147,8 +160,9 @@ class PetBasicsMixin:
         return wrapped
 
     def get_social_cooldown_seconds(self):
-        if self.dashboard:
-            cooldown = self.dashboard.get_social_cooldown_seconds(self.name)
+        provider = getattr(self, "settings_provider", None)
+        if provider:
+            cooldown = provider.get_social_cooldown_seconds(self.name)
             if cooldown:
                 return cooldown
         return self.social_cooldown_duration
@@ -180,80 +194,39 @@ class PetBasicsMixin:
             locomotion = "airborne"
             anchor = "air"
             support_surface = "air"
-            edge_side = "none"
         else:
             if self.flight_mode != "none":
                 intent = f"flight:{self.flight_mode}"
                 locomotion = "moving"
                 anchor = "air"
                 support_surface = "air"
-                edge_side = "none"
             elif self.perched_window_hwnd:
                 intent = "perched:window"
                 locomotion = "moving" if self.state == "move" else "idle"
                 anchor = "window_top"
                 support_surface = "window_top"
-                edge_side = "none"
-            elif self.edge_mode != "none":
-                intent = f"edge:{self.edge_mode}"
-                locomotion = "idle" if self.edge_mode == "perch" else "moving"
-                if self.edge_mode == "return_taskbar":
-                    anchor = "air"
-                    support_surface = "air"
-                else:
-                    anchor = f"{self.edge_side}_edge" if self.edge_side in {"left", "right"} else "edge"
-                    support_surface = "edge"
-                edge_side = self.edge_side
             elif self.care_mode != "none":
                 intent = f"care:{self.care_mode}"
-                edge_side = "none"
             elif self.social_mode != "none":
                 intent = f"social:{self.social_mode}"
-                edge_side = "none"
             elif self.is_recovering:
                 intent = "recovery"
-                edge_side = "none"
             else:
                 intent = self.state or "idle"
-                edge_side = "none"
-            if self.flight_mode == "none" and self.edge_mode == "none" and not self.perched_window_hwnd:
+            if self.flight_mode == "none" and not self.perched_window_hwnd:
                 locomotion = "moving" if self.state == "move" else "idle"
                 support_surface = "desktop_floor" if surface.on_floor else "screen_space"
-                if surface.on_floor and surface.near_left_edge:
-                    anchor = "left_edge_ready"
-                elif surface.on_floor and surface.near_right_edge:
-                    anchor = "right_edge_ready"
-                else:
-                    anchor = "floor" if surface.on_floor else "air"
+                anchor = "floor" if surface.on_floor else "air"
         self.movement_state = PetMovementState(
             intent=intent,
             locomotion=locomotion,
             anchor=anchor,
             support_surface=support_surface,
-            edge_side=edge_side,
             near_left_edge=surface.near_left_edge,
             near_right_edge=surface.near_right_edge,
-            can_attach_edge=(
-                not self.dragging and
-                self.vy == 0 and
-                self.care_mode == "none" and
-                self.edge_mode == "none" and
-                self.flight_mode == "none" and
-                not self.perched_window_hwnd
-            ),
             dock_edge=surface.dock_edge,
         )
         return self.movement_state
-
-    def get_edge_attach_target(self):
-        state = self.refresh_movement_state()
-        if not state.can_attach_edge:
-            return None
-        if state.anchor == "left_edge_ready":
-            return "left"
-        if state.anchor == "right_edge_ready":
-            return "right"
-        return None
 
     def get_taskbar_walk_y(self):
         surface = self.get_surface_snapshot()

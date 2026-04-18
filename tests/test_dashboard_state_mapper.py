@@ -1,0 +1,132 @@
+import unittest
+
+from tanuki_core.dashboard_state_mapper import (
+    DashboardConfigState,
+    DashboardOptionBounds,
+    apply_dashboard_config_to_settings,
+    build_dashboard_config_state,
+    build_pet_config_state,
+    dashboard_config_state_to_payload,
+    normalize_dashboard_config_state,
+    normalize_pet_config_state,
+    pet_config_state_to_payload,
+    safe_index,
+)
+from tanuki_core.settings_provider import RuntimeSettings
+
+
+class DashboardStateMapperTests(unittest.TestCase):
+    def test_safe_index_clamps_and_falls_back(self):
+        self.assertEqual(safe_index("2", 0, 5), 2)
+        self.assertEqual(safe_index("99", 1, 5), 4)
+        self.assertEqual(safe_index("oops", 3, 5), 3)
+
+    def test_normalize_dashboard_config_state_uses_bounds(self):
+        defaults = DashboardConfigState(
+            care_feature_enabled=True,
+            teio_dur_idx=3,
+            tsuyoshi_dur_idx=2,
+            time_scale_idx=0,
+            display_scale_idx=0,
+            debug_enabled=False,
+        )
+        bounds = DashboardOptionBounds(
+            teio_duration_count=5,
+            tsuyoshi_duration_count=5,
+            time_scale_count=4,
+            display_scale_count=4,
+        )
+
+        state = normalize_dashboard_config_state(
+            {
+                "care_feature_enabled": False,
+                "teio_dur_idx": 99,
+                "tsuyoshi_dur_idx": "1",
+                "time_scale_idx": "bad",
+                "display_scale_idx": 2,
+                "debug_enabled": True,
+            },
+            defaults=defaults,
+            option_bounds=bounds,
+        )
+
+        self.assertFalse(state.care_feature_enabled)
+        self.assertEqual(state.teio_dur_idx, 4)
+        self.assertEqual(state.tsuyoshi_dur_idx, 1)
+        self.assertEqual(state.time_scale_idx, 0)
+        self.assertEqual(state.display_scale_idx, 2)
+        self.assertTrue(state.debug_enabled)
+
+    def test_apply_dashboard_config_to_settings_updates_provider(self):
+        settings = RuntimeSettings()
+        state = build_dashboard_config_state(
+            care_feature_enabled=False,
+            teio_dur_idx=1,
+            tsuyoshi_dur_idx=4,
+            time_scale_idx=2,
+            display_scale_idx=3,
+            debug_enabled=True,
+        )
+
+        apply_dashboard_config_to_settings(settings, state)
+
+        self.assertFalse(settings.care_feature_enabled)
+        self.assertEqual(settings.teio_dur_idx, 1)
+        self.assertEqual(settings.tsuyoshi_dur_idx, 4)
+        self.assertEqual(settings.time_scale_idx, 2)
+        self.assertEqual(settings.display_scale_idx, 3)
+        self.assertTrue(settings.debug_enabled)
+
+    def test_dashboard_payload_round_trip_uses_expected_shape(self):
+        state = build_dashboard_config_state(
+            care_feature_enabled=True,
+            teio_dur_idx=2,
+            tsuyoshi_dur_idx=3,
+            time_scale_idx=1,
+            display_scale_idx=0,
+            debug_enabled=False,
+        )
+
+        payload = dashboard_config_state_to_payload(state)
+
+        self.assertEqual(
+            payload,
+            {
+                "care_feature_enabled": True,
+                "teio_dur_idx": 2,
+                "tsuyoshi_dur_idx": 3,
+                "time_scale_idx": 1,
+                "display_scale_idx": 0,
+                "debug_enabled": False,
+            },
+        )
+
+    def test_pet_config_state_normalizes_and_serializes(self):
+        defaults = build_pet_config_state(x=100, y=200, user_visible=True)
+        state = normalize_pet_config_state(
+            {"x": "320", "y": 480, "user_visible": 0},
+            defaults=defaults,
+        )
+
+        self.assertEqual(state.x, 320)
+        self.assertEqual(state.y, 480)
+        self.assertFalse(state.user_visible)
+        self.assertEqual(
+            pet_config_state_to_payload(state),
+            {"x": 320, "y": 480, "user_visible": False},
+        )
+
+    def test_pet_config_state_falls_back_when_coordinates_are_invalid(self):
+        defaults = build_pet_config_state(x=100, y=200, user_visible=True)
+
+        state = normalize_pet_config_state(
+            {"x": "bad", "y": None, "user_visible": True},
+            defaults=defaults,
+        )
+
+        self.assertEqual(state.x, 100)
+        self.assertEqual(state.y, 200)
+
+
+if __name__ == "__main__":
+    unittest.main()

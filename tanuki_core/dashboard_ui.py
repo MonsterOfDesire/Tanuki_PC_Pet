@@ -1,39 +1,20 @@
-import os
-
-from PyQt6.QtCore import QEasingCurve, QObject, QPoint, QPropertyAnimation, QTimer, Qt, QVariantAnimation, pyqtSignal
-from PyQt6.QtGui import QColor, QPainter
+from PyQt6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, QTimer, Qt
 from PyQt6.QtWidgets import QApplication, QHBoxLayout, QLabel, QMessageBox, QProgressBar, QPushButton, QVBoxLayout, QWidget
-from pynput import mouse
 
+from .dashboard_actions import DashboardActions
+from .dashboard_controller import DashboardController
+from .dashboard_presenter import DashboardPresenter
+from .dashboard_shell import build_overlay_window_flags
+from .dashboard_state_mapper import (
+    DashboardConfigState,
+    DashboardOptionBounds,
+    apply_dashboard_config_to_settings,
+    build_dashboard_config_state,
+)
+from .dashboard_tools_actions import DashboardToolsActions
 from .runtime import SIM_CLOCK, app_now
-from .validation import build_validation_report
-
-SAFE_WINDOW_MODE = os.environ.get("TANUKI_SAFE_WINDOW_MODE", "0") == "1"
-
-
-def build_overlay_window_flags():
-    flags = Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint
-    if not SAFE_WINDOW_MODE:
-        flags |= Qt.WindowType.Tool
-    return flags
-
-
-class GlobalMouseListener(QObject):
-    request_slide_out = pyqtSignal()
-
-    def __init__(self, dashboard):
-        super().__init__()
-        self.dashboard = dashboard
-        self.request_slide_out.connect(self.dashboard.slide_out, Qt.ConnectionType.QueuedConnection)
-        self.listener = mouse.Listener(on_click=self.on_click)
-        self.listener.start()
-
-    def on_click(self, x, y, button, pressed):
-        if pressed and self.dashboard.is_expanded:
-            ratio = self.dashboard.devicePixelRatio()
-            logic_point = QPoint(int(x / ratio), int(y / ratio))
-            if not self.dashboard.geometry().contains(logic_point):
-                self.request_slide_out.emit()
+from .settings_provider import RuntimeSettings
+from .shutdown_controller import DashboardShutdownController
 
 
 class Dashboard(QWidget):
@@ -43,22 +24,48 @@ class Dashboard(QWidget):
     )
     SECTION_LABEL_STYLE = "color: white; background: rgba(0,0,0,150); padding: 6px 8px; border-radius: 6px;"
 
-    def __init__(self, target_rect, pets_dict, resource_resolver):
+    def __init__(
+        self,
+        target_rect,
+        pets_dict,
+        resource_resolver,
+        settings_provider=None,
+        actions=None,
+        tools_actions=None,
+        presenter=None,
+        save_scheduler=None,
+        shutdown_controller=None,
+        controller=None,
+    ):
         super().__init__()
+        self.settings_provider = settings_provider or RuntimeSettings()
+        actions = actions or DashboardActions(sim_clock=SIM_CLOCK, now_provider=app_now)
+        tools_actions = tools_actions or DashboardToolsActions()
+        presenter = presenter or DashboardPresenter()
         self.is_expanded = False
         self.config_store = None
-        self.care_feature_enabled = True
-        self.debug_enabled = False
-        self.time_scale_options = [1, 2, 4, 8]
-        self.time_scale_idx = 0
+        self.save_scheduler = save_scheduler
+        shutdown_controller = shutdown_controller or DashboardShutdownController(
+            save_before_quit=lambda: self.save_now(force=True)
+        )
+        self.controller = controller or DashboardController(
+            actions=actions,
+            tools_actions=tools_actions,
+            presenter=presenter,
+            shutdown_controller=shutdown_controller,
+        )
+        self.care_feature_enabled = bool(self.settings_provider.care_feature_enabled)
+        self.debug_enabled = bool(self.settings_provider.debug_enabled)
+        self.time_scale_options = list(RuntimeSettings.TIME_SCALE_OPTIONS)
+        self.time_scale_idx = int(self.settings_provider.time_scale_idx)
         self.time_scale_buttons = []
-        self.display_scale_options = [1.0, 1.5, 2.0, 3.0]
-        self.display_scale_idx = 0
+        self.display_scale_options = list(RuntimeSettings.DISPLAY_SCALE_OPTIONS)
+        self.display_scale_idx = int(self.settings_provider.display_scale_idx)
         self.display_scale_buttons = []
-        self.teio_dur_list = [2, 5, 10, 20, 30]
-        self.teio_dur_idx = 3
-        self.tsuyoshi_dur_list = [2, 10, 20, 40, 60]
-        self.tsuyoshi_dur_idx = 2
+        self.teio_dur_list = list(RuntimeSettings.TEIO_DURATIONS)
+        self.teio_dur_idx = int(self.settings_provider.teio_dur_idx)
+        self.tsuyoshi_dur_list = list(RuntimeSettings.TSUYOSHI_DURATIONS)
+        self.tsuyoshi_dur_idx = int(self.settings_provider.tsuyoshi_dur_idx)
         self.teio_duration_buttons = []
         self.tsuyoshi_duration_buttons = []
         self.target_rect = target_rect
@@ -151,7 +158,6 @@ class Dashboard(QWidget):
         self.update_timer = QTimer(self)
         self.update_timer.timeout.connect(self.refresh_mood_bars)
         self.update_timer.start(500)
-        SIM_CLOCK.register_timer(self.update_timer, 500)
 
         self.btn_exit = QPushButton("關閉系統")
         self.btn_exit.clicked.connect(self.begin_shutdown)
@@ -173,6 +179,41 @@ class Dashboard(QWidget):
         self.update_care_button_text()
         self.update_debug_button_text()
 
+    def sync_settings_provider(self):
+        apply_dashboard_config_to_settings(self.settings_provider, self.capture_config_state())
+
+    def capture_config_state(self):
+        return build_dashboard_config_state(
+            care_feature_enabled=self.care_feature_enabled,
+            teio_dur_idx=self.teio_dur_idx,
+            tsuyoshi_dur_idx=self.tsuyoshi_dur_idx,
+            time_scale_idx=self.time_scale_idx,
+            display_scale_idx=self.display_scale_idx,
+            debug_enabled=self.debug_enabled,
+        )
+
+    def get_option_bounds(self):
+        return DashboardOptionBounds(
+            teio_duration_count=len(self.teio_dur_list),
+            tsuyoshi_duration_count=len(self.tsuyoshi_dur_list),
+            time_scale_count=len(self.time_scale_options),
+            display_scale_count=len(self.display_scale_options),
+        )
+
+    def apply_config_state(self, state):
+        if not isinstance(state, DashboardConfigState):
+            return
+        self.set_care_enabled(state.care_feature_enabled, save=False)
+        self.teio_dur_idx = int(state.teio_dur_idx)
+        self.tsuyoshi_dur_idx = int(state.tsuyoshi_dur_idx)
+        self.time_scale_idx = int(state.time_scale_idx)
+        self.display_scale_idx = int(state.display_scale_idx)
+        self.set_debug_enabled(state.debug_enabled, save=False)
+        self.sync_settings_provider()
+        self.update_duration_buttons()
+        self.update_time_scale_buttons()
+        self.update_display_scale_buttons()
+
     def refresh_mood_bars(self):
         for info in self.pets_dict.values():
             info["mood_bar"].setValue(int(info["pet"].mood_score))
@@ -185,52 +226,60 @@ class Dashboard(QWidget):
     def update_care_button_text(self):
         self.btn_care.setText(f"照護功能: {'開啟' if self.care_feature_enabled else '關閉'}")
 
-    def update_debug_button_text(self):
-        self.btn_debug.setText(f"Debug: {'開啟' if self.debug_enabled else '關閉'}")
+    def apply_debug_button_presentation(self, presentation):
+        self.btn_debug.setText(presentation.text)
 
-    def show_shutdown_status(self):
-        self.status_label.setText("正在儲存設定...")
-        self.status_label.show()
-        self.btn_exit.setEnabled(False)
-        self.btn_exit.setText("正在關閉...")
-        self.is_expanded = True
+    def update_debug_button_text(self):
+        self.apply_debug_button_presentation(self.controller.presenter.build_debug_button(self.debug_enabled))
+
+    def apply_shutdown_status_presentation(self, presentation):
+        self.status_label.setText(presentation.status_text)
+        if presentation.show_status:
+            self.status_label.show()
+        else:
+            self.status_label.hide()
+        self.btn_exit.setEnabled(presentation.exit_enabled)
+        self.btn_exit.setText(presentation.exit_text)
+        self.is_expanded = bool(presentation.force_expanded)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
         self.move(self.show_pos)
         self.show()
         self.raise_()
         QApplication.processEvents()
 
+    def show_tools_dialog(self, presentation):
+        if presentation.severity == "warning":
+            QMessageBox.warning(self, presentation.title, presentation.message)
+        else:
+            QMessageBox.information(self, presentation.title, presentation.message)
+
     def begin_shutdown(self):
-        self.show_shutdown_status()
-        if self.config_store:
-            self.config_store.save_now(force=True)
-        QApplication.quit()
+        self.controller.begin_shutdown(self)
+
+    def schedule_save(self):
+        if self.save_scheduler:
+            self.save_scheduler.schedule()
+
+    def save_now(self, force=False):
+        if self.save_scheduler:
+            self.save_scheduler.save_now(force=force)
+        elif self.config_store:
+            self.config_store.save_now(force=force)
 
     def set_care_enabled(self, enabled, save=True):
-        self.care_feature_enabled = bool(enabled)
-        self.update_care_button_text()
+        self.controller.set_care_enabled(self, enabled, save=save)
 
     def toggle_care(self):
-        self.set_care_enabled(not self.care_feature_enabled)
+        self.controller.toggle_care(self)
 
     def set_debug_enabled(self, enabled, save=True):
-        self.debug_enabled = bool(enabled)
-        self.update_debug_button_text()
-        for info in self.pets_dict.values():
-            pet = info.get("pet")
-            if pet:
-                pet.update()
+        self.controller.set_debug_enabled(self, enabled, save=save)
 
     def toggle_debug(self):
-        self.set_debug_enabled(not self.debug_enabled)
+        self.controller.toggle_debug(self)
 
     def handle_pet_toggle(self, pet, checked):
-        pet.user_visible = bool(checked)
-        if checked:
-            if not (pet.care_lock_mode == "hidden" and pet.is_under_care(app_now())):
-                pet.show()
-        else:
-            pet.hide()
+        self.controller.handle_pet_toggle(self, pet, checked)
 
     def create_duration_selector(self, char, durations):
         row = QHBoxLayout()
@@ -259,13 +308,8 @@ class Dashboard(QWidget):
             row.addWidget(btn)
         return row
 
-    def set_duration(self, char, index):
-        if char == "teio":
-            self.teio_dur_idx = index
-        else:
-            self.tsuyoshi_dur_idx = index
-        self.update_duration_buttons()
-        self.apply_social_settings()
+    def set_duration(self, char, index, save=True):
+        self.controller.set_duration(self, char, index, save=save)
 
     def update_duration_buttons(self):
         for idx, btn in enumerate(self.teio_duration_buttons):
@@ -284,34 +328,20 @@ class Dashboard(QWidget):
     def get_time_scale(self):
         return float(self.time_scale_options[self.time_scale_idx])
 
-    def set_time_scale_index(self, index):
-        self.time_scale_idx = max(0, min(len(self.time_scale_options) - 1, int(index)))
-        self.update_time_scale_buttons()
-        SIM_CLOCK.set_speed(self.get_time_scale())
+    def set_time_scale_index(self, index, save=True):
+        self.controller.set_time_scale_index(self, index, save=save)
 
     def get_display_scale_multiplier(self):
         return float(self.display_scale_options[self.display_scale_idx])
 
-    def set_display_scale_index(self, index):
-        self.display_scale_idx = max(0, min(len(self.display_scale_options) - 1, int(index)))
-        self.update_display_scale_buttons()
-        self.apply_display_scale()
+    def set_display_scale_index(self, index, save=True):
+        self.controller.set_display_scale_index(self, index, save=save)
 
-    def apply_display_scale(self):
-        multiplier = self.get_display_scale_multiplier()
-        for info in self.pets_dict.values():
-            pet = info.get("pet")
-            if pet:
-                pet.apply_display_scale(multiplier)
+    def apply_display_scale(self, save=True):
+        self.controller.apply_display_scale(self, save=save)
 
     def run_validation_checks(self):
-        assets_dir = self.resource_resolver("assets_cropped")
-        config_path = self.config_store.config_path if self.config_store else self.resource_resolver("config.json")
-        report, warnings = build_validation_report(assets_dir, config_path)
-        if warnings:
-            QMessageBox.warning(self, "檢查結果", report)
-        else:
-            QMessageBox.information(self, "檢查結果", report)
+        self.controller.run_validation_checks(self)
 
     def get_social_cooldown_label_seconds(self, pet_name):
         if pet_name == "Tokai Teio":
@@ -324,13 +354,8 @@ class Dashboard(QWidget):
         duration = self.get_social_cooldown_label_seconds(pet_name)
         return float(duration) if duration else 0.0
 
-    def apply_social_settings(self):
-        teio = self.pets_dict.get("Tokai Teio", {}).get("pet")
-        tsuyoshi = self.pets_dict.get("Tsurumaru Tsuyoshi", {}).get("pet")
-        if teio:
-            teio.social_cooldown_duration = self.get_social_cooldown_seconds("Tokai Teio")
-        if tsuyoshi:
-            tsuyoshi.social_cooldown_duration = self.get_social_cooldown_seconds("Tsurumaru Tsuyoshi")
+    def apply_social_settings(self, save=True):
+        self.controller.apply_social_settings(self, save=save)
 
     def update_positions(self, rect):
         w = self.width()
@@ -351,47 +376,3 @@ class Dashboard(QWidget):
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
             self.anim.setEndValue(self.hide_pos)
             self.anim.start()
-
-
-class SensorZone(QWidget):
-    def __init__(self, dashboard):
-        super().__init__()
-        self.dashboard = dashboard
-        self.setWindowFlags(build_overlay_window_flags())
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.progress = 0.0
-        self.glow_anim = QVariantAnimation(self)
-        self.glow_anim.setDuration(2000)
-        self.glow_anim.setStartValue(0.0)
-        self.glow_anim.setEndValue(1.0)
-        self.glow_anim.valueChanged.connect(self.update_progress)
-        self.glow_anim.finished.connect(self.on_finished)
-
-    def update_progress(self, value):
-        self.progress = value
-        self.update()
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setBrush(QColor(40, 40, 40, 80))
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawRect(self.rect())
-        if self.progress > 0:
-            fill_h = int(self.height() * self.progress)
-            painter.setBrush(QColor(100, 255, 100, 200))
-            painter.drawRect(0, self.height() - fill_h, self.width(), fill_h)
-
-    def on_finished(self):
-        if self.progress >= 0.99:
-            self.dashboard.slide_in([], self)
-        self.progress = 0.0
-        self.update()
-
-    def enterEvent(self, event):
-        if not self.dashboard.is_expanded:
-            self.glow_anim.start()
-
-    def leaveEvent(self, event):
-        self.glow_anim.stop()
-        self.progress = 0.0
-        self.update()

@@ -48,10 +48,8 @@ class PetMovementState:
     locomotion: str = "idle"
     anchor: str = "floor"
     support_surface: str = "desktop_floor"
-    edge_side: str = "none"
     near_left_edge: bool = False
     near_right_edge: bool = False
-    can_attach_edge: bool = False
     dock_edge: str = "none"
 
 

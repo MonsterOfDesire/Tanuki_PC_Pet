@@ -3,24 +3,89 @@ import random
 from PyQt6.QtWidgets import QApplication
 
 from .geometry import get_total_virtual_geometry
+from .pet_social_catalog import (
+    get_adult_companion_candidates as catalog_get_adult_companion_candidates,
+    get_care_move_candidates as catalog_get_care_move_candidates,
+    get_child_comfort_candidates as catalog_get_child_comfort_candidates,
+    get_child_recovery_candidates as catalog_get_child_recovery_candidates,
+    get_idle_candidates as catalog_get_idle_candidates,
+    get_move_candidates as catalog_get_move_candidates,
+)
+from .pet_social_coordinator import (
+    ActiveCareContext,
+    ActiveSocialContext,
+    CARE_DECISION_APPROACH_TICK,
+    CARE_DECISION_CANCEL,
+    CARE_DECISION_CONTINUE,
+    CARE_DECISION_FINISH_FAILURE,
+    CARE_DECISION_FINISH_SUCCESS,
+    CARE_DECISION_INTERACTION_TICK,
+    CARE_DECISION_MOVING_INTERACTION_TICK,
+    CARE_DECISION_SIT_TICK,
+    CARE_DECISION_START_APPROACH,
+    CARE_TRANSITION_COMPANION,
+    CARE_TRANSITION_INTERACTION,
+    IdleCareContext,
+    SOCIAL_CARE_COORDINATOR,
+    SOCIAL_DECISION_ACTIVE_FOLLOWING,
+    SOCIAL_DECISION_ACTIVE_MIMICKING,
+    SOCIAL_DECISION_CONTINUE,
+    SOCIAL_DECISION_START_FOLLOWING,
+    SOCIAL_DECISION_START_MIMICKING,
+    SOCIAL_DECISION_STOP,
+    SocialEntryContext,
+)
+from .pet_social_effects import SOCIAL_CARE_EFFECTS
+from .pet_social_rules import (
+    CareAdultCandidate,
+    CareTargetCandidate,
+    build_distress_mood_candidates,
+    can_mimic_socially,
+    is_distressed_state,
+    parse_interaction_action,
+    choose_preferred_care_adult_name,
+    should_preserve_candidate_animation,
+)
 from .runtime import app_now
 
 
 class PetSocialCareMixin:
     def is_distressed(self):
-        if self.current_mood_tag in self.DISTRESS_MOODS:
-            return True
-        return self.mood_state == "depressed" and self.current_mood_tag not in {"happy", "smile", "confidence", "cool"}
+        return is_distressed_state(
+            mood_state=self.mood_state,
+            current_mood_tag=self.current_mood_tag,
+            current_purpose=self.current_purpose,
+            dragging=self.dragging,
+            mood_score=self.mood_score,
+            distress_ready_at=getattr(self, "distress_ready_at", 0.0),
+            now=app_now(),
+        )
+
+    def get_preferred_care_adult_name(self, child, all_pets):
+        adult_candidates = []
+        child_screen = QApplication.screenAt(child.geometry().center()) or QApplication.primaryScreen()
+        for pet in all_pets:
+            adult_screen = QApplication.screenAt(pet.geometry().center()) or QApplication.primaryScreen()
+            adult_candidates.append(CareAdultCandidate(
+                name=pet.name,
+                is_adult=pet.is_adult,
+                is_visible=pet.isVisible(),
+                is_busy=(
+                    pet.dragging or
+                    pet.care_mode != "none" or
+                    pet.is_under_care(app_now()) or
+                    pet.is_angry_locked
+                ),
+                distance=pet.distance_to(child),
+                same_screen=(adult_screen == child_screen),
+            ))
+        return choose_preferred_care_adult_name(adult_candidates)
 
     def is_under_care(self, now):
         return self.care_partner is not None and self.care_lock_mode != "none" and now < self.care_lock_end_time
 
     def clear_care_lock(self):
-        if self.care_lock_mode == "hidden" and not self.isVisible():
-            self.show()
-        self.care_partner = None
-        self.care_lock_mode = "none"
-        self.care_lock_end_time = 0.0
+        SOCIAL_CARE_EFFECTS.clear_care_lock(self)
 
     def get_care_release_padding(self):
         return 24
@@ -77,8 +142,6 @@ class PetSocialCareMixin:
             self.vy != 0 or
             not self.isVisible() or
             self.flight_mode != "none" or
-            self.perched_window_hwnd != 0 or
-            self.edge_mode != "none" or
             self.is_hugging or
             self.care_mode != "none" or
             self.care_partner is not None or
@@ -93,6 +156,8 @@ class PetSocialCareMixin:
             return False
         self.current_frames = frames
         self.frame_index = 0
+        if hasattr(self, "animation_step_budget"):
+            self.animation_step_budget = 0.0
         self.current_purpose = purpose
         self.current_action_tag = action_type
         self.current_mood_tag = mood
@@ -196,29 +261,41 @@ class PetSocialCareMixin:
         return expanded
 
     def ensure_candidate_animation(self, candidates, context=None):
-        if any(self.current_purpose == purpose and self.current_action_tag == action for purpose, action in candidates):
-            frames = self.asset_manager.get_specific_frames(
-                self.current_purpose,
-                self.current_action_tag,
-                self.current_mood_tag,
-                mood_score=self.mood_score,
-                context=context,
-            )
-            if frames:
-                return True
+        frames = self.asset_manager.get_specific_frames(
+            self.current_purpose,
+            self.current_action_tag,
+            self.current_mood_tag,
+            mood_score=self.mood_score,
+            context=context,
+        )
+        if should_preserve_candidate_animation(
+            self.current_purpose,
+            self.current_action_tag,
+            self.current_mood_tag,
+            candidates,
+            frames_available=bool(frames),
+        ):
+            return True
         return self.change_state_candidates(candidates, context=context)
 
     def ensure_candidate_animation_with_preferences(self, candidates, preferred_moods, forbidden=None, context=None):
-        if any(self.current_purpose == purpose and self.current_action_tag == action for purpose, action in candidates):
-            frames = self.asset_manager.get_specific_frames(
-                self.current_purpose,
-                self.current_action_tag,
-                self.current_mood_tag,
-                mood_score=self.mood_score,
-                context=context,
-            )
-            if self.current_mood_tag in preferred_moods and frames:
-                return True
+        frames = self.asset_manager.get_specific_frames(
+            self.current_purpose,
+            self.current_action_tag,
+            self.current_mood_tag,
+            mood_score=self.mood_score,
+            context=context,
+        )
+        if should_preserve_candidate_animation(
+            self.current_purpose,
+            self.current_action_tag,
+            self.current_mood_tag,
+            candidates,
+            frames_available=bool(frames),
+            preferred_moods=preferred_moods,
+            forbidden=forbidden,
+        ):
+            return True
         return self.change_state_candidates_with_preferences(
             candidates,
             preferred_moods,
@@ -227,88 +304,22 @@ class PetSocialCareMixin:
         )
 
     def get_child_comfort_candidates(self):
-        if self.name == "Tokai Teio":
-            return [
-                ("idle", "drink"),
-                ("idle", "eat"),
-                ("idle", "side_eat_candy"),
-                ("idle", "sit"),
-                ("idle", "lie"),
-                ("idle", "side"),
-                ("idle", "side_hug"),
-            ]
-        return [
-            ("idle", "drink"),
-            ("idle", "eat"),
-            ("idle", "side_hug"),
-            ("idle", "side_rub"),
-            ("idle", "sit_no"),
-            ("idle", "squat"),
-            ("idle", "side"),
-        ]
+        return catalog_get_child_comfort_candidates(self.name)
 
     def get_child_recovery_candidates(self):
-        if self.name == "Tokai Teio":
-            return [
-                ("move", "walk_drink"),
-                ("idle", "dance_uma_drink"),
-                ("idle", "side_eat_candy"),
-                ("idle", "lie"),
-                ("idle", "side"),
-                ("idle", "sit"),
-            ]
-        return self.get_child_comfort_candidates()
+        return catalog_get_child_recovery_candidates(self.name)
 
     def get_adult_companion_candidates(self):
-        return [
-            ("idle", "sit"),
-            ("idle", "sit_talk"),
-            ("idle", "sit_read"),
-            ("idle", "rest"),
-            ("idle", "squat"),
-            ("idle", "side"),
-        ]
+        return catalog_get_adult_companion_candidates()
 
     def get_move_candidates(self):
-        return [
-            ("move", "walk"),
-            ("move", "run"),
-            ("move", "jog"),
-            ("move", "sneak"),
-            ("move", "climb"),
-            ("move", "fly"),
-            ("move", "fly_up"),
-        ]
+        return catalog_get_move_candidates()
 
     def get_care_move_candidates(self):
-        return [
-            ("move", "run"),
-            ("move", "jog"),
-            ("move", "walk"),
-            ("move", "sneak"),
-            ("move", "climb"),
-            ("move", "fly"),
-            ("move", "fly_up"),
-        ]
+        return catalog_get_care_move_candidates()
 
     def get_idle_candidates(self):
-        return [
-            ("idle", "stand"),
-            ("idle", "side"),
-            ("idle", "sit"),
-            ("idle", "rest"),
-            ("idle", "lie"),
-            ("idle", "squat"),
-            ("idle", "observe"),
-            ("idle", "photo"),
-            ("idle", "photo_ready"),
-            ("idle", "dance_three"),
-            ("idle", "dance_uma"),
-            ("idle", "hear"),
-            ("idle", "knock"),
-            ("idle", "get"),
-            ("idle", "sleep"),
-        ]
+        return catalog_get_idle_candidates()
 
     def get_randomized_candidates(self, candidates):
         randomized = list(candidates)
@@ -351,22 +362,15 @@ class PetSocialCareMixin:
         self.state = "idle"
         self.ensure_candidate_animation(self.get_child_comfort_candidates())
         self.mood_score = min(100, self.mood_score + 0.05)
+        if hasattr(self, "sync_mood_state_with_score"):
+            self.sync_mood_state_with_score()
         return True
 
     def start_social_mode(self, mode, target, now):
-        self.social_mode = mode
-        self.social_target = target
-        self.social_started_at = now
-        self.social_timer_frames = self.get_social_duration_frames(mode)
-        self.star_timer.start(30)
+        SOCIAL_CARE_EFFECTS.start_social_mode(self, mode, target, now)
 
     def stop_social_mode(self, now, apply_cooldown=True):
-        if apply_cooldown and self.social_mode != "none":
-            self.social_cooldown_end = now + self.get_social_cooldown_seconds()
-        self.social_mode = "none"
-        self.social_target = None
-        self.social_started_at = 0.0
-        self.social_timer_frames = 0
+        SOCIAL_CARE_EFFECTS.stop_social_mode(self, now, apply_cooldown=apply_cooldown)
 
     def can_strictly_mimic(self, target):
         return bool(self.asset_manager.get_specific_frames(
@@ -395,27 +399,6 @@ class PetSocialCareMixin:
             self.current_mood_tag = target.current_mood_tag
         return True
 
-    def parse_interaction_action(self, action_key):
-        if action_key.startswith("move_"):
-            motion = "move"
-            rest = action_key[len("move_"):]
-        elif action_key.startswith("idle_"):
-            motion = "idle"
-            rest = action_key[len("idle_"):]
-        else:
-            return None
-        if "_" not in rest:
-            return None
-        action_desc, child_token = rest.rsplit("_", 1)
-        return motion, action_desc, child_token
-
-    def get_distress_mood_candidates(self, child):
-        moods = []
-        for mood in [child.current_mood_tag, "sad", "cry", "hard-cry", "happy"]:
-            if mood and mood not in moods:
-                moods.append(mood)
-        return moods
-
     def select_interaction_animation(self, child):
         child_tokens = set(child.get_child_tokens())
         actions = self.asset_manager.get_action_keys("interaction")
@@ -425,10 +408,10 @@ class PetSocialCareMixin:
         preferred_motion = "move" if self.state == "move" else "idle"
         motion_order = [preferred_motion, "idle" if preferred_motion == "move" else "move"]
         for motion in motion_order:
-            for mood in self.get_distress_mood_candidates(child):
+            for mood in build_distress_mood_candidates(child.current_mood_tag):
                 matches = []
                 for action_key in actions:
-                    parsed = self.parse_interaction_action(action_key)
+                    parsed = parse_interaction_action(action_key)
                     if not parsed:
                         continue
                     action_motion, _, child_token = parsed
@@ -449,94 +432,19 @@ class PetSocialCareMixin:
         return None
 
     def start_care_approach(self, child):
-        self.stop_social_mode(app_now(), apply_cooldown=False)
-        self.care_mode = "approach"
-        self.care_target = child
-        self.care_plan = "auto"
-        child.care_partner = self
-
-    def decide_care_plan(self, child, has_interaction):
-        if not has_interaction:
-            return "companion"
-        interaction_weights = {
-            "Symboli Rudolf": 0.65,
-            "Sirius Symboli": 0.50,
-            "Air Groove": 0.40,
-        }
-        interaction_chance = interaction_weights.get(self.name, 0.50)
-        if random.random() < interaction_chance:
-            return "interaction"
-        return "companion"
+        SOCIAL_CARE_EFFECTS.start_care_approach(self, child, app_now())
 
     def begin_hidden_interaction(self, child, animation_spec, now):
-        action_key, mood, frames = animation_spec
-        parsed = self.parse_interaction_action(action_key)
-        motion = parsed[0] if parsed else "idle"
-        self.care_mode = "moving_interaction" if motion == "move" else "interaction"
-        self.care_end_time = now + 3.0
-        self.is_hugging = True
-        self.care_move_direction = self.direction or 1
-        child.care_partner = self
-        child.care_lock_mode = "hidden"
-        child.care_lock_end_time = self.care_end_time
-        child.hide()
-        self.current_frames = frames
-        self.frame_index = 0
-        self.current_purpose = "interaction"
-        self.current_action_tag = action_key
-        self.current_mood_tag = mood
-        self.state = "move" if self.care_mode == "moving_interaction" else "idle"
+        SOCIAL_CARE_EFFECTS.begin_hidden_interaction(self, child, animation_spec, now)
 
     def begin_companion_care(self, child, now):
-        self.care_mode = "sit"
-        self.care_end_time = now + 5.0
-        child.care_partner = self
-        child.care_lock_mode = "comfort"
-        child.care_lock_end_time = self.care_end_time
-        child.show()
-        self.state = "idle"
-        self.ensure_candidate_animation(self.get_adult_companion_candidates())
-        child.state = "idle"
-        child.ensure_candidate_animation(child.get_child_comfort_candidates())
+        SOCIAL_CARE_EFFECTS.begin_companion_care(self, child, now)
 
     def finish_care_mode(self, success=True):
-        now = app_now()
-        child = self.care_target
-        previous_mode = self.care_mode
-        if child:
-            if previous_mode == "moving_interaction":
-                self.release_hidden_child_nearby(child)
-            if not child.isVisible():
-                child.show()
-            child.clear_care_lock()
-            if success:
-                child.mood_score = min(100, child.mood_score + 25)
-                child.pop_heart()
-                child.start_recovery(now)
-        self.is_hugging = False
-        self.care_mode = "none"
-        self.care_target = None
-        self.care_end_time = 0.0
-        self.care_move_direction = 0
-        self.care_plan = "auto"
-        self.care_cooldown_end = now + 4.0
-        self.state = "idle"
-        self.change_state("idle", "stand")
+        SOCIAL_CARE_EFFECTS.finish_care_mode(self, success, app_now())
 
     def cancel_care_mode(self):
-        child = self.care_target
-        if child:
-            if self.care_mode == "moving_interaction":
-                self.release_hidden_child_nearby(child)
-            if not child.isVisible():
-                child.show()
-            child.clear_care_lock()
-        self.is_hugging = False
-        self.care_mode = "none"
-        self.care_target = None
-        self.care_end_time = 0.0
-        self.care_move_direction = 0
-        self.care_plan = "auto"
+        SOCIAL_CARE_EFFECTS.cancel_care_mode(self)
 
     def move_toward_x(self, target_x, speed_scale=1.0, min_speed=None):
         delta = target_x - self.x()
@@ -560,69 +468,102 @@ class PetSocialCareMixin:
         return abs(target_x - self.x()) <= step
 
     def update_care_behavior(self, now, all_pets):
-        if not self.is_adult or not self.isVisible():
-            if self.care_mode != "none":
-                self.cancel_care_mode()
+        gate = SOCIAL_CARE_COORDINATOR.decide_care_gate(
+            is_adult=self.is_adult,
+            is_visible=self.isVisible(),
+            care_enabled=self.is_care_feature_enabled(),
+            care_mode=self.care_mode,
+        )
+        if gate.action == CARE_DECISION_CANCEL:
+            self.cancel_care_mode()
             return False
-
-        care_enabled = self.dashboard.care_feature_enabled if self.dashboard else True
-        if not care_enabled:
-            if self.care_mode != "none":
-                self.cancel_care_mode()
+        if gate.action != CARE_DECISION_CONTINUE:
             return False
 
         if self.care_mode != "none":
             child = self.care_target
+            child_in_all_pets = child in all_pets if child else False
+            child_partner_ok = child.care_partner in (None, self) if child else False
+            child_visible = child.isVisible() if child else False
+            child_mood_score = child.mood_score if child else 0.0
+            child_is_distressed = child.is_distressed() if child else False
+
+            moving_step = 0
+            moving_hits_edge = False
+            if child and self.care_mode == "moving_interaction":
+                moving_step = max(1, int(round(self.get_distressed_move_speed())))
+                moving_hits_edge = self.should_finish_moving_interaction_at_edge(child, moving_step)
+
+            interaction_spec = None
             if (
-                not child or
-                child not in all_pets or
-                child.care_partner not in (None, self) or
-                (not child.isVisible() and self.care_mode not in {"interaction", "moving_interaction"})
+                child and
+                self.care_mode not in {"interaction", "moving_interaction", "sit"} and
+                (child_is_distressed or child_mood_score < 55)
             ):
+                interaction_spec = self.select_interaction_animation(child)
+
+            decision = SOCIAL_CARE_COORDINATOR.decide_active_care(ActiveCareContext(
+                has_child=child is not None,
+                child_in_all_pets=child_in_all_pets,
+                child_partner_ok=child_partner_ok,
+                child_visible=child_visible,
+                mode=self.care_mode,
+                now=now,
+                care_end_time=self.care_end_time,
+                child_mood_score=child_mood_score,
+                child_is_distressed=child_is_distressed,
+                care_plan=self.care_plan,
+                interaction_available=interaction_spec is not None,
+                adult_name=self.name,
+                adult_x=self.x(),
+                child_x=child.x() if child else 0,
+                distance_to_child=self.distance_to(child) if child else 0.0,
+                moving_interaction_hits_edge=moving_hits_edge,
+                roll=random.random(),
+            ))
+
+            if decision.action == CARE_DECISION_CANCEL:
                 self.cancel_care_mode()
                 return False
 
-            if self.care_mode == "interaction":
-                if now >= self.care_end_time:
-                    self.finish_care_mode(success=True)
-                else:
-                    child.mood_score = min(100, child.mood_score + 0.18)
+            if decision.action == CARE_DECISION_FINISH_SUCCESS:
+                self.finish_care_mode(success=True)
+                return decision.handled
+
+            if decision.action == CARE_DECISION_FINISH_FAILURE:
+                self.finish_care_mode(success=False)
+                return decision.handled
+
+            if decision.action == CARE_DECISION_INTERACTION_TICK:
+                child.mood_score = min(100, child.mood_score + 0.18)
+                if hasattr(child, "sync_mood_state_with_score"):
+                    child.sync_mood_state_with_score()
                 return True
 
-            if self.care_mode == "moving_interaction":
+            if decision.action == CARE_DECISION_MOVING_INTERACTION_TICK:
                 self.direction = self.care_move_direction or self.direction or 1
                 self.state = "move"
                 child.mood_score = min(100, child.mood_score + 0.18)
-                step = max(1, int(round(self.get_distressed_move_speed())))
-                if now >= self.care_end_time or self.should_finish_moving_interaction_at_edge(child, step):
-                    self.finish_care_mode(success=True)
-                else:
-                    self.move(self.x() + (step * self.direction), self.y())
+                if hasattr(child, "sync_mood_state_with_score"):
+                    child.sync_mood_state_with_score()
+                self.move(self.x() + (moving_step * self.direction), self.y())
                 return True
 
-            if self.care_mode == "sit":
+            if decision.action == CARE_DECISION_SIT_TICK:
                 self.direction = -1 if child.x() < self.x() else 1
                 child.direction = -1 if self.x() < child.x() else 1
                 self.ensure_candidate_animation(self.get_adult_companion_candidates())
                 child.ensure_candidate_animation(child.get_child_comfort_candidates())
                 child.mood_score = min(100, child.mood_score + 0.10)
-                if now >= self.care_end_time or child.mood_score >= 70:
-                    self.finish_care_mode(success=True)
+                if hasattr(child, "sync_mood_state_with_score"):
+                    child.sync_mood_state_with_score()
                 return True
 
-            if not child.is_distressed() and child.mood_score >= 55:
-                self.finish_care_mode(success=False)
+            if decision.action != CARE_DECISION_APPROACH_TICK:
                 return False
 
-            interaction_spec = self.select_interaction_animation(child)
-            if self.care_plan == "auto":
-                self.care_plan = self.decide_care_plan(child, interaction_spec is not None)
-            elif self.care_plan == "interaction" and not interaction_spec:
-                self.care_plan = "companion"
-
-            use_interaction = self.care_plan == "interaction" and interaction_spec is not None
-            offset = 120 if self.x() <= child.x() else -120
-            target_x = child.x() if use_interaction else child.x() - offset
+            if decision.next_care_plan is not None:
+                self.care_plan = decision.next_care_plan
             self.state = "move"
             self.ensure_candidate_animation_with_preferences(
                 self.expand_candidates_with_context("move", self.get_care_move_candidates(), context="care_approach"),
@@ -631,69 +572,85 @@ class PetSocialCareMixin:
                 context="care_approach",
             )
             arrived = self.move_toward_x(
-                target_x,
+                decision.target_x,
                 speed_scale=1.6,
                 min_speed=self.get_care_approach_speed(),
             )
-            if arrived or self.distance_to(child) < 140:
-                if use_interaction:
-                    self.begin_hidden_interaction(child, interaction_spec, now)
-                else:
-                    self.begin_companion_care(child, now)
+            transition = SOCIAL_CARE_COORDINATOR.decide_approach_transition(
+                arrived=arrived,
+                distance_to_child=self.distance_to(child),
+                use_interaction=decision.use_interaction,
+            )
+            if transition == CARE_TRANSITION_INTERACTION:
+                self.begin_hidden_interaction(child, interaction_spec, now)
+            elif transition == CARE_TRANSITION_COMPANION:
+                self.begin_companion_care(child, now)
             return True
 
-        if now < self.care_cooldown_end:
-            return False
-
-        radius = None if self.name == "Sirius Symboli" else 1000
         candidates = []
         for pet in all_pets:
-            if pet == self or pet.is_adult or not pet.isVisible():
-                continue
-            if pet.care_partner not in (None, self):
-                continue
-            if pet.is_recovering or not pet.is_distressed():
-                continue
-            dist = self.distance_to(pet)
-            if radius is not None and dist > radius:
-                continue
-            candidates.append((dist, pet))
+            candidates.append(CareTargetCandidate(
+                pet=pet,
+                is_self=(pet == self),
+                is_adult=pet.is_adult,
+                is_visible=pet.isVisible(),
+                care_partner=pet.care_partner,
+                is_recovering=pet.is_recovering,
+                is_distressed=pet.is_distressed(),
+                distance=self.distance_to(pet),
+                preferred_adult_name=(
+                    self.get_preferred_care_adult_name(pet, all_pets)
+                    if not pet.is_adult
+                    else None
+                ),
+            ))
 
-        if not candidates:
+        decision = SOCIAL_CARE_COORDINATOR.decide_idle_care(IdleCareContext(
+            now=now,
+            care_cooldown_end=self.care_cooldown_end,
+            adult=self,
+            adult_name=self.name,
+            target_candidates=candidates,
+        ))
+        if decision.action != CARE_DECISION_START_APPROACH:
             return False
 
-        candidates.sort(key=lambda item: item[0])
-        self.start_care_approach(candidates[0][1])
-        return True
+        self.start_care_approach(decision.target)
+        return decision.handled
 
     def update_social_behavior(self, now, all_pets):
-        if self.name not in self.CHILD_NAMES or self.dragging:
+        gate = SOCIAL_CARE_COORDINATOR.decide_social_gate(
+            is_social_child=self.name in self.CHILD_NAMES,
+            dragging=self.dragging,
+        )
+        if gate.action != SOCIAL_DECISION_CONTINUE:
             return False
 
         rudolf = next((p for p in all_pets if p.name == "Symboli Rudolf" and p.isVisible()), None)
         if self.social_mode != "none":
-            if not rudolf or self.social_target != rudolf:
-                self.stop_social_mode(now)
-                return False
-
-            dist = self.distance_to(rudolf)
             self.social_timer_frames -= 1
-            timed_out = self.social_timer_frames <= 0
-            if timed_out or dist > (self.social_distance + 150):
+            decision = SOCIAL_CARE_COORDINATOR.decide_active_social(ActiveSocialContext(
+                social_mode=self.social_mode,
+                has_rudolf=rudolf is not None,
+                social_target_matches=rudolf is not None and self.social_target == rudolf,
+                distance_to_rudolf=self.distance_to(rudolf) if rudolf else 0.0,
+                timer_frames_remaining=self.social_timer_frames,
+                social_distance=self.social_distance,
+                rudolf_purpose=rudolf.current_purpose if rudolf else "",
+                can_mimic=can_mimic_socially(mood_state=self.mood_state),
+            ))
+            if decision.action == SOCIAL_DECISION_STOP:
                 self.stop_social_mode(now)
                 return False
 
-            if self.social_mode == "following":
-                if rudolf.current_purpose != "move":
-                    self.stop_social_mode(now)
-                    return False
+            if decision.action == SOCIAL_DECISION_ACTIVE_FOLLOWING:
                 self.state = "move"
                 follow_x = rudolf.x() + (rudolf.direction * 120)
                 self.move_toward_x(follow_x, speed_scale=1.25)
                 self.ensure_candidate_animation(self.get_move_candidates())
                 return True
 
-            if self.social_mode == "mimicking":
+            if decision.action == SOCIAL_DECISION_ACTIVE_MIMICKING:
                 if not self.sync_mimic_animation(rudolf):
                     self.stop_social_mode(now)
                     return False
@@ -703,19 +660,25 @@ class PetSocialCareMixin:
                     self.move_toward_x(rudolf.x(), speed_scale=1.05)
                 return True
 
-        if not rudolf or now < self.social_cooldown_end:
             return False
 
-        dist = self.distance_to(rudolf)
-        is_behind = (self.x() - rudolf.x()) * rudolf.direction < 0
-        if dist >= self.social_distance:
-            return False
+        decision = SOCIAL_CARE_COORDINATOR.decide_social_entry(SocialEntryContext(
+            has_rudolf=rudolf is not None,
+            now=now,
+            social_cooldown_end=self.social_cooldown_end,
+            distance_to_rudolf=self.distance_to(rudolf) if rudolf else 0.0,
+            social_distance=self.social_distance,
+            rudolf_purpose=rudolf.current_purpose if rudolf else "",
+            is_behind=((self.x() - rudolf.x()) * rudolf.direction < 0) if rudolf else False,
+            can_strictly_mimic=self.can_strictly_mimic(rudolf) if rudolf else False,
+            can_mimic=can_mimic_socially(mood_state=self.mood_state),
+        ))
 
-        if rudolf.current_purpose == "move" and is_behind:
+        if decision.action == SOCIAL_DECISION_START_FOLLOWING:
             self.start_social_mode("following", rudolf, now)
             return True
 
-        if self.can_strictly_mimic(rudolf):
+        if decision.action == SOCIAL_DECISION_START_MIMICKING:
             self.start_social_mode("mimicking", rudolf, now)
             return True
 
