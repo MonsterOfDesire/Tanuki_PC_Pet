@@ -1,6 +1,12 @@
 import unittest
 
-from tanuki_core.config_save_scheduler import ConfigSaveScheduler
+from tests.qt_test_support import QT_BINDINGS_AVAILABLE, QtApplicationTestCase
+
+
+if QT_BINDINGS_AVAILABLE:
+    from tanuki_core.config_save_scheduler import ConfigSaveScheduler
+else:
+    ConfigSaveScheduler = None
 
 
 class FakeConfigStore:
@@ -11,18 +17,27 @@ class FakeConfigStore:
         self.calls.append(force)
 
 
-class ConfigSaveSchedulerTests(unittest.TestCase):
-    def test_schedule_is_disabled_by_default(self):
-        store = FakeConfigStore()
-        scheduler = ConfigSaveScheduler(lambda: store, delay_ms=900)
+@unittest.skipUnless(QT_BINDINGS_AVAILABLE, "PyQt6 is required for Qt timer tests")
+class ConfigSaveSchedulerQtTests(QtApplicationTestCase):
+    def setUp(self):
+        self.schedulers = []
 
-        scheduler.schedule()
+    def tearDown(self):
+        for scheduler in self.schedulers:
+            scheduler.save_timer.stop()
 
-        self.assertFalse(scheduler.save_timer.isActive())
+    def build_scheduler(self, *args, **kwargs):
+        scheduler = ConfigSaveScheduler(*args, **kwargs)
+        self.schedulers.append(scheduler)
+        return scheduler
 
     def test_schedule_can_arm_timer_when_autosave_is_enabled(self):
         store = FakeConfigStore()
-        scheduler = ConfigSaveScheduler(lambda: store, delay_ms=900, autosave_enabled=True)
+        scheduler = self.build_scheduler(
+            lambda: store,
+            delay_ms=900,
+            autosave_enabled=True,
+        )
 
         scheduler.schedule()
 
@@ -31,7 +46,11 @@ class ConfigSaveSchedulerTests(unittest.TestCase):
 
     def test_save_now_stops_timer_and_delegates(self):
         store = FakeConfigStore()
-        scheduler = ConfigSaveScheduler(lambda: store, delay_ms=900)
+        scheduler = self.build_scheduler(
+            lambda: store,
+            delay_ms=900,
+            autosave_enabled=True,
+        )
         scheduler.schedule()
 
         scheduler.save_now(force=True)

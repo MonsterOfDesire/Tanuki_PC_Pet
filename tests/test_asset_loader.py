@@ -6,6 +6,9 @@ from collections import OrderedDict
 from tanuki_core.asset_loader import (
     AssetStoreCache,
     FrameCache,
+    get_runtime_asset_file_names,
+    get_runtime_asset_file_names_for_contexts,
+    is_runtime_manifest_entry,
     load_asset_indexes,
     load_asset_store,
     parse_asset_filename,
@@ -87,6 +90,76 @@ class AssetLoaderTests(unittest.TestCase):
 
             self.assertEqual(store.assets["idle"]["sit"]["happy"], ["idle_sit-happy.gif@0.5"])
             self.assertEqual(store.get_record("idle", "sit", "happy")["manifest"], {"band": ["normal"]})
+
+    def test_runtime_manifest_entry_excludes_future_disabled_and_zero_weight(self):
+        self.assertTrue(is_runtime_manifest_entry({"contexts": ["random"], "weight": 1.0}))
+        self.assertTrue(is_runtime_manifest_entry({"contexts": ["future_sleep", "random"], "weight": 1.0}))
+        self.assertFalse(is_runtime_manifest_entry({"contexts": ["future_sleep"], "weight": 1.0}))
+        self.assertFalse(is_runtime_manifest_entry({"contexts": ["disabled"], "weight": 1.0}))
+        self.assertFalse(is_runtime_manifest_entry({"contexts": ["random"], "weight": 0.0}))
+        self.assertFalse(is_runtime_manifest_entry({"contexts": [], "weight": 1.0}))
+
+    def test_runtime_asset_file_names_prefers_active_manifest_entries(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            for file_name in (
+                "idle_stand-happy.gif",
+                "idle_sleep-happy.gif",
+                "idle_disabled-happy.gif",
+                "idle_zero-happy.gif",
+                "idle_unlisted-happy.gif",
+            ):
+                open(os.path.join(temp_dir, file_name), "wb").close()
+
+            file_names = get_runtime_asset_file_names(
+                temp_dir,
+                {
+                    "idle_stand-happy.gif": {"contexts": ["random"], "weight": 1.0},
+                    "idle_sleep-happy.gif": {"contexts": ["future_sleep"], "weight": 1.0},
+                    "idle_disabled-happy.gif": {"contexts": ["disabled"], "weight": 1.0},
+                    "idle_zero-happy.gif": {"contexts": ["random"], "weight": 0.0},
+                    "missing.gif": {"contexts": ["random"], "weight": 1.0},
+                },
+            )
+
+            self.assertEqual(file_names, ["idle_stand-happy.gif"])
+
+    def test_runtime_asset_file_names_falls_back_when_manifest_has_no_active_entries(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            for file_name in ("idle_sleep-happy.gif", "idle_disabled-happy.gif"):
+                open(os.path.join(temp_dir, file_name), "wb").close()
+
+            file_names = get_runtime_asset_file_names(
+                temp_dir,
+                {
+                    "idle_sleep-happy.gif": {"contexts": ["future_sleep"], "weight": 1.0},
+                    "idle_disabled-happy.gif": {"contexts": ["disabled"], "weight": 1.0},
+                },
+            )
+
+            self.assertEqual(file_names, ["idle_disabled-happy.gif", "idle_sleep-happy.gif"])
+
+    def test_runtime_asset_file_names_for_contexts_filters_to_requested_contexts(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            for file_name in (
+                "idle_stand-happy.gif",
+                "idle_watch-happy.gif",
+                "idle_sleep-happy.gif",
+                "idle_disabled-happy.gif",
+            ):
+                open(os.path.join(temp_dir, file_name), "wb").close()
+
+            file_names = get_runtime_asset_file_names_for_contexts(
+                temp_dir,
+                {
+                    "idle_stand-happy.gif": {"contexts": ["random"], "weight": 1.0},
+                    "idle_watch-happy.gif": {"contexts": ["relation_watch"], "weight": 1.0},
+                    "idle_sleep-happy.gif": {"contexts": ["future_sleep"], "weight": 1.0},
+                    "idle_disabled-happy.gif": {"contexts": ["disabled"], "weight": 1.0},
+                },
+                ["random", "window_perch"],
+            )
+
+            self.assertEqual(file_names, ["idle_stand-happy.gif"])
 
     def test_frame_cache_reuses_raw_frames_across_scales_but_scales_per_size(self):
         with tempfile.TemporaryDirectory() as temp_dir:

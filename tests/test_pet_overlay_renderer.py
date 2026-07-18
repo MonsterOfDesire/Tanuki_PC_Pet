@@ -1,6 +1,11 @@
 import unittest
 
-from tanuki_core.pet_overlay_renderer import compute_debug_overlay_layout, compute_star_draw_specs
+from tanuki_core.pet_overlay_renderer import (
+    compute_debug_overlay_layout,
+    compute_head_status_label_layout,
+    compute_log_icon_draw_spec,
+    compute_star_draw_specs,
+)
 
 
 class PetOverlayRendererTests(unittest.TestCase):
@@ -30,6 +35,31 @@ class PetOverlayRendererTests(unittest.TestCase):
         self.assertEqual(layout.box_x, 30)
         self.assertEqual(layout.box_width, 160)
         self.assertEqual(layout.box_height, 52)
+
+    def test_compute_log_icon_draw_spec_places_icon_above_center(self):
+        spec = compute_log_icon_draw_spec(
+            widget_width=240,
+            draw_y=180,
+            overlay_scale=1.0,
+            log_icon_y_offset=12,
+        )
+
+        self.assertEqual(spec.size, 34)
+        self.assertGreater(spec.x, 120)
+        self.assertEqual(spec.y, 142)
+
+    def test_compute_head_status_label_layout_places_compact_label_above_character(self):
+        layout = compute_head_status_label_layout(
+            widget_width=240,
+            draw_y=180,
+            text_width=92,
+            line_height=16,
+        )
+
+        self.assertEqual(layout.width, 108)
+        self.assertEqual(layout.height, 24)
+        self.assertEqual(layout.x, 66)
+        self.assertEqual(layout.y, 132)
 
 
 if __name__ == "__main__":

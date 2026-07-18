@@ -3,6 +3,12 @@ from dataclasses import dataclass
 import sys
 import types
 
+try:
+    import PyQt6.QtCore  # noqa: F401
+    import PyQt6.QtWidgets  # noqa: F401
+except ModuleNotFoundError:
+    pass
+
 
 class _FakeQObject:
     pass

@@ -336,6 +336,20 @@ class SocialCoordinatorTests(unittest.TestCase):
 
         self.assertEqual(decision.action, SOCIAL_DECISION_STOP)
 
+    def test_active_mimicking_stops_when_rudolf_is_dragged(self):
+        decision = SOCIAL_CARE_COORDINATOR.decide_active_social(ActiveSocialContext(
+            social_mode="mimicking",
+            has_rudolf=True,
+            social_target_matches=True,
+            distance_to_rudolf=60,
+            timer_frames_remaining=10,
+            social_distance=120,
+            rudolf_purpose="drag",
+            can_mimic=True,
+        ))
+
+        self.assertEqual(decision.action, SOCIAL_DECISION_STOP)
+
     def test_social_entry_starts_following_or_mimicking(self):
         following = SOCIAL_CARE_COORDINATOR.decide_social_entry(SocialEntryContext(
             has_rudolf=True,

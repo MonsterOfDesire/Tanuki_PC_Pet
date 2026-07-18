@@ -1,9 +1,30 @@
 from __future__ import annotations
 
 
+SHARED_FOOD_TEST_LAYERS = {
+    "logic": (
+        "test_shared_food_partner_rules",
+        "test_shared_food_outcome_rules",
+    ),
+    "runtime": (
+        "test_item_scene_coordinator",
+        "test_offer_interaction_rules",
+        "test_offer_release_ui",
+        "test_shared_food_runtime",
+    ),
+    "assets": (
+        "test_asset_manager",
+        "test_asset_action_audit",
+        "test_manifest_xlsx_converter",
+        "test_shared_food_asset_integration",
+    ),
+}
+
+
 TEST_SUITE_MEMBERS = {
     "assets": {
         "test_asset_loader",
+        "test_asset_manager",
         "test_asset_selection_rules",
         "test_asset_store",
         "test_manifest_rules",
@@ -25,22 +46,51 @@ TEST_SUITE_MEMBERS = {
         "test_dashboard_tools_actions",
     },
     "pet": {
+        "test_pet_ambient_mood_rules",
+        "test_pet_ai_scheduler",
+        "test_pet_behavior_scheduler",
         "test_pet_collision_rules",
         "test_pet_logic",
         "test_pet_overlay_renderer",
+        "test_pet_intent_rules",
+        "test_pet_observe_rules",
         "test_pet_physics",
+        "test_pet_perception_rules",
         "test_pet_random_rules",
+        "test_pet_relationship_rules",
         "test_pet_runtime_state",
+        "test_pet_social_care",
         "test_pet_social_catalog",
         "test_pet_social_coordinator",
         "test_pet_social_effects",
+        "test_pet_social_log_rules",
         "test_pet_social_rules",
         "test_pet_tick_coordinator",
+        "test_pet_widget_runtime",
     },
     "runtime": {
+        "test_bottle_honey_scene_executor",
+        "test_direct_hover_scene_executor",
+        "test_ground_item_coordinator",
+        "test_household_event_rules",
+        "test_household_persistence",
+        "test_household_runtime_coordinator",
+        "test_item_scene_coordinator",
+        "test_offer_interaction_runtime",
+        "test_offer_release_ui",
+        "test_household_state",
+        "test_offer_interaction_rules",
         "test_runtime_clock",
+        "test_shared_food_outcome_rules",
+        "test_shared_food_partner_rules",
+        "test_shared_food_runtime",
+        "test_shared_food_scene_executor",
+        "test_shared_food_asset_integration",
     },
     "tooling": {
+        "test_asset_action_audit",
+        "test_manifest_xlsx_converter",
+        "test_suite_catalog",
         "test_tooling_lightweight_checks",
     },
     "windowing": {

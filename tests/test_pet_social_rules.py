@@ -8,6 +8,7 @@ from tanuki_core.pet_social_rules import (
     SOCIAL_ENTRY_FOLLOWING,
     SOCIAL_ENTRY_MIMICKING,
     SOCIAL_ENTRY_NONE,
+    build_care_interaction_mood_candidates,
     build_distress_mood_candidates,
     can_mimic_socially,
     is_distressed_state,
@@ -16,6 +17,7 @@ from tanuki_core.pet_social_rules import (
     decide_care_plan,
     decide_social_entry,
     parse_interaction_action,
+    resolve_care_interaction_motion_order,
     should_preserve_candidate_animation,
 )
 
@@ -48,6 +50,16 @@ class InteractionRuleTests(unittest.TestCase):
             build_distress_mood_candidates(None),
             ["sad", "cry", "hard-cry", "happy"],
         )
+
+    def test_care_interaction_mood_candidates_include_recovery_moods(self):
+        self.assertEqual(
+            build_care_interaction_mood_candidates("cry"),
+            ["cry", "happy", "smile", "relief", "calm", "think", "sad", "hard-cry"],
+        )
+
+    def test_care_interaction_motion_order_can_prefer_stationary_or_moving(self):
+        self.assertEqual(resolve_care_interaction_motion_order("move", 0.49), ["idle", "move"])
+        self.assertEqual(resolve_care_interaction_motion_order("move", 0.50), ["move", "idle"])
 
     def test_is_distressed_state_requires_depressed_state_not_just_sad_animation(self):
         self.assertTrue(
@@ -175,6 +187,27 @@ class CareTargetRuleTests(unittest.TestCase):
 
         self.assertIs(target, child_ok)
 
+    def test_choose_care_target_filters_child_with_temporary_care_block(self):
+        adult = object()
+        blocked_child = object()
+
+        target = choose_care_target(adult, "Air Groove", [
+            CareTargetCandidate(
+                blocked_child,
+                False,
+                False,
+                True,
+                None,
+                False,
+                True,
+                120,
+                "Air Groove",
+                care_blocked=True,
+            ),
+        ])
+
+        self.assertIsNone(target)
+
     def test_sirius_symboli_ignores_default_search_radius(self):
         adult = object()
         distant_child = object()
@@ -253,6 +286,18 @@ class SocialEntryRuleTests(unittest.TestCase):
             is_behind=False,
             can_strictly_mimic=True,
             can_mimic=False,
+        )
+
+        self.assertEqual(entry, SOCIAL_ENTRY_NONE)
+
+    def test_social_entry_blocks_mimicking_when_rudolf_is_dragged(self):
+        entry = decide_social_entry(
+            distance=80,
+            social_distance=120,
+            rudolf_purpose="drag",
+            is_behind=False,
+            can_strictly_mimic=True,
+            can_mimic=True,
         )
 
         self.assertEqual(entry, SOCIAL_ENTRY_NONE)

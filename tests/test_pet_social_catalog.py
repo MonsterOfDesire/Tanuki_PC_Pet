@@ -2,9 +2,9 @@ import unittest
 
 from tanuki_core.pet_social_catalog import (
     get_adult_companion_candidates,
-    get_care_move_candidates,
     get_child_comfort_candidates,
     get_child_recovery_candidates,
+    get_expression_preferred_moods,
     get_idle_candidates,
     get_move_candidates,
 )
@@ -15,13 +15,10 @@ class ChildCandidateCatalogTests(unittest.TestCase):
         self.assertEqual(
             get_child_comfort_candidates("Tokai Teio"),
             [
-                ("idle", "drink"),
-                ("idle", "eat"),
                 ("idle", "side_eat_candy"),
                 ("idle", "sit"),
                 ("idle", "lie"),
                 ("idle", "side"),
-                ("idle", "side_hug"),
             ],
         )
 
@@ -60,36 +57,37 @@ class ChildCandidateCatalogTests(unittest.TestCase):
 
 
 class SharedCandidateCatalogTests(unittest.TestCase):
-    def test_shared_candidate_lists_match_existing_behavior(self):
+    def test_adult_companion_candidates_are_character_specific(self):
         self.assertEqual(
-            get_adult_companion_candidates(),
+            get_adult_companion_candidates("Symboli Rudolf"),
             [
                 ("idle", "sit"),
-                ("idle", "sit_talk"),
                 ("idle", "sit_read"),
                 ("idle", "rest"),
                 ("idle", "squat"),
+            ],
+        )
+        self.assertEqual(
+            get_adult_companion_candidates("Sirius Symboli"),
+            [
+                ("idle", "sit"),
+                ("idle", "sit_talk"),
                 ("idle", "side"),
             ],
         )
+        self.assertEqual(
+            get_adult_companion_candidates("Air Groove"),
+            [("idle", "sit"), ("idle", "side")],
+        )
+        self.assertEqual(get_adult_companion_candidates("Unknown"), [])
+
+    def test_shared_candidate_lists_match_existing_behavior(self):
         self.assertEqual(
             get_move_candidates(),
             [
                 ("move", "walk"),
                 ("move", "run"),
                 ("move", "jog"),
-                ("move", "sneak"),
-                ("move", "climb"),
-                ("move", "fly"),
-                ("move", "fly_up"),
-            ],
-        )
-        self.assertEqual(
-            get_care_move_candidates(),
-            [
-                ("move", "run"),
-                ("move", "jog"),
-                ("move", "walk"),
                 ("move", "sneak"),
                 ("move", "climb"),
                 ("move", "fly"),
@@ -123,6 +121,17 @@ class SharedCandidateCatalogTests(unittest.TestCase):
 
         self.assertNotIn(("idle", "fake"), get_child_comfort_candidates("Tokai Teio"))
         self.assertNotIn(("idle", "fake"), get_idle_candidates())
+
+    def test_expression_catalog_returns_preferred_moods(self):
+        self.assertEqual(
+            get_expression_preferred_moods("relation_watch"),
+            ["glance", "think", "smile", "happy", "confidence", "cool"],
+        )
+        self.assertEqual(
+            get_expression_preferred_moods("relation_close"),
+            ["smile", "happy", "confidence", "cool", "glance", "think"],
+        )
+        self.assertEqual(get_expression_preferred_moods("ambient"), [])
 
 
 if __name__ == "__main__":

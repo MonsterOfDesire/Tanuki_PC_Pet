@@ -114,6 +114,9 @@ class FakePet:
         self.animation_calls.append((tuple(candidates), context))
         return True
 
+    def ensure_window_perch_animation(self):
+        return self.ensure_candidate_animation(self.get_window_perch_candidates(), context="window_perch")
+
     def get_window_perch_candidates(self):
         return [("idle", "stand")]
 
@@ -122,6 +125,9 @@ class FakePet:
 
     def get_free_fly_candidates(self):
         return [("move", "fly")]
+
+    def ensure_window_flight_animation(self):
+        return self.ensure_candidate_animation(self.get_free_fly_candidates(), context="window_flight")
 
     def reset_stationary_move_mode(self):
         self.reset_calls += 1

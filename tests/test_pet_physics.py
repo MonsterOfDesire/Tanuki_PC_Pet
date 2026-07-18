@@ -23,6 +23,12 @@ class PetPhysicsTests(unittest.TestCase):
         self.assertGreaterEqual(penalty, 50.0)
         self.assertLess(penalty, 60.0)
 
+    def test_adult_fall_penalty_is_half_of_child_penalty(self):
+        child_penalty = compute_fall_mood_penalty(336, 560, is_adult=False)
+        adult_penalty = compute_fall_mood_penalty(336, 560, is_adult=True)
+
+        self.assertAlmostEqual(adult_penalty, child_penalty * 0.5)
+
     def test_gravity_step_tracks_fall_origin_while_airborne(self):
         result = compute_gravity_step(
             current_y=100,
@@ -46,6 +52,7 @@ class PetPhysicsTests(unittest.TestCase):
             bounce=-0.3,
             fall_origin_y=40,
             max_fall_distance=320,
+            is_adult=False,
         )
 
         self.assertLess(result.next_vy, 0.0)
@@ -62,6 +69,7 @@ class PetPhysicsTests(unittest.TestCase):
             bounce=-0.3,
             fall_origin_y=260,
             max_fall_distance=304,
+            is_adult=False,
         )
 
         self.assertLess(result.next_vy, 0.0)

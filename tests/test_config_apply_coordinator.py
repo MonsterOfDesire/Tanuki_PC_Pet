@@ -10,9 +10,11 @@ class FakeDashboard:
         self.time_scale_calls = []
         self.display_scale_calls = []
         self.social_settings_calls = []
+        self.applied_household_states = []
 
     def capture_config_state(self):
         return DashboardConfigState(
+            world_mode="golden_legend",
             care_feature_enabled=True,
             teio_dur_idx=3,
             tsuyoshi_dur_idx=2,
@@ -42,6 +44,9 @@ class FakeDashboard:
 
     def apply_social_settings(self, save=True):
         self.social_settings_calls.append(save)
+
+    def apply_household_config_state(self, payload):
+        self.applied_household_states.append(payload)
 
 
 class FakePet:
@@ -108,6 +113,9 @@ class ConfigApplyCoordinatorTests(unittest.TestCase):
                         "user_visible": False,
                     }
                 },
+                "household": {
+                    "living_fund": 900,
+                },
             },
             dashboard,
             {"Tokai Teio": {"pet": pet, "toggle_button": toggle}},
@@ -123,6 +131,7 @@ class ConfigApplyCoordinatorTests(unittest.TestCase):
         self.assertEqual(pet.refresh_calls, 1)
         self.assertEqual(toggle.block_calls, [True, False])
         self.assertFalse(toggle.checked)
+        self.assertEqual(dashboard.applied_household_states, [{"living_fund": 900}])
 
 
 if __name__ == "__main__":

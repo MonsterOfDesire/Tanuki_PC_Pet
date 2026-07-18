@@ -97,6 +97,39 @@ class PetTickCoordinatorTests(unittest.TestCase):
         self.assertTrue(plan.should_run_random)
         self.assertFalse(plan.should_refresh_and_return)
 
+    def test_intent_reselect_plan_only_opens_for_ambient_states(self):
+        blocked = self.coordinator.resolve_intent_reselect_plan(
+            now=5.0,
+            intent_kind="perch_hold",
+            intent_reconsider_after=0.0,
+            dragging=False,
+            is_angry_locked=False,
+            is_recovering=False,
+            care_lock_maintained=False,
+            care_mode="none",
+            social_mode="none",
+            flight_mode="none",
+            perched_window_hwnd=1,
+        )
+        allowed = self.coordinator.resolve_intent_reselect_plan(
+            now=5.0,
+            intent_kind="random_roam",
+            intent_reconsider_after=0.0,
+            dragging=False,
+            is_angry_locked=False,
+            is_recovering=False,
+            care_lock_maintained=False,
+            care_mode="none",
+            social_mode="none",
+            flight_mode="none",
+            perched_window_hwnd=0,
+        )
+
+        self.assertFalse(blocked.allow_reselect)
+        self.assertEqual(blocked.reason, "perched")
+        self.assertTrue(allowed.allow_reselect)
+        self.assertGreater(allowed.next_reconsider_after, 5.0)
+
 
 if __name__ == "__main__":
     unittest.main()

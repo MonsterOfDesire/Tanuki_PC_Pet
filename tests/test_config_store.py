@@ -7,6 +7,7 @@ from tanuki_core.config_store import ConfigStore
 
 
 class FakeDashboard:
+    world_mode = "golden_legend"
     care_feature_enabled = True
     teio_dur_idx = 3
     tsuyoshi_dur_idx = 2
@@ -25,8 +26,15 @@ class FakeDashboard:
                 "time_scale_idx": self.time_scale_idx,
                 "display_scale_idx": self.display_scale_idx,
                 "debug_enabled": self.debug_enabled,
+                "world_mode": self.world_mode,
             },
         )()
+
+    def capture_household_config_state(self):
+        return {
+            "living_fund": 1200,
+            "household_pressure": 8.0,
+        }
 
 
 class FakePet:
@@ -58,6 +66,9 @@ class ConfigStoreTests(unittest.TestCase):
             payload = json.loads(config_path.read_text(encoding="utf-8"))
             self.assertIn("dashboard", payload)
             self.assertIn("pets", payload)
+            self.assertIn("household", payload)
+            self.assertEqual(payload["dashboard"]["world_mode"], "golden_legend")
+            self.assertEqual(payload["household"]["living_fund"], 1200)
 
     def test_load_collects_migration_warnings_for_legacy_payload(self):
         with tempfile.TemporaryDirectory() as tmp_dir:

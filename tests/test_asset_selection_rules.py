@@ -5,6 +5,7 @@ from tanuki_core.asset_selection_rules import (
     get_mood_rules,
     is_record_eligible,
     select_contextual_result,
+    select_contextual_result_for_purposes,
     select_result_by_score,
     select_result_for_preferences,
     select_safe_result,
@@ -45,6 +46,25 @@ class AssetSelectionRuleTests(unittest.TestCase):
         self.assertTrue(is_record_eligible(record, mood_score=60, context="random"))
         self.assertFalse(is_record_eligible(record, mood_score=30, context="random"))
         self.assertFalse(is_record_eligible(record, mood_score=60, context="care"))
+
+    def test_is_record_eligible_accepts_multiple_context_candidates(self):
+        record = make_record("sit", "happy", bands=["normal"], contexts=["random"])
+
+        self.assertTrue(is_record_eligible(record, mood_score=60, context=["relation_watch", "random"]))
+        self.assertFalse(is_record_eligible(record, mood_score=60, context=["relation_watch", "care"]))
+
+    def test_is_record_eligible_blocks_future_only_context_without_explicit_match(self):
+        record = make_record("work", "happy", bands=["severe"], contexts=["future_work"])
+
+        self.assertFalse(is_record_eligible(record, mood_score=10))
+        self.assertFalse(is_record_eligible(record, mood_score=10, context="random"))
+        self.assertTrue(is_record_eligible(record, mood_score=10, context="future_work"))
+
+    def test_is_record_eligible_blocks_disabled_context(self):
+        record = make_record("stand", "happy", bands=["normal"], contexts=["disabled"])
+
+        self.assertFalse(is_record_eligible(record, mood_score=80))
+        self.assertFalse(is_record_eligible(record, mood_score=80, context="random"))
 
     def test_get_mood_rules_preserves_existing_adult_and_child_chains(self):
         child_priority, child_fallback, child_forbidden = get_mood_rules(10, is_adult=False)
@@ -162,6 +182,107 @@ class AssetSelectionRuleTests(unittest.TestCase):
         )
 
         self.assertEqual(result, (["sit:happy"], "sit", "happy"))
+
+    def test_select_contextual_result_respects_mood_score_when_provided(self):
+        asset_records = {
+            "drag_original": {
+                "sad": make_record("drag_original", "sad", bands=["low"], contexts=["drag"], weight=1.0),
+                "happy": make_record("drag_original", "happy", bands=["normal"], contexts=["drag"], weight=1.0),
+            },
+        }
+
+        result = select_contextual_result(
+            asset_records,
+            context="drag",
+            preferred_moods=["sad", "happy"],
+            mood_score=80,
+            rng=FirstChoiceRng(),
+        )
+
+        self.assertEqual(result, (["drag_original:happy"], "drag_original", "happy"))
+
+    def test_select_contextual_result_respects_forbidden_moods_when_band_is_ignored(self):
+        asset_records = {
+            "photo": {
+                "happy": make_record("photo", "happy", bands=["normal"], contexts=["relation_watch"]),
+                "sad": make_record("photo", "sad", bands=["low"], contexts=["relation_watch"]),
+            },
+        }
+
+        result = select_contextual_result(
+            asset_records,
+            context="relation_watch",
+            preferred_moods=["sad", "happy"],
+            forbidden=["happy"],
+            mood_score=None,
+            ordered_preferences=True,
+            rng=FirstChoiceRng(),
+        )
+
+        self.assertEqual(result, (["photo:sad"], "photo", "sad"))
+
+    def test_select_contextual_result_can_respect_preferred_mood_order(self):
+        asset_records = {
+            "get": {
+                "happy": make_record("get", "happy", contexts=["offer_preview"]),
+                "sad": make_record("get", "sad", contexts=["offer_preview"]),
+            },
+        }
+
+        result = select_contextual_result(
+            asset_records,
+            context="offer_preview",
+            preferred_moods=["sad", "happy"],
+            ordered_preferences=True,
+            rng=FirstChoiceRng(),
+        )
+
+        self.assertEqual(result, (["get:sad"], "get", "sad"))
+
+    def test_select_contextual_result_skips_records_without_frames(self):
+        asset_records = {
+            "get": {
+                "sad": {
+                    "frames": [],
+                    "manifest": {"contexts": ["offer_preview"], "weight": 1.0},
+                },
+                "happy": make_record("get", "happy", contexts=["offer_preview"]),
+            },
+        }
+
+        result = select_contextual_result(
+            asset_records,
+            context="offer_preview",
+            preferred_moods=["sad"],
+            rng=FirstChoiceRng(),
+        )
+
+        self.assertEqual(result, (["get:happy"], "get", "happy"))
+
+    def test_select_contextual_result_for_purposes_reports_selected_purpose(self):
+        asset_records = {
+            "idle": {
+                "side_hug": {
+                    "happy": make_record("side_hug", "happy", contexts=["post_observe"], weight=0.0),
+                },
+            },
+            "move": {
+                "walk_shake": {
+                    "sad": make_record("walk_shake", "sad", contexts=["post_observe"], weight=1.0),
+                },
+            },
+        }
+
+        result = select_contextual_result_for_purposes(
+            asset_records,
+            ("idle", "move"),
+            context="post_observe",
+            preferred_moods=["sad", "happy"],
+            ordered_preferences=True,
+            rng=FirstChoiceRng(),
+        )
+
+        self.assertEqual(result, (["walk_shake:sad"], "move", "walk_shake", "sad"))
 
     def test_select_safe_result_prefers_requested_mood_then_safe_normal(self):
         available_types = {

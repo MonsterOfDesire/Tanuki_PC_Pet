@@ -5,6 +5,8 @@ from tanuki_core.pet_random_rules import (
     SEVERE_RANDOM_DIRECTION_FLIP_CHANCE,
     build_random_state_transition,
     derive_random_visual_purpose,
+    extend_random_state_timer,
+    get_idle_action_override,
     resolve_random_stuck_behavior,
     should_refresh_severe_random_state,
 )
@@ -56,6 +58,42 @@ class PetRandomRuleTests(unittest.TestCase):
         self.assertEqual(derive_random_visual_purpose("move", 1.2), "move")
         self.assertEqual(derive_random_visual_purpose("move", 0.8), "idle")
         self.assertEqual(derive_random_visual_purpose("idle", 2.0), "idle")
+
+    def test_extend_random_state_timer_holds_current_state(self):
+        self.assertEqual(extend_random_state_timer(-3, 30), 30)
+        self.assertEqual(extend_random_state_timer(42, 30), 42)
+
+    def test_tsuyoshi_side_stand_requires_side_ready_first(self):
+        self.assertEqual(
+            get_idle_action_override(
+                "Tsurumaru Tsuyoshi",
+                current_purpose="idle",
+                current_action_tag="stand",
+                next_purpose="idle",
+                next_action_tag="side_stand",
+            ),
+            ("side_ready", "side", "stand"),
+        )
+        self.assertEqual(
+            get_idle_action_override(
+                "Tsurumaru Tsuyoshi",
+                current_purpose="idle",
+                current_action_tag="side_ready",
+                next_purpose="idle",
+                next_action_tag="side_stand",
+            ),
+            (),
+        )
+        self.assertEqual(
+            get_idle_action_override(
+                "Symboli Rudolf",
+                current_purpose="idle",
+                current_action_tag="stand",
+                next_purpose="idle",
+                next_action_tag="side_stand",
+            ),
+            (),
+        )
 
 
 if __name__ == "__main__":

@@ -16,6 +16,146 @@ from tanuki_core.windowing_coordinator import (
 )
 
 
+class FakeWindowAssetManager:
+    def __init__(self):
+        self.context_calls = []
+
+    def has_action(self, purpose, action_type):
+        return (purpose, action_type) in {
+            ("idle", "stand"),
+            ("move", "walk"),
+            ("move", "fly"),
+        }
+
+    def get_action_keys(self, purpose):
+        if purpose == "move":
+            return ["walk", "fly"]
+        if purpose == "idle":
+            return ["stand"]
+        return []
+
+    def get_action_keys_for_context(self, purpose, mood_score=None, context=None):
+        self.context_calls.append((purpose, mood_score, context))
+        if purpose == "move" and context == "window_walk":
+            return ["walk_context"]
+        if purpose == "move" and context == "window_flight":
+            return ["fly_context"]
+        if purpose == "idle" and context == "window_perch":
+            return ["perch_context"]
+        return []
+
+
+class FakeWindowAnimationPet(PetWindowingMixin):
+    def __init__(self, ensure_results=None):
+        self.name = "Symboli Rudolf"
+        self.current_purpose = "move"
+        self.current_action_tag = "stand"
+        self.mood_score = 80.0
+        self.asset_manager = FakeWindowAssetManager()
+        self.ensure_results = dict(ensure_results or {})
+        self.ensure_calls = []
+
+    def get_idle_candidates(self):
+        return [("idle", "stand")]
+
+    def expand_candidates_with_context(self, purpose, candidates, context=None):
+        expanded = list(candidates)
+        for action_type in self.asset_manager.get_action_keys_for_context(
+            purpose,
+            mood_score=self.mood_score,
+            context=context,
+        ):
+            candidate = (purpose, action_type)
+            if candidate not in expanded:
+                expanded.append(candidate)
+        return expanded
+
+    def ensure_candidate_animation(self, candidates, context=None):
+        self.ensure_calls.append((tuple(candidates), context))
+        return self.ensure_results.get(context, True)
+
+
+class FakeForcedWindowFlightPet(PetWindowingMixin):
+    def __init__(self):
+        self.context_calls = []
+        self.ensure_calls = []
+
+    def change_state_for_context_with_preferences(
+        self,
+        purpose,
+        context,
+        preferred_moods=None,
+        forbidden=None,
+        preserve=False,
+        ignore_mood_band=False,
+    ):
+        self.context_calls.append((
+            purpose,
+            context,
+            tuple(preferred_moods or ()),
+            tuple(forbidden or ()),
+            preserve,
+            ignore_mood_band,
+        ))
+        return True
+
+    def ensure_candidate_animation(self, candidates, context=None):
+        self.ensure_calls.append((tuple(candidates), context))
+        return False
+
+
+class WindowAnimationContextTests(unittest.TestCase):
+    def test_window_walk_animation_uses_manifest_context_only(self):
+        pet = FakeWindowAnimationPet()
+
+        handled = pet.ensure_window_walk_animation()
+
+        self.assertTrue(handled)
+        self.assertEqual([call[1] for call in pet.ensure_calls], ["window_walk"])
+        self.assertEqual(pet.ensure_calls[0][0], (("move", "walk_context"),))
+        self.assertIn(("move", "walk_context"), pet.ensure_calls[0][0])
+
+    def test_window_flight_candidates_use_manifest_context_actions(self):
+        pet = FakeWindowAnimationPet()
+
+        candidates = pet.get_window_flight_candidates(context="window_flight")
+
+        self.assertNotIn(("move", "fly"), candidates)
+        self.assertIn(("move", "fly_context"), candidates)
+
+    def test_window_flight_animation_uses_forced_context_selection(self):
+        pet = FakeForcedWindowFlightPet()
+
+        handled = pet.ensure_window_flight_animation()
+
+        self.assertTrue(handled)
+        self.assertEqual(
+            pet.context_calls,
+            [("move", "window_flight", (), (), True, False)],
+        )
+        self.assertEqual(pet.ensure_calls, [])
+
+    def test_window_flight_start_chance_uses_low_probe_for_regular_move_animation(self):
+        pet = FakeWindowAnimationPet()
+        pet.current_purpose = "move"
+        pet.current_action_tag = "walk"
+
+        self.assertEqual(
+            pet.get_window_flight_start_chance(),
+            pet.WINDOW_FLIGHT_PROBE_START_CHANCE,
+        )
+
+    def test_window_flight_start_chance_uses_direct_chance_for_flight_animation(self):
+        pet = FakeWindowAnimationPet()
+        pet.current_purpose = "move"
+        pet.current_action_tag = "fly_context"
+
+        self.assertEqual(
+            pet.get_window_flight_start_chance(),
+            pet.WINDOW_FLIGHT_DIRECT_START_CHANCE,
+        )
+
+
 class WindowPerchCoordinatorTests(unittest.TestCase):
     def test_update_window_perch_returns_false_when_pet_is_not_perched(self):
         class DummyPet:
@@ -214,6 +354,9 @@ class WindowPerchCoordinatorTests(unittest.TestCase):
                 pass
 
             def ensure_candidate_animation(self, candidates, context=None):
+                return True
+
+            def ensure_window_flight_animation(self):
                 return True
 
             def get_free_fly_candidates(self):

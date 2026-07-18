@@ -23,6 +23,7 @@ class DashboardStateMapperTests(unittest.TestCase):
 
     def test_normalize_dashboard_config_state_uses_bounds(self):
         defaults = DashboardConfigState(
+            world_mode="golden_legend",
             care_feature_enabled=True,
             teio_dur_idx=3,
             tsuyoshi_dur_idx=2,
@@ -40,6 +41,7 @@ class DashboardStateMapperTests(unittest.TestCase):
         state = normalize_dashboard_config_state(
             {
                 "care_feature_enabled": False,
+                "world_mode": "sandbox",
                 "teio_dur_idx": 99,
                 "tsuyoshi_dur_idx": "1",
                 "time_scale_idx": "bad",
@@ -50,6 +52,7 @@ class DashboardStateMapperTests(unittest.TestCase):
             option_bounds=bounds,
         )
 
+        self.assertEqual(state.world_mode, "sandbox")
         self.assertFalse(state.care_feature_enabled)
         self.assertEqual(state.teio_dur_idx, 4)
         self.assertEqual(state.tsuyoshi_dur_idx, 1)
@@ -60,6 +63,7 @@ class DashboardStateMapperTests(unittest.TestCase):
     def test_apply_dashboard_config_to_settings_updates_provider(self):
         settings = RuntimeSettings()
         state = build_dashboard_config_state(
+            world_mode="sandbox",
             care_feature_enabled=False,
             teio_dur_idx=1,
             tsuyoshi_dur_idx=4,
@@ -70,6 +74,7 @@ class DashboardStateMapperTests(unittest.TestCase):
 
         apply_dashboard_config_to_settings(settings, state)
 
+        self.assertEqual(settings.world_mode, "sandbox")
         self.assertFalse(settings.care_feature_enabled)
         self.assertEqual(settings.teio_dur_idx, 1)
         self.assertEqual(settings.tsuyoshi_dur_idx, 4)
@@ -79,6 +84,7 @@ class DashboardStateMapperTests(unittest.TestCase):
 
     def test_dashboard_payload_round_trip_uses_expected_shape(self):
         state = build_dashboard_config_state(
+            world_mode="golden_legend",
             care_feature_enabled=True,
             teio_dur_idx=2,
             tsuyoshi_dur_idx=3,
@@ -92,6 +98,7 @@ class DashboardStateMapperTests(unittest.TestCase):
         self.assertEqual(
             payload,
             {
+                "world_mode": "golden_legend",
                 "care_feature_enabled": True,
                 "teio_dur_idx": 2,
                 "tsuyoshi_dur_idx": 3,
