@@ -1,9 +1,11 @@
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from tools.check_staged_secrets import filename_findings, get_staged_paths, scan_staged_path
+from tools.check_staged_secrets import filename_findings, get_staged_paths, main, scan_staged_path
 
 
 class StagedSecretScannerTests(unittest.TestCase):
@@ -28,6 +30,22 @@ class StagedSecretScannerTests(unittest.TestCase):
         run_git.return_value = SimpleNamespace(returncode=0, stdout=b"deleted.txt\0added.txt\0")
         self.assertEqual(get_staged_paths("repo"), ("deleted.txt", "added.txt"))
         run_git.assert_called_once_with("repo", "diff", "--cached", "--name-only", "-z")
+
+    @patch("tools.check_staged_secrets.get_staged_blob")
+    @patch("tools.check_staged_secrets.get_staged_paths")
+    @patch("tools.check_staged_secrets.get_repo_root", return_value="repo")
+    def test_deletion_only_stage_is_reported_without_reading_deleted_blob(
+        self,
+        _get_repo_root,
+        get_staged_paths_mock,
+        get_staged_blob_mock,
+    ):
+        get_staged_paths_mock.side_effect = [("deleted.txt",), ()]
+        output = StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(main(), 0)
+        self.assertIn("deleted.txt", output.getvalue())
+        get_staged_blob_mock.assert_not_called()
 
 
 if __name__ == "__main__":

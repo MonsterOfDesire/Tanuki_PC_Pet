@@ -144,11 +144,11 @@ def main() -> int:
     if not staged_paths:
         print("  (none)")
         return 0
-    for path in scannable_paths:
+    for path in staged_paths:
         print(f"  {path}")
 
     findings: list[Finding] = []
-    for path in staged_paths:
+    for path in scannable_paths:
         data = get_staged_blob(repo_root, path)
         if data is None:
             findings.append(Finding(path=path, rule="staged_blob_unreadable"))
