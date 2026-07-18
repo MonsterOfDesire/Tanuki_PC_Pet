@@ -149,9 +149,17 @@ git -C G:\TanukiProject\tanuki_app tag v0.5.0-beta
 
 ### 6. 打包
 
+先檢查 Python、PyInstaller 與必要素材：
+
+```powershell
+& G:\TanukiProject\tanuki_app\build_lab_2.ps1 -CheckOnly
+```
+
 執行：
 
 - `build_lab_2.bat`
+
+腳本會優先使用 `TANUKI_PYTHON` 或 `-PythonExe` 指定的直譯器，否則依序尋找 G 槽 `.venv` 與本機 Python 3.10。封裝內容包括 `assets_cropped/`、`items/`、`heart.png`、`star.png` 與 `think.png`。
 
 目前打包結果輸出到：
 
