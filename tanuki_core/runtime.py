@@ -70,10 +70,10 @@ def resolve_timer_repeat_count(default_repeat_count, repeat_count_provider=None)
     return repeat_count
 
 
-def get_timer_callback_step_delta(clock, base_interval_ms, actual_interval_ms, repeat_count=1):
+def get_timer_callback_step_delta(clock, base_interval_ms, effective_interval_ms, repeat_count=1):
     event_step_delta = clock.get_timer_step_delta(
         base_interval_ms,
-        actual_interval_ms=actual_interval_ms,
+        actual_interval_ms=effective_interval_ms,
     )
     return float(event_step_delta) / max(1, int(repeat_count))
 
@@ -133,11 +133,18 @@ class AdaptivePetLogicScheduler:
             self.batch_phase = 0
             self.pending_step_scale_by_pet_id.clear()
             return 0
+        event_step_delta = max(1e-6, float(step_delta or 0.0))
+        high_load = self.is_high_load(active_pets, speed)
+        if not high_load and abs(event_step_delta - 1.0) <= 1e-6:
+            self.batch_phase = 0
+            self.pending_step_scale_by_pet_id.clear()
+            for pet in active_pets:
+                pet.tick(active_pets)
+            return len(active_pets)
         active_pet_ids = {id(pet) for pet in active_pets}
         for pet_id in tuple(self.pending_step_scale_by_pet_id):
             if pet_id not in active_pet_ids:
                 del self.pending_step_scale_by_pet_id[pet_id]
-        event_step_delta = max(1e-6, float(step_delta or 0.0))
         for pet in active_pets:
             pet_id = id(pet)
             pending = self.pending_step_scale_by_pet_id.get(pet_id, 0.0)
@@ -145,7 +152,6 @@ class AdaptivePetLogicScheduler:
                 float(self.max_pending_step_scale),
                 pending + event_step_delta,
             )
-        high_load = self.is_high_load(active_pets, speed)
         if not high_load:
             self.batch_phase = 0
             scheduled_pets = active_pets

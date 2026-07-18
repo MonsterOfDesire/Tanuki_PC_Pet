@@ -1651,11 +1651,10 @@ def register_runtime_timer(
         )
         callback_step_delta = None
         if pass_step_delta:
-            actual_interval_ms = callback_interval_ms or float(timer.interval())
             callback_step_delta = get_timer_callback_step_delta(
                 SIM_CLOCK,
                 interval_ms,
-                actual_interval_ms,
+                float(timer.interval()),
                 repeat_count=repeat_count,
             )
         for _ in range(int(repeat_count)):

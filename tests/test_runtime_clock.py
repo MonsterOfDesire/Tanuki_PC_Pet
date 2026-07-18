@@ -99,7 +99,7 @@ class RuntimeTests(unittest.TestCase):
             get_timer_callback_step_delta(
                 clock,
                 base_interval_ms=30,
-                actual_interval_ms=8,
+                effective_interval_ms=8,
                 repeat_count=2,
             ),
             1.0666666667,
@@ -108,10 +108,24 @@ class RuntimeTests(unittest.TestCase):
             get_timer_callback_step_delta(
                 clock,
                 base_interval_ms=30,
-                actual_interval_ms=8,
+                effective_interval_ms=8,
                 repeat_count=1,
             ),
             2.1333333333,
+        )
+
+    def test_timer_callback_step_delta_is_stable_at_1x_nominal_interval(self):
+        clock = SimulationClock()
+        clock.speed = 1.0
+
+        self.assertEqual(
+            get_timer_callback_step_delta(
+                clock,
+                base_interval_ms=30,
+                effective_interval_ms=30,
+                repeat_count=1,
+            ),
+            1.0,
         )
 
     def test_runtime_profiler_builds_debug_lines(self):
@@ -261,6 +275,15 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual([len(pet.logic_groups) for pet in pets], [1, 1, 0, 0, 0])
         self.assertEqual([pet.logic_step_scales for pet in pets[:2]], [[1.0], [1.0]])
 
+    def test_adaptive_scheduler_uses_legacy_fast_path_for_unit_step(self):
+        scheduler = AdaptivePetLogicScheduler()
+        pets = [FakeSimulationPet() for _ in range(5)]
+
+        self.assertEqual(scheduler.run(pets, speed=1.0, step_delta=1.0), 5)
+
+        self.assertTrue(all(pet.logic_step_attribute_present == [False] for pet in pets))
+        self.assertEqual(scheduler.pending_step_scale_by_pet_id, {})
+
     def test_logic_step_count_normalizes_scheduler_scale(self):
         pet = FakeSimulationPet()
 
@@ -287,6 +310,7 @@ class FakeSimulationPet:
         self.widget_visible = widget_visible
         self.logic_groups = []
         self.logic_step_scales = []
+        self.logic_step_attribute_present = []
         self.physics_groups = []
 
     def isVisible(self):
@@ -294,6 +318,7 @@ class FakeSimulationPet:
 
     def tick(self, pets):
         self.logic_groups.append(pets)
+        self.logic_step_attribute_present.append(hasattr(self, "logic_step_scale"))
         self.logic_step_scales.append(float(getattr(self, "logic_step_scale", 1.0)))
 
     def resolve_collision(self, pets):
