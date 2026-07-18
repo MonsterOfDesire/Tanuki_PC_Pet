@@ -109,15 +109,12 @@ def get_repo_root() -> str:
     return result.stdout.strip()
 
 
-def get_staged_paths(repo_root: str) -> tuple[str, ...]:
-    result = run_git(
-        repo_root,
-        "diff",
-        "--cached",
-        "--name-only",
-        "--diff-filter=ACMR",
-        "-z",
-    )
+def get_staged_paths(repo_root: str, diff_filter: str | None = None) -> tuple[str, ...]:
+    args = ["diff", "--cached", "--name-only"]
+    if diff_filter:
+        args.append(f"--diff-filter={diff_filter}")
+    args.append("-z")
+    result = run_git(repo_root, *args)
     if result.returncode != 0:
         raise RuntimeError("unable to list staged files")
     return tuple(
@@ -138,6 +135,7 @@ def main() -> int:
     try:
         repo_root = get_repo_root()
         staged_paths = get_staged_paths(repo_root)
+        scannable_paths = get_staged_paths(repo_root, diff_filter="ACMR")
     except RuntimeError as exc:
         print(f"staged security check failed [{exc}]", file=sys.stderr)
         return 2
@@ -146,7 +144,7 @@ def main() -> int:
     if not staged_paths:
         print("  (none)")
         return 0
-    for path in staged_paths:
+    for path in scannable_paths:
         print(f"  {path}")
 
     findings: list[Finding] = []

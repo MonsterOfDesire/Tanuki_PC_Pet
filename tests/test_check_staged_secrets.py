@@ -1,7 +1,9 @@
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
-from tools.check_staged_secrets import filename_findings, scan_staged_path
+from tools.check_staged_secrets import filename_findings, get_staged_paths, scan_staged_path
 
 
 class StagedSecretScannerTests(unittest.TestCase):
@@ -20,6 +22,12 @@ class StagedSecretScannerTests(unittest.TestCase):
     def test_scanner_does_not_flag_its_own_source(self):
         scanner_path = Path(__file__).resolve().parents[1] / "tools" / "check_staged_secrets.py"
         self.assertEqual(scan_staged_path("tools/check_staged_secrets.py", scanner_path.read_bytes()), ())
+
+    @patch("tools.check_staged_secrets.run_git")
+    def test_staged_listing_includes_deletions_when_no_filter_is_requested(self, run_git):
+        run_git.return_value = SimpleNamespace(returncode=0, stdout=b"deleted.txt\0added.txt\0")
+        self.assertEqual(get_staged_paths("repo"), ("deleted.txt", "added.txt"))
+        run_git.assert_called_once_with("repo", "diff", "--cached", "--name-only", "-z")
 
 
 if __name__ == "__main__":
