@@ -1,0 +1,14 @@
+{
+  "schema_version": 3,
+  "dashboard": {
+    "world_mode": "golden_legend",
+    "care_feature_enabled": true,
+    "teio_dur_idx": 3,
+    "tsuyoshi_dur_idx": 2,
+    "time_scale_idx": 0,
+    "display_scale_idx": 0,
+    "debug_enabled": false
+  },
+  "pets": {},
+  "household": {}
+}

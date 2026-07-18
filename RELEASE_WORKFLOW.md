@@ -93,16 +93,16 @@
 建議至少看這幾個 Git 指令：
 
 ```powershell
-git -C J:\TanukiProject\tanuki_app status
-git -C J:\TanukiProject\tanuki_app diff --stat
-git -C J:\TanukiProject\tanuki_app log --oneline --decorate -n 15
+git -C G:\TanukiProject\tanuki_app status
+git -C G:\TanukiProject\tanuki_app diff --stat
+git -C G:\TanukiProject\tanuki_app log --oneline --decorate -n 15
 ```
 
 如果要直接比前一版 tag 和目前差異：
 
 ```powershell
-git -C J:\TanukiProject\tanuki_app diff --stat v0.3.0..HEAD
-git -C J:\TanukiProject\tanuki_app log --oneline v0.3.0..HEAD
+git -C G:\TanukiProject\tanuki_app diff --stat v0.4.1-beta..HEAD
+git -C G:\TanukiProject\tanuki_app log --oneline v0.4.1-beta..HEAD
 ```
 
 這兩組資訊通常就足夠寫出初版 release note。
@@ -120,10 +120,21 @@ git -C J:\TanukiProject\tanuki_app log --oneline v0.3.0..HEAD
 ### 4. 提交原始碼
 
 ```powershell
-git -C J:\TanukiProject\tanuki_app status
-git -C J:\TanukiProject\tanuki_app add .
-git -C J:\TanukiProject\tanuki_app commit -m "..."
-git -C J:\TanukiProject\tanuki_app push
+git -C G:\TanukiProject\tanuki_app status
+git -C G:\TanukiProject\tanuki_app add -- <explicit-paths>
+git -C G:\TanukiProject\tanuki_app diff --cached --name-only
+python G:\TanukiProject\tanuki_app\tools\check_staged_secrets.py
+git -C G:\TanukiProject\tanuki_app diff --cached
+git -C G:\TanukiProject\tanuki_app commit -m "..."
+```
+
+不得使用無條件的 `git add .`。每次只 stage 本次 commit 負責的明確路徑，安全檢查只輸出檔名與命中規則，不輸出匹配內容。
+
+首次設定此 repo 時，啟用並確認版本化 hook：
+
+```powershell
+git -C G:\TanukiProject\tanuki_app config core.hooksPath .githooks
+git -C G:\TanukiProject\tanuki_app config --get core.hooksPath
 ```
 
 ### 5. 建立版本 tag
@@ -131,19 +142,20 @@ git -C J:\TanukiProject\tanuki_app push
 例如：
 
 ```powershell
-git -C J:\TanukiProject\tanuki_app tag v0.4.0
-git -C J:\TanukiProject\tanuki_app push origin v0.4.0
+git -C G:\TanukiProject\tanuki_app tag v0.5.0-beta
 ```
+
+只有在 commit、tag、測試與 staged 安全檢查都確認完成，並取得明確同意後，才執行 `git push` 與 `git push origin <tag>`。
 
 ### 6. 打包
 
 執行：
 
-- `tanuki_app/build_lab_2.bat`
+- `build_lab_2.bat`
 
 目前打包結果輸出到：
 
-- `J:\TanukiProject\dist\TanukiPet`
+- `G:\TanukiProject\dist\TanukiPet`
 
 ### 7. 簽章與發布
 

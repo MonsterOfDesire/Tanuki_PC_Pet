@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+
+repo_root=$(git rev-parse --show-toplevel)
+cd "$repo_root"
+
+python_exe=$(git config --get tanuki.pythonPath || true)
+if [ -n "$python_exe" ]; then
+    exec "$python_exe" tools/check_staged_secrets.py
+fi
+if command -v python >/dev/null 2>&1; then
+    exec python tools/check_staged_secrets.py
+fi
+if command -v py >/dev/null 2>&1; then
+    exec py -3.10 tools/check_staged_secrets.py
+fi
+
+echo "pre-commit security check failed [python_not_configured]" >&2
+exit 2

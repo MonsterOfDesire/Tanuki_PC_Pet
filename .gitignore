@@ -34,8 +34,11 @@ venv.bak/
 
 # Environment / local config
 .env
+.env.*
+!.env.example
 .envrc
 .python-version
+config.json
 
 # Notebook / docs noise
 .ipynb_checkpoints/
@@ -44,8 +47,18 @@ site/
 
 # Security / signing
 *.pfx
+*.p12
+*.pem
+*.key
 Sign_Tanuki.ps1
+新文字文件.txt
+
+# IDE / editor state
+.idea/
+.vscode/
 
 # Crash / temp output
+nuitka-crash-report*.xml
 pip-log.txt
 pip-delete-this-directory.txt
+*.log
