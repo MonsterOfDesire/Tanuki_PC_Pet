@@ -70,6 +70,14 @@ def resolve_timer_repeat_count(default_repeat_count, repeat_count_provider=None)
     return repeat_count
 
 
+def get_timer_callback_step_delta(clock, base_interval_ms, actual_interval_ms, repeat_count=1):
+    event_step_delta = clock.get_timer_step_delta(
+        base_interval_ms,
+        actual_interval_ms=actual_interval_ms,
+    )
+    return float(event_step_delta) / max(1, int(repeat_count))
+
+
 def get_enabled_simulation_pets(pets):
     return tuple(
         pet
@@ -78,8 +86,12 @@ def get_enabled_simulation_pets(pets):
     )
 
 
+def get_pet_logic_step_scale(pet):
+    return max(1e-6, float(getattr(pet, "logic_step_scale", 1.0) or 1.0))
+
+
 def get_pet_logic_step_count(pet):
-    return max(1, int(round(float(getattr(pet, "logic_step_scale", 1.0) or 1.0))))
+    return max(1, int(round(get_pet_logic_step_scale(pet))))
 
 
 def run_pet_logic_step(pets):
@@ -100,8 +112,9 @@ def run_pet_physics_step(pets):
 class AdaptivePetLogicScheduler:
     high_load_min_speed: float = 8.0
     high_load_pet_threshold: int = 3
-    high_load_step_scale: float = 4.0
+    max_pending_step_scale: float = 8.0
     batch_phase: int = 0
+    pending_step_scale_by_pet_id: dict[int, float] = field(default_factory=dict)
 
     def is_high_load(self, pets, speed):
         return (
@@ -114,11 +127,24 @@ class AdaptivePetLogicScheduler:
             return 1
         return max(1, int(default_repeat_count))
 
-    def run(self, pets, speed):
+    def run(self, pets, speed, step_delta=1.0):
         active_pets = get_enabled_simulation_pets(pets)
         if not active_pets:
             self.batch_phase = 0
+            self.pending_step_scale_by_pet_id.clear()
             return 0
+        active_pet_ids = {id(pet) for pet in active_pets}
+        for pet_id in tuple(self.pending_step_scale_by_pet_id):
+            if pet_id not in active_pet_ids:
+                del self.pending_step_scale_by_pet_id[pet_id]
+        event_step_delta = max(1e-6, float(step_delta or 0.0))
+        for pet in active_pets:
+            pet_id = id(pet)
+            pending = self.pending_step_scale_by_pet_id.get(pet_id, 0.0)
+            self.pending_step_scale_by_pet_id[pet_id] = min(
+                float(self.max_pending_step_scale),
+                pending + event_step_delta,
+            )
         high_load = self.is_high_load(active_pets, speed)
         if not high_load:
             self.batch_phase = 0
@@ -128,10 +154,10 @@ class AdaptivePetLogicScheduler:
             scheduled_pets = active_pets[phase::2]
             self.batch_phase = 1 - phase
         for pet in scheduled_pets:
+            pet_step_scale = self.pending_step_scale_by_pet_id.pop(id(pet), event_step_delta)
             had_step_scale = hasattr(pet, "logic_step_scale")
             previous_step_scale = getattr(pet, "logic_step_scale", 1.0)
-            if high_load:
-                pet.logic_step_scale = float(self.high_load_step_scale)
+            pet.logic_step_scale = float(pet_step_scale)
             try:
                 pet.tick(active_pets)
             finally:

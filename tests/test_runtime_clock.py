@@ -6,6 +6,8 @@ from tanuki_core.runtime import (
     SimulationClock,
     get_enabled_simulation_pets,
     get_pet_logic_step_count,
+    get_pet_logic_step_scale,
+    get_timer_callback_step_delta,
     resolve_timer_repeat_count,
     run_pet_logic_step,
     run_pet_physics_step,
@@ -89,6 +91,29 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(observed_defaults, [2])
         self.assertEqual(repeat_count, 1)
 
+    def test_timer_callback_step_delta_splits_elapsed_time_across_repeats(self):
+        clock = SimulationClock()
+        clock.speed = 8.0
+
+        self.assertAlmostEqual(
+            get_timer_callback_step_delta(
+                clock,
+                base_interval_ms=30,
+                actual_interval_ms=8,
+                repeat_count=2,
+            ),
+            1.0666666667,
+        )
+        self.assertAlmostEqual(
+            get_timer_callback_step_delta(
+                clock,
+                base_interval_ms=30,
+                actual_interval_ms=8,
+                repeat_count=1,
+            ),
+            2.1333333333,
+        )
+
     def test_runtime_profiler_builds_debug_lines(self):
         profiler = RuntimeProfiler()
         profiler.record_timer("logic", duration_ms=0.6, now=0.5, repeat_count=2, interval_ms=8.0)
@@ -133,15 +158,80 @@ class RuntimeTests(unittest.TestCase):
         scheduler = AdaptivePetLogicScheduler()
         pets = [FakeSimulationPet() for _ in range(5)]
 
-        first_count = scheduler.run(pets, speed=8.0)
-        second_count = scheduler.run(pets, speed=8.0)
+        first_count = scheduler.run(pets, speed=8.0, step_delta=2.0)
+        second_count = scheduler.run(pets, speed=8.0, step_delta=2.0)
 
         self.assertEqual(first_count, 3)
         self.assertEqual(second_count, 2)
         self.assertEqual([len(pet.logic_groups) for pet in pets], [1, 1, 1, 1, 1])
         self.assertTrue(all(pet.logic_groups == [tuple(pets)] for pet in pets))
-        self.assertTrue(all(pet.logic_step_scales == [4.0] for pet in pets))
+        self.assertEqual([pet.logic_step_scales for pet in pets], [[2.0], [4.0], [2.0], [4.0], [2.0]])
         self.assertTrue(all(not hasattr(pet, "logic_step_scale") for pet in pets))
+
+    def test_adaptive_scheduler_preserves_elapsed_time_across_pet_counts(self):
+        clock = SimulationClock()
+        clock.speed = 8.0
+        event_step_delta = clock.get_timer_step_delta(30, actual_interval_ms=8)
+        low_load_repeat_count = clock.get_timer_repeat_count(30, minimum_interval_ms=8)
+        low_load_step_delta = event_step_delta / low_load_repeat_count
+        low_load_scheduler = AdaptivePetLogicScheduler()
+        high_load_scheduler = AdaptivePetLogicScheduler()
+        two_pets = [FakeSimulationPet() for _ in range(2)]
+        five_pets = [FakeSimulationPet() for _ in range(5)]
+
+        event_count = 120
+        for _ in range(event_count):
+            for _repeat in range(low_load_repeat_count):
+                low_load_scheduler.run(two_pets, speed=8.0, step_delta=low_load_step_delta)
+            high_load_scheduler.run(five_pets, speed=8.0, step_delta=event_step_delta)
+
+        expected_elapsed_steps = event_count * event_step_delta
+        for pet in two_pets:
+            self.assertAlmostEqual(sum(pet.logic_step_scales), expected_elapsed_steps)
+        for pet in five_pets:
+            self.assertLessEqual(
+                abs(sum(pet.logic_step_scales) - expected_elapsed_steps),
+                event_step_delta + 1e-6,
+            )
+
+    def test_adaptive_scheduler_handles_two_to_three_pet_transition_without_spike(self):
+        scheduler = AdaptivePetLogicScheduler()
+        pets = [FakeSimulationPet() for _ in range(2)]
+        scheduler.run(pets, speed=8.0, step_delta=1.0)
+        third_pet = FakeSimulationPet()
+        pets.append(third_pet)
+
+        scheduler.run(pets, speed=8.0, step_delta=2.0)
+        scheduler.run(pets, speed=8.0, step_delta=2.0)
+
+        transition_scales = [scale for pet in pets for scale in pet.logic_step_scales[1:]]
+        transition_scales.extend(third_pet.logic_step_scales)
+        self.assertTrue(transition_scales)
+        self.assertLessEqual(max(transition_scales), 4.0)
+
+    def test_adaptive_scheduler_discards_disabled_pet_backlog_before_reenable(self):
+        scheduler = AdaptivePetLogicScheduler()
+        pets = [FakeSimulationPet() for _ in range(5)]
+        target = pets[1]
+        scheduler.run(pets, speed=8.0, step_delta=2.0)
+        target.user_visible = False
+        for _ in range(4):
+            scheduler.run(pets, speed=8.0, step_delta=2.0)
+        target.user_visible = True
+        for _ in range(2):
+            scheduler.run(pets, speed=8.0, step_delta=2.0)
+
+        self.assertEqual(len(target.logic_step_scales), 1)
+        self.assertLessEqual(target.logic_step_scales[0], 4.0)
+
+    def test_adaptive_scheduler_caps_large_elapsed_backlog(self):
+        scheduler = AdaptivePetLogicScheduler(max_pending_step_scale=8.0)
+        pets = [FakeSimulationPet() for _ in range(5)]
+
+        scheduler.run(pets, speed=8.0, step_delta=100.0)
+        scheduler.run(pets, speed=8.0, step_delta=1.0)
+
+        self.assertTrue(all(max(pet.logic_step_scales) <= 8.0 for pet in pets))
 
     def test_adaptive_logic_scheduler_disables_timer_repeat_in_high_load_mode(self):
         scheduler = AdaptivePetLogicScheduler()
@@ -177,6 +267,10 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(get_pet_logic_step_count(pet), 1)
         pet.logic_step_scale = 4.0
         self.assertEqual(get_pet_logic_step_count(pet), 4)
+        self.assertEqual(get_pet_logic_step_scale(pet), 4.0)
+        pet.logic_step_scale = 2.25
+        self.assertEqual(get_pet_logic_step_count(pet), 2)
+        self.assertEqual(get_pet_logic_step_scale(pet), 2.25)
 
 
 class FakeTimer:

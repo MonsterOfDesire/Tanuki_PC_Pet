@@ -3,10 +3,12 @@ from unittest.mock import patch
 
 from tanuki_core.pet_behavior_layers import PetBehaviorLayersMixin
 from tanuki_core.pet_intent_rules import INTENT_OBSERVE, INTENT_POST_OBSERVE_INTERACTION
+from tanuki_core.runtime import AdaptivePetLogicScheduler, SimulationClock
 
 
 class FakeBehaviorLayerPet(PetBehaviorLayersMixin):
     def __init__(self):
+        self.user_visible = True
         self.offer_scene_kind = "none"
         self.behavior_layer_refresh_skip_counter = 0
         self.behavior_layer_refresh_divisor = 1
@@ -18,6 +20,12 @@ class FakeBehaviorLayerPet(PetBehaviorLayersMixin):
         self.expression_updates = 0
         self.intent_syncs = 0
         self.override_updates = 0
+        self.layer_refresh_results = []
+        self.high_level_refresh_results = []
+
+    def tick(self, all_pets):
+        self.layer_refresh_results.append(self.refresh_behavior_layers(all_pets, now=1.0))
+        self.high_level_refresh_results.append(self.should_refresh_high_level_ai())
 
     def apply_offer_behavior_layer_override(self):
         self.override_updates += 1
@@ -110,6 +118,16 @@ class PetBehaviorSchedulerTests(unittest.TestCase):
         self.assertEqual(pet.perception_updates, 2)
         self.assertEqual(pet.behavior_layer_refresh_divisor, 4)
 
+    def test_refresh_behavior_layers_consumes_accumulated_logic_delta_at_8x(self):
+        pet = FakeBehaviorLayerPet()
+        pet.logic_step_scale = 4.0
+
+        with patch("tanuki_core.pet_behavior_layers.SIM_CLOCK.speed", 8.0):
+            results = [pet.refresh_behavior_layers([], now=1.0), pet.refresh_behavior_layers([], now=1.1)]
+
+        self.assertEqual(results, [True, True])
+        self.assertEqual(pet.perception_updates, 2)
+
     def test_refresh_behavior_layers_resets_skip_counter_when_speed_bucket_changes(self):
         pet = FakeBehaviorLayerPet()
 
@@ -167,6 +185,62 @@ class PetBehaviorSchedulerTests(unittest.TestCase):
 
         self.assertEqual(results, [True, False, False, False, True])
         self.assertEqual(pet.high_level_ai_refresh_divisor, 4)
+
+    def test_high_level_ai_refresh_consumes_fractional_accumulated_delta(self):
+        pet = FakeBehaviorLayerPet()
+        pet.logic_step_scale = 2.25
+
+        with patch("tanuki_core.pet_behavior_layers.SIM_CLOCK.speed", 8.0):
+            results = [pet.should_refresh_high_level_ai() for _ in range(3)]
+
+        self.assertEqual(results, [True, False, True])
+
+    def test_behavior_and_high_level_refresh_rates_match_across_pet_counts(self):
+        low_load_scheduler = AdaptivePetLogicScheduler()
+        high_load_scheduler = AdaptivePetLogicScheduler()
+        two_pets = [FakeBehaviorLayerPet() for _ in range(2)]
+        five_pets = [FakeBehaviorLayerPet() for _ in range(5)]
+
+        with patch("tanuki_core.pet_behavior_layers.SIM_CLOCK.speed", 8.0):
+            for _ in range(40):
+                low_load_scheduler.run(two_pets, speed=8.0, step_delta=1.0)
+                low_load_scheduler.run(two_pets, speed=8.0, step_delta=1.0)
+                high_load_scheduler.run(five_pets, speed=8.0, step_delta=2.0)
+
+        expected_refreshes = sum(two_pets[0].layer_refresh_results)
+        self.assertEqual(expected_refreshes, 20)
+        self.assertTrue(all(sum(pet.layer_refresh_results) == expected_refreshes for pet in two_pets))
+        self.assertTrue(all(sum(pet.layer_refresh_results) == expected_refreshes for pet in five_pets))
+        self.assertTrue(all(sum(pet.high_level_refresh_results) == expected_refreshes for pet in two_pets))
+        self.assertTrue(all(sum(pet.high_level_refresh_results) == expected_refreshes for pet in five_pets))
+
+    def test_behavior_refresh_rate_stays_close_with_real_8x_timer_delta(self):
+        clock = SimulationClock()
+        clock.speed = 8.0
+        event_step_delta = clock.get_timer_step_delta(30, actual_interval_ms=8)
+        repeat_count = clock.get_timer_repeat_count(30, minimum_interval_ms=8)
+        repeated_step_delta = event_step_delta / repeat_count
+        low_load_scheduler = AdaptivePetLogicScheduler()
+        high_load_scheduler = AdaptivePetLogicScheduler()
+        two_pets = [FakeBehaviorLayerPet() for _ in range(2)]
+        five_pets = [FakeBehaviorLayerPet() for _ in range(5)]
+
+        with patch("tanuki_core.pet_behavior_layers.SIM_CLOCK.speed", 8.0):
+            for _ in range(120):
+                for _repeat in range(repeat_count):
+                    low_load_scheduler.run(two_pets, speed=8.0, step_delta=repeated_step_delta)
+                high_load_scheduler.run(five_pets, speed=8.0, step_delta=event_step_delta)
+
+        expected_layer_refreshes = sum(two_pets[0].layer_refresh_results)
+        expected_ai_refreshes = sum(two_pets[0].high_level_refresh_results)
+        self.assertEqual(expected_layer_refreshes, 64)
+        self.assertEqual(expected_ai_refreshes, 64)
+        self.assertTrue(
+            all(abs(sum(pet.layer_refresh_results) - expected_layer_refreshes) <= 4 for pet in five_pets)
+        )
+        self.assertTrue(
+            all(abs(sum(pet.high_level_refresh_results) - expected_ai_refreshes) <= 4 for pet in five_pets)
+        )
 
     def test_sync_intent_state_preserves_expired_observe_for_executor_clear(self):
         pet = FakeIntentSyncPet()

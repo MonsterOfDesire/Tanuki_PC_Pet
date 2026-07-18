@@ -60,6 +60,7 @@ from .runtime import (
     SIM_CLOCK,
     RuntimeProfiler,
     app_now,
+    get_timer_callback_step_delta,
     resolve_timer_repeat_count,
     run_pet_physics_step,
 )
@@ -1625,6 +1626,7 @@ def register_runtime_timer(
     profiler=None,
     timer_name="",
     repeat_count_provider=None,
+    pass_step_delta=False,
 ):
     timer = QTimer(app)
     timer.setTimerType(Qt.TimerType.PreciseTimer)
@@ -1647,8 +1649,20 @@ def register_runtime_timer(
             repeat_count,
             repeat_count_provider=repeat_count_provider,
         )
+        callback_step_delta = None
+        if pass_step_delta:
+            actual_interval_ms = callback_interval_ms or float(timer.interval())
+            callback_step_delta = get_timer_callback_step_delta(
+                SIM_CLOCK,
+                interval_ms,
+                actual_interval_ms,
+                repeat_count=repeat_count,
+            )
         for _ in range(int(repeat_count)):
-            callback()
+            if pass_step_delta:
+                callback(callback_step_delta)
+            else:
+                callback()
         if profiler is not None and timer_name:
             profiler.record_timer(
                 timer_name,
@@ -1690,9 +1704,10 @@ def start_runtime_timers(runtime):
         "logic": register_runtime_timer(
             runtime.app,
             30,
-            lambda: runtime.logic_scheduler.run(
+            lambda step_delta: runtime.logic_scheduler.run(
                 runtime.pets_list,
                 speed=SIM_CLOCK.speed,
+                step_delta=step_delta,
             ),
             minimum_interval_ms=8,
             profiler=runtime.profiler,
@@ -1704,6 +1719,7 @@ def start_runtime_timers(runtime):
                     speed=SIM_CLOCK.speed,
                 )
             ),
+            pass_step_delta=True,
         ),
         "windows": register_runtime_timer(
             runtime.app,

@@ -10,7 +10,7 @@ from .pet_relationship_rules import (
     derive_relational_situation_tag,
 )
 from .pet_runtime_state import RelationshipEntry
-from .runtime import SIM_CLOCK, app_now
+from .runtime import SIM_CLOCK, app_now, get_pet_logic_step_scale
 
 
 class PetBehaviorLayersMixin:
@@ -21,15 +21,23 @@ class PetBehaviorLayersMixin:
             setattr(self, skip_attr, 0)
         if force or divisor <= 1:
             setattr(self, divisor_attr, divisor)
-            setattr(self, skip_attr, max(0, int(divisor) - 1))
+            setattr(self, skip_attr, float(divisor))
             return True
-        remaining = max(0, int(getattr(self, skip_attr, 0) or 0))
+        remaining = max(0.0, float(getattr(self, skip_attr, 0.0) or 0.0))
         if remaining <= 0:
             setattr(self, divisor_attr, divisor)
-            setattr(self, skip_attr, max(0, int(divisor) - 1))
+            setattr(self, skip_attr, float(divisor))
             return True
-        setattr(self, skip_attr, remaining - 1)
-        return False
+        remaining -= get_pet_logic_step_scale(self)
+        if remaining > 1e-6:
+            setattr(self, skip_attr, remaining)
+            return False
+        overshoot = max(0.0, -remaining)
+        next_remaining = float(divisor) - (overshoot % float(divisor))
+        if next_remaining <= 1e-6:
+            next_remaining = float(divisor)
+        setattr(self, skip_attr, next_remaining)
+        return True
 
     def get_behavior_layer_refresh_divisor(self, speed=None):
         speed = float(SIM_CLOCK.speed if speed is None else speed)

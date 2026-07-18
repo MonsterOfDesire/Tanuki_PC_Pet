@@ -156,9 +156,9 @@ class PetBehaviorState:
     current_purpose: str = ""
     current_action_tag: str = "stand"
     current_mood_tag: str = "happy"
-    behavior_layer_refresh_skip_counter: int = 0
+    behavior_layer_refresh_skip_counter: float = 0.0
     behavior_layer_refresh_divisor: int = 1
-    high_level_ai_refresh_skip_counter: int = 0
+    high_level_ai_refresh_skip_counter: float = 0.0
     high_level_ai_refresh_divisor: int = 1
 
 

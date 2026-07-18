@@ -67,6 +67,7 @@ from tanuki_core.asset_selection_rules import (
     select_contextual_result_for_purposes,
 )
 from tanuki_core.pet_social_care import PetSocialCareMixin
+from tanuki_core.runtime import AdaptivePetLogicScheduler, SimulationClock
 
 
 class FirstChoiceRng:
@@ -612,6 +613,52 @@ class FakeCareInteractionChild:
         return ["Teio"]
 
 
+class FakeCareLockPartner:
+    def x(self):
+        return 0
+
+
+class FakeCareLockPet(PetSocialCareMixin):
+    def __init__(self, logic_step_scale=1.0):
+        self.name = "Tokai Teio"
+        self.user_visible = True
+        self.logic_step_scale = logic_step_scale
+        self.care_partner = FakeCareLockPartner()
+        self.care_lock_mode = "interaction"
+        self.care_lock_end_time = 100.0
+        self.social_mode = "none"
+        self.state = "idle"
+        self.mood_score = 10.0
+        self.current_purpose = "idle"
+        self.current_action_tag = "stand"
+        self.current_mood_tag = "cry"
+        self.visible = True
+        self.mood_syncs = 0
+
+    def tick(self, all_pets):
+        _ = all_pets
+        self.maintain_care_lock(now=10.0)
+
+    def x(self):
+        return 100
+
+    def isVisible(self):
+        return self.visible
+
+    def show(self):
+        self.visible = True
+
+    def ensure_candidate_animation(self, candidates, context=None):
+        _ = (candidates, context)
+        return True
+
+    def get_child_comfort_candidates(self):
+        return [("idle", "stand")]
+
+    def sync_mood_state_with_score(self):
+        self.mood_syncs += 1
+
+
 class FakeCareApproachAssetManager(FakeContextualSelectionMixin):
     def __init__(self):
         self.asset_records = {
@@ -683,6 +730,40 @@ class FakeCareApproachPet(PetSocialCareMixin):
 
 
 class PetSocialCareMixinTests(unittest.TestCase):
+    def test_care_lock_mood_recovery_uses_fractional_logic_step_scale(self):
+        normal_pet = FakeCareLockPet(logic_step_scale=1.0)
+        scaled_pet = FakeCareLockPet(logic_step_scale=4.25)
+
+        self.assertTrue(normal_pet.maintain_care_lock(now=10.0))
+        self.assertTrue(scaled_pet.maintain_care_lock(now=10.0))
+
+        self.assertAlmostEqual(normal_pet.mood_score, 10.05)
+        self.assertAlmostEqual(scaled_pet.mood_score, 10.2125)
+        self.assertEqual(normal_pet.mood_syncs, 1)
+        self.assertEqual(scaled_pet.mood_syncs, 1)
+
+    def test_care_recovery_rate_matches_across_pet_counts(self):
+        clock = SimulationClock()
+        clock.speed = 8.0
+        event_step_delta = clock.get_timer_step_delta(30, actual_interval_ms=8)
+        repeat_count = clock.get_timer_repeat_count(30, minimum_interval_ms=8)
+        repeated_step_delta = event_step_delta / repeat_count
+        low_load_scheduler = AdaptivePetLogicScheduler()
+        high_load_scheduler = AdaptivePetLogicScheduler()
+        two_pets = [FakeCareLockPet() for _ in range(2)]
+        five_pets = [FakeCareLockPet() for _ in range(5)]
+
+        for _ in range(120):
+            for _repeat in range(repeat_count):
+                low_load_scheduler.run(two_pets, speed=8.0, step_delta=repeated_step_delta)
+            high_load_scheduler.run(five_pets, speed=8.0, step_delta=event_step_delta)
+
+        expected_mood = two_pets[0].mood_score
+        self.assertAlmostEqual(expected_mood, 22.8)
+        self.assertTrue(all(abs(pet.mood_score - expected_mood) < 1e-6 for pet in two_pets))
+        max_phase_error = 0.05 * event_step_delta
+        self.assertTrue(all(abs(pet.mood_score - expected_mood) <= max_phase_error + 1e-6 for pet in five_pets))
+
     def test_expression_idle_behavior_preserves_matching_relation_context_animation(self):
         pet = FakeExpressionPet()
 

@@ -64,7 +64,7 @@ from .pet_social_rules import (
     resolve_care_interaction_motion_order,
     should_preserve_candidate_animation,
 )
-from .runtime import app_now, get_pet_logic_step_count
+from .runtime import app_now, get_pet_logic_step_count, get_pet_logic_step_scale
 
 
 class PetSocialCareMixin:
@@ -1167,7 +1167,7 @@ class PetSocialCareMixin:
             self.direction = -1 if self.care_partner.x() < self.x() else 1
         self.state = "idle"
         self.ensure_candidate_animation(self.get_child_comfort_candidates())
-        self.mood_score = min(100, self.mood_score + 0.05)
+        self.mood_score = min(100, self.mood_score + (0.05 * get_pet_logic_step_scale(self)))
         if hasattr(self, "sync_mood_state_with_score"):
             self.sync_mood_state_with_score()
         return True
