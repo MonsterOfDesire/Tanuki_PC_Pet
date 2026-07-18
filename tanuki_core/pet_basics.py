@@ -94,14 +94,49 @@ class PetBasicsMixin:
         self.heart_y_offset = int(value * 60)
         self.update()
 
+    def animate_log_icon(self, value):
+        self.log_icon_opacity = 1.0 - (value ** 2)
+        self.log_icon_y_offset = int(value * 42)
+        self.update()
+
     def pop_heart(self):
         if not self.heart_pixmap.isNull():
             self.show_heart = True
             self.heart_anim.start()
 
+    def pop_log_icon(self):
+        if not self.log_icon_pixmap.isNull():
+            self.show_log_icon = True
+            self.log_icon_anim.stop()
+            self.log_icon_anim.start()
+
     def is_debug_enabled(self):
         provider = getattr(self, "settings_provider", None)
         return bool(provider and getattr(provider, "debug_enabled", False))
+
+    def get_behavior_probe_label(self):
+        intent_kind = str(getattr(self, "intent_kind", "") or "")
+        intent_context = str(getattr(self, "intent_context", "") or "")
+        expression_context = str(getattr(self, "expression_animation_context", "") or "")
+        goal_label = ""
+        if intent_kind == "post_observe_interaction" or intent_context == "post_observe_interaction":
+            goal_label = "post_observe"
+        elif intent_kind == "observe" or intent_context == "observe":
+            goal_label = "observe"
+        elif intent_kind in {"", "none", "random_roam", "ambient_idle"}:
+            goal_label = "random"
+
+        expression_label = ""
+        if expression_context in {"relation_watch", "relation_close"}:
+            expression_label = expression_context
+
+        if goal_label and expression_label:
+            return f"{goal_label} / {expression_label}"
+        if goal_label:
+            return goal_label
+        if expression_label:
+            return expression_label
+        return ""
 
     def is_care_feature_enabled(self):
         provider = getattr(self, "settings_provider", None)
@@ -110,10 +145,12 @@ class PetBasicsMixin:
         return bool(getattr(provider, "care_feature_enabled", True))
 
     def get_debug_lines(self):
+        provider = getattr(self, "settings_provider", None)
         lines = [
             f"{self.name} mood={int(self.mood_score)} state={self.state}",
             f"{self.current_purpose}/{self.current_action_tag}/{self.current_mood_tag}",
             f"intent={self.movement_state.intent} anchor={self.movement_state.anchor}",
+            f"goal={self.intent_kind} situ={self.perception_situation_tag} expr={self.expression_animation_context}",
         ]
         if self.perched_window_hwnd and self.window_tracker:
             surface = self.window_tracker.get_surface_by_hwnd(self.perched_window_hwnd)
@@ -125,6 +162,21 @@ class PetBasicsMixin:
             lines.append(f"care={self.care_mode}")
         elif self.social_mode != "none":
             lines.append(f"social={self.social_mode}")
+        if getattr(self, "offer_scene_kind", "none") != "none":
+            lines.append(f"offer={self.offer_scene_kind}")
+        if self.relationship_focus_target_name:
+            lines.append(
+                f"focus={self.relationship_focus_target_name} "
+                f"fam={int(self.relationship_focus_familiarity)} "
+                f"att={int(self.relationship_focus_attachment)}"
+            )
+        if provider and hasattr(provider, "get_time_scale"):
+            lines.append(f"time={provider.get_time_scale():g}x")
+        profiler = getattr(self, "runtime_profiler", None)
+        if profiler is not None and self.is_debug_enabled():
+            lines.extend(profiler.build_debug_lines(
+                provider.get_time_scale() if provider and hasattr(provider, "get_time_scale") else 1.0
+            ))
         return lines
 
     def wrap_debug_lines(self, font_metrics, max_width):
@@ -241,9 +293,21 @@ class PetBasicsMixin:
     def get_window_perch_y(self, surface):
         return max(self.get_airborne_top_bound(), surface.perch_y(self.height()))
 
+    def get_drag_preferred_moods(self):
+        if self.mood_score >= 50:
+            return ["happy", "smile", "laugh"]
+        if self.mood_score >= 20:
+            return ["sad", "angry", "cry", "awkward", "think"]
+        return ["cry", "hard-cry", "sad", "angry", "scold", "scared"]
+
     def apply_drag_animation(self):
-        preferred_moods = ["sad", "exhausted", "angry", "scold", "awkward", "think", "cry", "hard-cry"]
-        result = self.asset_manager.get_contextual_result("drag", context="drag", preferred_moods=preferred_moods)
+        preferred_moods = self.get_drag_preferred_moods()
+        result = self.asset_manager.get_contextual_result(
+            "drag",
+            context="drag",
+            preferred_moods=preferred_moods,
+            mood_score=self.mood_score,
+        )
         if not result:
             result = self.asset_manager.get_frames_by_score(
                 "drag",

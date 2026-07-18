@@ -1,8 +1,13 @@
 from dataclasses import dataclass
 
+from .settings_provider import RuntimeSettings
+
+
+WORLD_MODE_OPTIONS = RuntimeSettings.WORLD_MODE_OPTIONS
 
 @dataclass(frozen=True)
 class DashboardConfigState:
+    world_mode: str
     care_feature_enabled: bool
     teio_dur_idx: int
     tsuyoshi_dur_idx: int
@@ -41,8 +46,15 @@ def safe_int(value, default):
         return int(default)
 
 
+def safe_world_mode(value, default):
+    if value in WORLD_MODE_OPTIONS:
+        return str(value)
+    return str(default)
+
+
 def build_dashboard_config_state(
     *,
+    world_mode,
     care_feature_enabled,
     teio_dur_idx,
     tsuyoshi_dur_idx,
@@ -51,6 +63,7 @@ def build_dashboard_config_state(
     debug_enabled,
 ):
     return DashboardConfigState(
+        world_mode=safe_world_mode(world_mode, WORLD_MODE_OPTIONS[0]),
         care_feature_enabled=bool(care_feature_enabled),
         teio_dur_idx=int(teio_dur_idx),
         tsuyoshi_dur_idx=int(tsuyoshi_dur_idx),
@@ -62,6 +75,7 @@ def build_dashboard_config_state(
 
 def normalize_dashboard_config_state(raw_state, defaults, option_bounds):
     return DashboardConfigState(
+        world_mode=safe_world_mode(raw_state.get("world_mode", defaults.world_mode), defaults.world_mode),
         care_feature_enabled=bool(raw_state.get("care_feature_enabled", defaults.care_feature_enabled)),
         teio_dur_idx=safe_index(
             raw_state.get("teio_dur_idx", defaults.teio_dur_idx),
@@ -89,6 +103,7 @@ def normalize_dashboard_config_state(raw_state, defaults, option_bounds):
 
 def dashboard_config_state_to_payload(state):
     return {
+        "world_mode": str(state.world_mode),
         "care_feature_enabled": bool(state.care_feature_enabled),
         "teio_dur_idx": int(state.teio_dur_idx),
         "tsuyoshi_dur_idx": int(state.tsuyoshi_dur_idx),
@@ -99,6 +114,7 @@ def dashboard_config_state_to_payload(state):
 
 
 def apply_dashboard_config_to_settings(settings_provider, state):
+    settings_provider.world_mode = safe_world_mode(state.world_mode, WORLD_MODE_OPTIONS[0])
     settings_provider.care_feature_enabled = bool(state.care_feature_enabled)
     settings_provider.debug_enabled = bool(state.debug_enabled)
     settings_provider.teio_dur_idx = int(state.teio_dur_idx)

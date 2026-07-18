@@ -2,7 +2,7 @@ import math
 import random
 
 from .pet_social_rules import CareTargetCandidate, choose_care_target
-from .runtime import app_now
+from .runtime import app_now, get_pet_logic_step_count
 from .window_mode_rules import (
     can_start_window_flight_gate,
 )
@@ -34,51 +34,91 @@ from .windowing_coordinator import (
 
 
 class PetWindowingMixin:
-    def get_window_perch_candidates(self):
-        candidates = []
-        for action_type in [
-            "sit", "sit_talk", "sit_read",
-            "side", "side_face", "side_face_hand", "side_face_stretch",
-            "side_rub", "side_hug", "side_stretch", "side_play",
-            "side_fan", "side_ready", "side_stand",
-            "drink", "eat", "get",
-            "stand", "observe", "rest", "lie", "squat",
-            "hear", "photo", "photo_ready", "dance_uma", "dance_three",
-        ]:
-            if self.asset_manager.has_action("idle", action_type):
-                candidates.append(("idle", action_type))
-        return self.expand_candidates_with_context("idle", candidates or self.get_idle_candidates(), context="random")
+    WINDOW_PERCH_CONTEXT = "window_perch"
+    WINDOW_WALK_CONTEXT = "window_walk"
+    WINDOW_FLIGHT_CONTEXT = "window_flight"
+    WINDOW_FLIGHT_DIRECT_START_CHANCE = 0.06
+    WINDOW_FLIGHT_PROBE_START_CHANCE = 0.00195
 
-    def get_window_walk_candidates(self):
+    def get_window_context_candidates(self, purpose, context):
         candidates = []
-        for action_type in ["walk", "jog", "sneak"]:
-            if self.asset_manager.has_action("move", action_type):
-                candidates.append(("move", action_type))
-        if candidates:
-            return candidates
-        for action_type in self.asset_manager.get_action_keys("move"):
-            if action_type in {"fly_up"}:
+        for action_type in self.asset_manager.get_action_keys_for_context(
+            purpose,
+            mood_score=self.mood_score,
+            context=context,
+        ):
+            if (
+                self.name == "Tsurumaru Tsuyoshi" and
+                purpose == "idle" and
+                action_type == "side_stand" and
+                self.current_action_tag != "side_ready"
+            ):
                 continue
-            if action_type not in {"walk", "jog", "sneak"}:
-                candidates.append(("move", action_type))
+            candidates.append((purpose, action_type))
         return candidates
 
+    def get_window_perch_candidates(self, context=None):
+        return self.get_window_context_candidates("idle", context or self.WINDOW_PERCH_CONTEXT)
+
+    def get_window_walk_candidates(self, context=None):
+        return self.get_window_context_candidates("move", context or self.WINDOW_WALK_CONTEXT)
+
+    def get_window_flight_candidates(self, context=None):
+        return self.get_window_context_candidates("move", context or self.WINDOW_FLIGHT_CONTEXT)
+
+    def change_window_perch_animation(self):
+        return self.change_state_candidates(
+            self.get_randomized_candidates(self.get_window_perch_candidates()),
+            context=self.WINDOW_PERCH_CONTEXT,
+        )
+
+    def ensure_window_perch_animation(self):
+        return self.ensure_candidate_animation(
+            self.get_window_perch_candidates(),
+            context=self.WINDOW_PERCH_CONTEXT,
+        )
+
+    def change_window_walk_animation(self):
+        return self.change_state_candidates(
+            self.get_randomized_candidates(self.get_window_walk_candidates()),
+            context=self.WINDOW_WALK_CONTEXT,
+        )
+
+    def ensure_window_walk_animation(self):
+        return self.ensure_candidate_animation(
+            self.get_window_walk_candidates(),
+            context=self.WINDOW_WALK_CONTEXT,
+        )
+
+    def ensure_window_flight_animation(self):
+        change_for_context = getattr(self, "change_state_for_context_with_preferences", None)
+        if callable(change_for_context):
+            return change_for_context(
+                "move",
+                self.WINDOW_FLIGHT_CONTEXT,
+                preserve=True,
+            )
+        return self.ensure_candidate_animation(
+            self.get_window_flight_candidates(),
+            context=self.WINDOW_FLIGHT_CONTEXT,
+        )
+
     def can_fly_freely(self):
-        return self.name not in self.AUTONOMOUS_FLY_DISABLED_NAMES and bool(self.get_free_fly_candidates())
+        return self.name not in self.AUTONOMOUS_FLY_DISABLED_NAMES and bool(self.get_window_flight_candidates())
 
     def has_free_fly_animation(self):
         return self.can_fly_freely()
 
-    def get_free_fly_candidates(self):
-        candidates = []
-        for action_type in ["fly_up", "fly"]:
-            if self.asset_manager.has_action("move", action_type):
-                candidates.append(("move", action_type))
-        return candidates
+    def get_window_flight_start_chance(self):
+        flight_actions = {action_type for _purpose, action_type in self.get_window_flight_candidates()}
+        if self.current_purpose == "move" and self.current_action_tag in flight_actions:
+            return self.WINDOW_FLIGHT_DIRECT_START_CHANCE
+        return self.WINDOW_FLIGHT_PROBE_START_CHANCE
 
     def move_flight_toward(self, target_x, target_y, speed=None):
         if speed is None:
             speed = max(2.8, self.get_base_speed() + 1.2)
+        speed = float(speed) * get_pet_logic_step_count(self)
         surface = self.get_surface_snapshot()
         next_x, next_y, arrived = compute_flight_step(
             current_x=self.x(),
@@ -160,22 +200,29 @@ class PetWindowingMixin:
         distressed_target_x = None
         adult_should_leave_for_care = False
         if self.perched_window_hwnd and can_perch_on_surface and self.is_adult and all_pets and self.is_care_feature_enabled():
+            now = app_now()
+            care_candidates = []
+            for pet in all_pets:
+                care_block_checker = getattr(pet, "is_care_blocked_by_negative_afterglow", None)
+                care_candidates.append(CareTargetCandidate(
+                    pet=pet,
+                    is_self=(pet == self),
+                    is_adult=pet.is_adult,
+                    is_visible=pet.isVisible(),
+                    care_partner=pet.care_partner,
+                    is_recovering=pet.is_recovering,
+                    is_distressed=pet.is_distressed(),
+                    distance=self.distance_to(pet),
+                    care_blocked=(
+                        bool(care_block_checker(now))
+                        if callable(care_block_checker)
+                        else False
+                    ),
+                ))
             care_target = choose_care_target(
                 self,
                 self.name,
-                [
-                    CareTargetCandidate(
-                        pet=pet,
-                        is_self=(pet == self),
-                        is_adult=pet.is_adult,
-                        is_visible=pet.isVisible(),
-                        care_partner=pet.care_partner,
-                        is_recovering=pet.is_recovering,
-                        is_distressed=pet.is_distressed(),
-                        distance=self.distance_to(pet),
-                    )
-                    for pet in all_pets
-                ],
+                care_candidates,
             )
             if care_target is not None:
                 adult_should_leave_for_care = True
@@ -217,7 +264,7 @@ class PetWindowingMixin:
         target_y = self.get_window_perch_y(surface)
         self.vy = 0
         max_offset = max(0, surface.rect.width() - self.width())
-        self.state_timer -= 1
+        self.state_timer -= get_pet_logic_step_count(self)
         if self.state_timer <= 0:
             walk_candidates = self.get_window_walk_candidates()
             mode_decision = decide_window_perch_mode(
@@ -235,18 +282,12 @@ class PetWindowingMixin:
             self.state_timer = mode_decision.state_timer
             self.direction = mode_decision.direction
             if mode_decision.use_walk_animation:
-                self.change_state_candidates(
-                    self.get_randomized_candidates(walk_candidates),
-                    context="random",
-                )
+                self.change_window_walk_animation()
             else:
-                self.change_state_candidates(
-                    self.get_randomized_candidates(self.get_window_perch_candidates()),
-                    context="random",
-                )
+                self.change_window_perch_animation()
 
         if self.window_perch_mode == "move" and max_offset > 0:
-            step = self.get_window_perch_speed()
+            step = self.get_window_perch_speed() * get_pet_logic_step_count(self)
             walk_decision = advance_window_perch_walk(
                 offset_x=self.window_perch_offset_x,
                 direction=self.direction,
@@ -261,15 +302,15 @@ class PetWindowingMixin:
             if walk_decision.state_timer is not None:
                 self.state_timer = walk_decision.state_timer
             target_x = surface.rect.left() + self.window_perch_offset_x
-            if not self.ensure_candidate_animation(self.get_window_walk_candidates(), context="random"):
+            if not self.ensure_window_walk_animation():
                 self.window_perch_mode = "idle"
                 self.state = "idle"
                 self.state_timer = random.randint(70, 150)
-                self.ensure_candidate_animation(self.get_window_perch_candidates(), context="random")
+                self.ensure_window_perch_animation()
         else:
             self.window_perch_mode = "idle"
             self.state = "idle"
-            self.ensure_candidate_animation(self.get_window_perch_candidates(), context="random")
+            self.ensure_window_perch_animation()
         if self.x() != target_x or self.y() != target_y:
             self.move(target_x, target_y)
         self.refresh_movement_state()
@@ -312,7 +353,7 @@ class PetWindowingMixin:
             return False
         if not self.can_start_window_flight(now=now):
             return False
-        if random.random() >= 0.06:
+        if random.random() >= self.get_window_flight_start_chance():
             return False
         surface = self.window_tracker.find_flight_surface_for_actor(
             self.window_tracker.build_actor_snapshot(self)

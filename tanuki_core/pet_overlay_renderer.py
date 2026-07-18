@@ -10,10 +10,25 @@ class StarSpriteSpec:
 
 
 @dataclass(frozen=True)
+class IconSpriteSpec:
+    x: int
+    y: int
+    size: int
+
+
+@dataclass(frozen=True)
 class DebugOverlayLayout:
     box_x: int
     box_width: int
     box_height: int
+
+
+@dataclass(frozen=True)
+class HeadStatusLabelLayout:
+    x: int
+    y: int
+    width: int
+    height: int
 
 
 def compute_star_draw_specs(widget_width, draw_y, overlay_scale, star_y_offset, star_anim_counter, num_stars=3):
@@ -34,11 +49,26 @@ def compute_star_draw_specs(widget_width, draw_y, overlay_scale, star_y_offset, 
     return tuple(specs)
 
 
+def compute_log_icon_draw_spec(widget_width, draw_y, overlay_scale, log_icon_y_offset):
+    size = int(34 * overlay_scale)
+    x = (widget_width - size) // 2 + int(36 * overlay_scale)
+    y = draw_y - 26 - int(log_icon_y_offset)
+    return IconSpriteSpec(x=x, y=y, size=size)
+
+
 def compute_debug_overlay_layout(line_widths, line_height, max_debug_width, widget_width):
     box_height = (len(line_widths) * line_height) + 10
     box_width = min(max_debug_width, max(line_widths) + 12)
     box_x = max(4, (widget_width - box_width) // 2)
     return DebugOverlayLayout(box_x=box_x, box_width=box_width, box_height=box_height)
+
+
+def compute_head_status_label_layout(widget_width, draw_y, text_width, line_height):
+    width = min(max(64, int(text_width) + 16), max(64, int(widget_width) - 8))
+    height = int(line_height) + 8
+    x = max(4, (int(widget_width) - width) // 2)
+    y = max(4, int(draw_y) - height - 24)
+    return HeadStatusLabelLayout(x=x, y=y, width=width, height=height)
 
 
 class PetOverlayRenderer:
@@ -88,6 +118,41 @@ class PetOverlayRenderer:
         painter.setOpacity(star_opacity)
         for spec in compute_star_draw_specs(widget_width, draw_y, overlay_scale, star_y_offset, star_anim_counter):
             painter.drawPixmap(spec.x, spec.y, spec.size, spec.size, star_pixmap)
+
+    def draw_log_icon(self, painter, widget_width, draw_y, overlay_scale, log_icon_pixmap, show_log_icon, log_icon_opacity, log_icon_y_offset):
+        if not show_log_icon or log_icon_pixmap.isNull():
+            return
+        painter.setOpacity(log_icon_opacity)
+        spec = compute_log_icon_draw_spec(widget_width, draw_y, overlay_scale, log_icon_y_offset)
+        painter.drawPixmap(spec.x, spec.y, spec.size, spec.size, log_icon_pixmap)
+
+    def draw_head_status_label(self, painter, label_text, widget_width, draw_y):
+        label_text = str(label_text or "").strip()
+        if not label_text:
+            return
+        from PyQt6.QtCore import Qt
+        from PyQt6.QtGui import QColor
+
+        metrics = painter.fontMetrics()
+        layout = compute_head_status_label_layout(
+            widget_width,
+            draw_y,
+            metrics.horizontalAdvance(label_text),
+            metrics.height(),
+        )
+        painter.setOpacity(1.0)
+        painter.setBrush(QColor(10, 10, 10, 190))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRoundedRect(layout.x, layout.y, layout.width, layout.height, 6, 6)
+        painter.setPen(QColor(230, 255, 230))
+        painter.drawText(
+            layout.x,
+            layout.y,
+            layout.width,
+            layout.height,
+            Qt.AlignmentFlag.AlignCenter,
+            label_text,
+        )
 
     def draw_debug_overlay(self, painter, lines, max_debug_width, widget_width):
         if not lines:

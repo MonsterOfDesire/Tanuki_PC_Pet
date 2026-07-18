@@ -42,6 +42,19 @@ def get_record_weight(record):
     return max(0.0, float(meta.get("weight", 1.0) or 0.0))
 
 
+def context_matches(context, contexts):
+    if isinstance(context, (list, tuple, set, frozenset)):
+        return any(item in contexts for item in context if item)
+    return context in contexts
+
+
+def has_reserved_context_only(contexts):
+    return bool(contexts) and all(
+        str(item).startswith("future_") or str(item) == "disabled"
+        for item in contexts
+    )
+
+
 def is_record_eligible(record, mood_score=None, context=None):
     if not record:
         return False
@@ -51,7 +64,9 @@ def is_record_eligible(record, mood_score=None, context=None):
         if get_mood_band(mood_score) not in bands:
             return False
     contexts = meta.get("contexts") or []
-    if context and contexts and context not in contexts:
+    if has_reserved_context_only(contexts) and not context_matches(context, contexts):
+        return False
+    if context and contexts and not context_matches(context, contexts):
         return False
     return True
 
@@ -197,32 +212,129 @@ def select_result_for_preferences(
     return choose_weighted_result(safe_results, rng=rng)
 
 
-def select_contextual_result(asset_records_for_purpose, *, context=None, preferred_moods=None, rng=None):
-    if not asset_records_for_purpose:
+def _select_contextual_candidate(
+    purpose_records,
+    *,
+    context=None,
+    preferred_moods=None,
+    forbidden=None,
+    mood_score=None,
+    ordered_preferences=False,
+    rng=None,
+):
+    if rng is None:
+        rng = random_module
+    preferred_moods = tuple(preferred_moods or ())
+    preferred_set = set(preferred_moods)
+    forbidden = set(forbidden or ())
+    preferred_results = []
+    fallback_results = []
+    for purpose, asset_records_for_purpose in purpose_records:
+        for action_type, mood_map in asset_records_for_purpose.items():
+            for mood_tag, record in mood_map.items():
+                if mood_tag in forbidden:
+                    continue
+                if not is_record_eligible(record, mood_score=mood_score, context=context):
+                    continue
+                frames = record.get("frames")
+                if not frames:
+                    continue
+                result = (
+                    frames,
+                    purpose,
+                    action_type,
+                    mood_tag,
+                    get_record_weight(record),
+                )
+                if mood_tag in preferred_set:
+                    preferred_results.append(result)
+                else:
+                    fallback_results.append(result)
+    weighted = None
+    if ordered_preferences:
+        for mood_tag in preferred_moods:
+            weighted = _choose_weighted_contextual_candidate(
+                [result for result in preferred_results if result[3] == mood_tag],
+                rng=rng,
+            )
+            if weighted:
+                break
+    else:
+        weighted = _choose_weighted_contextual_candidate(preferred_results, rng=rng)
+    if weighted:
+        return weighted
+    return _choose_weighted_contextual_candidate(fallback_results, rng=rng)
+
+
+def _choose_weighted_contextual_candidate(results, rng=None):
+    if not results:
         return None
     if rng is None:
         rng = random_module
-    preferred_moods = preferred_moods or []
-    preferred_results = []
-    fallback_results = []
-    for action_type, mood_map in asset_records_for_purpose.items():
-        for mood_tag, record in mood_map.items():
-            if not is_record_eligible(record, mood_score=None, context=context):
-                continue
-            result = (
-                record["frames"],
-                action_type,
-                mood_tag,
-                get_record_weight(record),
-            )
-            if mood_tag in preferred_moods:
-                preferred_results.append(result)
-            else:
-                fallback_results.append(result)
-    weighted = choose_weighted_result(preferred_results, rng=rng)
-    if weighted:
-        return weighted
-    return choose_weighted_result(fallback_results, rng=rng)
+    weights = [max(0.0, result[4]) for result in results]
+    if any(weight > 0 for weight in weights):
+        return rng.choices(results, weights=weights, k=1)[0]
+    return rng.choice(results)
+
+
+def select_contextual_result(
+    asset_records_for_purpose,
+    *,
+    context=None,
+    preferred_moods=None,
+    forbidden=None,
+    mood_score=None,
+    ordered_preferences=False,
+    rng=None,
+):
+    if not asset_records_for_purpose:
+        return None
+    result = _select_contextual_candidate(
+        (("", asset_records_for_purpose),),
+        context=context,
+        preferred_moods=preferred_moods,
+        forbidden=forbidden,
+        mood_score=mood_score,
+        ordered_preferences=ordered_preferences,
+        rng=rng,
+    )
+    if not result:
+        return None
+    frames, _purpose, action_type, mood_tag, _weight = result
+    return frames, action_type, mood_tag
+
+
+def select_contextual_result_for_purposes(
+    asset_records,
+    purposes,
+    *,
+    context=None,
+    preferred_moods=None,
+    forbidden=None,
+    mood_score=None,
+    ordered_preferences=False,
+    rng=None,
+):
+    purpose_records = tuple(
+        (purpose, asset_records.get(purpose, {}))
+        for purpose in purposes or ()
+        if purpose and asset_records.get(purpose)
+    )
+    if not purpose_records:
+        return None
+    result = _select_contextual_candidate(
+        purpose_records,
+        context=context,
+        preferred_moods=preferred_moods,
+        forbidden=forbidden,
+        mood_score=mood_score,
+        ordered_preferences=ordered_preferences,
+        rng=rng,
+    )
+    if not result:
+        return None
+    frames, purpose, action_type, mood_tag, _weight = result
+    return frames, purpose, action_type, mood_tag
 
 
 def select_safe_result(

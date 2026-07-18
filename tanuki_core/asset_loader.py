@@ -29,7 +29,6 @@ class AssetStore:
     def has_action(self, purpose, action_type):
         return action_type in self.assets.get(purpose, {})
 
-
 def get_file_signature(gif_path):
     stat = os.stat(gif_path)
     return stat.st_mtime_ns, stat.st_size
@@ -106,6 +105,72 @@ def get_shared_frame_cache():
 
 def get_manifest_path(character_path):
     return os.path.join(character_path, "manifest_edit.json")
+
+
+def is_runtime_manifest_context(context):
+    context = str(context or "").strip()
+    return bool(context) and context != "disabled" and not context.startswith("future_")
+
+
+def is_runtime_manifest_entry(meta):
+    if not isinstance(meta, dict):
+        return False
+    if float(meta.get("weight", 1.0) or 0.0) <= 0.0:
+        return False
+    contexts = meta.get("contexts") or []
+    return any(is_runtime_manifest_context(context) for context in contexts)
+
+
+def normalize_context_filter(contexts):
+    if not contexts:
+        return set()
+    if isinstance(contexts, str):
+        contexts = [contexts]
+    return {
+        str(context).strip()
+        for context in contexts
+        if is_runtime_manifest_context(context)
+    }
+
+
+def manifest_entry_matches_contexts(meta, contexts):
+    context_filter = normalize_context_filter(contexts)
+    if not context_filter or not is_runtime_manifest_entry(meta):
+        return False
+    entry_contexts = normalize_context_filter(meta.get("contexts") or [])
+    return bool(entry_contexts & context_filter)
+
+
+def get_runtime_asset_file_names(character_path, manifest_data):
+    available_files = sorted(f for f in os.listdir(character_path) if f.endswith(".gif"))
+    if not manifest_data:
+        return available_files
+
+    available_set = set(available_files)
+    active_files = sorted(
+        file_name
+        for file_name, meta in manifest_data.items()
+        if file_name in available_set and is_runtime_manifest_entry(meta)
+    )
+    return active_files or available_files
+
+
+def get_runtime_asset_file_names_for_contexts(character_path, manifest_data, contexts):
+    if not manifest_data:
+        return sorted(f for f in os.listdir(character_path) if f.endswith(".gif"))
+
+    context_filter = normalize_context_filter(contexts)
+    if not context_filter:
+        return get_runtime_asset_file_names(character_path, manifest_data)
+
+    available_set = {
+        f for f in os.listdir(character_path) if f.endswith(".gif")
+    }
+    return sorted(
+        file_name
+        for file_name, meta in manifest_data.items()
+        if file_name in available_set and manifest_entry_matches_contexts(meta, context_filter)
+    )
 
 
 def parse_asset_filename(file_name):

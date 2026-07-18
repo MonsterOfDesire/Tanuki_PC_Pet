@@ -23,14 +23,17 @@ def update_fall_origin(current_y, floor_top_y, fall_origin_y):
     return min(int(fall_origin_y), int(current_y))
 
 
-def compute_fall_mood_penalty(fall_distance, max_fall_distance):
+def compute_fall_mood_penalty(fall_distance, max_fall_distance, is_adult=False):
     fall_distance = max(0.0, float(fall_distance))
     max_fall_distance = max(1.0, float(max_fall_distance))
     fall_ratio = min(1.0, fall_distance / max_fall_distance)
-    return min(70.0, 8.0 + (75.0 * fall_ratio))
+    penalty = min(70.0, 8.0 + (75.0 * fall_ratio))
+    if is_adult:
+        penalty *= 0.5
+    return penalty
 
 
-def compute_gravity_step(current_y, current_vy, gravity, floor_top_y, bounce, fall_origin_y, max_fall_distance):
+def compute_gravity_step(current_y, current_vy, gravity, floor_top_y, bounce, fall_origin_y, max_fall_distance, is_adult=False):
     tracked_origin = update_fall_origin(current_y, floor_top_y, fall_origin_y)
     if current_vy != 0 or current_y < floor_top_y:
         next_vy = current_vy + gravity
@@ -43,7 +46,11 @@ def compute_gravity_step(current_y, current_vy, gravity, floor_top_y, bounce, fa
                     next_y=int(floor_top_y),
                     next_vy=impact * bounce,
                     fall_origin_y=None,
-                    mood_penalty=compute_fall_mood_penalty(fall_distance, max_fall_distance),
+                    mood_penalty=compute_fall_mood_penalty(
+                        fall_distance,
+                        max_fall_distance,
+                        is_adult=is_adult,
+                    ),
                     reaction_moods=HARD_LANDING_REACTION_MOODS,
                 )
             if abs(impact) > SOFT_LANDING_IMPACT_THRESHOLD:

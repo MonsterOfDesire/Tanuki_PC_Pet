@@ -1,4 +1,5 @@
 from .pet_social_rules import parse_interaction_action
+from .runtime import app_now
 
 
 class SocialCareEffects:
@@ -47,6 +48,9 @@ class SocialCareEffects:
         adult.frame_index = 0
         if hasattr(adult, "animation_step_budget"):
             adult.animation_step_budget = 0.0
+        animation_stepper = getattr(adult, "animation_stepper", None)
+        if animation_stepper is not None:
+            animation_stepper.reset()
         adult.current_purpose = "interaction"
         adult.current_action_tag = action_key
         adult.current_mood_tag = mood

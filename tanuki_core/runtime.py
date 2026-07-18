@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 import time
 
 
@@ -60,6 +61,184 @@ class SimulationClock:
 
 
 SIM_CLOCK = SimulationClock()
+
+
+def resolve_timer_repeat_count(default_repeat_count, repeat_count_provider=None):
+    repeat_count = max(1, int(default_repeat_count))
+    if callable(repeat_count_provider):
+        repeat_count = max(1, int(repeat_count_provider(repeat_count)))
+    return repeat_count
+
+
+def get_enabled_simulation_pets(pets):
+    return tuple(
+        pet
+        for pet in tuple(pets or ())
+        if bool(getattr(pet, "user_visible", True))
+    )
+
+
+def get_pet_logic_step_count(pet):
+    return max(1, int(round(float(getattr(pet, "logic_step_scale", 1.0) or 1.0))))
+
+
+def run_pet_logic_step(pets):
+    active_pets = get_enabled_simulation_pets(pets)
+    for pet in active_pets:
+        pet.tick(active_pets)
+    return len(active_pets)
+
+
+def run_pet_physics_step(pets):
+    active_pets = get_enabled_simulation_pets(pets)
+    for pet in active_pets:
+        pet.resolve_collision(active_pets)
+    return len(active_pets)
+
+
+@dataclass
+class AdaptivePetLogicScheduler:
+    high_load_min_speed: float = 8.0
+    high_load_pet_threshold: int = 3
+    high_load_step_scale: float = 4.0
+    batch_phase: int = 0
+
+    def is_high_load(self, pets, speed):
+        return (
+            float(speed) >= float(self.high_load_min_speed) and
+            len(get_enabled_simulation_pets(pets)) >= int(self.high_load_pet_threshold)
+        )
+
+    def resolve_repeat_count(self, pets, default_repeat_count, speed):
+        if self.is_high_load(pets, speed):
+            return 1
+        return max(1, int(default_repeat_count))
+
+    def run(self, pets, speed):
+        active_pets = get_enabled_simulation_pets(pets)
+        if not active_pets:
+            self.batch_phase = 0
+            return 0
+        high_load = self.is_high_load(active_pets, speed)
+        if not high_load:
+            self.batch_phase = 0
+            scheduled_pets = active_pets
+        else:
+            phase = int(self.batch_phase) % 2
+            scheduled_pets = active_pets[phase::2]
+            self.batch_phase = 1 - phase
+        for pet in scheduled_pets:
+            had_step_scale = hasattr(pet, "logic_step_scale")
+            previous_step_scale = getattr(pet, "logic_step_scale", 1.0)
+            if high_load:
+                pet.logic_step_scale = float(self.high_load_step_scale)
+            try:
+                pet.tick(active_pets)
+            finally:
+                if had_step_scale:
+                    pet.logic_step_scale = previous_step_scale
+                elif hasattr(pet, "logic_step_scale"):
+                    delattr(pet, "logic_step_scale")
+        return len(scheduled_pets)
+
+
+@dataclass
+class RuntimeProfileMetric:
+    sample_count: int = 0
+    total_ms: float = 0.0
+    max_ms: float = 0.0
+    last_ms: float = 0.0
+    last_interval_ms: float = 0.0
+    last_repeat_count: int = 1
+    window_started_at: float = 0.0
+    window_events: int = 0
+    window_repeats: int = 0
+    events_per_second: float = 0.0
+    repeats_per_second: float = 0.0
+
+    @property
+    def average_ms(self):
+        if self.sample_count <= 0:
+            return 0.0
+        return self.total_ms / float(self.sample_count)
+
+    @property
+    def average_repeat_count(self):
+        if self.events_per_second <= 0.0:
+            return float(self.last_repeat_count or 1)
+        return self.repeats_per_second / max(self.events_per_second, 1e-6)
+
+    def record(self, *, duration_ms, now, repeat_count=1, interval_ms=0.0):
+        self.sample_count += 1
+        self.total_ms += float(duration_ms)
+        self.max_ms = max(self.max_ms, float(duration_ms))
+        self.last_ms = float(duration_ms)
+        self.last_interval_ms = float(interval_ms)
+        self.last_repeat_count = max(1, int(repeat_count))
+        if self.window_started_at <= 0.0:
+            self.window_started_at = float(now)
+        self.window_events += 1
+        self.window_repeats += max(1, int(repeat_count))
+        elapsed = max(0.0, float(now) - float(self.window_started_at))
+        if elapsed >= 1.0:
+            self.events_per_second = float(self.window_events) / elapsed
+            self.repeats_per_second = float(self.window_repeats) / elapsed
+            self.window_started_at = float(now)
+            self.window_events = 0
+            self.window_repeats = 0
+
+
+@dataclass
+class RuntimeProfiler:
+    timer_metrics: dict[str, RuntimeProfileMetric] = field(default_factory=dict)
+    section_metrics: dict[str, RuntimeProfileMetric] = field(default_factory=dict)
+
+    def _get_metric(self, bucket, name):
+        metric = bucket.get(name)
+        if metric is None:
+            metric = RuntimeProfileMetric()
+            bucket[name] = metric
+        return metric
+
+    def record_timer(self, name, *, duration_ms, now=None, repeat_count=1, interval_ms=0.0):
+        now = time.perf_counter() if now is None else float(now)
+        metric = self._get_metric(self.timer_metrics, str(name))
+        metric.record(
+            duration_ms=float(duration_ms),
+            now=now,
+            repeat_count=int(repeat_count),
+            interval_ms=float(interval_ms),
+        )
+
+    def record_section(self, name, duration_ms, now=None):
+        now = time.perf_counter() if now is None else float(now)
+        metric = self._get_metric(self.section_metrics, str(name))
+        metric.record(duration_ms=float(duration_ms), now=now, repeat_count=1, interval_ms=0.0)
+
+    def build_debug_lines(self, speed=1.0):
+        lines = [f"perf speed={float(speed):g}x"]
+        timer_order = ("logic", "physics", "offer", "household")
+        timer_chunks = []
+        for name in timer_order:
+            metric = self.timer_metrics.get(name)
+            if metric is None or metric.sample_count <= 0:
+                continue
+            timer_chunks.append(
+                f"{name}:{metric.events_per_second:.0f}/s x{metric.average_repeat_count:.1f} {metric.average_ms:.2f}ms"
+            )
+        if timer_chunks:
+            lines.append(" ".join(timer_chunks))
+        section_order = ("pet.tick", "pet.layers", "pet.ai", "offer.update", "household.update")
+        section_chunks = []
+        for name in section_order:
+            metric = self.section_metrics.get(name)
+            if metric is None or metric.sample_count <= 0:
+                continue
+            short_name = name.replace("pet.", "").replace(".update", "")
+            section_chunks.append(f"{short_name}:{metric.average_ms:.2f}ms")
+        if section_chunks:
+            lines.append(" ".join(section_chunks))
+        return lines
 
 
 def app_now():

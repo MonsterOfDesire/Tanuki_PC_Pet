@@ -40,6 +40,10 @@ class ConfigApplyCoordinator:
                 toggle_button=info.get("toggle_button"),
             )
 
+        household_state = loaded_state.get("household", {})
+        if household_state and hasattr(dashboard, "apply_household_config_state"):
+            dashboard.apply_household_config_state(household_state)
+
     def apply_pet_state(self, *, pet, state, toggle_button=None):
         pet.user_visible = state.user_visible
 

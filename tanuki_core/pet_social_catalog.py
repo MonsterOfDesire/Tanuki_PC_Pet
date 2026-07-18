@@ -9,13 +9,10 @@ DEFAULT_CHILD_COMFORT_CANDIDATES = (
 )
 
 TOKAI_TEIO_CHILD_COMFORT_CANDIDATES = (
-    ("idle", "drink"),
-    ("idle", "eat"),
     ("idle", "side_eat_candy"),
     ("idle", "sit"),
     ("idle", "lie"),
     ("idle", "side"),
-    ("idle", "side_hug"),
 )
 
 TOKAI_TEIO_CHILD_RECOVERY_CANDIDATES = (
@@ -27,29 +24,28 @@ TOKAI_TEIO_CHILD_RECOVERY_CANDIDATES = (
     ("idle", "sit"),
 )
 
-ADULT_COMPANION_CANDIDATES = (
-    ("idle", "sit"),
-    ("idle", "sit_talk"),
-    ("idle", "sit_read"),
-    ("idle", "rest"),
-    ("idle", "squat"),
-    ("idle", "side"),
-)
+ADULT_COMPANION_CANDIDATES_BY_NAME = {
+    "Symboli Rudolf": (
+        ("idle", "sit"),
+        ("idle", "sit_read"),
+        ("idle", "rest"),
+        ("idle", "squat"),
+    ),
+    "Sirius Symboli": (
+        ("idle", "sit"),
+        ("idle", "sit_talk"),
+        ("idle", "side"),
+    ),
+    "Air Groove": (
+        ("idle", "sit"),
+        ("idle", "side"),
+    ),
+}
 
 MOVE_CANDIDATES = (
     ("move", "walk"),
     ("move", "run"),
     ("move", "jog"),
-    ("move", "sneak"),
-    ("move", "climb"),
-    ("move", "fly"),
-    ("move", "fly_up"),
-)
-
-CARE_MOVE_CANDIDATES = (
-    ("move", "run"),
-    ("move", "jog"),
-    ("move", "walk"),
     ("move", "sneak"),
     ("move", "climb"),
     ("move", "fly"),
@@ -74,7 +70,6 @@ IDLE_CANDIDATES = (
     ("idle", "sleep"),
 )
 
-
 def get_child_comfort_candidates(name):
     if name == "Tokai Teio":
         return list(TOKAI_TEIO_CHILD_COMFORT_CANDIDATES)
@@ -87,17 +82,21 @@ def get_child_recovery_candidates(name):
     return get_child_comfort_candidates(name)
 
 
-def get_adult_companion_candidates():
-    return list(ADULT_COMPANION_CANDIDATES)
+def get_adult_companion_candidates(name):
+    return list(ADULT_COMPANION_CANDIDATES_BY_NAME.get(name, ()))
 
 
 def get_move_candidates():
     return list(MOVE_CANDIDATES)
 
 
-def get_care_move_candidates():
-    return list(CARE_MOVE_CANDIDATES)
-
-
 def get_idle_candidates():
     return list(IDLE_CANDIDATES)
+
+
+def get_expression_preferred_moods(animation_context):
+    if animation_context == "relation_watch":
+        return ["glance", "think", "smile", "happy", "confidence", "cool"]
+    if animation_context == "relation_close":
+        return ["smile", "happy", "confidence", "cool", "glance", "think"]
+    return []

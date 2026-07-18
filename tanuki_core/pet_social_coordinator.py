@@ -5,6 +5,7 @@ from .pet_social_rules import (
     CARE_PLAN_COMPANION,
     CARE_PLAN_INTERACTION,
     CareTargetCandidate,
+    NON_MIMIC_TARGET_PURPOSES,
     SOCIAL_ENTRY_FOLLOWING,
     SOCIAL_ENTRY_MIMICKING,
     choose_care_target,
@@ -199,7 +200,7 @@ class SocialCareCoordinator:
             return SocialDecision(action=SOCIAL_DECISION_ACTIVE_FOLLOWING, handled=True)
 
         if context.social_mode == "mimicking":
-            if not context.can_mimic:
+            if not context.can_mimic or context.rudolf_purpose in NON_MIMIC_TARGET_PURPOSES:
                 return SocialDecision(action=SOCIAL_DECISION_STOP)
             return SocialDecision(action=SOCIAL_DECISION_ACTIVE_MIMICKING, handled=True)
 

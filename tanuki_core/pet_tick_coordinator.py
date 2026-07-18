@@ -16,6 +16,7 @@ from .pet_logic import (
     decide_initial_ai_phase,
     decide_tick_phase,
 )
+from .pet_intent_rules import resolve_intent_reselect_gate
 
 
 @dataclass(frozen=True)
@@ -47,6 +48,13 @@ class FollowupAiPlan:
     phase: str
     should_run_random: bool
     should_refresh_and_return: bool
+
+
+@dataclass(frozen=True)
+class IntentReselectPlan:
+    allow_reselect: bool
+    next_reconsider_after: float | None
+    reason: str
 
 
 class PetTickCoordinator:
@@ -146,4 +154,38 @@ class PetTickCoordinator:
                 AI_FOLLOWUP_CARE,
                 AI_FOLLOWUP_SOCIAL,
             },
+        )
+
+    def resolve_intent_reselect_plan(
+        self,
+        *,
+        now,
+        intent_kind,
+        intent_reconsider_after,
+        dragging,
+        is_angry_locked,
+        is_recovering,
+        care_lock_maintained,
+        care_mode,
+        social_mode,
+        flight_mode,
+        perched_window_hwnd,
+    ):
+        rule_plan = resolve_intent_reselect_gate(
+            now=now,
+            intent_kind=intent_kind,
+            intent_reconsider_after=intent_reconsider_after,
+            dragging=dragging,
+            is_angry_locked=is_angry_locked,
+            is_recovering=is_recovering,
+            care_lock_active=care_lock_maintained,
+            care_mode=care_mode,
+            social_mode=social_mode,
+            flight_mode=flight_mode,
+            perched_window_hwnd=perched_window_hwnd,
+        )
+        return IntentReselectPlan(
+            allow_reselect=rule_plan.allow_reselect,
+            next_reconsider_after=rule_plan.next_reconsider_after,
+            reason=rule_plan.reason,
         )

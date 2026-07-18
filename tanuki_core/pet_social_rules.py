@@ -10,12 +10,15 @@ SOCIAL_ENTRY_FOLLOWING = "following"
 SOCIAL_ENTRY_MIMICKING = "mimicking"
 CHEERFUL_MOODS = {"happy", "smile", "confidence", "cool"}
 DISTRESS_ANIMATION_MOODS = {"sad", "cry", "hard-cry"}
+NON_MIMIC_TARGET_PURPOSES = {"drag"}
 
 CARE_INTERACTION_WEIGHTS = {
     "Symboli Rudolf": 0.65,
     "Sirius Symboli": 0.50,
     "Air Groove": 0.40,
 }
+CARE_INTERACTION_STATIONARY_CHANCE = 0.50
+CARE_INTERACTION_RECOVERY_MOODS = ("happy", "smile", "relief", "calm", "think", "sad", "cry", "hard-cry")
 
 
 @dataclass(frozen=True)
@@ -29,6 +32,7 @@ class CareTargetCandidate:
     is_distressed: bool
     distance: float
     preferred_adult_name: str | None = None
+    care_blocked: bool = False
 
 
 @dataclass(frozen=True)
@@ -62,6 +66,23 @@ def build_distress_mood_candidates(current_mood_tag):
         if mood and mood not in moods:
             moods.append(mood)
     return moods
+
+
+def build_care_interaction_mood_candidates(current_mood_tag):
+    moods = []
+    for mood in (current_mood_tag, *CARE_INTERACTION_RECOVERY_MOODS):
+        if mood and mood not in moods:
+            moods.append(mood)
+    return moods
+
+
+def resolve_care_interaction_motion_order(preferred_motion, roll):
+    stationary_first = float(roll or 0.0) < CARE_INTERACTION_STATIONARY_CHANCE
+    if stationary_first:
+        return ["idle", "move"]
+    if preferred_motion == "idle":
+        return ["move", "idle"]
+    return ["move", "idle"]
 
 
 def is_distressed_state(
@@ -124,7 +145,7 @@ def choose_care_target(adult, adult_name, candidates):
             continue
         if candidate.care_partner not in (None, adult):
             continue
-        if candidate.is_recovering or not candidate.is_distressed:
+        if candidate.is_recovering or candidate.care_blocked or not candidate.is_distressed:
             continue
         if radius is not None and candidate.distance > radius:
             continue
@@ -154,6 +175,8 @@ def choose_preferred_care_adult_name(candidates):
 
 def decide_social_entry(distance, social_distance, rudolf_purpose, is_behind, can_strictly_mimic, can_mimic=True):
     if distance >= social_distance:
+        return SOCIAL_ENTRY_NONE
+    if rudolf_purpose in NON_MIMIC_TARGET_PURPOSES:
         return SOCIAL_ENTRY_NONE
     if rudolf_purpose == "move" and is_behind:
         return SOCIAL_ENTRY_FOLLOWING

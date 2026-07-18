@@ -58,3 +58,17 @@ def derive_random_visual_purpose(state, base_speed):
     if state == "move" and base_speed > RANDOM_MOVE_PURPOSE_SPEED_THRESHOLD:
         return "move"
     return "idle"
+
+
+def extend_random_state_timer(state_timer, hold_timer):
+    return max(int(state_timer), int(hold_timer))
+
+
+def get_idle_action_override(name, *, current_purpose, current_action_tag, next_purpose, next_action_tag):
+    if name != "Tsurumaru Tsuyoshi":
+        return ()
+    if next_purpose != "idle" or next_action_tag != "side_stand":
+        return ()
+    if current_purpose == "idle" and current_action_tag == "side_ready":
+        return ()
+    return ("side_ready", "side", "stand")

@@ -24,7 +24,7 @@ class ConfigStore:
 
     def load(self):
         if not os.path.exists(self.config_path):
-            return {"schema_version": self.schema_version, "dashboard": {}, "pets": {}}
+            return {"schema_version": self.schema_version, "dashboard": {}, "pets": {}, "household": {}}
         try:
             with open(self.config_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -36,7 +36,7 @@ class ConfigStore:
         except Exception as e:
             print(f"讀取 config.json 失敗 {self.config_path}: {e}")
             self.validation_warnings = [str(e)]
-            return {"schema_version": self.schema_version, "dashboard": {}, "pets": {}}
+            return {"schema_version": self.schema_version, "dashboard": {}, "pets": {}, "household": {}}
 
     def bind(self, dashboard, pets_dict):
         self.dashboard = dashboard
@@ -73,10 +73,15 @@ class ConfigStore:
                 )
             )
 
+        household_state = {}
+        if self.dashboard and hasattr(self.dashboard, "capture_household_config_state"):
+            household_state = self.dashboard.capture_household_config_state()
+
         return {
             "schema_version": self.schema_version,
             "dashboard": dashboard_state,
             "pets": pets_state,
+            "household": household_state,
         }
 
     def save_now(self, force=False):

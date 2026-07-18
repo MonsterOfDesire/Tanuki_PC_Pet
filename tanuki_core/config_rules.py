@@ -1,6 +1,10 @@
-CONFIG_SCHEMA_VERSION = 2
+from .dashboard_state_mapper import WORLD_MODE_OPTIONS
+
+
+CONFIG_SCHEMA_VERSION = 3
 
 DEFAULT_DASHBOARD_STATE = {
+    "world_mode": WORLD_MODE_OPTIONS[0],
     "care_feature_enabled": True,
     "teio_dur_idx": 3,
     "tsuyoshi_dur_idx": 2,
@@ -12,8 +16,14 @@ DEFAULT_DASHBOARD_STATE = {
 ROOT_DASHBOARD_KEYS = frozenset(DEFAULT_DASHBOARD_STATE.keys())
 
 
+def resolve_config_autosave_target(config_store_provider, autosave_enabled=False):
+    if not autosave_enabled or not config_store_provider:
+        return None
+    return config_store_provider()
+
+
 def build_default_config_state():
-    return {"schema_version": CONFIG_SCHEMA_VERSION, "dashboard": {}, "pets": {}}
+    return {"schema_version": CONFIG_SCHEMA_VERSION, "dashboard": {}, "pets": {}, "household": {}}
 
 
 def coerce_config_schema_version(raw_version):
@@ -64,6 +74,18 @@ def migrate_config_state(raw):
             migrated["dashboard"] = dashboard
         schema_version = 2
 
+    if schema_version < 3:
+        dashboard = migrated.get("dashboard", {})
+        if isinstance(dashboard, dict) and "world_mode" not in dashboard:
+            dashboard = dict(dashboard)
+            dashboard["world_mode"] = DEFAULT_DASHBOARD_STATE["world_mode"]
+            migrated["dashboard"] = dashboard
+        if "household" in migrated and not isinstance(migrated.get("household"), dict):
+            warnings.append("household 區塊不是物件，已重設")
+        if "household" not in migrated or not isinstance(migrated.get("household"), dict):
+            migrated["household"] = {}
+        schema_version = 3
+
     migrated["schema_version"] = CONFIG_SCHEMA_VERSION
     if original_schema_version != CONFIG_SCHEMA_VERSION:
         warnings.append(f"config schema {original_schema_version} 已升級到 {CONFIG_SCHEMA_VERSION}")
@@ -74,16 +96,23 @@ def normalize_config_state(raw):
     migrated, warnings, _original_schema_version = migrate_config_state(raw)
     dashboard = migrated.get("dashboard", {})
     pets = migrated.get("pets", {})
+    household = migrated.get("household", {})
     if not isinstance(dashboard, dict):
         dashboard = {}
         warnings.append("dashboard 區塊不是物件，已重設")
     if not isinstance(pets, dict):
         pets = {}
         warnings.append("pets 區塊不是物件，已重設")
+    if not isinstance(household, dict):
+        household = {}
+        warnings.append("household 區塊不是物件，已重設")
 
     normalized = {
         "schema_version": CONFIG_SCHEMA_VERSION,
         "dashboard": {
+            "world_mode": dashboard.get("world_mode", DEFAULT_DASHBOARD_STATE["world_mode"])
+            if dashboard.get("world_mode") in WORLD_MODE_OPTIONS
+            else DEFAULT_DASHBOARD_STATE["world_mode"],
             "care_feature_enabled": bool(dashboard.get("care_feature_enabled", DEFAULT_DASHBOARD_STATE["care_feature_enabled"])),
             "teio_dur_idx": dashboard.get("teio_dur_idx", DEFAULT_DASHBOARD_STATE["teio_dur_idx"]),
             "tsuyoshi_dur_idx": dashboard.get("tsuyoshi_dur_idx", DEFAULT_DASHBOARD_STATE["tsuyoshi_dur_idx"]),
@@ -92,6 +121,7 @@ def normalize_config_state(raw):
             "debug_enabled": bool(dashboard.get("debug_enabled", DEFAULT_DASHBOARD_STATE["debug_enabled"])),
         },
         "pets": {},
+        "household": dict(household),
     }
 
     for pet_name, pet_state in pets.items():

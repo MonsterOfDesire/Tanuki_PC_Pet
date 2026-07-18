@@ -34,7 +34,7 @@ class WindowingEffects:
         pet.move(target_x, target_y)
         pet.state = "idle"
         pet.state_timer = rng.randint(80, 160)
-        pet.ensure_candidate_animation(pet.get_window_perch_candidates(), context="random")
+        pet.ensure_window_perch_animation()
         pet.refresh_movement_state()
         return True
 
@@ -93,7 +93,7 @@ class WindowingEffects:
         pet.state = "move"
         pet.reset_stationary_move_mode()
         pet.direction = 1 if target_x >= pet.x() else -1
-        pet.ensure_candidate_animation(pet.get_free_fly_candidates(), context="random")
+        pet.ensure_window_flight_animation()
         pet.refresh_movement_state()
         return True
 
@@ -125,7 +125,7 @@ class WindowingEffects:
         pet.state = "move"
         pet.reset_stationary_move_mode()
         pet.direction = 1 if pet.flight_target_x >= pet.x() else -1
-        pet.ensure_candidate_animation(pet.get_free_fly_candidates(), context="random")
+        pet.ensure_window_flight_animation()
         pet.refresh_movement_state()
         return True
 
@@ -138,7 +138,7 @@ class WindowingEffects:
         pet.vy = 0
         pet.state = "move"
         pet.direction = 1 if pet.flight_target_x >= pet.x() else -1
-        pet.ensure_candidate_animation(pet.get_free_fly_candidates(), context="random")
+        pet.ensure_window_flight_animation()
         arrived = pet.move_flight_toward(
             pet.flight_target_x,
             pet.flight_target_y,
@@ -170,7 +170,7 @@ class WindowingEffects:
         pet.vy = 0
         pet.state = "move"
         pet.direction = 1 if self_state_dx >= 0 else -1
-        pet.ensure_candidate_animation(pet.get_free_fly_candidates(), context="random")
+        pet.ensure_window_flight_animation()
         arrived = pet.move_flight_toward(
             pet.flight_target_x,
             pet.flight_target_y,

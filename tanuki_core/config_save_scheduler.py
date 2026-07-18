@@ -39,6 +39,8 @@ except ModuleNotFoundError:
         def interval(self):
             return self._interval
 
+from .config_rules import resolve_config_autosave_target
+
 
 class ConfigSaveScheduler(QObject):
     def __init__(self, config_store_provider, delay_ms=750, autosave_enabled=False):
@@ -54,9 +56,10 @@ class ConfigSaveScheduler(QObject):
         return self.config_store_provider() if self.config_store_provider else None
 
     def schedule(self):
-        if not self.autosave_enabled:
-            return
-        config_store = self._get_config_store()
+        config_store = resolve_config_autosave_target(
+            self.config_store_provider,
+            autosave_enabled=self.autosave_enabled,
+        )
         if not config_store:
             return
         self.save_timer.start(self.delay_ms)

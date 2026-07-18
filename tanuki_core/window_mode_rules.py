@@ -33,4 +33,5 @@ def can_start_window_flight_gate(
         not can_fly_freely
     ):
         return False
-    return current_purpose == "move" and current_action_tag in {"fly", "fly_up"}
+    _ = current_action_tag
+    return current_purpose == "move"

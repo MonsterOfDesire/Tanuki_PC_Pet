@@ -43,6 +43,19 @@ class DashboardController:
     def toggle_debug(self, dashboard):
         self.set_debug_enabled(dashboard, not dashboard.debug_enabled)
 
+    def set_world_mode(self, dashboard, world_mode, save=True):
+        previous_mode = getattr(dashboard, "world_mode", "")
+        if world_mode not in getattr(dashboard, "world_mode_options", ()):
+            world_mode = dashboard.world_mode_options[0]
+        dashboard.world_mode = str(world_mode)
+        dashboard.sync_settings_provider()
+        dashboard.update_world_mode_buttons()
+        dashboard.update_household_control_states()
+        if world_mode != previous_mode:
+            dashboard.apply_world_mode_runtime_transition(world_mode, previous_mode=previous_mode)
+        if save:
+            dashboard.schedule_save()
+
     def handle_pet_toggle(self, dashboard, pet, checked):
         self.actions.apply_pet_visibility(pet, checked)
         dashboard.schedule_save()
@@ -85,6 +98,37 @@ class DashboardController:
             config_store=dashboard.config_store,
         )
         dashboard.show_tools_dialog(self.presenter.build_validation_dialog(result))
+
+    def open_household_summary(self, dashboard):
+        presentation = self.presenter.build_household_summary(
+            dashboard.get_household_state_snapshot(),
+            dashboard.get_recent_household_events(limit=128),
+        )
+        dashboard.show_household_summary(presentation)
+
+    def open_social_log(self, dashboard):
+        presentation = self.presenter.build_social_log(
+            dashboard.get_recent_household_events(limit=128),
+            filter_mode=dashboard.get_social_log_filter_mode(),
+            participant_name=dashboard.get_social_log_participant_name(),
+        )
+        dashboard.show_social_log(presentation)
+
+    def open_relationship_table(self, dashboard):
+        presentation = self.presenter.build_relationship_table(
+            dashboard.get_household_state_snapshot(),
+            pet_names=dashboard.get_pet_display_names(),
+        )
+        dashboard.show_relationship_table(presentation)
+
+    def open_offer_tray(self, dashboard):
+        dashboard.show_offer_tray()
+
+    def donate_household_fund(self, dashboard, amount=100):
+        dashboard.apply_household_fund_donation(amount=amount)
+        dashboard.refresh_household_summary_if_open()
+        dashboard.refresh_social_log_if_open()
+        dashboard.refresh_relationship_table_if_open()
 
     def apply_social_settings(self, dashboard, save=True):
         self.actions.apply_social_cooldowns(

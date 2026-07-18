@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 @dataclass
 class RuntimeSettings:
+    world_mode: str = "golden_legend"
     care_feature_enabled: bool = True
     debug_enabled: bool = False
     teio_dur_idx: int = 3
@@ -10,6 +11,7 @@ class RuntimeSettings:
     time_scale_idx: int = 0
     display_scale_idx: int = 0
 
+    WORLD_MODE_OPTIONS = ("golden_legend", "sandbox")
     TIME_SCALE_OPTIONS = (1, 2, 4, 8)
     DISPLAY_SCALE_OPTIONS = (1.0, 1.5, 2.0, 3.0)
     TEIO_DURATIONS = (2, 5, 10, 20, 30)
