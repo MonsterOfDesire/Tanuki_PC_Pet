@@ -235,6 +235,10 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         is_visible = getattr(self, "isVisible", None)
         if callable(is_visible) and not is_visible():
             return
+        if float(SIM_CLOCK.speed) <= 1.0 + 1e-6:
+            self.animation_frame_accumulator = 0.0
+            self.next_frame()
+            return
         timer = getattr(self, "anim_timer", None)
         interval_getter = getattr(timer, "interval", None)
         if not callable(interval_getter):

@@ -66,9 +66,17 @@ class AssetManagerTests(unittest.TestCase):
                 )
                 self.assertIsNotNone(manager.get_record("idle", "watch", "happy"))
 
-                result = manager.get_contextual_result("idle", context="relation_watch", mood_score=80)
+                with patch(
+                    "tanuki_core.asset_manager.get_runtime_asset_file_names_for_contexts"
+                ) as context_file_lookup:
+                    result = manager.get_contextual_result(
+                        "idle",
+                        context="relation_watch",
+                        mood_score=80,
+                    )
 
                 self.assertEqual(result, (["idle_watch-happy.gif@0.5"], "watch", "happy"))
+                context_file_lookup.assert_not_called()
                 self.assertEqual(
                     extracted,
                     ["idle_stand-happy.gif", "idle_watch-happy.gif", "move_walk_shake-happy.gif"],

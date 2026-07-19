@@ -61,6 +61,7 @@ class AssetManager:
         self.store = AssetStore.empty()
         self._runtime_file_names = set()
         self._loaded_file_names = set()
+        self._all_runtime_assets_loaded = False
         self.refresh_assets()
 
     @property
@@ -248,11 +249,15 @@ class AssetManager:
             self.store = AssetStore.empty()
             self._runtime_file_names = set()
             self._loaded_file_names = set()
+            self._all_runtime_assets_loaded = False
             return
         manifest_data = self.load_manifest()
         self._runtime_file_names = set(get_runtime_asset_file_names(self.character_path, manifest_data))
         file_names = sorted(self._runtime_file_names)
         self._loaded_file_names = set(file_names)
+        self._all_runtime_assets_loaded = self._runtime_file_names.issubset(
+            self._loaded_file_names
+        )
         self.store = load_asset_store(
             self.character_path,
             manifest_data,
@@ -269,6 +274,8 @@ class AssetManager:
 
     def ensure_context_assets(self, context):
         if not context or not self.manifest_data:
+            return
+        if self._all_runtime_assets_loaded:
             return
         context_file_names = set(
             get_runtime_asset_file_names_for_contexts(
@@ -295,6 +302,9 @@ class AssetManager:
         )
         self._merge_store(partial_store)
         self._loaded_file_names.update(missing)
+        self._all_runtime_assets_loaded = self._runtime_file_names.issubset(
+            self._loaded_file_names
+        )
 
     def _merge_store(self, partial_store):
         for purpose, action_map in partial_store.assets.items():

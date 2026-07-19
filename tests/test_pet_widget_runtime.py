@@ -582,11 +582,17 @@ class PetWidgetRuntimeTests(unittest.TestCase):
 
     def test_advance_animation_timer_advances_one_frame_per_callback(self):
         pet = FakePetForAnimationTiming()
+        pet.animation_frame_accumulator = 0.75
 
-        TanukiPet.advance_animation_timer(pet)
+        with patch("tanuki_core.pet_widget.SIM_CLOCK.speed", 1.0), patch(
+            "tanuki_core.pet_widget.SIM_CLOCK.get_timer_step_delta"
+        ) as get_step_delta:
+            TanukiPet.advance_animation_timer(pet)
 
         self.assertEqual(pet.frame_index, 1)
         self.assertEqual(pet.updated, 1)
+        self.assertEqual(pet.animation_frame_accumulator, 0.0)
+        get_step_delta.assert_not_called()
 
     def test_advance_animation_timer_loops_frames_normally(self):
         pet = FakePetForAnimationTiming()
@@ -605,7 +611,7 @@ class PetWidgetRuntimeTests(unittest.TestCase):
         pet.isVisible = lambda: True
         visited_frames = []
 
-        with patch(
+        with patch("tanuki_core.pet_widget.SIM_CLOCK.speed", 8.0), patch(
             "tanuki_core.pet_widget.SIM_CLOCK.get_timer_step_delta",
             return_value=1.7,
         ) as get_step_delta:
@@ -624,7 +630,7 @@ class PetWidgetRuntimeTests(unittest.TestCase):
         pet.animation_frame_accumulator = 0.0
         pet.isVisible = lambda: True
 
-        with patch(
+        with patch("tanuki_core.pet_widget.SIM_CLOCK.speed", 4.0), patch(
             "tanuki_core.pet_widget.SIM_CLOCK.get_timer_step_delta",
             return_value=1.5,
         ):
