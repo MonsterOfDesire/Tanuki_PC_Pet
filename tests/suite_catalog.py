@@ -90,6 +90,7 @@ TEST_SUITE_MEMBERS = {
     "tooling": {
         "test_asset_action_audit",
         "test_manifest_xlsx_converter",
+        "test_manifest_xlsx_tool",
         "test_suite_catalog",
         "test_tooling_lightweight_checks",
     },

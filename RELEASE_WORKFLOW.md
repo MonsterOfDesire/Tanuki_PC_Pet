@@ -88,6 +88,12 @@
 - 或用：
   - `run_lab_2.bat`
 
+若這次包含素材 manifest 異動，先用正式 wrapper 乾跑驗證；只有確定要重新產生 JSON 時才加上 `--write`：
+
+```powershell
+.\.venv\Scripts\python.exe .\tools\manifest_xlsx_to_json.py --assets-dir .\assets_cropped
+```
+
 ### 2. 整理這次改動
 
 建議至少看這幾個 Git 指令：
@@ -149,21 +155,29 @@ git -C G:\TanukiProject\tanuki_app tag v0.5.0-beta
 
 ### 6. 打包
 
-先檢查 Python、PyInstaller 與必要素材：
+先在目前環境安裝明確版本的 runtime 與 build 依賴：
 
 ```powershell
-& G:\TanukiProject\tanuki_app\build_lab_2.ps1 -CheckOnly
+.\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
+```
+
+再檢查 Python、PyInstaller 與必要素材：
+
+```powershell
+.\build_lab_2.ps1 -CheckOnly
 ```
 
 執行：
 
 - `build_lab_2.bat`
 
-腳本會優先使用 `TANUKI_PYTHON` 或 `-PythonExe` 指定的直譯器，否則依序尋找 G 槽 `.venv` 與本機 Python 3.10。封裝內容包括 `assets_cropped/`、`items/`、`heart.png`、`star.png` 與 `think.png`。
+腳本會優先使用 `TANUKI_PYTHON` 或 `-PythonExe` 指定的直譯器，否則依序尋找 repository、G 槽巢狀工作區的 `.venv` 與本機 Python 3.10。封裝內容包括 `assets_cropped/`、`items/`、`heart.png`、`star.png` 與 `think.png`。
 
-目前打包結果輸出到：
+一般 clone 預設輸出到 `<repository>\dist\TanukiPet`；目前 G 槽巢狀工作區仍輸出到：
 
 - `G:\TanukiProject\dist\TanukiPet`
+
+需要隔離輸出時，使用 `-OutputRoot` 或 `TANUKI_BUILD_ROOT` 指定目錄。發布前也必須依 [ASSET_NOTICE.md](ASSET_NOTICE.md) 確認素材的授權與散布範圍。
 
 ### 7. 簽章與發布
 
