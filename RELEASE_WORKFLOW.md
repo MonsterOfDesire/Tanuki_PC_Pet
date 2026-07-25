@@ -98,17 +98,19 @@
 
 建議至少看這幾個 Git 指令：
 
+以下命令都從 repository 根目錄執行：
+
 ```powershell
-git -C G:\TanukiProject\tanuki_app status
-git -C G:\TanukiProject\tanuki_app diff --stat
-git -C G:\TanukiProject\tanuki_app log --oneline --decorate -n 15
+git status
+git diff --stat
+git log --oneline --decorate -n 15
 ```
 
 如果要直接比前一版 tag 和目前差異：
 
 ```powershell
-git -C G:\TanukiProject\tanuki_app diff --stat v0.4.1-beta..HEAD
-git -C G:\TanukiProject\tanuki_app log --oneline v0.4.1-beta..HEAD
+git diff --stat v0.5.0-beta..HEAD
+git log --oneline v0.5.0-beta..HEAD
 ```
 
 這兩組資訊通常就足夠寫出初版 release note。
@@ -126,12 +128,12 @@ git -C G:\TanukiProject\tanuki_app log --oneline v0.4.1-beta..HEAD
 ### 4. 提交原始碼
 
 ```powershell
-git -C G:\TanukiProject\tanuki_app status
-git -C G:\TanukiProject\tanuki_app add -- <explicit-paths>
-git -C G:\TanukiProject\tanuki_app diff --cached --name-only
-python G:\TanukiProject\tanuki_app\tools\check_staged_secrets.py
-git -C G:\TanukiProject\tanuki_app diff --cached
-git -C G:\TanukiProject\tanuki_app commit -m "..."
+git status
+git add -- <explicit-paths>
+git diff --cached --name-only
+python .\tools\check_staged_secrets.py
+git diff --cached
+git commit -m "..."
 ```
 
 不得使用無條件的 `git add .`。每次只 stage 本次 commit 負責的明確路徑，安全檢查只輸出檔名與命中規則，不輸出匹配內容。
@@ -139,8 +141,8 @@ git -C G:\TanukiProject\tanuki_app commit -m "..."
 首次設定此 repo 時，啟用並確認版本化 hook：
 
 ```powershell
-git -C G:\TanukiProject\tanuki_app config core.hooksPath .githooks
-git -C G:\TanukiProject\tanuki_app config --get core.hooksPath
+git config core.hooksPath .githooks
+git config --get core.hooksPath
 ```
 
 ### 5. 建立版本 tag
@@ -148,10 +150,10 @@ git -C G:\TanukiProject\tanuki_app config --get core.hooksPath
 例如：
 
 ```powershell
-git -C G:\TanukiProject\tanuki_app tag v0.5.0-beta
+git tag -s v0.6.0-beta -m "Tanuki PC Pet v0.6.0-beta"
 ```
 
-只有在 commit、tag、測試與 staged 安全檢查都確認完成，並取得明確同意後，才執行 `git push` 與 `git push origin <tag>`。
+版本 tag、簽章、壓縮與 GitHub Release 由維護者本人執行。只有在 commit、測試、完整 build、EXE smoke test 與 staged／outgoing 安全檢查都確認完成，並取得明確同意後，才執行 `git push` 與 `git push origin <tag>`。
 
 ### 6. 打包
 
@@ -173,11 +175,7 @@ git -C G:\TanukiProject\tanuki_app tag v0.5.0-beta
 
 腳本會優先使用 `TANUKI_PYTHON` 或 `-PythonExe` 指定的直譯器，否則依序尋找 repository、G 槽巢狀工作區的 `.venv` 與本機 Python 3.10。封裝內容包括 `assets_cropped/`、`items/`、`heart.png`、`star.png` 與 `think.png`。
 
-一般 clone 預設輸出到 `<repository>\dist\TanukiPet`；目前 G 槽巢狀工作區仍輸出到：
-
-- `G:\TanukiProject\dist\TanukiPet`
-
-需要隔離輸出時，使用 `-OutputRoot` 或 `TANUKI_BUILD_ROOT` 指定目錄。發布前也必須依 [ASSET_NOTICE.md](ASSET_NOTICE.md) 確認素材的授權與散布範圍。
+一般 clone 預設輸出到 `<repository>\dist\TanukiPet`。需要隔離輸出時，使用 `-OutputRoot` 或 `TANUKI_BUILD_ROOT` 指定目錄；維護者的巢狀工作區設定另見 [docs/LOCAL_WORKSPACE.md](docs/LOCAL_WORKSPACE.md)。發布前也必須依 [ASSET_NOTICE.md](ASSET_NOTICE.md) 確認素材的授權與散布範圍。
 
 ### 7. 簽章與發布
 

@@ -30,10 +30,10 @@
 PowerShell 執行方式：
 
 ```powershell
-$env:PYTHONPATH="G:\TanukiProject\.venv\Lib\site-packages"
-& "C:\Users\HreoK\AppData\Local\Programs\Python\Python310\python.exe" "G:\TanukiProject\tools\run_shared_food_tests.py" --layer logic
-& "C:\Users\HreoK\AppData\Local\Programs\Python\Python310\python.exe" "G:\TanukiProject\tools\run_shared_food_tests.py" --layer runtime
-& "C:\Users\HreoK\AppData\Local\Programs\Python\Python310\python.exe" "G:\TanukiProject\tools\run_shared_food_tests.py" --layer assets
+$env:QT_QPA_PLATFORM = "offscreen"
+.\.venv\Scripts\python.exe .\tools\run_shared_food_tests.py --layer logic
+.\.venv\Scripts\python.exe .\tools\run_shared_food_tests.py --layer runtime
+.\.venv\Scripts\python.exe .\tools\run_shared_food_tests.py --layer assets
 ```
 
 完整 shared_food 回歸使用 `--layer all`。第三層直接讀取工作區的 `assets_cropped`，會確認四位參與角色 xlsx/json 一致、36 個食物／角色／能力 context 需求無缺漏，以及六個雙向路由都支援三種 outcome。

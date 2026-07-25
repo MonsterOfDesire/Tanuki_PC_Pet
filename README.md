@@ -1,5 +1,7 @@
 # Tanuki PC Pet
 
+[![Windows CI](https://github.com/MonsterOfDesire/Tanuki_PC_Pet/actions/workflows/windows-ci.yml/badge.svg)](https://github.com/MonsterOfDesire/Tanuki_PC_Pet/actions/workflows/windows-ci.yml)
+
 Tanuki PC Pet 是以 Python 3.10 與 PyQt6 開發的 Windows 桌面寵物。角色會在桌面與視窗邊緣移動，並依心情、關係、道具與家庭事件呈現不同互動。
 
 ## 系統需求
@@ -16,8 +18,6 @@ py -3.10 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe lab_2.py
 ```
-
-目前的 G 槽重建工作區也可使用外層 `.venv\Lib\site-packages`；一般 clone 不需要依賴這個特殊目錄結構。
 
 ## 測試
 
@@ -51,7 +51,7 @@ $env:QT_QPA_PLATFORM = "offscreen"
 .\build_lab_2.ps1
 ```
 
-一般 clone 預設輸出到 repository 的 `build\` 與 `dist\`。目前 G 槽巢狀工作區則會沿用外層 `G:\TanukiProject\build` 與 `G:\TanukiProject\dist`，避免改變既有發布位置。
+一般 clone 預設輸出到 repository 的 `build\` 與 `dist\`。
 
 可用 `-PythonExe` 或 `TANUKI_PYTHON` 指定 Python；可用 `-OutputRoot` 或 `TANUKI_BUILD_ROOT` 指定輸出根目錄：
 
@@ -60,6 +60,7 @@ $env:QT_QPA_PLATFORM = "offscreen"
 ```
 
 完整提交、tag、敏感資料檢查與發布步驟請參閱 [RELEASE_WORKFLOW.md](RELEASE_WORKFLOW.md)。
+維護者的特殊巢狀工作區說明位於 [docs/LOCAL_WORKSPACE.md](docs/LOCAL_WORKSPACE.md)，一般 clone 不需要依賴該目錄結構。
 
 ## 授權與素材
 

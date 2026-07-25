@@ -109,7 +109,7 @@ Write-Host "Work dir: $workDir"
 Write-Host "Dist dir: $distDir"
 Write-Host ""
 
-& $PythonExe -c "import PyInstaller, PyQt6, pynput" 2>$null
+& $PythonExe -c "import PyInstaller, PyQt6, pynput, PIL" 2>$null
 if ($LASTEXITCODE -ne 0) {
     throw "Build dependencies are unavailable. Install requirements-build.txt with the selected Python environment."
 }
