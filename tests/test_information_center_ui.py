@@ -174,6 +174,16 @@ class InformationCenterWindowTests(unittest.TestCase):
             tuple(self.window.navigation_buttons),
             tuple(page.page_id for page in INFORMATION_CENTER_PAGE_SPECS),
         )
+        self.assertEqual(
+            {
+                page_id: button.property("pageAccent")
+                for page_id, button in self.window.navigation_buttons.items()
+            },
+            {
+                page_spec.page_id: page_spec.page_id
+                for page_spec in INFORMATION_CENTER_PAGE_SPECS
+            },
+        )
 
     def test_navigation_bar_replaces_native_title_bar(self):
         self.assertTrue(

@@ -10,7 +10,13 @@ class UiThemeTokens:
     text_inverse: str = "#fffaf2"
     accent: str = "#c76742"
     accent_hover: str = "#dc7b53"
-    focus: str = "#f2bf5d"
+    focus: str = "#e4b75f"
+    relation_accent: str = "#4d8fc7"
+    event_accent: str = "#28755b"
+    family_accent: str = "#69a45d"
+    settings_accent: str = "#76559a"
+    offer_accent: str = "#d9a928"
+    danger: str = "#a34f45"
     border: str = "rgba(54, 44, 36, 170)"
     paper_surface: str = "rgba(255, 253, 247, 244)"
     frosted_surface: str = "rgba(255, 248, 232, 224)"
@@ -100,8 +106,8 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         border-color: {tokens.focus};
     }}
     QToolButton[tanukiRole="chromeButton"][chromeAction="close"]:hover {{
-        background: #c94b45;
-        border-color: #f2bf5d;
+        background: {tokens.danger};
+        border-color: {tokens.focus};
     }}
     QFrame[tanukiRole="offerItemBadge"] {{
         min-width: 54px;
@@ -110,8 +116,8 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         border-radius: {tokens.radius_medium}px;
     }}
     QFrame[tanukiRole="offerItemBadge"]:hover {{
-        background: rgba(255, 244, 204, 242);
-        border-color: {tokens.accent};
+        background: rgba(255, 244, 196, 242);
+        border-color: {tokens.offer_accent};
     }}
     QLabel[tanukiRole="offerItemName"] {{
         color: #271d16;
@@ -120,8 +126,8 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
     }}
     QLabel[tanukiRole="offerInstruction"] {{
         color: #fffaf2;
-        background: rgba(104, 66, 35, 220);
-        border: 1px solid rgba(73, 45, 25, 180);
+        background: rgba(126, 92, 24, 226);
+        border: 1px solid {tokens.offer_accent};
         border-radius: {tokens.radius_medium}px;
         padding: {tokens.spacing_xs}px {tokens.spacing_md}px;
         font-size: 13px;
@@ -138,13 +144,13 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         border-color: rgba(245, 221, 172, 180);
     }}
     QWidget#tanukiInformationCenter {{
-        background: #201d1b;
+        background: #211d1a;
         border: 1px solid rgba(245, 221, 172, 115);
         border-radius: {tokens.radius_medium}px;
     }}
     QFrame#tanukiInformationNavigation {{
         min-height: {tokens.navigation_height}px;
-        background: rgba(39, 33, 29, 248);
+        background: rgba(33, 29, 26, 248);
         border-bottom: 1px solid rgba(245, 221, 172, 120);
         border-top-left-radius: {tokens.radius_medium}px;
         border-top-right-radius: {tokens.radius_medium}px;
@@ -172,6 +178,22 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         border-color: {tokens.focus};
         font-weight: 700;
     }}
+    QPushButton[tanukiRole="navigation"][pageAccent="relation_summon"]:checked {{
+        background: #376f9e;
+        border-color: {tokens.relation_accent};
+    }}
+    QPushButton[tanukiRole="navigation"][pageAccent="event_log"]:checked {{
+        background: {tokens.event_accent};
+        border-color: #68b99a;
+    }}
+    QPushButton[tanukiRole="navigation"][pageAccent="family_status"]:checked {{
+        background: #4f8449;
+        border-color: {tokens.family_accent};
+    }}
+    QPushButton[tanukiRole="navigation"][pageAccent="status_settings"]:checked {{
+        background: {tokens.settings_accent};
+        border-color: #b59bd0;
+    }}
     QToolButton[tanukiRole="windowSize"],
     QToolButton[tanukiRole="windowAction"] {{
         min-height: {tokens.control_height}px;
@@ -198,7 +220,7 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
     }}
     QMenu {{
         color: {tokens.text_inverse};
-        background: rgba(39, 33, 29, 252);
+        background: rgba(33, 29, 26, 252);
         border: 1px solid rgba(245, 221, 172, 120);
         padding: {tokens.spacing_xs}px;
     }}
@@ -257,7 +279,7 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
     QGroupBox[tanukiRole="settingsGroup"] {{
         color: {tokens.text_inverse};
         font-weight: 700;
-        border: 1px solid rgba(245, 221, 172, 100);
+        border: 1px solid rgba(181, 155, 208, 115);
         border-radius: {tokens.radius_medium}px;
         margin-top: {tokens.spacing_sm}px;
         padding: {tokens.spacing_sm}px;
@@ -274,7 +296,7 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         padding: 0 {tokens.spacing_sm}px;
         color: rgba(255, 250, 242, 220);
         background: rgba(255, 255, 255, 18);
-        border: 1px solid rgba(245, 221, 172, 75);
+        border: 1px solid rgba(181, 155, 208, 90);
         border-radius: {tokens.radius_small}px;
     }}
     QPushButton[tanukiRole="settingsOption"][compact="true"] {{
@@ -283,8 +305,8 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
     }}
     QPushButton[tanukiRole="settingsOption"]:checked {{
         color: {tokens.text_inverse};
-        background: {tokens.accent};
-        border-color: {tokens.focus};
+        background: {tokens.settings_accent};
+        border-color: #b59bd0;
         font-weight: 700;
     }}
     QPushButton[tanukiRole="settingsAction"] {{
@@ -292,11 +314,12 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         padding: 0 {tokens.spacing_md}px;
         color: {tokens.text_inverse};
         background: rgba(255, 255, 255, 18);
-        border: 1px solid rgba(245, 221, 172, 100);
+        border: 1px solid rgba(181, 155, 208, 115);
         border-radius: {tokens.radius_small}px;
     }}
     QPushButton[tanukiRole="settingsAction"]:hover {{
-        background: {tokens.accent};
+        background: {tokens.settings_accent};
+        border-color: #b59bd0;
     }}
     QCheckBox[tanukiRole="settingsToggle"] {{
         color: {tokens.text_inverse};
@@ -308,8 +331,8 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
     }}
     QFrame[tanukiRole="launcherSurface"] {{
         color: {tokens.text_inverse};
-        background: rgba(35, 30, 26, 249);
-        border: 2px solid rgba(242, 191, 93, 215);
+        background: rgba(33, 29, 26, 249);
+        border: 2px solid rgba(228, 183, 95, 215);
         border-radius: 22px;
     }}
     QLabel[tanukiRole="launcherTitle"] {{
@@ -409,7 +432,7 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         background: rgba(28, 25, 22, 225);
     }}
     QPushButton[tanukiRole="launcherShutdown"]:hover {{
-        background: rgba(157, 66, 53, 205);
+        background: {tokens.danger};
         border-color: {tokens.focus};
     }}
     QToolButton[tanukiRole="launcherRailAction"] {{
@@ -455,7 +478,7 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         font-weight: 700;
     }}
     QLabel[tanukiRole="familyValue"] {{
-        color: {tokens.accent};
+        color: #477d3e;
         font-size: 20px;
         font-weight: 700;
     }}
@@ -464,13 +487,13 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         padding: 0 {tokens.spacing_sm}px;
         color: {tokens.text_primary};
         background: rgba(224, 242, 211, 210);
-        border: 1px solid rgba(43, 139, 75, 105);
+        border: 1px solid rgba(105, 164, 93, 135);
         border-radius: {tokens.radius_small}px;
         font-weight: 800;
     }}
     QPushButton[tanukiRole="familyAction"]:hover {{
         background: rgba(205, 233, 187, 235);
-        border-color: rgba(43, 139, 75, 170);
+        border-color: {tokens.family_accent};
     }}
     QPushButton[tanukiRole="familyAction"]:disabled {{
         color: rgba(47, 41, 36, 90);
@@ -496,7 +519,7 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         border-radius: 5px;
     }}
     QProgressBar[tanukiRole="familyPressure"]::chunk {{
-        background: {tokens.accent};
+        background: {tokens.family_accent};
         border-radius: 5px;
     }}
     QPlainTextEdit[tanukiRole="familyLog"] {{
@@ -524,11 +547,11 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
     }}
     QFrame[tanukiRole="familyMemberCard"][summoned="true"] {{
         background: rgba(239, 250, 231, 224);
-        border-color: rgba(43, 139, 75, 135);
+        border-color: {tokens.family_accent};
     }}
     QLabel[tanukiRole="familyAvatar"] {{
         background: rgba(255, 255, 255, 165);
-        border: 1px solid rgba(43, 139, 75, 80);
+        border: 1px solid rgba(105, 164, 93, 105);
         border-radius: 25px;
     }}
     QLabel[tanukiRole="familyMemberName"] {{
@@ -567,7 +590,7 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         font-weight: 700;
     }}
     QLabel[tanukiRole="familySummonStatus"][summoned="true"] {{
-        color: #2b8b4b;
+        color: #477d3e;
     }}
     QTableWidget[tanukiRole="familyEvents"] {{
         color: {tokens.text_primary};
@@ -601,7 +624,7 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         font-weight: 700;
     }}
     QLabel[tanukiRole="familyStatValue"] {{
-        color: #2b8b4b;
+        color: #477d3e;
         font-size: 12px;
         font-weight: 800;
     }}
@@ -634,9 +657,9 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         border-radius: {tokens.radius_small}px;
     }}
     QPushButton[tanukiRole="eventFilter"]:checked {{
-        color: {tokens.text_primary};
-        background: {tokens.focus};
-        border-color: rgba(255, 250, 242, 210);
+        color: {tokens.text_inverse};
+        background: #3b8f70;
+        border-color: #76c7a7;
         font-weight: 700;
     }}
     QComboBox[tanukiRole="eventParticipant"] {{
@@ -697,7 +720,7 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
     }}
     QTableWidget[tanukiRole="eventList"]::item:selected {{
         color: {tokens.text_inverse};
-        background: rgba(199, 103, 66, 155);
+        background: rgba(40, 117, 91, 205);
     }}
     QLabel[tanukiRole="eventEmpty"] {{
         color: rgba(255, 250, 242, 165);
@@ -814,12 +837,12 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         border-radius: 8px;
     }}
     QToolButton[tanukiRole="relationRosterAvatar"]:hover {{
-        background: rgba(242, 191, 93, 85);
-        border-color: rgba(199, 103, 66, 105);
+        background: rgba(77, 143, 199, 72);
+        border-color: rgba(77, 143, 199, 145);
     }}
     QToolButton[tanukiRole="relationRosterAvatar"]:checked {{
-        background: rgba(242, 191, 93, 145);
-        border: 2px solid {tokens.accent};
+        background: rgba(77, 143, 199, 110);
+        border: 2px solid {tokens.relation_accent};
     }}
     QLabel[tanukiRole="relationLegend"] {{
         color: rgba(47, 41, 36, 205);
@@ -852,7 +875,7 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         font-size: 10px;
     }}
     QLabel[tanukiRole="relationAffinityValue"] {{
-        color: #a94f20;
+        color: #356f9e;
         font-size: 11px;
         font-weight: 800;
     }}

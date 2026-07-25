@@ -169,6 +169,7 @@ class InformationCenterWindow(QWidget):
             button = QPushButton(page_spec.navigation_label)
             button.setCheckable(True)
             button.setProperty("tanukiRole", "navigation")
+            button.setProperty("pageAccent", page_spec.page_id)
             button.setIcon(
                 create_ui_icon(
                     NAVIGATION_ICON_NAMES[page_spec.page_id],
