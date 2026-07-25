@@ -43,6 +43,19 @@ class DashboardController:
     def toggle_debug(self, dashboard):
         self.set_debug_enabled(dashboard, not dashboard.debug_enabled)
 
+    def set_social_status_enabled(
+        self,
+        dashboard,
+        enabled,
+        save=True,
+    ):
+        dashboard.social_status_enabled = bool(enabled)
+        dashboard.sync_settings_provider()
+        dashboard.update_social_status_control()
+        self.tools_actions.apply_debug_refresh(dashboard.pets_dict)
+        if save:
+            dashboard.schedule_save()
+
     def set_world_mode(self, dashboard, world_mode, save=True):
         previous_mode = getattr(dashboard, "world_mode", "")
         if world_mode not in getattr(dashboard, "world_mode_options", ()):
@@ -59,6 +72,16 @@ class DashboardController:
     def handle_pet_toggle(self, dashboard, pet, checked):
         self.actions.apply_pet_visibility(pet, checked)
         dashboard.schedule_save()
+        if hasattr(dashboard, "refresh_relationship_table_if_open"):
+            dashboard.refresh_relationship_table_if_open()
+
+    def set_pet_visibility_by_name(self, dashboard, pet_name, checked):
+        pet = dashboard.get_pet_by_display_name(pet_name)
+        if pet is None:
+            return False
+        dashboard.sync_pet_toggle_control(pet, checked)
+        self.handle_pet_toggle(dashboard, pet, checked)
+        return True
 
     def set_duration(self, dashboard, char, index, save=True):
         if char == "teio":
@@ -99,30 +122,51 @@ class DashboardController:
         )
         dashboard.show_tools_dialog(self.presenter.build_validation_dialog(result))
 
-    def open_household_summary(self, dashboard):
-        presentation = self.presenter.build_household_summary(
+    def build_household_summary_presentation(self, dashboard):
+        return self.presenter.build_household_summary(
             dashboard.get_household_state_snapshot(),
             dashboard.get_recent_household_events(limit=128),
+            pet_states=(
+                dashboard.get_pet_summon_states()
+                if hasattr(dashboard, "get_pet_summon_states") else
+                ()
+            ),
         )
+
+    def open_household_summary(self, dashboard):
+        presentation = self.build_household_summary_presentation(dashboard)
         dashboard.show_household_summary(presentation)
 
-    def open_social_log(self, dashboard):
-        presentation = self.presenter.build_social_log(
+    def build_social_log_presentation(self, dashboard, filter_mode="all", participant_name=""):
+        return self.presenter.build_social_log(
             dashboard.get_recent_household_events(limit=128),
+            filter_mode=filter_mode,
+            participant_name=participant_name,
+        )
+
+    def open_social_log(self, dashboard):
+        presentation = self.build_social_log_presentation(
+            dashboard,
             filter_mode=dashboard.get_social_log_filter_mode(),
             participant_name=dashboard.get_social_log_participant_name(),
         )
         dashboard.show_social_log(presentation)
 
-    def open_relationship_table(self, dashboard):
-        presentation = self.presenter.build_relationship_table(
+    def build_relationship_table_presentation(self, dashboard):
+        return self.presenter.build_relationship_table(
             dashboard.get_household_state_snapshot(),
             pet_names=dashboard.get_pet_display_names(),
         )
+
+    def open_relationship_table(self, dashboard):
+        presentation = self.build_relationship_table_presentation(dashboard)
         dashboard.show_relationship_table(presentation)
 
     def open_offer_tray(self, dashboard):
         dashboard.show_offer_tray()
+
+    def open_information_center(self, dashboard, page_id=None):
+        dashboard.show_information_center(page_id=page_id)
 
     def donate_household_fund(self, dashboard, amount=100):
         dashboard.apply_household_fund_donation(amount=amount)

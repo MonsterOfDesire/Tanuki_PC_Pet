@@ -66,10 +66,10 @@ class FakePresenter:
             severity="information",
         )
 
-    def build_household_summary(self, household, entries):
+    def build_household_summary(self, household, entries, pet_states=()):
         return HouseholdSummaryPresentation(
             title="家庭摘要",
-            overview_text=f"fund={household.living_fund}",
+            overview_text=f"fund={household.living_fund} pets={len(pet_states)}",
             log_text=f"entries={len(entries)}",
         )
 
@@ -103,6 +103,7 @@ class FakeDashboard:
         self.world_mode_options = ["golden_legend", "sandbox"]
         self.care_feature_enabled = False
         self.debug_enabled = False
+        self.social_status_enabled = False
         self.teio_dur_idx = 0
         self.tsuyoshi_dur_idx = 0
         self.time_scale_options = [0.5, 1.0, 2.0]
@@ -115,6 +116,7 @@ class FakeDashboard:
         self.sync_calls = 0
         self.care_button_updates = 0
         self.debug_button_updates = 0
+        self.social_status_updates = 0
         self.duration_button_updates = 0
         self.time_scale_button_updates = 0
         self.display_scale_button_updates = 0
@@ -136,6 +138,8 @@ class FakeDashboard:
         self.social_log_participant_name = ""
         self.world_mode_transition_calls = []
         self.offer_tray_open_calls = 0
+        self.information_center_page_ids = []
+        self.synced_pet_toggle_calls = []
 
     def sync_settings_provider(self):
         self.sync_calls += 1
@@ -145,6 +149,9 @@ class FakeDashboard:
 
     def update_debug_button_text(self):
         self.debug_button_updates += 1
+
+    def update_social_status_control(self):
+        self.social_status_updates += 1
 
     def update_duration_buttons(self):
         self.duration_button_updates += 1
@@ -204,6 +211,15 @@ class FakeDashboard:
     def get_pet_display_names(self):
         return tuple(self.pets_dict.keys())
 
+    def get_pet_summon_states(self):
+        return (("Tokai Teio", True, 72.0, "normal"),)
+
+    def get_pet_by_display_name(self, pet_name):
+        return self.pets_dict.get(pet_name, {}).get("pet")
+
+    def sync_pet_toggle_control(self, pet, checked):
+        self.synced_pet_toggle_calls.append((pet, checked))
+
     def show_relationship_table(self, presentation):
         self.relationship_table_presentations.append(presentation)
 
@@ -224,6 +240,9 @@ class FakeDashboard:
 
     def show_offer_tray(self):
         self.offer_tray_open_calls += 1
+
+    def show_information_center(self, page_id=None):
+        self.information_center_page_ids.append(page_id)
 
 
 class DashboardControllerTests(unittest.TestCase):
@@ -262,6 +281,21 @@ class DashboardControllerTests(unittest.TestCase):
         self.assertEqual(self.tools.debug_refresh_calls, [dashboard.pets_dict])
         self.assertEqual(dashboard.save_calls, 1)
 
+    def test_set_social_status_enabled_refreshes_pets_and_saves(self):
+        controller = self.build_controller()
+        dashboard = FakeDashboard()
+
+        controller.set_social_status_enabled(dashboard, True)
+
+        self.assertTrue(dashboard.social_status_enabled)
+        self.assertEqual(dashboard.sync_calls, 1)
+        self.assertEqual(dashboard.social_status_updates, 1)
+        self.assertEqual(
+            self.tools.debug_refresh_calls,
+            [dashboard.pets_dict],
+        )
+        self.assertEqual(dashboard.save_calls, 1)
+
     def test_handle_pet_toggle_delegates_visibility_and_save(self):
         controller = self.build_controller()
         dashboard = FakeDashboard()
@@ -271,6 +305,28 @@ class DashboardControllerTests(unittest.TestCase):
 
         self.assertEqual(self.actions.visibility_calls, [(pet, False)])
         self.assertEqual(dashboard.save_calls, 1)
+        self.assertEqual(dashboard.relationship_table_refresh_calls, 1)
+
+    def test_set_pet_visibility_by_name_updates_runtime_and_legacy_control(self):
+        controller = self.build_controller()
+        dashboard = FakeDashboard()
+        pet = dashboard.pets_dict["Tokai Teio"]["pet"]
+
+        result = controller.set_pet_visibility_by_name(dashboard, "Tokai Teio", True)
+
+        self.assertTrue(result)
+        self.assertEqual(dashboard.synced_pet_toggle_calls, [(pet, True)])
+        self.assertEqual(self.actions.visibility_calls, [(pet, True)])
+        self.assertEqual(dashboard.save_calls, 1)
+
+    def test_set_pet_visibility_by_name_rejects_unknown_character(self):
+        controller = self.build_controller()
+        dashboard = FakeDashboard()
+
+        result = controller.set_pet_visibility_by_name(dashboard, "Unknown", True)
+
+        self.assertFalse(result)
+        self.assertEqual(self.actions.visibility_calls, [])
 
     def test_set_duration_updates_index_and_applies_social_settings(self):
         controller = self.build_controller()
@@ -334,8 +390,20 @@ class DashboardControllerTests(unittest.TestCase):
 
         self.assertEqual(len(dashboard.household_presentations), 1)
         self.assertEqual(dashboard.household_presentations[0].title, "家庭摘要")
-        self.assertEqual(dashboard.household_presentations[0].overview_text, "fund=1000")
+        self.assertEqual(
+            dashboard.household_presentations[0].overview_text,
+            "fund=1000 pets=1",
+        )
         self.assertEqual(dashboard.household_presentations[0].log_text, "entries=1")
+
+    def test_build_household_summary_presentation_reuses_existing_presenter(self):
+        controller = self.build_controller()
+        dashboard = FakeDashboard()
+
+        presentation = controller.build_household_summary_presentation(dashboard)
+
+        self.assertEqual(presentation.overview_text, "fund=1000 pets=1")
+        self.assertEqual(presentation.log_text, "entries=1")
 
     def test_open_social_log_builds_and_shows_filtered_log_window(self):
         controller = self.build_controller()
@@ -350,6 +418,20 @@ class DashboardControllerTests(unittest.TestCase):
         self.assertEqual(dashboard.social_log_presentations[0].participant_name, "Tokai Teio")
         self.assertEqual(dashboard.social_log_presentations[0].log_text, "entries=1")
 
+    def test_build_social_log_presentation_accepts_information_center_filters(self):
+        controller = self.build_controller()
+        dashboard = FakeDashboard()
+
+        presentation = controller.build_social_log_presentation(
+            dashboard,
+            filter_mode="economy",
+            participant_name="Tokai Teio",
+        )
+
+        self.assertEqual(presentation.title, "社交紀錄-economy")
+        self.assertEqual(presentation.participant_name, "Tokai Teio")
+        self.assertEqual(presentation.log_text, "entries=1")
+
     def test_open_relationship_table_builds_and_shows_window(self):
         controller = self.build_controller()
         dashboard = FakeDashboard()
@@ -359,6 +441,15 @@ class DashboardControllerTests(unittest.TestCase):
         self.assertEqual(len(dashboard.relationship_table_presentations), 1)
         self.assertEqual(dashboard.relationship_table_presentations[0].title, "關係表")
         self.assertEqual(dashboard.relationship_table_presentations[0].table_text, "pets=1 fund=1000")
+
+    def test_build_relationship_table_presentation_reuses_existing_presenter(self):
+        controller = self.build_controller()
+        dashboard = FakeDashboard()
+
+        presentation = controller.build_relationship_table_presentation(dashboard)
+
+        self.assertEqual(presentation.title, "關係表")
+        self.assertEqual(presentation.table_text, "pets=1 fund=1000")
 
     def test_donate_household_fund_applies_action_and_refreshes_open_summary(self):
         controller = self.build_controller()
@@ -378,6 +469,14 @@ class DashboardControllerTests(unittest.TestCase):
         controller.open_offer_tray(dashboard)
 
         self.assertEqual(dashboard.offer_tray_open_calls, 1)
+
+    def test_open_information_center_delegates_page_to_dashboard_view(self):
+        controller = self.build_controller()
+        dashboard = FakeDashboard()
+
+        controller.open_information_center(dashboard, page_id="event_log")
+
+        self.assertEqual(dashboard.information_center_page_ids, ["event_log"])
 
     def test_set_world_mode_updates_state_and_notifies_runtime(self):
         controller = self.build_controller()

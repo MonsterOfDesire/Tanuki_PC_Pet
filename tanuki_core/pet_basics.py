@@ -114,6 +114,13 @@ class PetBasicsMixin:
         provider = getattr(self, "settings_provider", None)
         return bool(provider and getattr(provider, "debug_enabled", False))
 
+    def is_social_status_enabled(self):
+        provider = getattr(self, "settings_provider", None)
+        return bool(
+            provider
+            and getattr(provider, "social_status_enabled", False)
+        )
+
     def get_behavior_probe_label(self):
         intent_kind = str(getattr(self, "intent_kind", "") or "")
         intent_context = str(getattr(self, "intent_context", "") or "")

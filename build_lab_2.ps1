@@ -34,6 +34,19 @@ $scriptPath = Join-Path $repoRoot "lab_2.py"
 $iconPath = Join-Path $repoRoot "luna.ico"
 $assetsDir = Join-Path $repoRoot "assets_cropped"
 $itemsDir = Join-Path $repoRoot "items"
+$uiDir = Join-Path $repoRoot "UI"
+$uiFamilyIconsDir = Join-Path $uiDir "family_icon"
+$uiDietPath = Join-Path $uiDir "diet.png"
+$uiDietCharacterPath = Join-Path $uiDir "diet_char.gif"
+$uiRelationPath = Join-Path $uiDir "relation_summon.gif"
+$uiRelationCharacterPath = Join-Path $uiDir "relation_summon_char.gif"
+$uiEventPath = Join-Path $uiDir "event_note.jpg"
+$uiEventCharacterPath = Join-Path $uiDir "event_note_char.gif"
+$uiFamilyPath = Join-Path $uiDir "family_status_abstract.png"
+$uiFamilyCharacterPath = Join-Path $uiDir "family_status_abstract_char.gif"
+$uiSettingsPath = Join-Path $uiDir "status_setting.png"
+$uiSettingsCharacterPath = Join-Path $uiDir "status_setting_char.gif"
+$uiDashboardSideIconPath = Join-Path $uiDir "side.png"
 $heartPath = Join-Path $repoRoot "heart.png"
 $starPath = Join-Path $repoRoot "star.png"
 $thinkPath = Join-Path $repoRoot "think.png"
@@ -50,6 +63,23 @@ $requiredPaths = @(
     @{ Label = "icon"; Path = $iconPath },
     @{ Label = "assets directory"; Path = $assetsDir },
     @{ Label = "item icons directory"; Path = $itemsDir },
+    @{ Label = "UI family icon directory"; Path = $uiFamilyIconsDir },
+    @{ Label = "Air Groove family icon"; Path = (Join-Path $uiFamilyIconsDir "Air Groove.gif") },
+    @{ Label = "Sirius Symboli family icon"; Path = (Join-Path $uiFamilyIconsDir "Sirius Symboli.gif") },
+    @{ Label = "Symboli Rudolf family icon"; Path = (Join-Path $uiFamilyIconsDir "Symboli Rudolf.gif") },
+    @{ Label = "Tokai Teio family icon"; Path = (Join-Path $uiFamilyIconsDir "Tokai Teio.gif") },
+    @{ Label = "Tsurumaru Tsuyoshi family icon"; Path = (Join-Path $uiFamilyIconsDir "Tsurumaru Tsuyoshi.gif") },
+    @{ Label = "diet UI background"; Path = $uiDietPath },
+    @{ Label = "diet UI character"; Path = $uiDietCharacterPath },
+    @{ Label = "relationship UI background"; Path = $uiRelationPath },
+    @{ Label = "relationship UI character"; Path = $uiRelationCharacterPath },
+    @{ Label = "event UI background"; Path = $uiEventPath },
+    @{ Label = "event UI character"; Path = $uiEventCharacterPath },
+    @{ Label = "family UI background"; Path = $uiFamilyPath },
+    @{ Label = "family UI character"; Path = $uiFamilyCharacterPath },
+    @{ Label = "settings UI background"; Path = $uiSettingsPath },
+    @{ Label = "settings UI character"; Path = $uiSettingsCharacterPath },
+    @{ Label = "dashboard launcher side icon"; Path = $uiDashboardSideIconPath },
     @{ Label = "heart image"; Path = $heartPath },
     @{ Label = "star image"; Path = $starPath },
     @{ Label = "thought icon"; Path = $thinkPath }
@@ -96,6 +126,18 @@ if ($CheckOnly) {
   --icon $iconPath `
   --add-data "${assetsDir};assets_cropped" `
   --add-data "${itemsDir};items" `
+  --add-data "${uiDietPath};UI" `
+  --add-data "${uiDietCharacterPath};UI" `
+  --add-data "${uiRelationPath};UI" `
+  --add-data "${uiRelationCharacterPath};UI" `
+  --add-data "${uiEventPath};UI" `
+  --add-data "${uiEventCharacterPath};UI" `
+  --add-data "${uiFamilyPath};UI" `
+  --add-data "${uiFamilyCharacterPath};UI" `
+  --add-data "${uiSettingsPath};UI" `
+  --add-data "${uiSettingsCharacterPath};UI" `
+  --add-data "${uiDashboardSideIconPath};UI" `
+  --add-data "${uiFamilyIconsDir};UI/family_icon" `
   --add-data "${heartPath};." `
   --add-data "${starPath};." `
   --add-data "${thinkPath};." `

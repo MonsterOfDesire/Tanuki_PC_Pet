@@ -122,6 +122,10 @@ class ConfigApplyCoordinatorTests(unittest.TestCase):
         )
 
         self.assertEqual(len(dashboard.applied_states), 1)
+        self.assertEqual(
+            dashboard.applied_states[0].information_center.page_id,
+            "family_status",
+        )
         self.assertEqual(dashboard.time_scale_calls, [(2, False)])
         self.assertEqual(dashboard.display_scale_calls, [False])
         self.assertEqual(dashboard.social_settings_calls, [False])

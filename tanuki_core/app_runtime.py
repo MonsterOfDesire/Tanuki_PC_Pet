@@ -1786,6 +1786,7 @@ def create_runtime(app=None):
 
     sensor = SensorZone(dashboard)
     sensor.setGeometry(available_rect.left(), available_rect.bottom() - 300, 20, 300)
+    dashboard.set_sensor_zone(sensor)
     monitor = GlobalMouseListener(dashboard)
 
     runtime = TanukiAppRuntime(

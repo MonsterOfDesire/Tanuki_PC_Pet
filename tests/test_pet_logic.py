@@ -231,6 +231,7 @@ class RuntimeSettingsTests(unittest.TestCase):
 
         self.assertTrue(settings.care_feature_enabled)
         self.assertFalse(settings.debug_enabled)
+        self.assertFalse(settings.social_status_enabled)
         self.assertEqual(settings.get_time_scale(), 1.0)
         self.assertEqual(settings.get_display_scale_multiplier(), 1.0)
 

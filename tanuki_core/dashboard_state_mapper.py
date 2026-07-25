@@ -1,5 +1,10 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
+from .information_center_state import (
+    InformationCenterConfigState,
+    information_center_config_state_to_payload,
+    normalize_information_center_config_state,
+)
 from .settings_provider import RuntimeSettings
 
 
@@ -14,6 +19,10 @@ class DashboardConfigState:
     time_scale_idx: int
     display_scale_idx: int
     debug_enabled: bool
+    social_status_enabled: bool = False
+    information_center: InformationCenterConfigState = field(
+        default_factory=InformationCenterConfigState
+    )
 
 
 @dataclass(frozen=True)
@@ -61,6 +70,8 @@ def build_dashboard_config_state(
     time_scale_idx,
     display_scale_idx,
     debug_enabled,
+    social_status_enabled=False,
+    information_center=None,
 ):
     return DashboardConfigState(
         world_mode=safe_world_mode(world_mode, WORLD_MODE_OPTIONS[0]),
@@ -70,10 +81,21 @@ def build_dashboard_config_state(
         time_scale_idx=int(time_scale_idx),
         display_scale_idx=int(display_scale_idx),
         debug_enabled=bool(debug_enabled),
+        social_status_enabled=bool(social_status_enabled),
+        information_center=(
+            information_center
+            if isinstance(information_center, InformationCenterConfigState)
+            else InformationCenterConfigState()
+        ),
     )
 
 
 def normalize_dashboard_config_state(raw_state, defaults, option_bounds):
+    default_information_center = getattr(
+        defaults,
+        "information_center",
+        InformationCenterConfigState(),
+    )
     return DashboardConfigState(
         world_mode=safe_world_mode(raw_state.get("world_mode", defaults.world_mode), defaults.world_mode),
         care_feature_enabled=bool(raw_state.get("care_feature_enabled", defaults.care_feature_enabled)),
@@ -98,6 +120,16 @@ def normalize_dashboard_config_state(raw_state, defaults, option_bounds):
             option_bounds.display_scale_count,
         ),
         debug_enabled=bool(raw_state.get("debug_enabled", defaults.debug_enabled)),
+        social_status_enabled=bool(
+            raw_state.get(
+                "social_status_enabled",
+                getattr(defaults, "social_status_enabled", False),
+            )
+        ),
+        information_center=normalize_information_center_config_state(
+            raw_state.get("information_center", {}),
+            defaults=default_information_center,
+        ),
     )
 
 
@@ -110,6 +142,14 @@ def dashboard_config_state_to_payload(state):
         "time_scale_idx": int(state.time_scale_idx),
         "display_scale_idx": int(state.display_scale_idx),
         "debug_enabled": bool(state.debug_enabled),
+        "social_status_enabled": bool(state.social_status_enabled),
+        "information_center": information_center_config_state_to_payload(
+            getattr(
+                state,
+                "information_center",
+                InformationCenterConfigState(),
+            )
+        ),
     }
 
 
@@ -117,6 +157,9 @@ def apply_dashboard_config_to_settings(settings_provider, state):
     settings_provider.world_mode = safe_world_mode(state.world_mode, WORLD_MODE_OPTIONS[0])
     settings_provider.care_feature_enabled = bool(state.care_feature_enabled)
     settings_provider.debug_enabled = bool(state.debug_enabled)
+    settings_provider.social_status_enabled = bool(
+        state.social_status_enabled
+    )
     settings_provider.teio_dur_idx = int(state.teio_dur_idx)
     settings_provider.tsuyoshi_dur_idx = int(state.tsuyoshi_dur_idx)
     settings_provider.time_scale_idx = int(state.time_scale_idx)

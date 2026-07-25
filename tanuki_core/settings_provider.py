@@ -6,6 +6,7 @@ class RuntimeSettings:
     world_mode: str = "golden_legend"
     care_feature_enabled: bool = True
     debug_enabled: bool = False
+    social_status_enabled: bool = False
     teio_dur_idx: int = 3
     tsuyoshi_dur_idx: int = 2
     time_scale_idx: int = 0

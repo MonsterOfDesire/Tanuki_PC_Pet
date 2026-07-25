@@ -219,12 +219,13 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             max_debug_width = max(120, self.width() - 16)
             lines = self.wrap_debug_lines(painter.fontMetrics(), max_debug_width)
             self.overlay_renderer.draw_debug_overlay(painter, lines, max_debug_width, self.width())
-        self.overlay_renderer.draw_head_status_label(
-            painter,
-            self.get_behavior_probe_label(),
-            self.width(),
-            draw_y,
-        )
+        if self.is_social_status_enabled():
+            self.overlay_renderer.draw_head_status_label(
+                painter,
+                self.get_behavior_probe_label(),
+                self.width(),
+                draw_y,
+            )
 
     def next_frame(self, steps=1):
         if self.current_frames:

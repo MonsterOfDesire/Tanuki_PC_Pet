@@ -78,6 +78,60 @@ class DashboardPresenterTests(unittest.TestCase):
         self.assertIn("家庭壓力: 18%", presentation.overview_text)
         self.assertIn("#001 12:34:56 帝寶偷喝飲料 (生活費 -35, 壓力 +8.5)", presentation.log_text)
         self.assertIn("#002 12:34:56 魯道夫正在盤點家用。", presentation.log_text)
+        self.assertEqual(presentation.living_fund, 650)
+        self.assertEqual(presentation.household_pressure, 18.5)
+
+    def test_build_household_summary_includes_runtime_members_and_recent_stats(self):
+        presenter = DashboardPresenter()
+        household = SimpleNamespace(living_fund=1250, household_pressure=37.0)
+        entries = [
+            SimpleNamespace(
+                sequence=1,
+                wall_clock_time=0.0,
+                channel="economy",
+                category="economy",
+                importance="normal",
+                summary="生活費補充",
+                living_fund_delta=300,
+                household_pressure_delta=-2.0,
+            ),
+            SimpleNamespace(
+                sequence=2,
+                wall_clock_time=0.0,
+                channel="system",
+                category="system",
+                importance="normal",
+                summary="家庭狀態結算",
+                living_fund_delta=0,
+                household_pressure_delta=1.0,
+            ),
+        ]
+        pet_states = (
+            ("Air Groove", True, 72.0, "normal"),
+            ("Tokai Teio", False, 34.0, "unhappy"),
+            ("Sirius Symboli", True, 18.0, "depressed"),
+        )
+
+        presentation = presenter.build_household_summary(
+            household,
+            entries,
+            pet_states=pet_states,
+        )
+
+        self.assertEqual(presentation.member_count, 3)
+        self.assertEqual(presentation.summoned_count, 2)
+        self.assertAlmostEqual(presentation.average_mood, (72.0 + 34.0 + 18.0) / 3)
+        self.assertEqual(
+            tuple(member.mood_label for member in presentation.members),
+            ("平穩", "低落", "非常低落"),
+        )
+        self.assertEqual(
+            tuple(event.sequence for event in presentation.recent_events),
+            (2, 1),
+        )
+        self.assertEqual(presentation.recent_event_count, 2)
+        self.assertEqual(presentation.recent_fund_delta, 300)
+        self.assertEqual(presentation.recent_pressure_delta, -1.0)
 
     def test_build_household_summary_filters_out_social_noise(self):
         presenter = DashboardPresenter()
@@ -120,6 +174,47 @@ class DashboardPresenterTests(unittest.TestCase):
         self.assertNotIn("聊了幾句", presentation.log_text)
         self.assertIn("帝寶又偷偷買了飲料", presentation.log_text)
         self.assertIn("鶴寶接過奶瓶", presentation.log_text)
+        self.assertEqual(
+            tuple(event.sequence for event in presentation.recent_events),
+            (3, 2, 1),
+        )
+        self.assertIn("聊了幾句", presentation.recent_events[2].summary)
+
+    def test_household_recent_events_match_all_event_log_order_and_content(self):
+        presenter = DashboardPresenter()
+        household = SimpleNamespace(living_fund=900, household_pressure=12.0)
+        entries = [
+            SimpleNamespace(
+                sequence=index,
+                wall_clock_time=1710000000.0 + index,
+                channel="social" if index % 2 else "item",
+                category="social" if index % 2 else "player_offer",
+                importance="normal",
+                summary=f"事件 {index}",
+                actor_name="Air Groove",
+                target_name="Tokai Teio",
+                living_fund_delta=0,
+                household_pressure_delta=0.0,
+                mood_delta=0.0,
+                relation_delta={},
+                tags=(),
+            )
+            for index in range(1, 8)
+        ]
+
+        household_summary = presenter.build_household_summary(household, entries)
+        event_log = presenter.build_social_log(entries, filter_mode="all")
+
+        self.assertEqual(
+            tuple(
+                (event.sequence, event.channel, event.summary)
+                for event in household_summary.recent_events
+            ),
+            tuple(
+                (event.sequence, event.channel, event.summary)
+                for event in event_log.entries[:5]
+            ),
+        )
 
     def test_build_household_summary_keeps_only_recent_relevant_entries(self):
         presenter = DashboardPresenter()
@@ -192,12 +287,28 @@ class DashboardPresenterTests(unittest.TestCase):
         social = presenter.build_social_log(entries, filter_mode="social")
         economy = presenter.build_social_log(entries, filter_mode="economy")
         item = presenter.build_social_log(entries, filter_mode="item")
+        all_events = presenter.build_social_log(entries, filter_mode="all")
         personal = presenter.build_social_log(entries, filter_mode="personal", participant_name="Tokai Teio")
 
         self.assertIn("[社交] Symboli Rudolf -> Tokai Teio:", social.log_text)
         self.assertIn("關係 familiarity +0.25", social.log_text)
+        self.assertEqual(social.entries[0].channel_label, "社交")
+        self.assertEqual(social.entries[0].participant_text, "Symboli Rudolf → Tokai Teio")
+        self.assertEqual(
+            social.entries[0].effects[0].key,
+            "relationship_familiarity",
+        )
         self.assertIn("生活費 -18", economy.log_text)
+        self.assertEqual(economy.title, "事件日誌 - 經濟")
+        self.assertEqual(
+            tuple(effect.key for effect in economy.entries[0].effects),
+            ("living_fund", "household_pressure"),
+        )
         self.assertIn("鶴寶接過奶瓶", item.log_text)
+        self.assertEqual(
+            tuple(entry.sequence for entry in all_events.entries),
+            (3, 2, 1),
+        )
         self.assertIn("#001", personal.log_text)
         self.assertIn("#002", personal.log_text)
         self.assertNotIn("#003", personal.log_text)
@@ -253,6 +364,17 @@ class DashboardPresenterTests(unittest.TestCase):
         self.assertIn("事件 1", presentation.table_text)
         self.assertIn("-> Air Groove: 好感度  0.00", presentation.table_text)
         self.assertIn("[Air Groove]", presentation.table_text)
+        self.assertEqual(
+            presentation.actor_names,
+            ("Air Groove", "Symboli Rudolf", "Tokai Teio"),
+        )
+        rudolf_to_teio = next(
+            row
+            for row in presentation.rows
+            if row.actor_name == "Symboli Rudolf" and row.target_name == "Tokai Teio"
+        )
+        self.assertEqual(rudolf_to_teio.affinity, 6.5)
+        self.assertEqual(rudolf_to_teio.event_count, 1)
 
 
 if __name__ == "__main__":

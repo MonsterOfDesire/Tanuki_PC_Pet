@@ -1,7 +1,16 @@
 from .dashboard_state_mapper import WORLD_MODE_OPTIONS
+from .information_center_state import (
+    InformationCenterConfigState,
+    information_center_config_state_to_payload,
+    normalize_information_center_config_state,
+)
 
 
-CONFIG_SCHEMA_VERSION = 3
+CONFIG_SCHEMA_VERSION = 5
+
+DEFAULT_INFORMATION_CENTER_STATE = information_center_config_state_to_payload(
+    InformationCenterConfigState()
+)
 
 DEFAULT_DASHBOARD_STATE = {
     "world_mode": WORLD_MODE_OPTIONS[0],
@@ -11,6 +20,8 @@ DEFAULT_DASHBOARD_STATE = {
     "time_scale_idx": 0,
     "display_scale_idx": 0,
     "debug_enabled": False,
+    "social_status_enabled": False,
+    "information_center": DEFAULT_INFORMATION_CENTER_STATE,
 }
 
 ROOT_DASHBOARD_KEYS = frozenset(DEFAULT_DASHBOARD_STATE.keys())
@@ -86,6 +97,29 @@ def migrate_config_state(raw):
             migrated["household"] = {}
         schema_version = 3
 
+    if schema_version < 4:
+        dashboard = migrated.get("dashboard", {})
+        if isinstance(dashboard, dict) and "information_center" not in dashboard:
+            dashboard = dict(dashboard)
+            dashboard["information_center"] = dict(
+                DEFAULT_INFORMATION_CENTER_STATE
+            )
+            migrated["dashboard"] = dashboard
+        schema_version = 4
+
+    if schema_version < 5:
+        dashboard = migrated.get("dashboard", {})
+        if (
+            isinstance(dashboard, dict)
+            and "social_status_enabled" not in dashboard
+        ):
+            dashboard = dict(dashboard)
+            dashboard["social_status_enabled"] = (
+                DEFAULT_DASHBOARD_STATE["social_status_enabled"]
+            )
+            migrated["dashboard"] = dashboard
+        schema_version = 5
+
     migrated["schema_version"] = CONFIG_SCHEMA_VERSION
     if original_schema_version != CONFIG_SCHEMA_VERSION:
         warnings.append(f"config schema {original_schema_version} 已升級到 {CONFIG_SCHEMA_VERSION}")
@@ -106,6 +140,18 @@ def normalize_config_state(raw):
     if not isinstance(household, dict):
         household = {}
         warnings.append("household 區塊不是物件，已重設")
+    information_center = dashboard.get("information_center", {})
+    if not isinstance(information_center, dict):
+        information_center = {}
+        warnings.append("dashboard.information_center 區塊不是物件，已重設")
+    normalized_information_center = (
+        information_center_config_state_to_payload(
+            normalize_information_center_config_state(
+                information_center,
+                defaults=InformationCenterConfigState(),
+            )
+        )
+    )
 
     normalized = {
         "schema_version": CONFIG_SCHEMA_VERSION,
@@ -119,6 +165,13 @@ def normalize_config_state(raw):
             "time_scale_idx": dashboard.get("time_scale_idx", DEFAULT_DASHBOARD_STATE["time_scale_idx"]),
             "display_scale_idx": dashboard.get("display_scale_idx", DEFAULT_DASHBOARD_STATE["display_scale_idx"]),
             "debug_enabled": bool(dashboard.get("debug_enabled", DEFAULT_DASHBOARD_STATE["debug_enabled"])),
+            "social_status_enabled": bool(
+                dashboard.get(
+                    "social_status_enabled",
+                    DEFAULT_DASHBOARD_STATE["social_status_enabled"],
+                )
+            ),
+            "information_center": normalized_information_center,
         },
         "pets": {},
         "household": dict(household),

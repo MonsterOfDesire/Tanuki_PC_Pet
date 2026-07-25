@@ -43,6 +43,7 @@ class ConfigRuleTests(unittest.TestCase):
                     "world_mode": "sandbox",
                     "care_feature_enabled": False,
                     "debug_enabled": True,
+                    "social_status_enabled": True,
                 },
                 "pets": {
                     "Tokai Teio": {
@@ -58,6 +59,9 @@ class ConfigRuleTests(unittest.TestCase):
         self.assertEqual(normalized["dashboard"]["world_mode"], "sandbox")
         self.assertFalse(normalized["dashboard"]["care_feature_enabled"])
         self.assertTrue(normalized["dashboard"]["debug_enabled"])
+        self.assertTrue(
+            normalized["dashboard"]["social_status_enabled"]
+        )
         self.assertEqual(normalized["pets"]["Tokai Teio"]["x"], 10)
         self.assertEqual(normalized["household"], {})
         self.assertTrue(any("config schema 1 已升級" in warning for warning in warnings))
@@ -73,6 +77,9 @@ class ConfigRuleTests(unittest.TestCase):
         )
 
         self.assertEqual(normalized["dashboard"]["care_feature_enabled"], True)
+        self.assertFalse(
+            normalized["dashboard"]["social_status_enabled"]
+        )
         self.assertEqual(normalized["pets"], {})
         self.assertEqual(normalized["household"], {})
         self.assertTrue(any("dashboard 區塊不是物件" in warning for warning in warnings))
@@ -133,6 +140,67 @@ class ConfigRuleTests(unittest.TestCase):
 
         self.assertEqual(normalized["household"], {})
         self.assertTrue(any("household 區塊不是物件" in warning for warning in warnings))
+
+    def test_schema_three_config_receives_default_information_center_state(self):
+        normalized, warnings = normalize_config_state(
+            {
+                "schema_version": 3,
+                "dashboard": {
+                    "world_mode": "golden_legend",
+                },
+                "pets": {},
+                "household": {},
+            }
+        )
+
+        information_center = normalized["dashboard"]["information_center"]
+        self.assertIsNone(information_center["x"])
+        self.assertIsNone(information_center["y"])
+        self.assertEqual(information_center["width"], 1120)
+        self.assertEqual(information_center["height"], 720)
+        self.assertEqual(information_center["page_id"], "family_status")
+        self.assertTrue(
+            any("config schema 3 已升級" in warning for warning in warnings)
+        )
+
+    def test_normalize_config_state_resets_invalid_information_center_block(self):
+        normalized, warnings = normalize_config_state(
+            {
+                "schema_version": CONFIG_SCHEMA_VERSION,
+                "dashboard": {
+                    "information_center": "bad",
+                },
+            }
+        )
+
+        self.assertEqual(
+            normalized["dashboard"]["information_center"]["page_id"],
+            "family_status",
+        )
+        self.assertTrue(
+            any(
+                "dashboard.information_center 區塊不是物件"
+                in warning
+                for warning in warnings
+            )
+        )
+
+    def test_schema_four_config_receives_disabled_social_status_default(self):
+        normalized, warnings = normalize_config_state(
+            {
+                "schema_version": 4,
+                "dashboard": {
+                    "world_mode": "golden_legend",
+                },
+            }
+        )
+
+        self.assertFalse(
+            normalized["dashboard"]["social_status_enabled"]
+        )
+        self.assertTrue(
+            any("config schema 4 已升級" in warning for warning in warnings)
+        )
 
 
 if __name__ == "__main__":

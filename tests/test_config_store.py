@@ -14,6 +14,7 @@ class FakeDashboard:
     time_scale_idx = 0
     display_scale_idx = 0
     debug_enabled = False
+    social_status_enabled = False
 
     def capture_config_state(self):
         return type(
@@ -26,6 +27,7 @@ class FakeDashboard:
                 "time_scale_idx": self.time_scale_idx,
                 "display_scale_idx": self.display_scale_idx,
                 "debug_enabled": self.debug_enabled,
+                "social_status_enabled": self.social_status_enabled,
                 "world_mode": self.world_mode,
             },
         )()
@@ -68,6 +70,13 @@ class ConfigStoreTests(unittest.TestCase):
             self.assertIn("pets", payload)
             self.assertIn("household", payload)
             self.assertEqual(payload["dashboard"]["world_mode"], "golden_legend")
+            self.assertFalse(
+                payload["dashboard"]["social_status_enabled"]
+            )
+            self.assertEqual(
+                payload["dashboard"]["information_center"]["page_id"],
+                "family_status",
+            )
             self.assertEqual(payload["household"]["living_fund"], 1200)
 
     def test_load_collects_migration_warnings_for_legacy_payload(self):

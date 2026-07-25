@@ -1,4 +1,4 @@
-from PyQt6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, QTimer, Qt
+from PyQt6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, QSignalBlocker, QTimer, Qt
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -14,6 +14,13 @@ from PyQt6.QtWidgets import (
 
 from .dashboard_actions import DashboardActions
 from .dashboard_controller import DashboardController
+from .dashboard_launcher_binding import DashboardLauncherBinding
+from .dashboard_launcher_ui import (
+    COLLAPSED_LAUNCHER_WIDTH,
+    EXPANDED_LAUNCHER_WIDTH,
+    LAUNCHER_MINIMUM_HEIGHT,
+    DashboardLauncherPanel,
+)
 from .dashboard_presenter import DashboardPresenter
 from .dashboard_shell import build_overlay_window_flags
 from .dashboard_state_mapper import (
@@ -23,10 +30,21 @@ from .dashboard_state_mapper import (
     build_dashboard_config_state,
 )
 from .dashboard_tools_actions import DashboardToolsActions
+from .information_center_ui import InformationCenterWindow
+from .information_center_state import InformationCenterConfigState
+from .information_center_spec import PAGE_EVENT_LOG, PAGE_FAMILY_STATUS, PAGE_RELATION_SUMMON
+from .family_summary_binding import DashboardFamilySummaryBinding
+from .event_log_binding import DashboardEventLogBinding
+from .relation_summon_binding import DashboardRelationSummonBinding
 from .offer_tray_ui import OfferTrayWindow
 from .runtime import SIM_CLOCK, app_now
 from .settings_provider import RuntimeSettings
 from .shutdown_controller import DashboardShutdownController
+from .status_settings_binding import DashboardStatusSettingsBinding
+from .ui_localization import (
+    character_display_name,
+    localize_character_names_in_text,
+)
 
 
 class HouseholdSummaryWindow(QWidget):
@@ -62,8 +80,12 @@ class HouseholdSummaryWindow(QWidget):
 
     def apply_presentation(self, presentation):
         self.setWindowTitle(presentation.title)
-        self.overview_label.setText(presentation.overview_text)
-        self.log_view.setPlainText(presentation.log_text)
+        self.overview_label.setText(
+            localize_character_names_in_text(presentation.overview_text)
+        )
+        self.log_view.setPlainText(
+            localize_character_names_in_text(presentation.log_text)
+        )
         scroll_bar = self.log_view.verticalScrollBar()
         scroll_bar.setValue(scroll_bar.maximum())
 
@@ -128,7 +150,9 @@ class SocialLogWindow(QWidget):
         self.person_label.setStyleSheet("color: #f0f0f0;")
         person_row.addWidget(self.person_label)
         self.person_combo = QComboBox()
-        self.person_combo.currentTextChanged.connect(self.set_participant_name)
+        self.person_combo.currentIndexChanged.connect(
+            self._handle_participant_index_changed
+        )
         person_row.addWidget(self.person_combo, stretch=1)
         self.layout.addLayout(person_row)
 
@@ -150,6 +174,14 @@ class SocialLogWindow(QWidget):
         self.participant_name = str(participant_name or "")
         self.request_refresh()
 
+    def _handle_participant_index_changed(self, index):
+        participant_name = (
+            self.person_combo.itemData(index, Qt.ItemDataRole.UserRole)
+            if index >= 0 else
+            ""
+        )
+        self.set_participant_name(participant_name)
+
     def request_refresh(self):
         if self._applying_presentation:
             return
@@ -166,21 +198,35 @@ class SocialLogWindow(QWidget):
     def apply_presentation(self, presentation):
         self._applying_presentation = True
         try:
-            self.setWindowTitle(presentation.title)
+            self.setWindowTitle(
+                localize_character_names_in_text(presentation.title)
+            )
             self.filter_mode = presentation.filter_mode
             self.update_filter_controls()
 
-            current_names = [self.person_combo.itemText(index) for index in range(self.person_combo.count())]
+            current_names = [
+                self.person_combo.itemData(index, Qt.ItemDataRole.UserRole)
+                for index in range(self.person_combo.count())
+            ]
             target_names = list(presentation.participant_names)
             if current_names != target_names:
                 self.person_combo.clear()
-                self.person_combo.addItems(target_names)
+                for character_name in target_names:
+                    self.person_combo.addItem(
+                        character_display_name(character_name),
+                        character_name,
+                    )
             if presentation.participant_name:
-                index = self.person_combo.findText(presentation.participant_name)
+                index = self.person_combo.findData(
+                    presentation.participant_name,
+                    role=Qt.ItemDataRole.UserRole,
+                )
                 if index >= 0:
                     self.person_combo.setCurrentIndex(index)
             self.participant_name = presentation.participant_name
-            self.log_view.setPlainText(presentation.log_text)
+            self.log_view.setPlainText(
+                localize_character_names_in_text(presentation.log_text)
+            )
             scroll_bar = self.log_view.verticalScrollBar()
             scroll_bar.setValue(scroll_bar.maximum())
         finally:
@@ -228,7 +274,9 @@ class RelationshipTableWindow(QWidget):
 
     def apply_presentation(self, presentation):
         self.setWindowTitle(presentation.title)
-        self.table_view.setPlainText(presentation.table_text)
+        self.table_view.setPlainText(
+            localize_character_names_in_text(presentation.table_text)
+        )
 
     def move_near_anchor(self, x, y):
         self._moving_programmatically = True
@@ -289,6 +337,13 @@ class Dashboard(QWidget):
         )
         self.care_feature_enabled = bool(self.settings_provider.care_feature_enabled)
         self.debug_enabled = bool(self.settings_provider.debug_enabled)
+        self.social_status_enabled = bool(
+            getattr(
+                self.settings_provider,
+                "social_status_enabled",
+                False,
+            )
+        )
         self.world_mode_options = list(RuntimeSettings.WORLD_MODE_OPTIONS)
         self.world_mode = str(
             self.settings_provider.world_mode
@@ -320,18 +375,36 @@ class Dashboard(QWidget):
         self.offer_drop_provider = None
         self.offer_hover_provider = None
         self.offer_hover_clear_provider = None
+        self.sensor_zone = None
         self.household_summary_window = None
         self.social_log_window = None
         self.relationship_table_window = None
         self.offer_tray_window = None
+        self.information_center_window = None
+        self.launcher_shutdown_text = "關閉系統"
+        self.launcher_shutdown_enabled = True
+        self.launcher_status_text = ""
+        self.launcher_show_status = False
+        self.information_center_config_state = InformationCenterConfigState()
+        self.status_settings_binding = DashboardStatusSettingsBinding(self)
+        self.family_summary_binding = DashboardFamilySummaryBinding(self)
+        self.event_log_binding = DashboardEventLogBinding(self)
+        self.relation_summon_binding = DashboardRelationSummonBinding(self)
         self.setWindowFlags(build_overlay_window_flags())
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.layout = QVBoxLayout()
         self.layout.setSpacing(10)
         self.layout.setContentsMargins(15, 15, 15, 15)
+        title_row = QHBoxLayout()
+        title_row.setSpacing(6)
         self.title_label = QLabel("狸貓控制中心")
         self.title_label.setStyleSheet("color: white; background: rgba(0,0,0,150); padding: 5px; border-radius: 5px;")
-        self.layout.addWidget(self.title_label)
+        title_row.addWidget(self.title_label, stretch=1)
+        self.btn_information_center = QPushButton("資訊中心")
+        self.btn_information_center.setToolTip("開啟分頁式資訊中心")
+        self.btn_information_center.clicked.connect(lambda checked=False: self.open_information_center())
+        title_row.addWidget(self.btn_information_center)
+        self.layout.addLayout(title_row)
         self.status_label = QLabel("")
         self.status_label.setStyleSheet("color: white; background: rgba(70,90,120,190); padding: 6px 8px; border-radius: 6px;")
         self.status_label.hide()
@@ -401,11 +474,19 @@ class Dashboard(QWidget):
         household_action_row.addWidget(self.btn_offer_tray)
         self.layout.addLayout(household_action_row)
 
-        self.layout.addWidget(self.make_section_label("帝寶社交冷卻"))
+        self.layout.addWidget(
+            self.make_section_label(
+                f"{character_display_name('Tokai Teio')}社交冷卻"
+            )
+        )
         teio_row = self.create_duration_selector("teio", self.teio_dur_list)
         self.layout.addLayout(teio_row)
 
-        self.layout.addWidget(self.make_section_label("鶴寶社交冷卻"))
+        self.layout.addWidget(
+            self.make_section_label(
+                f"{character_display_name('Tsurumaru Tsuyoshi')}社交冷卻"
+            )
+        )
         tsuyoshi_row = self.create_duration_selector("tsuyoshi", self.tsuyoshi_dur_list)
         self.layout.addLayout(tsuyoshi_row)
 
@@ -415,7 +496,9 @@ class Dashboard(QWidget):
             v_box.setSpacing(4)
             v_box.setContentsMargins(0, 0, 0, 0)
 
-            btn = QPushButton(f"召喚 {info['name']}")
+            btn = QPushButton(
+                f"召喚 {character_display_name(info['name'])}"
+            )
             btn.setFixedHeight(35)
             btn.setCheckable(True)
             btn.setChecked(info["pet"].user_visible)
@@ -448,11 +531,19 @@ class Dashboard(QWidget):
         self.btn_exit.clicked.connect(self.begin_shutdown)
         self.layout.addWidget(self.btn_exit)
         self.setLayout(self.layout)
-
-        ratio = self.devicePixelRatio()
-        base_w, base_h = 360, 780
-        max_h = max(560, target_rect.height() - 20)
-        self.setFixedSize(int(base_w * ratio), int(min(base_h, max_h) * ratio))
+        self.launcher_binding = DashboardLauncherBinding(self)
+        self.launcher_panel = DashboardLauncherPanel(
+            self.launcher_binding,
+            resource_resolver=self.resource_resolver,
+            parent=self,
+        )
+        self.launcher_panel.expanded_changed.connect(
+            self._handle_launcher_expanded_changed
+        )
+        self.launcher_panel.pinned_changed.connect(
+            self._handle_launcher_pinned_changed
+        )
+        self._activate_launcher_shell(target_rect)
         self.update_positions(target_rect)
         self.move(self.hide_pos)
         self.anim = QPropertyAnimation(self, b"pos")
@@ -466,6 +557,104 @@ class Dashboard(QWidget):
         self.update_debug_button_text()
         self.update_household_control_states()
 
+    def _activate_launcher_shell(self, target_rect):
+        self._legacy_widgets = []
+        self._remove_legacy_layout_items(self.layout)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
+        self.layout.addWidget(self.launcher_panel)
+        self.launcher_panel.set_pinned(False, emit_signal=False)
+        self.launcher_panel.set_expanded(True, emit_signal=False)
+        available_height = max(
+            LAUNCHER_MINIMUM_HEIGHT,
+            target_rect.height() - 20,
+        )
+        self.launcher_shell_height = min(520, available_height)
+        self.setFixedSize(
+            EXPANDED_LAUNCHER_WIDTH,
+            self.launcher_shell_height,
+        )
+        self.launcher_panel.show()
+        # Legacy mood bars no longer form part of the visible shell.
+        self.update_timer.stop()
+
+    def _remove_legacy_layout_items(self, layout):
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.hide()
+                self._legacy_widgets.append(widget)
+                continue
+            child_layout = item.layout()
+            if child_layout is not None:
+                self._remove_legacy_layout_items(child_layout)
+
+    def set_sensor_zone(self, sensor):
+        self.sensor_zone = sensor
+
+    def _set_launcher_window_width(self, expanded):
+        width = (
+            EXPANDED_LAUNCHER_WIDTH
+            if expanded
+            else COLLAPSED_LAUNCHER_WIDTH
+        )
+        self.setFixedSize(width, self.launcher_shell_height)
+        self.update_positions(self.target_rect)
+
+    def _handle_launcher_expanded_changed(self, expanded):
+        self._set_launcher_window_width(expanded)
+        self.is_expanded = bool(expanded)
+        if expanded:
+            self.setAttribute(
+                Qt.WidgetAttribute.WA_TransparentForMouseEvents,
+                False,
+            )
+            self.move(self.show_pos)
+            self.show()
+            self.raise_()
+            if self.sensor_zone is not None:
+                self.sensor_zone.hide()
+            return
+        if self.launcher_panel.is_pinned:
+            self.setAttribute(
+                Qt.WidgetAttribute.WA_TransparentForMouseEvents,
+                False,
+            )
+            self.move(self.show_pos)
+            self.show()
+            self.raise_()
+            if self.sensor_zone is not None:
+                self.sensor_zone.hide()
+            return
+        self._hide_launcher_fully()
+
+    def _handle_launcher_pinned_changed(self, pinned):
+        if pinned:
+            if self.sensor_zone is not None:
+                self.sensor_zone.hide()
+            return
+        if not self.launcher_panel.is_expanded:
+            self._hide_launcher_fully()
+
+    def _hide_launcher_fully(self):
+        self.is_expanded = False
+        self.setAttribute(
+            Qt.WidgetAttribute.WA_TransparentForMouseEvents,
+            True,
+        )
+        self.update_positions(self.target_rect)
+        animation = getattr(self, "anim", None)
+        if animation is not None:
+            animation.stop()
+            animation.setEndValue(self.hide_pos)
+            animation.start()
+        else:
+            self.move(self.hide_pos)
+        if self.sensor_zone is not None:
+            self.sensor_zone.show()
+            self.sensor_zone.raise_()
+
     def sync_settings_provider(self):
         apply_dashboard_config_to_settings(self.settings_provider, self.capture_config_state())
 
@@ -478,6 +667,12 @@ class Dashboard(QWidget):
             time_scale_idx=self.time_scale_idx,
             display_scale_idx=self.display_scale_idx,
             debug_enabled=self.debug_enabled,
+            social_status_enabled=self.social_status_enabled,
+            information_center=(
+                self.information_center_window.capture_config_state()
+                if self.information_center_window is not None
+                else self.information_center_config_state
+            ),
         )
 
     def get_option_bounds(self):
@@ -497,7 +692,16 @@ class Dashboard(QWidget):
         self.tsuyoshi_dur_idx = int(state.tsuyoshi_dur_idx)
         self.time_scale_idx = int(state.time_scale_idx)
         self.display_scale_idx = int(state.display_scale_idx)
+        self.information_center_config_state = state.information_center
+        if self.information_center_window is not None:
+            self.information_center_window.restore_config_state(
+                self.information_center_config_state
+            )
         self.set_debug_enabled(state.debug_enabled, save=False)
+        self.set_social_status_enabled(
+            state.social_status_enabled,
+            save=False,
+        )
         self.sync_settings_provider()
         self.update_duration_buttons()
         self.update_world_mode_buttons()
@@ -516,35 +720,59 @@ class Dashboard(QWidget):
 
     def update_care_button_text(self):
         self.btn_care.setText(f"照護功能: {'開啟' if self.care_feature_enabled else '關閉'}")
+        self.refresh_information_center_settings()
+        self.refresh_launcher_panel()
 
     def update_world_mode_buttons(self):
         for idx, btn in enumerate(self.world_mode_buttons):
             btn.setChecked(self.world_mode_options[idx] == self.world_mode)
+        self.refresh_information_center_settings()
+        self.refresh_launcher_panel()
 
     def update_household_control_states(self):
         golden_mode = self.world_mode == "golden_legend"
         self.btn_household_donate.setEnabled(golden_mode)
         self.btn_offer_tray.setEnabled(True)
+        if (
+            self.information_center_window is not None
+            and self.information_center_window.is_page_visible(
+                PAGE_FAMILY_STATUS
+            )
+        ):
+            self.information_center_window.refresh_family_summary()
 
     def apply_debug_button_presentation(self, presentation):
         self.btn_debug.setText(presentation.text)
 
     def update_debug_button_text(self):
         self.apply_debug_button_presentation(self.controller.presenter.build_debug_button(self.debug_enabled))
+        self.refresh_information_center_settings()
 
     def apply_shutdown_status_presentation(self, presentation):
         self.status_label.setText(presentation.status_text)
-        if presentation.show_status:
-            self.status_label.show()
-        else:
-            self.status_label.hide()
+        self.status_label.hide()
         self.btn_exit.setEnabled(presentation.exit_enabled)
         self.btn_exit.setText(presentation.exit_text)
+        self.launcher_shutdown_enabled = bool(
+            presentation.exit_enabled
+        )
+        self.launcher_shutdown_text = str(presentation.exit_text)
+        self.launcher_status_text = str(presentation.status_text)
+        self.launcher_show_status = bool(presentation.show_status)
+        self.refresh_launcher_panel()
+        if presentation.force_expanded:
+            self.launcher_panel.set_expanded(
+                True,
+                emit_signal=False,
+            )
+            self._set_launcher_window_width(True)
         self.is_expanded = bool(presentation.force_expanded)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
         self.move(self.show_pos)
         self.show()
         self.raise_()
+        if self.sensor_zone is not None:
+            self.sensor_zone.hide()
         QApplication.processEvents()
 
     def show_tools_dialog(self, presentation):
@@ -577,6 +805,16 @@ class Dashboard(QWidget):
 
     def toggle_debug(self):
         self.controller.toggle_debug(self)
+
+    def set_social_status_enabled(self, enabled, save=True):
+        self.controller.set_social_status_enabled(
+            self,
+            enabled,
+            save=save,
+        )
+
+    def update_social_status_control(self):
+        self.refresh_information_center_settings()
 
     def set_world_mode(self, world_mode, save=True):
         self.controller.set_world_mode(self, world_mode, save=save)
@@ -619,14 +857,18 @@ class Dashboard(QWidget):
             btn.setChecked(idx == self.teio_dur_idx)
         for idx, btn in enumerate(self.tsuyoshi_duration_buttons):
             btn.setChecked(idx == self.tsuyoshi_dur_idx)
+        self.refresh_information_center_settings()
 
     def update_time_scale_buttons(self):
         for idx, btn in enumerate(self.time_scale_buttons):
             btn.setChecked(idx == self.time_scale_idx)
+        self.refresh_information_center_settings()
+        self.refresh_launcher_panel()
 
     def update_display_scale_buttons(self):
         for idx, btn in enumerate(self.display_scale_buttons):
             btn.setChecked(idx == self.display_scale_idx)
+        self.refresh_information_center_settings()
 
     def get_time_scale(self):
         return float(self.time_scale_options[self.time_scale_idx])
@@ -690,6 +932,9 @@ class Dashboard(QWidget):
     def open_offer_tray(self):
         self.controller.open_offer_tray(self)
 
+    def open_information_center(self, page_id=None):
+        self.controller.open_information_center(self, page_id=page_id)
+
     def donate_household_fund(self, amount=100):
         self.controller.donate_household_fund(self, amount=amount)
 
@@ -716,9 +961,15 @@ class Dashboard(QWidget):
         return False
 
     def refresh_household_summary_if_open(self):
-        if self.household_summary_window is None or not self.household_summary_window.isVisible():
-            return
-        self.open_household_summary()
+        if self.household_summary_window is not None and self.household_summary_window.isVisible():
+            self.open_household_summary()
+        if (
+            self.information_center_window is not None
+            and self.information_center_window.is_page_visible(
+                PAGE_FAMILY_STATUS
+            )
+        ):
+            self.information_center_window.refresh_family_summary()
 
     def get_social_log_filter_mode(self):
         if self.social_log_window is not None:
@@ -741,15 +992,67 @@ class Dashboard(QWidget):
                 names.append(name)
         return tuple(names)
 
-    def refresh_social_log_if_open(self):
-        if self.social_log_window is None or not self.social_log_window.isVisible():
+    def get_pet_summon_states(self):
+        states = []
+        for info in self.pets_dict.values():
+            pet = info.get("pet")
+            if pet is None:
+                continue
+            name = str(getattr(pet, "name", "") or info.get("name", "") or "").strip()
+            if name:
+                states.append(
+                    (
+                        name,
+                        bool(getattr(pet, "user_visible", False)),
+                        float(getattr(pet, "mood_score", 0.0)),
+                        str(getattr(pet, "mood_state", "") or ""),
+                    )
+                )
+        return tuple(states)
+
+    def get_pet_by_display_name(self, pet_name):
+        target_name = str(pet_name or "").strip()
+        for info in self.pets_dict.values():
+            pet = info.get("pet")
+            if pet is None:
+                continue
+            name = str(getattr(pet, "name", "") or info.get("name", "") or "").strip()
+            if name == target_name:
+                return pet
+        return None
+
+    def sync_pet_toggle_control(self, pet, checked):
+        for info in self.pets_dict.values():
+            if info.get("pet") is not pet:
+                continue
+            button = info.get("toggle_button")
+            if button is not None and button.isChecked() != bool(checked):
+                blocker = QSignalBlocker(button)
+                button.setChecked(bool(checked))
+                del blocker
             return
-        self.open_social_log()
+
+    def refresh_social_log_if_open(self):
+        if self.social_log_window is not None and self.social_log_window.isVisible():
+            self.open_social_log()
+        if (
+            self.information_center_window is not None
+            and self.information_center_window.is_page_visible(
+                PAGE_EVENT_LOG
+            )
+        ):
+            self.information_center_window.refresh_event_log()
 
     def refresh_relationship_table_if_open(self):
-        if self.relationship_table_window is None or not self.relationship_table_window.isVisible():
-            return
-        self.open_relationship_table()
+        if self.relationship_table_window is not None and self.relationship_table_window.isVisible():
+            self.open_relationship_table()
+        if (
+            self.information_center_window is not None
+            and self.information_center_window.is_page_visible(
+                PAGE_RELATION_SUMMON
+            )
+        ):
+            self.information_center_window.refresh_relation_summon()
 
     def apply_offer_item_drop(self, item_kind, global_pos):
         if callable(self.offer_drop_provider):
@@ -808,6 +1111,62 @@ class Dashboard(QWidget):
         self.offer_tray_window.raise_()
         self.offer_tray_window.activateWindow()
 
+    def show_information_center(self, page_id=None):
+        if self.information_center_window is None:
+            self.information_center_window = InformationCenterWindow(
+                self.resource_resolver,
+                status_settings_binding=self.status_settings_binding,
+                family_summary_binding=self.family_summary_binding,
+                event_log_binding=self.event_log_binding,
+                relation_summon_binding=self.relation_summon_binding,
+            )
+            self.information_center_window.state_changed.connect(
+                self._handle_information_center_state_changed
+            )
+            self.information_center_window.restore_config_state(
+                self.information_center_config_state
+            )
+            restored_state = (
+                self.information_center_window.capture_config_state()
+            )
+            if restored_state != self.information_center_config_state:
+                self.information_center_config_state = restored_state
+                self.schedule_save()
+        else:
+            self.information_center_window.set_status_settings_binding(self.status_settings_binding)
+            self.information_center_window.set_family_summary_binding(self.family_summary_binding)
+            self.information_center_window.set_event_log_binding(self.event_log_binding)
+            self.information_center_window.set_relation_summon_binding(self.relation_summon_binding)
+        if not self.information_center_window.user_position_locked:
+            target_x = self.x() + self.width() + 16
+            target_y = max(self.target_rect.top(), self.y())
+            max_x = self.target_rect.right() - self.information_center_window.width() + 1
+            max_y = self.target_rect.bottom() - self.information_center_window.height() + 1
+            self.information_center_window.move_near_anchor(
+                max(self.target_rect.left(), min(target_x, max_x)),
+                max(self.target_rect.top(), min(target_y, max_y)),
+            )
+        self.information_center_window.open_page(
+            page_id or self.information_center_config_state.page_id
+        )
+
+    def _handle_information_center_state_changed(self):
+        if self.information_center_window is None:
+            return
+        self.information_center_config_state = (
+            self.information_center_window.capture_config_state()
+        )
+        self.schedule_save()
+
+    def refresh_information_center_settings(self):
+        if self.information_center_window is not None:
+            self.information_center_window.refresh_status_settings()
+
+    def refresh_launcher_panel(self):
+        launcher = getattr(self, "launcher_panel", None)
+        if launcher is not None:
+            launcher.refresh_from_binding()
+
     def get_social_cooldown_label_seconds(self, pet_name):
         if pet_name == "Tokai Teio":
             return self.teio_dur_list[self.teio_dur_idx]
@@ -829,15 +1188,25 @@ class Dashboard(QWidget):
         self.hide_pos = QPoint(rect.left() - w - 10, rect.bottom() - h)
 
     def slide_in(self, pets, sensor):
+        if sensor is not None:
+            self.set_sensor_zone(sensor)
+            sensor.hide()
+        self.launcher_panel.set_expanded(
+            True,
+            emit_signal=False,
+        )
+        self._set_launcher_window_width(True)
+        self.move(self.hide_pos)
         self.is_expanded = True
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
+        self.show()
         self.anim.setEndValue(self.show_pos)
         self.anim.start()
         self.raise_()
 
     def slide_out(self):
         if self.is_expanded:
-            self.is_expanded = False
-            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
-            self.anim.setEndValue(self.hide_pos)
-            self.anim.start()
+            if self.launcher_panel.is_pinned:
+                self.launcher_panel.set_expanded(False)
+            else:
+                self._hide_launcher_fully()

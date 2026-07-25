@@ -580,6 +580,25 @@ class PetWidgetRuntimeTests(unittest.TestCase):
             "post_observe / relation_close",
         )
 
+    def test_behavior_probe_overlay_setting_defaults_off_and_can_enable(self):
+        pet = type(
+            "ProbePet",
+            (),
+            {
+                "settings_provider": type(
+                    "Settings",
+                    (),
+                    {"social_status_enabled": False},
+                )(),
+            },
+        )()
+
+        self.assertFalse(TanukiPet.is_social_status_enabled(pet))
+
+        pet.settings_provider.social_status_enabled = True
+
+        self.assertTrue(TanukiPet.is_social_status_enabled(pet))
+
     def test_advance_animation_timer_advances_one_frame_per_callback(self):
         pet = FakePetForAnimationTiming()
         pet.animation_frame_accumulator = 0.75

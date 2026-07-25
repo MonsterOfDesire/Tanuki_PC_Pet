@@ -13,6 +13,11 @@ from tanuki_core.dashboard_state_mapper import (
     safe_index,
 )
 from tanuki_core.settings_provider import RuntimeSettings
+from tanuki_core.information_center_size_rules import SIZE_16_10
+from tanuki_core.information_center_spec import PAGE_EVENT_LOG
+from tanuki_core.information_center_state import (
+    build_information_center_config_state,
+)
 
 
 class DashboardStateMapperTests(unittest.TestCase):
@@ -47,6 +52,7 @@ class DashboardStateMapperTests(unittest.TestCase):
                 "time_scale_idx": "bad",
                 "display_scale_idx": 2,
                 "debug_enabled": True,
+                "social_status_enabled": True,
             },
             defaults=defaults,
             option_bounds=bounds,
@@ -59,6 +65,7 @@ class DashboardStateMapperTests(unittest.TestCase):
         self.assertEqual(state.time_scale_idx, 0)
         self.assertEqual(state.display_scale_idx, 2)
         self.assertTrue(state.debug_enabled)
+        self.assertTrue(state.social_status_enabled)
 
     def test_apply_dashboard_config_to_settings_updates_provider(self):
         settings = RuntimeSettings()
@@ -70,6 +77,7 @@ class DashboardStateMapperTests(unittest.TestCase):
             time_scale_idx=2,
             display_scale_idx=3,
             debug_enabled=True,
+            social_status_enabled=True,
         )
 
         apply_dashboard_config_to_settings(settings, state)
@@ -81,6 +89,7 @@ class DashboardStateMapperTests(unittest.TestCase):
         self.assertEqual(settings.time_scale_idx, 2)
         self.assertEqual(settings.display_scale_idx, 3)
         self.assertTrue(settings.debug_enabled)
+        self.assertTrue(settings.social_status_enabled)
 
     def test_dashboard_payload_round_trip_uses_expected_shape(self):
         state = build_dashboard_config_state(
@@ -91,6 +100,15 @@ class DashboardStateMapperTests(unittest.TestCase):
             time_scale_idx=1,
             display_scale_idx=0,
             debug_enabled=False,
+            social_status_enabled=True,
+            information_center=build_information_center_config_state(
+                x=120,
+                y=80,
+                width=960,
+                height=640,
+                page_id=PAGE_EVENT_LOG,
+                size_preset_id=SIZE_16_10,
+            ),
         )
 
         payload = dashboard_config_state_to_payload(state)
@@ -105,6 +123,15 @@ class DashboardStateMapperTests(unittest.TestCase):
                 "time_scale_idx": 1,
                 "display_scale_idx": 0,
                 "debug_enabled": False,
+                "social_status_enabled": True,
+                "information_center": {
+                    "x": 120,
+                    "y": 80,
+                    "width": 960,
+                    "height": 640,
+                    "page_id": "event_log",
+                    "size_preset_id": "comfortable_16_10",
+                },
             },
         )
 
