@@ -39,7 +39,7 @@ class FamilyMemberCard(QFrame):
         self.setProperty("tanukiRole", "familyMemberCard")
         self.setProperty("summoned", bool(member.summoned))
         self.setFixedWidth(116)
-        self.setMinimumHeight(142)
+        self.setMinimumHeight(160)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(7, 7, 7, 7)
         layout.setSpacing(3)
@@ -107,6 +107,22 @@ class FamilyMemberCard(QFrame):
         mood_row.addWidget(self.mood_value_label)
         layout.addLayout(mood_row)
 
+        self.form_status_label = QLabel(
+            "✦ 變身形態"
+            if member.form_key == "transformed"
+            else "◇ 普通形態"
+        )
+        self.form_status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.form_status_label.setProperty(
+            "tanukiRole",
+            "familyFormStatus",
+        )
+        self.form_status_label.setProperty(
+            "transformed",
+            member.form_key == "transformed",
+        )
+        layout.addWidget(self.form_status_label)
+
         self.summon_status_label = QLabel(
             "● 召喚中" if member.summoned else "○ 待命"
         )
@@ -121,6 +137,7 @@ class FamilyMemberCard(QFrame):
                 "" if member.mood_score is None else
                 f"（{member.mood_score:.0f}/100）"
             )
+            + f"\n形態：{member.form_label}"
             + f"\n{'目前已召喚' if member.summoned else '目前待命'}"
         )
 

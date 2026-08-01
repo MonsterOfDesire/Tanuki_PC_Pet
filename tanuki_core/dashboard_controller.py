@@ -122,6 +122,12 @@ class DashboardController:
         )
         dashboard.show_tools_dialog(self.presenter.build_validation_dialog(result))
 
+    def preview_rudolf_work(self, dashboard):
+        return dashboard.apply_rudolf_work_preview()
+
+    def toggle_transformation_preview(self, dashboard, pet_name):
+        return dashboard.apply_transformation_preview(pet_name)
+
     def build_household_summary_presentation(self, dashboard):
         return self.presenter.build_household_summary(
             dashboard.get_household_state_snapshot(),

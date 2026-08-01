@@ -1,5 +1,10 @@
 from .pet_social_rules import parse_interaction_action
 from .runtime import app_now
+from .transformation_profiles import get_pet_form_key
+from .transformation_social_rules import (
+    get_transformed_rudolf_social_cooldown,
+    is_transformed_rudolf_social_pair,
+)
 
 
 class SocialCareEffects:
@@ -19,7 +24,21 @@ class SocialCareEffects:
 
     def stop_social_mode(self, pet, now, apply_cooldown=True):
         if apply_cooldown and pet.social_mode != "none":
-            pet.social_cooldown_end = now + pet.get_social_cooldown_seconds()
+            target = pet.social_target
+            transformed_rudolf_influence = (
+                target is not None
+                and is_transformed_rudolf_social_pair(
+                    observer_name=getattr(pet, "name", ""),
+                    observer_form=get_pet_form_key(pet),
+                    target_name=getattr(target, "name", ""),
+                    target_form=get_pet_form_key(target),
+                )
+            )
+            cooldown_seconds = get_transformed_rudolf_social_cooldown(
+                pet.get_social_cooldown_seconds(),
+                influenced=transformed_rudolf_influence,
+            )
+            pet.social_cooldown_end = now + cooldown_seconds
         pet.social_mode = "none"
         pet.social_target = None
         pet.social_started_at = 0.0

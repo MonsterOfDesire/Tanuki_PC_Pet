@@ -238,6 +238,26 @@ class AssetManager:
             rng=random,
         )
 
+    def get_contextual_result_for_any_purpose(
+        self,
+        context=None,
+        preferred_moods=None,
+        forbidden=None,
+        mood_score=None,
+        ordered_preferences=False,
+    ):
+        self.ensure_context_assets(context)
+        return select_contextual_result_for_purposes(
+            self.asset_records,
+            tuple(self.asset_records.keys()),
+            context=context,
+            preferred_moods=preferred_moods,
+            forbidden=forbidden,
+            mood_score=mood_score,
+            ordered_preferences=ordered_preferences,
+            rng=random,
+        )
+
     @staticmethod
     def get_resource_path(relative_path):
         writable_names = {"config.json"}

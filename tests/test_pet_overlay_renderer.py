@@ -1,6 +1,7 @@
 import unittest
 
 from tanuki_core.pet_overlay_renderer import (
+    clamp_whiteness,
     compute_debug_overlay_layout,
     compute_head_status_label_layout,
     compute_log_icon_draw_spec,
@@ -9,6 +10,11 @@ from tanuki_core.pet_overlay_renderer import (
 
 
 class PetOverlayRendererTests(unittest.TestCase):
+    def test_clamp_whiteness_limits_transition_overlay(self):
+        self.assertEqual(clamp_whiteness(-1), 0.0)
+        self.assertEqual(clamp_whiteness(0.4), 0.4)
+        self.assertEqual(clamp_whiteness(2), 1.0)
+
     def test_compute_star_draw_specs_returns_three_centered_specs(self):
         specs = compute_star_draw_specs(
             widget_width=200,

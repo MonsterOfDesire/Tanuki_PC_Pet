@@ -140,6 +140,8 @@ class FakeDashboard:
         self.offer_tray_open_calls = 0
         self.information_center_page_ids = []
         self.synced_pet_toggle_calls = []
+        self.rudolf_work_preview_calls = 0
+        self.transformation_preview_calls = []
 
     def sync_settings_provider(self):
         self.sync_calls += 1
@@ -237,6 +239,14 @@ class FakeDashboard:
 
     def apply_world_mode_runtime_transition(self, world_mode, previous_mode=None):
         self.world_mode_transition_calls.append((world_mode, previous_mode))
+
+    def apply_rudolf_work_preview(self):
+        self.rudolf_work_preview_calls += 1
+        return "preview-result"
+
+    def apply_transformation_preview(self, pet_name):
+        self.transformation_preview_calls.append(pet_name)
+        return f"transformation-result:{pet_name}"
 
     def show_offer_tray(self):
         self.offer_tray_open_calls += 1
@@ -371,6 +381,33 @@ class DashboardControllerTests(unittest.TestCase):
         self.assertEqual(self.tools.validation_calls, [(dashboard.resource_resolver, dashboard.config_store)])
         self.assertEqual(len(dashboard.validation_presentations), 1)
         self.assertEqual(dashboard.validation_presentations[0].title, "validation")
+
+    def test_preview_rudolf_work_uses_runtime_action_path(self):
+        controller = self.build_controller()
+        dashboard = FakeDashboard()
+
+        result = controller.preview_rudolf_work(dashboard)
+
+        self.assertEqual(result, "preview-result")
+        self.assertEqual(dashboard.rudolf_work_preview_calls, 1)
+
+    def test_toggle_transformation_preview_uses_runtime_action_path(self):
+        controller = self.build_controller()
+        dashboard = FakeDashboard()
+
+        result = controller.toggle_transformation_preview(
+            dashboard,
+            "Tokai Teio",
+        )
+
+        self.assertEqual(
+            result,
+            "transformation-result:Tokai Teio",
+        )
+        self.assertEqual(
+            dashboard.transformation_preview_calls,
+            ["Tokai Teio"],
+        )
 
     def test_begin_shutdown_applies_status_then_executes_shutdown(self):
         controller = self.build_controller()

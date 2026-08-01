@@ -30,6 +30,8 @@ class HouseholdMemberPresentation:
     mood_score: float | None
     mood_state: str
     mood_label: str
+    form_key: str = "base"
+    form_label: str = "普通形態"
 
 
 @dataclass(frozen=True)
@@ -151,6 +153,10 @@ class DashboardPresenter:
         "normal": "平穩",
         "unhappy": "低落",
         "depressed": "非常低落",
+    }
+    FORM_LABELS = {
+        "base": "普通形態",
+        "transformed": "變身形態",
     }
 
     def build_shutdown_status(self):
@@ -283,6 +289,11 @@ class DashboardPresenter:
             except (TypeError, ValueError):
                 mood_score = None
             mood_state = str(state[3] if state_length > 3 else "").strip()
+            form_key = str(
+                state[4] if state_length > 4 else "base"
+            ).strip()
+            if form_key not in self.FORM_LABELS:
+                form_key = "base"
             members.append(
                 HouseholdMemberPresentation(
                     character_name=character_name,
@@ -293,6 +304,8 @@ class DashboardPresenter:
                         mood_state,
                         "尚無資料" if mood_score is None else "平穩",
                     ),
+                    form_key=form_key,
+                    form_label=self.FORM_LABELS[form_key],
                 )
             )
         return tuple(members)

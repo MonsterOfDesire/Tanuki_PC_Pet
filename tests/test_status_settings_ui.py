@@ -34,6 +34,40 @@ class FakeStatusSettingsBinding:
             tsuyoshi_duration_index=3,
         )
         self.calls = []
+        self.preview_result = SimpleNamespace(
+            started=True,
+            reason="",
+        )
+        self.preview_active = False
+        self.transformation_states = {
+            "Tokai Teio": {
+                "available": True,
+                "current_form": "base",
+                "target_form": "",
+                "active": False,
+                "manual_end_requested": False,
+                "auto_session": False,
+                "auto_world_mode": "",
+                "source": "",
+            },
+            "Symboli Rudolf": {
+                "available": True,
+                "current_form": "base",
+                "target_form": "",
+                "active": False,
+                "manual_end_requested": False,
+                "auto_session": False,
+                "auto_world_mode": "",
+                "source": "",
+            },
+        }
+        self.transformation_result = SimpleNamespace(
+            started=True,
+            reason="",
+            character_name="Tokai Teio",
+            target_form="transformed",
+            queued=False,
+        )
 
     def snapshot(self):
         return self.state
@@ -75,6 +109,38 @@ class FakeStatusSettingsBinding:
 
     def run_validation_checks(self):
         self.calls.append(("validate",))
+
+    def preview_rudolf_work(self):
+        self.calls.append(("preview_rudolf_work",))
+        self.preview_active = bool(self.preview_result.started)
+        return self.preview_result
+
+    def is_rudolf_work_preview_active(self):
+        self.calls.append(("preview_active",))
+        return self.preview_active
+
+    def toggle_transformation_preview(self, pet_name):
+        self.calls.append(("transformation", pet_name))
+        self.transformation_result.character_name = pet_name
+        current_form = self.transformation_states[pet_name]["current_form"]
+        self.transformation_result.target_form = (
+            "base" if current_form == "transformed" else "transformed"
+        )
+        state = self.transformation_states[pet_name]
+        if self.transformation_result.started:
+            state.update(
+                target_form=self.transformation_result.target_form,
+                active=True,
+                manual_end_requested=False,
+                auto_session=False,
+                source="settings_preview",
+            )
+        elif self.transformation_result.queued:
+            state["manual_end_requested"] = True
+        return self.transformation_result
+
+    def get_transformation_preview_state(self, pet_name):
+        return dict(self.transformation_states[pet_name])
 
 
 class FakeDashboardForBinding:
@@ -121,6 +187,26 @@ class FakeDashboardForBinding:
 
     def run_validation_checks(self):
         self.calls.append(("validate",))
+
+    def preview_rudolf_work(self):
+        self.calls.append(("preview_rudolf_work",))
+        return "preview-result"
+
+    def is_rudolf_work_preview_active(self):
+        self.calls.append(("preview_active",))
+        return True
+
+    def toggle_transformation_preview(self, pet_name):
+        self.calls.append(("transformation", pet_name))
+        return f"transformation-result:{pet_name}"
+
+    def get_transformation_preview_state(self, pet_name):
+        self.calls.append(("transformation_state", pet_name))
+        return {
+            "available": True,
+            "current_form": "transformed",
+            "active": False,
+        }
 
 
 class StatusSettingsPanelTests(unittest.TestCase):
@@ -267,6 +353,217 @@ class StatusSettingsPanelTests(unittest.TestCase):
 
         self.assertEqual(self.binding.calls, [("validate",)])
 
+    def test_rudolf_work_preview_is_sandbox_only_and_reports_start(self):
+        self.assertFalse(
+            self.panel.rudolf_work_preview_button.isEnabled()
+        )
+
+        self.panel.world_mode_buttons[1].click()
+        self.panel.rudolf_work_preview_button.click()
+
+        self.assertEqual(
+            self.binding.calls,
+            [
+                ("world_mode", "sandbox"),
+                ("preview_rudolf_work",),
+            ],
+        )
+        self.assertIn(
+            "魯道夫工作預覽已開始",
+            self.panel.rudolf_work_preview_status.text(),
+        )
+
+        self.binding.preview_active = False
+        self.panel._poll_rudolf_work_preview_status()
+
+        self.assertEqual(
+            self.panel.rudolf_work_preview_status.text(),
+            "只播放工作與休息動畫，不套用金錢、家庭壓力或心情結算。",
+        )
+        self.assertFalse(
+            self.panel.rudolf_work_preview_poll_timer.isActive()
+        )
+
+    def test_rudolf_work_preview_explains_severe_mood(self):
+        self.binding.state = replace(
+            self.binding.state,
+            world_mode="sandbox",
+        )
+        self.binding.preview_result = SimpleNamespace(
+            started=False,
+            reason="severe_mood",
+        )
+        self.panel.refresh_from_binding()
+
+        self.panel.rudolf_work_preview_button.click()
+
+        self.assertIn(
+            "severe",
+            self.panel.rudolf_work_preview_status.text(),
+        )
+
+    def test_transformation_preview_is_sandbox_only_and_refreshes_form(self):
+        teio_button = self.panel.transformation_preview_buttons[
+            "Tokai Teio"
+        ]
+        self.assertFalse(teio_button.isEnabled())
+
+        self.panel.world_mode_buttons[1].click()
+        teio_button.click()
+
+        self.assertEqual(
+            self.binding.calls,
+            [
+                ("world_mode", "sandbox"),
+                ("transformation", "Tokai Teio"),
+            ],
+        )
+        self.assertIn(
+            "帝寶變身中",
+            self.panel.transformation_preview_status.text(),
+        )
+        self.assertTrue(
+            self.panel.transformation_preview_poll_timer.isActive()
+        )
+
+        self.binding.transformation_states["Tokai Teio"].update(
+            current_form="transformed",
+            target_form="",
+            active=False,
+            source="",
+        )
+        self.panel._poll_transformation_preview_status()
+
+        self.assertEqual(teio_button.text(), "解除帝寶變身")
+        self.assertEqual(
+            self.panel.transformation_preview_status.text(),
+            "帝寶已完成變身，目前為變身形態。",
+        )
+        self.assertTrue(
+            self.panel.transformation_preview_poll_timer.isActive()
+        )
+
+    def test_queued_transformation_end_waits_for_safe_runtime_state(self):
+        self.panel.world_mode_buttons[1].click()
+        self.binding.transformation_states["Tokai Teio"].update(
+            current_form="transformed",
+            active=False,
+        )
+        self.binding.transformation_result.started = False
+        self.binding.transformation_result.queued = True
+        teio_button = self.panel.transformation_preview_buttons[
+            "Tokai Teio"
+        ]
+
+        teio_button.click()
+        self.binding.transformation_states["Tokai Teio"][
+            "manual_end_requested"
+        ] = True
+        self.panel.refresh_from_binding()
+
+        self.assertIn(
+            "排入等待",
+            self.panel.transformation_preview_status.text(),
+        )
+        self.assertEqual(
+            teio_button.text(),
+            "等待解除帝寶變身",
+        )
+        self.assertFalse(teio_button.isEnabled())
+        self.assertTrue(
+            self.panel.transformation_preview_poll_timer.isActive()
+        )
+
+    def test_autonomous_form_then_manual_end_uses_final_runtime_state(self):
+        self.panel.world_mode_buttons[1].click()
+        teio_state = self.binding.transformation_states["Tokai Teio"]
+        teio_state.update(
+            current_form="transformed",
+            target_form="",
+            active=False,
+            auto_session=True,
+            auto_world_mode="sandbox",
+            source="",
+        )
+
+        self.panel._poll_transformation_preview_status()
+
+        teio_button = self.panel.transformation_preview_buttons[
+            "Tokai Teio"
+        ]
+        self.assertEqual(teio_button.text(), "解除帝寶變身")
+        self.assertIn(
+            "帝寶目前為自主變身形態",
+            self.panel.transformation_preview_status.text(),
+        )
+
+        teio_button.click()
+        self.assertEqual(teio_button.text(), "帝寶解除變身中")
+
+        teio_state.update(
+            current_form="base",
+            target_form="",
+            active=False,
+            manual_end_requested=False,
+            auto_session=False,
+            auto_world_mode="",
+            source="",
+        )
+        self.panel._poll_transformation_preview_status()
+
+        self.assertEqual(teio_button.text(), "手動變身帝寶")
+        self.assertEqual(
+            self.panel.transformation_preview_status.text(),
+            "帝寶已解除變身，目前為普通形態。",
+        )
+        self.assertNotIn(
+            "再次按下",
+            self.panel.transformation_preview_status.text(),
+        )
+
+    def test_autonomous_runtime_change_is_detected_without_button_click(self):
+        self.panel.world_mode_buttons[1].click()
+        self.binding.transformation_states["Symboli Rudolf"].update(
+            current_form="transformed",
+            auto_session=True,
+            auto_world_mode="sandbox",
+        )
+
+        self.panel._poll_transformation_preview_status()
+
+        rudolf_button = self.panel.transformation_preview_buttons[
+            "Symboli Rudolf"
+        ]
+        self.assertEqual(rudolf_button.text(), "解除魯道夫變身")
+        self.assertIn(
+            "魯道夫目前為自主變身形態",
+            self.panel.transformation_preview_status.text(),
+        )
+        self.assertEqual(
+            self.panel.transformation_preview_poll_timer.interval(),
+            400,
+        )
+
+    def test_transformation_polling_stops_when_panel_is_hidden(self):
+        self.panel.world_mode_buttons[1].click()
+        self.assertTrue(
+            self.panel.transformation_preview_poll_timer.isActive()
+        )
+
+        self.panel.hide()
+        self.app.processEvents()
+
+        self.assertFalse(
+            self.panel.transformation_preview_poll_timer.isActive()
+        )
+
+        self.panel.show()
+        self.app.processEvents()
+
+        self.assertTrue(
+            self.panel.transformation_preview_poll_timer.isActive()
+        )
+
     def test_external_state_refresh_updates_controls(self):
         self.binding.state = replace(
             self.binding.state,
@@ -307,7 +604,25 @@ class DashboardStatusSettingsBindingTests(unittest.TestCase):
         binding.set_display_scale_index(3)
         binding.set_social_duration_index("teio", 2)
         binding.run_validation_checks()
+        preview_result = binding.preview_rudolf_work()
+        preview_active = binding.is_rudolf_work_preview_active()
+        transformation_result = binding.toggle_transformation_preview(
+            "Tokai Teio"
+        )
+        transformation_state = binding.get_transformation_preview_state(
+            "Tokai Teio"
+        )
 
+        self.assertEqual(preview_result, "preview-result")
+        self.assertTrue(preview_active)
+        self.assertEqual(
+            transformation_result,
+            "transformation-result:Tokai Teio",
+        )
+        self.assertEqual(
+            transformation_state["current_form"],
+            "transformed",
+        )
         self.assertEqual(
             dashboard.calls,
             [
@@ -319,6 +634,10 @@ class DashboardStatusSettingsBindingTests(unittest.TestCase):
                 ("display", 3),
                 ("teio", 2),
                 ("validate",),
+                ("preview_rudolf_work",),
+                ("preview_active",),
+                ("transformation", "Tokai Teio"),
+                ("transformation_state", "Tokai Teio"),
             ],
         )
 

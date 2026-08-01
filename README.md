@@ -41,6 +41,8 @@ $env:QT_QPA_PLATFORM = "offscreen"
 
 確認結果後才加上 `--write`。`tools\manifest_xlsx_to_json.py` 是正式命令列入口，轉換與驗證規則只實作於 `tanuki_core.manifest_xlsx_converter`；不要直接手動改寫產生的 JSON。
 
+所有可用 context 的情境、互動對象、實際效果與接線狀態集中記錄於 [docs/MANIFEST_CONTEXT_CATALOG.md](docs/MANIFEST_CONTEXT_CATALOG.md)。
+
 ## 可攜打包
 
 安裝 build 依賴後，先檢查環境與封裝素材，再執行 PyInstaller：

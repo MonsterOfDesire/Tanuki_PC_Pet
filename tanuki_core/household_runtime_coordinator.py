@@ -134,6 +134,34 @@ class HouseholdRuntimeCoordinator:
         self.refresh_dashboard_views_for_entry(dashboard, entry)
         return entry
 
+    def record_resolved_event(
+        self,
+        event,
+        *,
+        dashboard=None,
+        pets=(),
+        apply_deltas: bool = True,
+    ):
+        return self.record_event(
+            dashboard=dashboard,
+            pets=pets,
+            occurred_at=event.occurred_at,
+            category=event.category,
+            event_type=event.event_type,
+            channel=event.channel,
+            importance=event.importance,
+            summary=event.summary,
+            actor_name=event.actor_name,
+            target_name=event.target_name,
+            mood_delta=event.mood_delta,
+            relation_delta=event.relation_delta,
+            tags=event.tags,
+            living_fund_delta=event.living_fund_delta,
+            household_pressure_delta=event.household_pressure_delta,
+            metadata=event.metadata,
+            apply_deltas=apply_deltas,
+        )
+
     def recent_events(self, limit=10):
         return self.event_log.recent_entries(limit=limit)
 
@@ -212,23 +240,10 @@ class HouseholdRuntimeCoordinator:
             now=now,
         )
         for event in resolved_events:
-            self.record_event(
+            self.record_resolved_event(
+                event,
                 dashboard=dashboard,
                 pets=pets,
-                occurred_at=event.occurred_at,
-                category=event.category,
-                event_type=event.event_type,
-                channel=event.channel,
-                importance=event.importance,
-                summary=event.summary,
-                actor_name=event.actor_name,
-                target_name=event.target_name,
-                mood_delta=event.mood_delta,
-                relation_delta=event.relation_delta,
-                tags=event.tags,
-                living_fund_delta=event.living_fund_delta,
-                household_pressure_delta=event.household_pressure_delta,
-                metadata=event.metadata,
             )
         all_events = [*recorded_social_events, *resolved_events]
         refresh_household_summary_if_needed(dashboard, all_events)

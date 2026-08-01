@@ -229,6 +229,45 @@ class ObserveRuleTests(unittest.TestCase):
         self.assertGreater(skipped.retry_cooldown, 0.0)
         self.assertEqual(skipped.reason, "observe_start_skipped")
 
+    def test_observe_and_followup_chance_accept_explicit_bonus(self):
+        ordinary_observe = resolve_observe_start_decision(
+            expression_animation_context="relation_watch",
+            visible_pet_count=1,
+            streak_count=0,
+            roll=0.40,
+        )
+        influenced_observe = resolve_observe_start_decision(
+            expression_animation_context="relation_watch",
+            visible_pet_count=1,
+            streak_count=0,
+            roll=0.40,
+            chance_bonus=0.15,
+        )
+        ordinary_followup = resolve_post_observe_interaction_candidate(
+            previous_target_name="Symboli Rudolf",
+            target_visible=True,
+            target_distance=100.0,
+            expression_animation_context="relation_watch",
+            visible_pet_count=1,
+            streak_count=0,
+            roll=0.60,
+        )
+        influenced_followup = resolve_post_observe_interaction_candidate(
+            previous_target_name="Symboli Rudolf",
+            target_visible=True,
+            target_distance=100.0,
+            expression_animation_context="relation_watch",
+            visible_pet_count=1,
+            streak_count=0,
+            roll=0.60,
+            chance_bonus=0.15,
+        )
+
+        self.assertFalse(ordinary_observe.should_start)
+        self.assertTrue(influenced_observe.should_start)
+        self.assertFalse(ordinary_followup.should_start)
+        self.assertTrue(influenced_followup.should_start)
+
     def test_post_observe_interaction_candidate_prefers_close_short_followup(self):
         decision = resolve_post_observe_interaction_candidate(
             previous_target_name="Tokai Teio",

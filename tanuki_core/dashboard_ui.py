@@ -369,6 +369,10 @@ class Dashboard(QWidget):
         self.household_state_provider = household_state_provider
         self.household_events_provider = household_events_provider
         self.household_donate_provider = household_donate_provider
+        self.rudolf_work_preview_provider = None
+        self.rudolf_work_preview_active_provider = None
+        self.transformation_toggle_provider = None
+        self.transformation_state_provider = None
         self.household_capture_provider = None
         self.household_load_provider = None
         self.world_mode_change_provider = None
@@ -888,12 +892,41 @@ class Dashboard(QWidget):
     def run_validation_checks(self):
         self.controller.run_validation_checks(self)
 
+    def preview_rudolf_work(self):
+        return self.controller.preview_rudolf_work(self)
+
+    def toggle_transformation_preview(self, pet_name):
+        return self.controller.toggle_transformation_preview(
+            self,
+            pet_name,
+        )
+
     def set_household_data_providers(self, household_state_provider=None, household_events_provider=None):
         self.household_state_provider = household_state_provider
         self.household_events_provider = household_events_provider
 
     def set_household_action_providers(self, household_donate_provider=None):
         self.household_donate_provider = household_donate_provider
+
+    def set_activity_action_providers(
+        self,
+        rudolf_work_preview_provider=None,
+        rudolf_work_preview_active_provider=None,
+        transformation_toggle_provider=None,
+        transformation_state_provider=None,
+    ):
+        self.rudolf_work_preview_provider = (
+            rudolf_work_preview_provider
+        )
+        self.rudolf_work_preview_active_provider = (
+            rudolf_work_preview_active_provider
+        )
+        self.transformation_toggle_provider = (
+            transformation_toggle_provider
+        )
+        self.transformation_state_provider = (
+            transformation_state_provider
+        )
 
     def set_household_persistence_providers(
         self,
@@ -944,6 +977,39 @@ class Dashboard(QWidget):
         if callable(self.household_donate_provider):
             return self.household_donate_provider(amount=amount)
         return None
+
+    def apply_rudolf_work_preview(self):
+        if self.world_mode != "sandbox":
+            return None
+        if callable(self.rudolf_work_preview_provider):
+            return self.rudolf_work_preview_provider()
+        return None
+
+    def is_rudolf_work_preview_active(self):
+        if callable(self.rudolf_work_preview_active_provider):
+            return bool(
+                self.rudolf_work_preview_active_provider()
+            )
+        return False
+
+    def apply_transformation_preview(self, pet_name):
+        if self.world_mode != "sandbox":
+            return None
+        if callable(self.transformation_toggle_provider):
+            return self.transformation_toggle_provider(
+                str(pet_name or "")
+            )
+        return None
+
+    def get_transformation_preview_state(self, pet_name):
+        if callable(self.transformation_state_provider):
+            return dict(
+                self.transformation_state_provider(
+                    str(pet_name or "")
+                )
+                or {}
+            )
+        return {}
 
     def capture_household_config_state(self):
         if callable(self.household_capture_provider):
@@ -1006,6 +1072,14 @@ class Dashboard(QWidget):
                         bool(getattr(pet, "user_visible", False)),
                         float(getattr(pet, "mood_score", 0.0)),
                         str(getattr(pet, "mood_state", "") or ""),
+                        str(
+                            getattr(
+                                getattr(pet, "transformation_state", None),
+                                "current_form",
+                                "base",
+                            )
+                            or "base"
+                        ),
                     )
                 )
         return tuple(states)

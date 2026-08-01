@@ -108,7 +108,7 @@ class DashboardPresenterTests(unittest.TestCase):
         ]
         pet_states = (
             ("Air Groove", True, 72.0, "normal"),
-            ("Tokai Teio", False, 34.0, "unhappy"),
+            ("Tokai Teio", False, 34.0, "unhappy", "transformed"),
             ("Sirius Symboli", True, 18.0, "depressed"),
         )
 
@@ -124,6 +124,10 @@ class DashboardPresenterTests(unittest.TestCase):
         self.assertEqual(
             tuple(member.mood_label for member in presentation.members),
             ("平穩", "低落", "非常低落"),
+        )
+        self.assertEqual(
+            tuple(member.form_label for member in presentation.members),
+            ("普通形態", "變身形態", "普通形態"),
         )
         self.assertEqual(
             tuple(event.sequence for event in presentation.recent_events),

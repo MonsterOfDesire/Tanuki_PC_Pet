@@ -173,6 +173,28 @@ class OfferInteractionRulesTests(unittest.TestCase):
         self.assertTrue(match.matched)
         self.assertLess(match.distance, match.hotspot_radius)
 
+    def test_transformed_teio_bottle_uses_form_specific_hotspot(self):
+        match = resolve_offer_hotspot_match(
+            item_kind=ITEM_BOTTLE,
+            pet_name="Tokai Teio",
+            widget_left=100,
+            widget_top=200,
+            widget_width=320,
+            widget_height=320,
+            frame_width=320,
+            frame_height=320,
+            render_scale=1.0,
+            direction=-1,
+            original_face_left=True,
+            offer_global_x=123,
+            offer_global_y=455,
+            form_key="transformed",
+        )
+
+        self.assertTrue(match.matched)
+        self.assertEqual(match.hotspot_global_x, 123.0)
+        self.assertEqual(match.hotspot_global_y, 455.0)
+
     def test_resolve_offer_hotspot_match_requires_exact_radius(self):
         match = resolve_offer_hotspot_match(
             item_kind=ITEM_BOTTLE,

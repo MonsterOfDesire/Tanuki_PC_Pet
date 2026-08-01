@@ -1,6 +1,10 @@
 import unittest
 
 from tanuki_core.pet_social_effects import SOCIAL_CARE_EFFECTS
+from tanuki_core.transformation_state import (
+    FORM_TRANSFORMED,
+    PetTransformationState,
+)
 
 
 class FakeTimer:
@@ -123,6 +127,33 @@ class SocialCareEffectsTests(unittest.TestCase):
         self.assertEqual(adult.social_started_at, 0.0)
         self.assertEqual(adult.social_timer_frames, 0)
         self.assertEqual(adult.social_cooldown_end, 25.5)
+
+    def test_transformed_rudolf_social_target_shortens_child_cooldown(self):
+        child = FakeAdult()
+        child.name = "Tokai Teio"
+        child.transformation_state = PetTransformationState()
+        target = FakeAdult()
+        target.name = "Symboli Rudolf"
+        target.transformation_state = PetTransformationState(
+            current_form=FORM_TRANSFORMED,
+        )
+        SOCIAL_CARE_EFFECTS.start_social_mode(
+            child,
+            "following",
+            target,
+            12.5,
+        )
+
+        SOCIAL_CARE_EFFECTS.stop_social_mode(
+            child,
+            20.0,
+            apply_cooldown=True,
+        )
+
+        self.assertAlmostEqual(
+            child.social_cooldown_end,
+            20.0 + 5.5 * 0.65,
+        )
 
     def test_start_care_approach_clears_social_without_cooldown(self):
         adult = FakeAdult()

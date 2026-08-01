@@ -108,7 +108,19 @@
       ],
       "contexts": [
         "negative_reaction",
-        "hard_landing"
+        "hard_landing",
+        "activity_work_rest",
+        "activity_sleep_settling",
+        "activity_sleep_waking"
+      ],
+      "weight": 1.0
+    },
+    "idle_lie-exhausted-sleep.gif": {
+      "band": [
+        "severe"
+      ],
+      "contexts": [
+        "activity_sleeping"
       ],
       "weight": 1.0
     },
@@ -117,7 +129,8 @@
         "normal"
       ],
       "contexts": [
-        "random"
+        "random",
+        "activity_sleep_settling"
       ],
       "weight": 1.0
     },
@@ -128,18 +141,27 @@
       ],
       "contexts": [
         "negative_reaction",
-        "random"
+        "random",
+        "activity_work_rest",
+        "activity_sleep_settling"
+      ],
+      "weight": 1.0
+    },
+    "idle_lie-sad-sleep.gif": {
+      "band": [
+        "low"
+      ],
+      "contexts": [
+        "activity_sleeping"
       ],
       "weight": 1.0
     },
     "idle_lie-sleep.gif": {
       "band": [
-        "normal",
-        "low",
-        "severe"
+        "normal"
       ],
       "contexts": [
-        "future_work"
+        "activity_sleeping"
       ],
       "weight": 1.0
     },
@@ -283,7 +305,18 @@
       "contexts": [
         "shared_food_react",
         "negative_reaction",
-        "random"
+        "random",
+        "activity_work_rest"
+      ],
+      "weight": 1.0
+    },
+    "idle_side_cross-sad.gif": {
+      "band": [
+        "low",
+        "severe"
+      ],
+      "contexts": [
+        "activity_sleep_observing"
       ],
       "weight": 1.0
     },
@@ -461,7 +494,8 @@
       ],
       "contexts": [
         "bottle_feed_watch",
-        "post_observe"
+        "post_observe",
+        "activity_sleep_observing"
       ],
       "weight": 1.0
     },
@@ -566,7 +600,9 @@
         "care_companion",
         "relation_watch",
         "bottle_feed_watch",
-        "random"
+        "random",
+        "activity_sleep_waking",
+        "activity_sleep_join_settling"
       ],
       "weight": 1.0
     },
@@ -582,7 +618,9 @@
         "honey_guard_take",
         "bottle_feed_watch",
         "negative_reaction",
-        "random"
+        "random",
+        "activity_sleep_waking",
+        "activity_sleep_join_settling"
       ],
       "weight": 1.0
     },
@@ -670,33 +708,30 @@
     "idle_work_dig-hurry.gif": {
       "band": [
         "normal",
-        "low",
-        "severe"
+        "low"
       ],
       "contexts": [
-        "future_work"
+        "activity_work_stationary"
       ],
       "weight": 1.0
     },
     "idle_work_knock-happy.gif": {
       "band": [
         "normal",
-        "low",
-        "severe"
+        "low"
       ],
       "contexts": [
-        "future_work"
+        "activity_work_stationary"
       ],
       "weight": 1.0
     },
     "idle_work_ricecake-hurry.gif": {
       "band": [
         "normal",
-        "low",
-        "severe"
+        "low"
       ],
       "contexts": [
-        "future_work"
+        "activity_work_stationary"
       ],
       "weight": 1.0
     },
@@ -866,7 +901,8 @@
       "contexts": [
         "window_walk",
         "negative_reaction",
-        "random"
+        "random",
+        "activity_sleep_join_approach"
       ],
       "weight": 1.0
     },
@@ -949,7 +985,8 @@
       ],
       "contexts": [
         "window_walk",
-        "random"
+        "random",
+        "activity_sleep_join_approach"
       ],
       "weight": 1.0
     },
@@ -980,11 +1017,10 @@
     "move_work_boxes-hurry.gif": {
       "band": [
         "normal",
-        "low",
-        "severe"
+        "low"
       ],
       "contexts": [
-        "future_work"
+        "activity_work_transport"
       ],
       "weight": 1.0
     },

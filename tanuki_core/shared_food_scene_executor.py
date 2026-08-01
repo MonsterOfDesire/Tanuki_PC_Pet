@@ -27,6 +27,10 @@ from .shared_food_profiles import (
     get_shared_food_profile,
     get_shared_food_profile_for_holder,
 )
+from .transformation_profiles import (
+    CAPABILITY_SHARED_FOOD,
+    pet_form_allows_capability,
+)
 
 
 SHARED_FOOD_UPDATE_INTERVAL_SECONDS = 0.03
@@ -222,6 +226,11 @@ class SharedFoodSceneExecutor:
         return SharedFoodParticipantState(
             visible=bool(pet is not None and pet.isVisible()),
             busy=bool(
+                not pet_form_allows_capability(
+                    pet,
+                    CAPABILITY_SHARED_FOOD,
+                )
+                or
                 runtime.pet_is_busy_for_offer_interaction(pet, now)
                 or getattr(pet, "is_angry_locked", False)
             ),
@@ -308,6 +317,11 @@ class SharedFoodSceneExecutor:
         roll_provider=None,
     ):
         if holder_pet is None or runtime.offer_scene is not None:
+            return False
+        if not pet_form_allows_capability(
+            holder_pet,
+            CAPABILITY_SHARED_FOOD,
+        ):
             return False
         profile = profile or get_shared_food_profile_for_holder(
             getattr(holder_pet, "held_item_kind", ""),

@@ -158,7 +158,9 @@
       ],
       "contexts": [
         "window_perch",
-        "random"
+        "random",
+        "activity_sleep_settling",
+        "activity_sleep_waking"
       ],
       "weight": 1.0
     },
@@ -169,7 +171,9 @@
       ],
       "contexts": [
         "window_perch",
-        "hard_landing"
+        "hard_landing",
+        "activity_sleep_settling",
+        "activity_sleep_waking"
       ],
       "weight": 1.0
     },
@@ -180,7 +184,7 @@
         "severe"
       ],
       "contexts": [
-        "future_work"
+        "activity_sleeping"
       ],
       "weight": 1.0
     },
@@ -232,7 +236,8 @@
         "honey_guard_take",
         "bottle_feed_watch",
         "shared_food_react",
-        "random"
+        "random",
+        "activity_sleep_observing"
       ],
       "weight": 1.0
     },
@@ -256,7 +261,8 @@
         "relation_close",
         "bottle_feed_watch",
         "shared_food_react",
-        "random"
+        "random",
+        "activity_sleep_observing"
       ],
       "weight": 1.0
     },
@@ -342,7 +348,8 @@
         "honey_guard_take",
         "bottle_feed_watch",
         "shared_food_react",
-        "random"
+        "random",
+        "activity_sleep_join_settling"
       ],
       "weight": 1.0
     },
@@ -356,7 +363,8 @@
         "relation_close",
         "bottle_feed_watch",
         "shared_food_react",
-        "random"
+        "random",
+        "activity_sleep_join_settling"
       ],
       "weight": 1.0
     },
@@ -486,7 +494,8 @@
       ],
       "contexts": [
         "window_walk",
-        "random"
+        "random",
+        "activity_sleep_join_approach"
       ],
       "weight": 1.0
     },
@@ -509,7 +518,8 @@
       "contexts": [
         "window_walk",
         "random",
-        "shared_food_approach"
+        "shared_food_approach",
+        "activity_sleep_join_approach"
       ],
       "weight": 1.0
     }

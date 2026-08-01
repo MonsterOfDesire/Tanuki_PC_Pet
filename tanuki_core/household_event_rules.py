@@ -1,6 +1,10 @@
 from dataclasses import dataclass, field
 
 from .household_state import HouseholdState
+from .rudolf_work_rules import (
+    WORK_LIVING_FUND_THRESHOLD,
+    WORK_PRESSURE_THRESHOLD,
+)
 
 
 TEIO_DRINK_INTERVAL_SECONDS = 30.0
@@ -8,15 +12,11 @@ RUDOLF_WORK_INTERVAL_SECONDS = 55.0
 RUDOLF_COLLECTIBLE_INTERVAL_SECONDS = 85.0
 
 TEIO_DRINK_COST = 18
-RUDOLF_WORK_INCOME = 80
 RUDOLF_COLLECTIBLE_COST = 35
 
 TEIO_DRINK_PRESSURE = 4.0
-RUDOLF_WORK_PRESSURE_RELIEF = -6.0
 RUDOLF_COLLECTIBLE_PRESSURE = 3.0
 
-WORK_LIVING_FUND_THRESHOLD = 820
-WORK_PRESSURE_THRESHOLD = 28.0
 COLLECTIBLE_LIVING_FUND_THRESHOLD = 960
 COLLECTIBLE_PRESSURE_MAX = 38.0
 
@@ -67,24 +67,17 @@ def _build_teio_drink_event(now: float) -> HouseholdResolvedEvent:
     )
 
 
-def _should_trigger_rudolf_work(household: HouseholdState) -> bool:
-    return (
-        household.living_fund <= WORK_LIVING_FUND_THRESHOLD
-        or household.household_pressure >= WORK_PRESSURE_THRESHOLD
+def consume_rudolf_work_schedule_if_due(
+    schedule: HouseholdEventScheduleState,
+    *,
+    now: float,
+) -> bool:
+    if float(now) < float(schedule.next_rudolf_work_at):
+        return False
+    schedule.next_rudolf_work_at = (
+        float(now) + RUDOLF_WORK_INTERVAL_SECONDS
     )
-
-
-def _build_rudolf_work_event(now: float) -> HouseholdResolvedEvent:
-    return HouseholdResolvedEvent(
-        occurred_at=now,
-        category="economy",
-        event_type="rudolf_work_income",
-        summary="魯道夫認真工作，替家裡賺了一筆生活費。",
-        actor_name="Symboli Rudolf",
-        living_fund_delta=RUDOLF_WORK_INCOME,
-        household_pressure_delta=RUDOLF_WORK_PRESSURE_RELIEF,
-        metadata={"source": "periodic_household_event"},
-    )
+    return True
 
 
 def _should_trigger_rudolf_collectible(household: HouseholdState) -> bool:
@@ -118,11 +111,6 @@ def resolve_household_events(
     if now >= schedule.next_teio_drink_at:
         schedule.next_teio_drink_at = now + TEIO_DRINK_INTERVAL_SECONDS
         events.append(_build_teio_drink_event(now))
-
-    if now >= schedule.next_rudolf_work_at:
-        schedule.next_rudolf_work_at = now + RUDOLF_WORK_INTERVAL_SECONDS
-        if _should_trigger_rudolf_work(household):
-            events.append(_build_rudolf_work_event(now))
 
     if now >= schedule.next_rudolf_collectible_at:
         schedule.next_rudolf_collectible_at = now + RUDOLF_COLLECTIBLE_INTERVAL_SECONDS

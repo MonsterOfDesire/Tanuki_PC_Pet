@@ -14,7 +14,16 @@ INTENT_PERCH_HOLD = "perch_hold"
 INTENT_RANDOM_ROAM = "random_roam"
 INTENT_OBSERVE = "observe"
 INTENT_POST_OBSERVE_INTERACTION = "post_observe_interaction"
+INTENT_SLEEP_OBSERVE = "sleep_observe"
+INTENT_SLEEP_JOIN_APPROACH = "sleep_join_approach"
 INTENT_AMBIENT_IDLE = "ambient_idle"
+
+SLEEP_JOIN_INTENT_KINDS = frozenset(
+    {
+        INTENT_SLEEP_OBSERVE,
+        INTENT_SLEEP_JOIN_APPROACH,
+    }
+)
 
 AMBIENT_INTENT_KINDS = {
     INTENT_NONE,
@@ -216,3 +225,11 @@ def resolve_intent_reselect_gate(
 
 def allow_random_behavior_reselect(*, intent_kind, intent_gate_open):
     return bool(intent_gate_open or intent_kind in RANDOM_PROGRESS_INTENT_KINDS)
+
+
+def pet_has_sleep_join_intent(pet) -> bool:
+    return bool(
+        pet is not None
+        and getattr(pet, "intent_kind", "none")
+        in SLEEP_JOIN_INTENT_KINDS
+    )

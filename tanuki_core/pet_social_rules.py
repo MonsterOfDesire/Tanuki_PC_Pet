@@ -33,6 +33,7 @@ class CareTargetCandidate:
     distance: float
     preferred_adult_name: str | None = None
     care_blocked: bool = False
+    activity_busy: bool = False
 
 
 @dataclass(frozen=True)
@@ -145,7 +146,12 @@ def choose_care_target(adult, adult_name, candidates):
             continue
         if candidate.care_partner not in (None, adult):
             continue
-        if candidate.is_recovering or candidate.care_blocked or not candidate.is_distressed:
+        if (
+            candidate.is_recovering
+            or candidate.care_blocked
+            or candidate.activity_busy
+            or not candidate.is_distressed
+        ):
             continue
         if radius is not None and candidate.distance > radius:
             continue

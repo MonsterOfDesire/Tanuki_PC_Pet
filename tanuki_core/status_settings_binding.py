@@ -72,3 +72,24 @@ class DashboardStatusSettingsBinding:
 
     def run_validation_checks(self):
         self.dashboard.run_validation_checks()
+
+    def preview_rudolf_work(self):
+        return self.dashboard.preview_rudolf_work()
+
+    def is_rudolf_work_preview_active(self):
+        return bool(
+            self.dashboard.is_rudolf_work_preview_active()
+        )
+
+    def toggle_transformation_preview(self, pet_name):
+        return self.dashboard.toggle_transformation_preview(
+            str(pet_name or "")
+        )
+
+    def get_transformation_preview_state(self, pet_name):
+        return dict(
+            self.dashboard.get_transformation_preview_state(
+                str(pet_name or "")
+            )
+            or {}
+        )

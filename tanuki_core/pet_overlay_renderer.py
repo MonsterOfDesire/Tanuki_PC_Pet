@@ -2,6 +2,10 @@ import math
 from dataclasses import dataclass
 
 
+def clamp_whiteness(value):
+    return max(0.0, min(1.0, float(value or 0.0)))
+
+
 @dataclass(frozen=True)
 class StarSpriteSpec:
     x: int
@@ -72,7 +76,16 @@ def compute_head_status_label_layout(widget_width, draw_y, text_width, line_heig
 
 
 class PetOverlayRenderer:
-    def draw_character(self, painter, widget_width, pixmap, draw_x, draw_y, should_flip):
+    def draw_character(
+        self,
+        painter,
+        widget_width,
+        pixmap,
+        draw_x,
+        draw_y,
+        should_flip,
+        whiteness=0.0,
+    ):
         painter.save()
         if should_flip:
             painter.translate(widget_width, 0)
@@ -80,6 +93,29 @@ class PetOverlayRenderer:
             painter.drawPixmap(widget_width - draw_x - pixmap.width(), draw_y, pixmap)
         else:
             painter.drawPixmap(draw_x, draw_y, pixmap)
+        painter.restore()
+        whiteness = clamp_whiteness(whiteness)
+        if whiteness <= 0.0:
+            return
+        from PyQt6.QtGui import QColor, QPainter
+
+        painter.save()
+        painter.setCompositionMode(
+            QPainter.CompositionMode.CompositionMode_SourceAtop
+        )
+        painter.setOpacity(whiteness)
+        overlay_x = (
+            widget_width - draw_x - pixmap.width()
+            if should_flip
+            else draw_x
+        )
+        painter.fillRect(
+            overlay_x,
+            draw_y,
+            pixmap.width(),
+            pixmap.height(),
+            QColor(255, 255, 255),
+        )
         painter.restore()
 
     def draw_mood_bar(self, painter, widget_width, draw_y, mood_score, opacity):

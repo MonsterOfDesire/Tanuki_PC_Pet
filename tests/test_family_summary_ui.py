@@ -39,6 +39,8 @@ class FakeFamilySummaryBinding:
                     mood_score=34.0,
                     mood_state="unhappy",
                     mood_label="低落",
+                    form_key="transformed",
+                    form_label="變身形態",
                 ),
             ),
             recent_events=(
@@ -106,6 +108,15 @@ class FamilySummaryPanelTests(unittest.TestCase):
         self.assertEqual(
             self.panel.member_cards["Tokai Teio"].mood_bar.value(),
             34,
+        )
+        self.assertEqual(
+            self.panel.member_cards["Tokai Teio"].form_status_label.text(),
+            "✦ 變身形態",
+        )
+        self.assertTrue(
+            self.panel.member_cards["Tokai Teio"].form_status_label.property(
+                "transformed"
+            )
         )
         self.assertEqual(self.panel.recent_event_table.rowCount(), 1)
         self.assertIn(

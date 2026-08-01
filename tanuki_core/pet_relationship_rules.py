@@ -82,8 +82,14 @@ def choose_relationship_focus(
     observe_target_visible=False,
     nearest_visible_pet_name="",
     nearest_visible_pet_distance=0.0,
+    nearest_visible_max_distance=None,
     blocked_target_name="",
 ):
+    nearest_visible_max_distance = (
+        RELATION_FOCUS_START_DISTANCE
+        if nearest_visible_max_distance is None
+        else max(0.0, float(nearest_visible_max_distance))
+    )
     target_name = care_target_name or social_target_name
     if (
         not target_name and
@@ -97,7 +103,8 @@ def choose_relationship_focus(
         not target_name and
         nearest_visible_pet_name and
         nearest_visible_pet_name != blocked_target_name and
-        0.0 < float(nearest_visible_pet_distance) <= RELATION_FOCUS_START_DISTANCE
+        0.0 < float(nearest_visible_pet_distance)
+        <= nearest_visible_max_distance
     ):
         target_name = nearest_visible_pet_name
     if not target_name:

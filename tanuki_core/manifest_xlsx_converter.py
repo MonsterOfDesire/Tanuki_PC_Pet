@@ -23,6 +23,15 @@ ANIMATION_EXTENSION = ".gif"
 
 KNOWN_CONTEXTS = frozenset(
     {
+        "activity_sleep_join_approach",
+        "activity_sleep_join_settling",
+        "activity_sleep_observing",
+        "activity_sleep_settling",
+        "activity_sleeping",
+        "activity_sleep_waking",
+        "activity_work_rest",
+        "activity_work_stationary",
+        "activity_work_transport",
         "bottle_feed_child_approach",
         "bottle_feed_child_drink",
         "bottle_feed_hold",

@@ -2,7 +2,11 @@ import unittest
 from unittest.mock import patch
 
 from tanuki_core.pet_behavior_layers import PetBehaviorLayersMixin
-from tanuki_core.pet_intent_rules import INTENT_OBSERVE, INTENT_POST_OBSERVE_INTERACTION
+from tanuki_core.pet_intent_rules import (
+    INTENT_OBSERVE,
+    INTENT_POST_OBSERVE_INTERACTION,
+    INTENT_SLEEP_JOIN_APPROACH,
+)
 from tanuki_core.runtime import AdaptivePetLogicScheduler, SimulationClock
 
 
@@ -274,6 +278,17 @@ class PetBehaviorSchedulerTests(unittest.TestCase):
         self.assertEqual(pet.intent_kind, "ambient_idle")
         self.assertEqual(pet.intent_target_name, "")
         self.assertEqual(pet.intent_locked_until, 0.0)
+
+    def test_sync_intent_state_preserves_sleep_join_approach(self):
+        pet = FakeIntentSyncPet()
+        pet.intent_kind = INTENT_SLEEP_JOIN_APPROACH
+        pet.intent_context = "approaching"
+
+        pet.sync_intent_state(now=10.0)
+
+        self.assertEqual(pet.intent_kind, INTENT_SLEEP_JOIN_APPROACH)
+        self.assertEqual(pet.intent_target_name, "Tokai Teio")
+        self.assertEqual(pet.intent_context, "approaching")
 
 
 if __name__ == "__main__":

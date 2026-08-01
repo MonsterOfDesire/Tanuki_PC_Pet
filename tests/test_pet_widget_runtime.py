@@ -66,6 +66,12 @@ class Qt:
     class WidgetAttribute:
         WA_TranslucentBackground = 0
 
+    class MouseButton:
+        LeftButton = 1
+
+    class CursorShape:
+        ForbiddenCursor = 0
+
 
 class QPainter:
     RenderHint = types.SimpleNamespace(Antialiasing=0)
@@ -122,7 +128,9 @@ sys.modules["PyQt6.QtGui"] = qtgui_module
 sys.modules["PyQt6.QtWidgets"] = qtwidgets_module
 
 
-from tanuki_core.pet_widget import TanukiPet
+from tanuki_core.geometry import DesktopGeometry
+from tanuki_core.pet_basics import PetBasicsMixin
+from tanuki_core.pet_widget import Qt, TanukiPet
 from tanuki_core.pet_logic import MoodUpdate
 
 
@@ -140,6 +148,156 @@ class FakeAnimationTimer:
 
     def interval(self):
         return self.interval_ms
+
+
+class FakeControlledTimer:
+    def __init__(self):
+        self.started_with = []
+        self.stop_calls = 0
+
+    def start(self, interval_ms):
+        self.started_with.append(interval_ms)
+
+    def stop(self):
+        self.stop_calls += 1
+
+
+class FakePoint:
+    def __init__(self, x=0, y=0):
+        self._x = int(x)
+        self._y = int(y)
+
+    def __sub__(self, other):
+        return FakePoint(self._x - other._x, self._y - other._y)
+
+    def x(self):
+        return self._x
+
+    def y(self):
+        return self._y
+
+
+class FakeMouseEvent:
+    def __init__(self, x=100, y=120):
+        self._point = FakePoint(x, y)
+
+    def button(self):
+        return Qt.MouseButton.LeftButton
+
+    def globalPosition(self):
+        return types.SimpleNamespace(toPoint=lambda: self._point)
+
+
+class FakePetForPointerInteraction:
+    DRAG_HOLD_THRESHOLD_MS = TanukiPet.DRAG_HOLD_THRESHOLD_MS
+    DRAG_HOLD_THRESHOLD_SECONDS = TanukiPet.DRAG_HOLD_THRESHOLD_SECONDS
+    DRAG_MOVE_THRESHOLD_PIXELS = TanukiPet.DRAG_MOVE_THRESHOLD_PIXELS
+
+    def __init__(self, activity_locked=False):
+        self.transformation_state = types.SimpleNamespace(active=False)
+        self.dragging = False
+        self.drag_press_pending = False
+        self.drag_motion_detected = False
+        self.drag_press_global_x = 0
+        self.drag_press_global_y = 0
+        self.drag_start_time = 0.0
+        self.drag_pos = FakePoint()
+        self.drag_hold_timer = FakeControlledTimer()
+        self.click_reset_timer = FakeControlledTimer()
+        self.lock_timer = FakeControlledTimer()
+        self.click_count = 0
+        self.is_angry_locked = False
+        self.care_mode = "none"
+        self.flight_mode = "none"
+        self.perched_window_hwnd = 0
+        self.vy = 3.0
+        self.fall_origin_y = 10
+        self.mood_score = 60.0
+        self.state = "move"
+        self.state_timer = 0
+        self._activity_locked = bool(activity_locked)
+        self.drag_animation_calls = 0
+        self.interrupt_reasons = []
+        self.reactions = []
+        self.heart_calls = 0
+        self.refresh_calls = 0
+        self.changed_states = []
+        self.moved_to = None
+        self.activity_user_interrupt_provider = self._interrupt_activity
+
+    def pos(self):
+        return FakePoint(10, 20)
+
+    def is_activity_locked(self):
+        return self._activity_locked
+
+    def is_under_care(self, now):
+        _ = now
+        return False
+
+    def is_offer_locked(self, now=None):
+        _ = now
+        return False
+
+    def _interrupt_activity(self, pet, reason):
+        self.interrupt_reasons.append((pet, reason))
+        if reason == "user_drag":
+            self._activity_locked = False
+        return True
+
+    def _cancel_pending_drag_press(self):
+        return TanukiPet._cancel_pending_drag_press(self)
+
+    def _begin_drag_after_hold(self):
+        return TanukiPet._begin_drag_after_hold(self)
+
+    def _apply_short_click_interaction(self):
+        return TanukiPet._apply_short_click_interaction(self)
+
+    def apply_drag_animation(self):
+        self.drag_animation_calls += 1
+        return True
+
+    def refresh_movement_state(self):
+        self.refresh_calls += 1
+
+    def stop_window_flight(self, apply_cooldown=True):
+        _ = apply_cooldown
+        self.flight_mode = "none"
+
+    def pop_heart(self):
+        self.heart_calls += 1
+
+    def apply_reaction(self, preferred_moods, is_negative=False):
+        self.reactions.append((tuple(preferred_moods), bool(is_negative)))
+
+    def try_snap_to_window_surface(self):
+        return False
+
+    def move(self, x, y):
+        self.moved_to = (x, y)
+
+    def change_state(self, purpose, action_type=None):
+        self.changed_states.append((purpose, action_type))
+
+
+class FakePetForHardLandingAnimation(PetBasicsMixin):
+    def __init__(self, selection_results):
+        self.selection_results = list(selection_results)
+        self.context_calls = []
+        self.state_timer = 0
+        self.stationary_reset_calls = 0
+
+    def change_state_for_context_any_purpose_with_preferences(
+        self,
+        context,
+        **kwargs,
+    ):
+        self.context_calls.append((context, kwargs))
+        return self.selection_results.pop(0)
+
+    def reset_stationary_move_mode(self):
+        self.stationary_reset_calls += 1
 
 
 class FakePetForStars:
@@ -428,6 +586,123 @@ class FakePetForMoodAnimationGuard:
 
 
 class PetWidgetRuntimeTests(unittest.TestCase):
+    def test_short_click_never_enters_drag_animation(self):
+        pet = FakePetForPointerInteraction()
+        event = FakeMouseEvent()
+
+        with patch("tanuki_core.pet_widget.time.time", return_value=100.0):
+            TanukiPet.mousePressEvent(pet, event)
+
+        self.assertTrue(pet.drag_press_pending)
+        self.assertFalse(pet.dragging)
+        self.assertEqual(pet.drag_animation_calls, 0)
+        self.assertEqual(
+            pet.drag_hold_timer.started_with,
+            [TanukiPet.DRAG_HOLD_THRESHOLD_MS],
+        )
+
+        with patch("tanuki_core.pet_widget.time.time", return_value=100.1):
+            TanukiPet.mouseReleaseEvent(pet, event)
+
+        self.assertFalse(pet.drag_press_pending)
+        self.assertFalse(pet.dragging)
+        self.assertEqual(pet.drag_animation_calls, 0)
+        self.assertEqual(pet.heart_calls, 1)
+        self.assertEqual(pet.reactions, [(('happy', 'smile'), False)])
+
+    def test_sleeping_short_click_requests_waking_without_drag(self):
+        pet = FakePetForPointerInteraction(activity_locked=True)
+        event = FakeMouseEvent()
+
+        with patch("tanuki_core.pet_widget.time.time", return_value=200.0):
+            TanukiPet.mousePressEvent(pet, event)
+        with patch("tanuki_core.pet_widget.time.time", return_value=200.1):
+            TanukiPet.mouseReleaseEvent(pet, event)
+
+        self.assertEqual(
+            pet.interrupt_reasons,
+            [(pet, "user_click")],
+        )
+        self.assertEqual(pet.drag_animation_calls, 0)
+        self.assertEqual(pet.heart_calls, 0)
+
+    def test_stationary_hold_is_still_a_click_without_drag(self):
+        pet = FakePetForPointerInteraction()
+        event = FakeMouseEvent()
+
+        with patch("tanuki_core.pet_widget.time.time", return_value=250.0):
+            TanukiPet.mousePressEvent(pet, event)
+        with patch("tanuki_core.pet_widget.time.time", return_value=250.3):
+            TanukiPet.mouseReleaseEvent(pet, event)
+
+        self.assertFalse(pet.dragging)
+        self.assertEqual(pet.drag_animation_calls, 0)
+        self.assertEqual(pet.heart_calls, 1)
+
+    def test_pointer_motion_starts_drag_after_short_threshold(self):
+        pet = FakePetForPointerInteraction()
+        press_event = FakeMouseEvent(100, 120)
+        move_event = FakeMouseEvent(104, 120)
+
+        with patch("tanuki_core.pet_widget.time.time", return_value=275.0):
+            TanukiPet.mousePressEvent(pet, press_event)
+        with patch(
+            "tanuki_core.pet_widget.time.time",
+            return_value=275.051,
+        ), patch.object(
+            DesktopGeometry,
+            "clamp_drag_position",
+            return_value=(14, 20),
+        ):
+            TanukiPet.mouseMoveEvent(pet, move_event)
+
+        self.assertTrue(pet.dragging)
+        self.assertEqual(pet.drag_animation_calls, 1)
+        self.assertEqual(pet.moved_to, (14, 20))
+
+    def test_hold_threshold_starts_drag_and_uses_drag_interrupt(self):
+        pet = FakePetForPointerInteraction(activity_locked=True)
+        event = FakeMouseEvent()
+
+        with patch("tanuki_core.pet_widget.time.time", return_value=300.0):
+            TanukiPet.mousePressEvent(pet, event)
+        pet.drag_motion_detected = True
+        with patch("tanuki_core.pet_widget.time.time", return_value=300.21):
+            started = TanukiPet._begin_drag_after_hold(pet)
+
+        self.assertTrue(started)
+        self.assertFalse(pet.drag_press_pending)
+        self.assertTrue(pet.dragging)
+        self.assertEqual(
+            pet.interrupt_reasons,
+            [(pet, "user_drag")],
+        )
+        self.assertEqual(pet.drag_animation_calls, 1)
+
+    def test_hard_landing_prefers_current_band_with_strict_context(self):
+        pet = FakePetForHardLandingAnimation([True])
+
+        applied = pet.apply_hard_landing_animation()
+
+        self.assertTrue(applied)
+        self.assertEqual(pet.context_calls, [("hard_landing", {})])
+        self.assertEqual(pet.state_timer, 80)
+        self.assertEqual(pet.stationary_reset_calls, 1)
+
+    def test_hard_landing_relaxes_only_band_not_context(self):
+        pet = FakePetForHardLandingAnimation([False, True])
+
+        applied = pet.apply_hard_landing_animation()
+
+        self.assertTrue(applied)
+        self.assertEqual(
+            pet.context_calls,
+            [
+                ("hard_landing", {}),
+                ("hard_landing", {"ignore_mood_band": True}),
+            ],
+        )
+
     def test_scene_animation_lock_keeps_offer_scene_protected_after_deadline_until_cleared(self):
         pet = FakePetForMoodAnimationGuard()
         pet.offer_scene_kind = "bottle_feed"

@@ -1131,6 +1131,34 @@ class PetSocialCareMixinTests(unittest.TestCase):
         self.assertEqual(pet.pending_social_log_event["relation_delta"], {"familiarity": 0.12})
         self.assertGreater(pet.social_log_event_cooldown_until, 10.0)
 
+    def test_transformed_rudolf_observe_reward_is_amplified_for_base_air_groove(self):
+        pet = FakeObservePet(FakeObserveTarget())
+        pet.name = "Air Groove"
+        pet.intent_target_form = "transformed"
+
+        queued = pet.enqueue_social_log_event_from_observe(
+            now=10.0,
+            target_name="Symboli Rudolf",
+            source_context="observe",
+            roll=0.0,
+            template_index=0,
+        )
+
+        self.assertTrue(queued)
+        self.assertEqual(
+            pet.pending_social_log_event["relation_delta"],
+            {"familiarity": 0.18},
+        )
+        self.assertIn(
+            "transformed_rudolf",
+            pet.pending_social_log_event["tags"],
+        )
+        self.assertTrue(
+            pet.pending_social_log_event["metadata"][
+                "transformed_rudolf_influence"
+            ]
+        )
+
     def test_observe_backoff_pauses_when_target_was_recently_pushed(self):
         target = FakeObserveTarget(collision_displaced_until=10.4, x=165)
         pet = FakeObservePet(target)

@@ -367,6 +367,90 @@ class FakeAssetManager:
     f"PyQt6 unavailable: {IMPORT_ERROR}",
 )
 class OfferInteractionRuntimeTests(QtApplicationTestCase):
+    def test_transformation_preview_state_exposes_runtime_origin(self):
+        runtime = object.__new__(TanukiAppRuntime)
+        state = SimpleNamespace(
+            current_form="transformed",
+            target_form="base",
+            active=True,
+            manual_end_requested=True,
+            auto_session=True,
+            auto_world_mode="sandbox",
+            source="sandbox_autonomous_end",
+        )
+        pet = SimpleNamespace(transformation_state=state)
+        runtime.find_pet_by_name = lambda *args, **kwargs: pet
+
+        snapshot = TanukiAppRuntime.get_transformation_preview_state(
+            runtime,
+            "Tokai Teio",
+        )
+
+        self.assertEqual(snapshot["current_form"], "transformed")
+        self.assertEqual(snapshot["target_form"], "base")
+        self.assertTrue(snapshot["active"])
+        self.assertTrue(snapshot["manual_end_requested"])
+        self.assertTrue(snapshot["auto_session"])
+        self.assertEqual(snapshot["auto_world_mode"], "sandbox")
+        self.assertEqual(snapshot["source"], "sandbox_autonomous_end")
+
+    def test_pending_drag_hold_blocks_offer_interaction(self):
+        runtime = object.__new__(TanukiAppRuntime)
+        pet = SimpleNamespace(
+            transformation_state=SimpleNamespace(active=False),
+            activity_state=None,
+            intent_kind="ambient_idle",
+            dragging=False,
+            drag_press_pending=True,
+            flight_mode="none",
+            care_mode="none",
+            care_partner=None,
+            is_hugging=False,
+            is_under_care=lambda now: False,
+        )
+
+        self.assertTrue(
+            TanukiAppRuntime.pet_is_busy_for_offer_interaction(
+                runtime,
+                pet,
+                now=5.0,
+            )
+        )
+
+    def test_user_click_routes_sleep_activity_to_early_wake(self):
+        calls = []
+        runtime = object.__new__(TanukiAppRuntime)
+        runtime.sleep_executor = SimpleNamespace(
+            request_early_wake=lambda pet, **kwargs: (
+                calls.append(("early_wake", pet, kwargs))
+                or SimpleNamespace(handled=True)
+            ),
+            interrupt_pet=lambda pet, **kwargs: (
+                calls.append(("interrupt", pet, kwargs))
+                or SimpleNamespace(handled=True)
+            ),
+        )
+        pet = object()
+
+        handled = TanukiAppRuntime.interrupt_pet_activity_for_user(
+            runtime,
+            pet,
+            reason="user_click",
+            now=25.0,
+        )
+
+        self.assertTrue(handled)
+        self.assertEqual(
+            calls,
+            [
+                (
+                    "early_wake",
+                    pet,
+                    {"now": 25.0, "reason": "user_click"},
+                )
+            ],
+        )
+
     def build_runtime(self, pets, dashboard=None):
         dashboard = dashboard or SimpleNamespace(refresh_household_summary_if_open=lambda: None)
         runtime = TanukiAppRuntime(
@@ -518,6 +602,15 @@ class OfferInteractionRuntimeTests(QtApplicationTestCase):
 
         self.assertTrue(runtime.pet_is_busy_for_offer_interaction(pet, 10.0))
 
+    def test_pet_is_busy_for_offer_interaction_includes_activity(self):
+        pet = FakePet("Symboli Rudolf")
+        pet.activity_state = SimpleNamespace(active=True)
+        runtime = self.build_runtime([pet])
+
+        self.assertTrue(
+            runtime.pet_is_busy_for_offer_interaction(pet, 10.0)
+        )
+
     def test_collect_pending_social_log_events_records_sandbox_social_entry(self):
         pet = FakePet("Symboli Rudolf")
         pet.pending_social_log_event = {
@@ -560,6 +653,56 @@ class OfferInteractionRuntimeTests(QtApplicationTestCase):
         )
 
         self.assertEqual(pet.log_icons, 1)
+
+    def test_autonomous_transformation_event_is_recorded_without_deltas(self):
+        runtime = self.build_runtime([])
+
+        entry = runtime.record_transformation_event(
+            SimpleNamespace(
+                character_name="Symboli Rudolf",
+                current_form="transformed",
+                source="autonomous_start",
+            ),
+            occurred_at=30.0,
+        )
+
+        self.assertEqual(entry.event_type, "transformation_started")
+        self.assertEqual(entry.channel, "story")
+        self.assertEqual(entry.summary, "魯道夫完成變身。")
+        self.assertEqual(entry.living_fund_delta, 0)
+        self.assertEqual(entry.household_pressure_delta, 0.0)
+        self.assertEqual(entry.metadata["form"], "transformed")
+
+    def test_sandbox_auto_completion_refreshes_summary_without_formal_event(self):
+        dashboard = SimpleNamespace(
+            summary_refreshes=0,
+            refresh_household_summary_if_open=lambda: setattr(
+                dashboard,
+                "summary_refreshes",
+                dashboard.summary_refreshes + 1,
+            ),
+        )
+        runtime = self.build_runtime([], dashboard=dashboard)
+        recorded_events = []
+        runtime.record_transformation_event = (
+            lambda *args, **kwargs: recorded_events.append(
+                (args, kwargs)
+            )
+        )
+        runtime.transformation_executor = SimpleNamespace(
+            update=lambda *_args, **_kwargs: (
+                SimpleNamespace(
+                    completed=True,
+                    source="sandbox_autonomous_start",
+                ),
+            ),
+            update_auto=lambda *_args, **_kwargs: (),
+        )
+
+        runtime.update_transformations(now=30.0)
+
+        self.assertEqual(dashboard.summary_refreshes, 1)
+        self.assertEqual(recorded_events, [])
 
     def test_record_household_event_refreshes_open_social_and_relationship_views(self):
         class FakeDashboard:

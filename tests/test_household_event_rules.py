@@ -9,6 +9,7 @@ from tanuki_core.household_event_rules import (
     WORK_PRESSURE_THRESHOLD,
     HouseholdEventScheduleState,
     build_household_event_schedule,
+    consume_rudolf_work_schedule_if_due,
     refresh_household_summary_if_needed,
     resolve_household_events,
 )
@@ -88,42 +89,44 @@ class HouseholdEventRulesTests(unittest.TestCase):
         self.assertEqual(events[0].household_pressure_delta, 4.0)
         self.assertEqual(schedule.next_teio_drink_at, 10.0 + TEIO_DRINK_INTERVAL_SECONDS)
 
-    def test_resolve_household_events_emits_rudolf_work_when_household_is_tight_on_fund(self):
+    def test_work_schedule_is_consumed_by_activity_runtime_when_due(self):
+        schedule = HouseholdEventScheduleState(
+            next_teio_drink_at=999.0,
+            next_rudolf_work_at=30.0,
+            next_rudolf_collectible_at=999.0,
+        )
+
+        consumed = consume_rudolf_work_schedule_if_due(
+            schedule,
+            now=30.0,
+        )
+
+        self.assertTrue(consumed)
+        self.assertEqual(
+            schedule.next_rudolf_work_at,
+            30.0 + RUDOLF_WORK_INTERVAL_SECONDS,
+        )
+
+    def test_work_schedule_is_not_consumed_before_due(self):
+        schedule = HouseholdEventScheduleState(
+            next_teio_drink_at=999.0,
+            next_rudolf_work_at=30.0,
+            next_rudolf_collectible_at=999.0,
+        )
+
+        consumed = consume_rudolf_work_schedule_if_due(
+            schedule,
+            now=29.0,
+        )
+
+        self.assertFalse(consumed)
+        self.assertEqual(schedule.next_rudolf_work_at, 30.0)
+
+    def test_periodic_resolver_leaves_work_schedule_to_activity_runtime(self):
         household = HouseholdState(
             living_fund=WORK_LIVING_FUND_THRESHOLD,
-            household_pressure=10.0,
-        )
-        schedule = HouseholdEventScheduleState(
-            next_teio_drink_at=999.0,
-            next_rudolf_work_at=30.0,
-            next_rudolf_collectible_at=999.0,
-        )
-
-        events = resolve_household_events(household, schedule, now=30.0)
-
-        self.assertEqual(len(events), 1)
-        self.assertEqual(events[0].event_type, "rudolf_work_income")
-        self.assertEqual(events[0].living_fund_delta, 80)
-        self.assertEqual(events[0].household_pressure_delta, -6.0)
-
-    def test_resolve_household_events_emits_rudolf_work_when_household_pressure_is_high(self):
-        household = HouseholdState(
-            living_fund=1200,
             household_pressure=WORK_PRESSURE_THRESHOLD,
         )
-        schedule = HouseholdEventScheduleState(
-            next_teio_drink_at=999.0,
-            next_rudolf_work_at=30.0,
-            next_rudolf_collectible_at=999.0,
-        )
-
-        events = resolve_household_events(household, schedule, now=30.0)
-
-        self.assertEqual(len(events), 1)
-        self.assertEqual(events[0].event_type, "rudolf_work_income")
-
-    def test_resolve_household_events_skips_rudolf_work_when_household_is_stable(self):
-        household = HouseholdState(living_fund=1200, household_pressure=10.0)
         schedule = HouseholdEventScheduleState(
             next_teio_drink_at=999.0,
             next_rudolf_work_at=40.0,
@@ -133,7 +136,7 @@ class HouseholdEventRulesTests(unittest.TestCase):
         events = resolve_household_events(household, schedule, now=40.0)
 
         self.assertEqual(events, [])
-        self.assertEqual(schedule.next_rudolf_work_at, 40.0 + RUDOLF_WORK_INTERVAL_SECONDS)
+        self.assertEqual(schedule.next_rudolf_work_at, 40.0)
 
     def test_resolve_household_events_emits_collectible_when_fund_is_high_and_pressure_low(self):
         household = HouseholdState(
@@ -165,7 +168,7 @@ class HouseholdEventRulesTests(unittest.TestCase):
 
         self.assertEqual(
             [event.event_type for event in events],
-            ["teio_drink_expense", "rudolf_work_income"],
+            ["teio_drink_expense"],
         )
 
 

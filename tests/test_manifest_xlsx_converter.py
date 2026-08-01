@@ -6,6 +6,7 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 from tanuki_core.manifest_xlsx_converter import (
+    KNOWN_CONTEXTS,
     ManifestXlsxValidationError,
     convert_assets_manifests,
     convert_character_manifest_xlsx,
@@ -104,6 +105,27 @@ def write_minimal_xlsx(path, rows, stale_rows=None):
 
 
 class ManifestXlsxConverterTests(unittest.TestCase):
+    def test_activity_sleep_contexts_are_registered(self):
+        self.assertTrue(
+            {
+                "activity_sleep_observing",
+                "activity_sleep_join_approach",
+                "activity_sleep_join_settling",
+                "activity_sleep_settling",
+                "activity_sleeping",
+                "activity_sleep_waking",
+            }.issubset(KNOWN_CONTEXTS)
+        )
+
+    def test_activity_work_contexts_are_registered(self):
+        self.assertTrue(
+            {
+                "activity_work_stationary",
+                "activity_work_rest",
+                "activity_work_transport",
+            }.issubset(KNOWN_CONTEXTS)
+        )
+
     def test_convert_character_manifest_xlsx_writes_schema_manifest(self):
         with tempfile.TemporaryDirectory() as tmp:
             character_dir = Path(tmp) / "Tokai Teio"

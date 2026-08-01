@@ -95,6 +95,17 @@ class AssetManagerTests(unittest.TestCase):
                     (["move_walk_shake-happy.gif@0.5"], "move", "walk_shake", "happy"),
                 )
 
+                any_purpose_result = manager.get_contextual_result_for_any_purpose(
+                    context="post_observe",
+                    preferred_moods=["happy"],
+                    ordered_preferences=True,
+                )
+
+                self.assertEqual(
+                    any_purpose_result,
+                    (["move_walk_shake-happy.gif@0.5"], "move", "walk_shake", "happy"),
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

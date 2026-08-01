@@ -40,6 +40,10 @@ class PetRuntimeStateTests(unittest.TestCase):
         state = PetInteractionState()
 
         self.assertFalse(state.dragging)
+        self.assertFalse(state.drag_press_pending)
+        self.assertFalse(state.drag_motion_detected)
+        self.assertEqual(state.drag_press_global_x, 0)
+        self.assertEqual(state.drag_press_global_y, 0)
         self.assertEqual(state.drag_start_time, 0.0)
         self.assertEqual(state.click_count, 0)
         self.assertFalse(state.is_angry_locked)
@@ -137,6 +141,7 @@ class PetRuntimeStateTests(unittest.TestCase):
         self.assertEqual(rudolf_state.social.social_cooldown_duration, 5.0)
         self.assertEqual(teio_state.intent.intent_kind, "none")
         self.assertEqual(teio_state.expression.expression_animation_context, "ambient")
+        self.assertFalse(teio_state.activity.active)
 
     def test_state_proxy_field_map_covers_runtime_state_groups(self):
         self.assertIn("behavior_state", PET_STATE_PROXY_FIELDS)
@@ -170,6 +175,10 @@ class PetRuntimeStateTests(unittest.TestCase):
         self.assertIn("social_log_event_cooldown_until", PET_STATE_PROXY_FIELDS["intent_state"])
         self.assertIn("expression_animation_context", PET_STATE_PROXY_FIELDS["expression_state"])
         self.assertIn("held_item_kind", PET_STATE_PROXY_FIELDS["interaction_state"])
+        self.assertIn("drag_press_pending", PET_STATE_PROXY_FIELDS["interaction_state"])
+        self.assertIn("drag_motion_detected", PET_STATE_PROXY_FIELDS["interaction_state"])
+        self.assertIn("drag_press_global_x", PET_STATE_PROXY_FIELDS["interaction_state"])
+        self.assertIn("drag_press_global_y", PET_STATE_PROXY_FIELDS["interaction_state"])
         self.assertIn("held_item_widget", PET_STATE_PROXY_FIELDS["interaction_state"])
         self.assertIn("negative_afterglow_until", PET_STATE_PROXY_FIELDS["interaction_state"])
         self.assertIn("negative_afterglow_care_block_until", PET_STATE_PROXY_FIELDS["interaction_state"])

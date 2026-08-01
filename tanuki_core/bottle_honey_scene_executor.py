@@ -26,6 +26,10 @@ from .offer_interaction_rules import (
     get_honey_guardian_take_context,
 )
 from .runtime import app_now
+from .transformation_profiles import (
+    CAPABILITY_BOTTLE_FEED_HOLDER,
+    pet_form_allows_capability,
+)
 
 
 HONEY_GUARD_APPROACH_SPEED_SCALE = 1.6
@@ -61,6 +65,11 @@ class BottleHoneySceneExecutor:
     ):
         if now is None:
             now = app_now()
+        if not pet_form_allows_capability(
+            holder_pet,
+            CAPABILITY_BOTTLE_FEED_HOLDER,
+        ):
+            return False
         runtime.ensure_pet_held_item(holder_pet, ITEM_BOTTLE, source=source)
         child_pet = runtime.choose_bottle_feed_child_for_holder(holder_pet, now=now)
         if child_pet is None:

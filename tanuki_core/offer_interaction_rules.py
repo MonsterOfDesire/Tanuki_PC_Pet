@@ -134,6 +134,15 @@ DEFAULT_ITEM_TAKE_HOTSPOTS = {
 }
 
 
+FORM_SPECIFIC_ITEM_TAKE_HOTSPOTS = {
+    ("transformed", ITEM_BOTTLE, "Tokai Teio"): OfferTakeHotspot(
+        23.0,
+        255.0,
+        10.0,
+    ),
+}
+
+
 DIRECT_OFFER_PREVIEW_CANDIDATES_BY_NAME = {
     "Symboli Rudolf": ("idle", "get"),
     "Sirius Symboli": ("idle", "stand_hand"),
@@ -407,7 +416,12 @@ def get_offer_item_definition(item_kind):
     return None
 
 
-def get_take_hotspot(item_kind, pet_name):
+def get_take_hotspot(item_kind, pet_name, form_key="base"):
+    form_specific = FORM_SPECIFIC_ITEM_TAKE_HOTSPOTS.get(
+        (str(form_key or "base"), item_kind, pet_name)
+    )
+    if form_specific is not None:
+        return form_specific
     return DEFAULT_ITEM_TAKE_HOTSPOTS.get(item_kind, {}).get(pet_name)
 
 
@@ -673,8 +687,13 @@ def resolve_offer_hotspot_match(
     original_face_left,
     offer_global_x,
     offer_global_y,
+    form_key="base",
 ):
-    hotspot = get_take_hotspot(item_kind, pet_name)
+    hotspot = get_take_hotspot(
+        item_kind,
+        pet_name,
+        form_key=form_key,
+    )
     if hotspot is None:
         return OfferHotspotMatch(
             matched=False,

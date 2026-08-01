@@ -1,6 +1,12 @@
 import time
+from dataclasses import replace
 
-from .pet_intent_rules import INTENT_OBSERVE, INTENT_POST_OBSERVE_INTERACTION, derive_current_intent
+from .pet_intent_rules import (
+    INTENT_OBSERVE,
+    INTENT_POST_OBSERVE_INTERACTION,
+    SLEEP_JOIN_INTENT_KINDS,
+    derive_current_intent,
+)
 from .pet_perception_rules import NearbyPetObservation, summarize_perception
 from .pet_relationship_rules import (
     RelationshipObservation,
@@ -11,9 +17,46 @@ from .pet_relationship_rules import (
 )
 from .pet_runtime_state import RelationshipEntry
 from .runtime import SIM_CLOCK, app_now, get_pet_logic_step_scale
+from .transformation_profiles import get_pet_form_key, pet_is_transforming
+from .transformation_social_rules import (
+    TRANSFORMED_RUDOLF_FOCUS_DISTANCE,
+    TRANSFORMED_RUDOLF_NAME,
+    resolve_transformed_rudolf_influence,
+)
 
 
 class PetBehaviorLayersMixin:
+    def get_transformed_rudolf_influence(
+        self,
+        all_pets,
+        *,
+        blocked_target_name="",
+    ):
+        rudolf = next(
+            (
+                pet
+                for pet in tuple(all_pets or ())
+                if getattr(pet, "name", "")
+                == TRANSFORMED_RUDOLF_NAME
+            ),
+            None,
+        )
+        return resolve_transformed_rudolf_influence(
+            observer_name=getattr(self, "name", ""),
+            observer_form=get_pet_form_key(self),
+            target_name=getattr(rudolf, "name", ""),
+            target_form=get_pet_form_key(rudolf),
+            target_visible=bool(
+                rudolf is not None
+                and rudolf.isVisible()
+                and not pet_is_transforming(rudolf)
+            ),
+            target_distance=(
+                self.distance_to(rudolf) if rudolf is not None else 0.0
+            ),
+            blocked_target_name=blocked_target_name,
+        )
+
     def _advance_refresh_scheduler(self, *, skip_attr, divisor_attr, divisor, force=False):
         current_divisor = max(1, int(getattr(self, divisor_attr, 1) or 1))
         if divisor != current_divisor:
@@ -223,6 +266,21 @@ class PetBehaviorLayersMixin:
                 now=now,
             )
 
+        transformed_rudolf = self.get_transformed_rudolf_influence(
+            all_pets,
+            blocked_target_name=blocked_target_name,
+        )
+        nearest_visible_pet_name = (
+            transformed_rudolf.target_name
+            if transformed_rudolf.active
+            else self.perception_nearest_visible_pet_name
+        )
+        nearest_visible_pet_distance = (
+            transformed_rudolf.target_distance
+            if transformed_rudolf.active
+            else self.perception_nearest_visible_pet_distance
+        )
+
         focus = choose_relationship_focus(
             entries=entries,
             social_target_name=social_target_name,
@@ -230,8 +288,13 @@ class PetBehaviorLayersMixin:
             observe_target_name=observe_target_name,
             observe_target_distance=observe_target_distance,
             observe_target_visible=(observe_target is not None),
-            nearest_visible_pet_name=self.perception_nearest_visible_pet_name,
-            nearest_visible_pet_distance=self.perception_nearest_visible_pet_distance,
+            nearest_visible_pet_name=nearest_visible_pet_name,
+            nearest_visible_pet_distance=nearest_visible_pet_distance,
+            nearest_visible_max_distance=(
+                TRANSFORMED_RUDOLF_FOCUS_DISTANCE
+                if transformed_rudolf.active
+                else None
+            ),
             blocked_target_name=blocked_target_name,
         )
         self.relationship_entries = entries
@@ -246,6 +309,10 @@ class PetBehaviorLayersMixin:
             now = app_now()
         observe_target_name, observe_target, observe_target_distance = self.get_locked_observe_focus(all_pets, now=now)
         blocked_target_name = self.get_blocked_observe_target_name(now=now)
+        transformed_rudolf = self.get_transformed_rudolf_influence(
+            all_pets,
+            blocked_target_name=blocked_target_name,
+        )
         focus = choose_relationship_focus(
             entries=self.relationship_entries,
             social_target_name=getattr(self.social_target, "name", "") if self.social_target else "",
@@ -256,10 +323,34 @@ class PetBehaviorLayersMixin:
             observe_target_name=observe_target_name,
             observe_target_distance=observe_target_distance,
             observe_target_visible=(observe_target is not None),
-            nearest_visible_pet_name=self.perception_nearest_visible_pet_name,
-            nearest_visible_pet_distance=self.perception_nearest_visible_pet_distance,
+            nearest_visible_pet_name=(
+                transformed_rudolf.target_name
+                if transformed_rudolf.active
+                else self.perception_nearest_visible_pet_name
+            ),
+            nearest_visible_pet_distance=(
+                transformed_rudolf.target_distance
+                if transformed_rudolf.active
+                else self.perception_nearest_visible_pet_distance
+            ),
+            nearest_visible_max_distance=(
+                TRANSFORMED_RUDOLF_FOCUS_DISTANCE
+                if transformed_rudolf.active
+                else None
+            ),
             blocked_target_name=blocked_target_name,
         )
+        if (
+            transformed_rudolf.active
+            and focus.target_name == transformed_rudolf.target_name
+        ):
+            focus = replace(
+                focus,
+                familiarity=max(
+                    focus.familiarity,
+                    transformed_rudolf.expression_familiarity_floor,
+                ),
+            )
         expression = derive_expression_state(
             situation_tag=self.perception_situation_tag,
             social_mode=self.social_mode,
@@ -323,6 +414,17 @@ class PetBehaviorLayersMixin:
             care_target_name=care_target_name,
             negative_afterglow_active=negative_afterglow_active,
         )
+        sleep_join_intent_active = (
+            self.intent_kind in SLEEP_JOIN_INTENT_KINDS and
+            bool(self.intent_target_name) and
+            snapshot.intent_kind in {
+                INTENT_OBSERVE,
+                "random_roam",
+                "ambient_idle",
+            }
+        )
+        if sleep_join_intent_active:
+            return
         observe_lock_active = (
             not negative_afterglow_active and
             self.intent_kind == INTENT_OBSERVE and

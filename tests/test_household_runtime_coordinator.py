@@ -1,6 +1,9 @@
 import unittest
 
-from tanuki_core.household_event_rules import HouseholdEventScheduleState
+from tanuki_core.household_event_rules import (
+    HouseholdEventScheduleState,
+    HouseholdResolvedEvent,
+)
 from tanuki_core.household_runtime_coordinator import HouseholdRuntimeCoordinator
 from tanuki_core.household_state import HouseholdEventLog, HouseholdState
 
@@ -90,6 +93,26 @@ class HouseholdRuntimeCoordinatorTests(unittest.TestCase):
         self.assertEqual(dashboard.summary_refreshes, 0)
         self.assertEqual(dashboard.social_refreshes, 1)
         self.assertEqual(dashboard.relationship_refreshes, 1)
+
+    def test_record_resolved_event_reuses_the_existing_household_ledger(self):
+        coordinator = self.build_coordinator()
+
+        entry = coordinator.record_resolved_event(
+            HouseholdResolvedEvent(
+                occurred_at=15.0,
+                category="economy",
+                event_type="rudolf_work_completed",
+                summary="魯道夫完成工作。",
+                actor_name="Symboli Rudolf",
+                living_fund_delta=80,
+                household_pressure_delta=-6.0,
+                metadata={"activity_id": "activity-1"},
+            )
+        )
+
+        self.assertEqual(entry.event_type, "rudolf_work_completed")
+        self.assertEqual(coordinator.household.living_fund, 1080)
+        self.assertEqual(coordinator.event_log.entries, [entry])
 
     def test_collect_pending_social_log_events_clears_payload_and_records_entry(self):
         coordinator = self.build_coordinator()

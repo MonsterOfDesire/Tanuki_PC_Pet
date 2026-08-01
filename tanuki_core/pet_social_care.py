@@ -2,6 +2,7 @@ import random
 
 from PyQt6.QtWidgets import QApplication
 
+from .activity_runtime_adapter import pet_has_active_activity
 from .geometry import get_total_virtual_geometry
 from .pet_social_catalog import (
     get_adult_companion_candidates as catalog_get_adult_companion_candidates,
@@ -11,7 +12,13 @@ from .pet_social_catalog import (
     get_idle_candidates as catalog_get_idle_candidates,
     get_move_candidates as catalog_get_move_candidates,
 )
-from .pet_intent_rules import INTENT_AMBIENT_IDLE, INTENT_OBSERVE, INTENT_POST_OBSERVE_INTERACTION, INTENT_RANDOM_ROAM
+from .pet_intent_rules import (
+    INTENT_AMBIENT_IDLE,
+    INTENT_OBSERVE,
+    INTENT_POST_OBSERVE_INTERACTION,
+    INTENT_RANDOM_ROAM,
+    pet_has_sleep_join_intent,
+)
 from .pet_ambient_mood_rules import (
     resolve_solitude_event,
 )
@@ -65,6 +72,23 @@ from .pet_social_rules import (
     should_preserve_candidate_animation,
 )
 from .runtime import app_now, get_pet_logic_step_count, get_pet_logic_step_scale
+from .transformation_profiles import (
+    CAPABILITY_CARE_GIVER,
+    CAPABILITY_COMBINED_CARE,
+    CAPABILITY_SOCIAL_FOLLOW,
+    CAPABILITY_SOCIAL_MIMIC,
+    get_pet_form_key,
+    pet_form_allows_capability,
+    pet_form_allows_care_target,
+    pet_is_transforming,
+)
+from .transformation_social_rules import (
+    TRANSFORMED_RUDOLF_OBSERVE_CHANCE_BONUS,
+    TRANSFORMED_RUDOLF_POST_OBSERVE_CHANCE_BONUS,
+    amplify_transformed_rudolf_positive_relation_delta,
+    get_transformed_rudolf_social_distance,
+    is_transformed_rudolf_social_pair,
+)
 
 
 class PetSocialCareMixin:
@@ -79,6 +103,14 @@ class PetSocialCareMixin:
         "glance",
     )
     RESCUE_MIN_SPEED_FLOOR = 5.0
+
+    def has_transformed_rudolf_social_influence(self, target):
+        return is_transformed_rudolf_social_pair(
+            observer_name=getattr(self, "name", ""),
+            observer_form=get_pet_form_key(self),
+            target_name=getattr(target, "name", ""),
+            target_form=get_pet_form_key(target),
+        )
 
     def is_distressed(self):
         return is_distressed_state(
@@ -98,13 +130,19 @@ class PetSocialCareMixin:
             adult_screen = QApplication.screenAt(pet.geometry().center()) or QApplication.primaryScreen()
             adult_candidates.append(CareAdultCandidate(
                 name=pet.name,
-                is_adult=pet.is_adult,
+                is_adult=pet_form_allows_capability(
+                    pet,
+                    CAPABILITY_CARE_GIVER,
+                ),
                 is_visible=pet.isVisible(),
                 is_busy=(
+                    pet_is_transforming(pet) or
                     pet.dragging or
                     pet.care_mode != "none" or
                     pet.is_under_care(app_now()) or
-                    pet.is_angry_locked
+                    pet.is_angry_locked or
+                    pet_has_active_activity(pet) or
+                    pet_has_sleep_join_intent(pet)
                 ),
                 distance=pet.distance_to(child),
                 same_screen=(adult_screen == child_screen),
@@ -182,7 +220,15 @@ class PetSocialCareMixin:
             self.care_mode != "none" or
             self.care_partner is not None or
             self.is_under_care(now) or
-            offer_locked
+            offer_locked or
+            (
+                pet_has_active_activity(self) and
+                getattr(
+                    self.activity_state,
+                    "collision_policy",
+                    "normal",
+                ) == "ignore"
+            )
         )
 
     def apply_animation_result(self, purpose, result):
@@ -386,6 +432,54 @@ class PetSocialCareMixin:
             return False
         frames, purpose, action_type, mood_tag = result
         return self.apply_animation_result(purpose, (frames, action_type, mood_tag))
+
+    def change_state_for_context_any_purpose_with_preferences(
+        self,
+        context,
+        preferred_moods=None,
+        forbidden=None,
+        preserve=False,
+        ignore_mood_band=False,
+    ):
+        asset_manager = getattr(self, "asset_manager", None)
+        if asset_manager is None:
+            return False
+        if preserve and self.current_animation_matches_context(
+            (),
+            context,
+            preferred_moods=preferred_moods,
+            forbidden=forbidden,
+            ignore_mood_band=ignore_mood_band,
+        ):
+            return True
+        selector = getattr(
+            asset_manager,
+            "get_contextual_result_for_any_purpose",
+            None,
+        )
+        if not callable(selector):
+            return False
+        result = selector(
+            context=context,
+            preferred_moods=preferred_moods,
+            forbidden=forbidden,
+            mood_score=(
+                None
+                if ignore_mood_band
+                else getattr(self, "mood_score", None)
+            ),
+            ordered_preferences=True,
+        )
+        if not result:
+            return False
+        frames, purpose, action_type, mood_tag = result
+        applied = self.apply_animation_result(
+            purpose,
+            (frames, action_type, mood_tag),
+        )
+        if applied:
+            self.state = "move" if purpose == "move" else "idle"
+        return applied
 
     def get_severe_moods(self):
         return self.ADULT_SEVERE_MOODS if self.is_adult else self.SEVERE_MOODS
@@ -619,15 +713,43 @@ class PetSocialCareMixin:
         )
         if not plan.should_emit:
             return False
+        transformed_rudolf_influence = (
+            is_transformed_rudolf_social_pair(
+                observer_name=getattr(self, "name", ""),
+                observer_form=get_pet_form_key(self),
+                target_name=target_name,
+                target_form=getattr(
+                    self,
+                    "intent_target_form",
+                    "",
+                ),
+            )
+        )
         self.pending_social_log_event = {
             "occurred_at": float(now),
             "event_type": plan.event_type,
             "summary": plan.summary,
             "actor_name": getattr(self, "name", ""),
             "target_name": str(target_name or ""),
-            "relation_delta": dict(plan.relation_delta),
-            "tags": tuple(plan.tags),
-            "metadata": dict(plan.metadata),
+            "relation_delta": (
+                amplify_transformed_rudolf_positive_relation_delta(
+                    plan.relation_delta,
+                    influenced=transformed_rudolf_influence,
+                )
+            ),
+            "tags": (
+                (*plan.tags, "transformed_rudolf")
+                if transformed_rudolf_influence
+                else tuple(plan.tags)
+            ),
+            "metadata": {
+                **dict(plan.metadata),
+                **(
+                    {"transformed_rudolf_influence": True}
+                    if transformed_rudolf_influence
+                    else {}
+                ),
+            },
         }
         self.social_log_event_cooldown_until = plan.cooldown_until
         return True
@@ -660,6 +782,7 @@ class PetSocialCareMixin:
         if self.intent_kind in {INTENT_OBSERVE, INTENT_POST_OBSERVE_INTERACTION}:
             self.intent_kind = INTENT_AMBIENT_IDLE
             self.intent_target_name = ""
+            self.intent_target_form = ""
             self.intent_priority = 10
             self.intent_source = "ambient"
             self.intent_reason = ""
@@ -734,6 +857,7 @@ class PetSocialCareMixin:
         lock_until = float(now) + float(lock_duration or 0.0)
         self.intent_kind = INTENT_POST_OBSERVE_INTERACTION
         self.intent_target_name = target_name
+        self.intent_target_form = get_pet_form_key(target)
         self.intent_locked_until = lock_until
         self.intent_reconsider_after = max(float(self.intent_reconsider_after or 0.0), lock_until)
         self.intent_priority = 16
@@ -819,6 +943,8 @@ class PetSocialCareMixin:
             getattr(target_pet, "care_mode", "none") != "none" or
             target_is_under_care or
             getattr(target_pet, "offer_scene_kind", "none") != "none" or
+            pet_has_active_activity(target_pet) or
+            pet_has_sleep_join_intent(target_pet) or
             getattr(target_pet, "intent_kind", "") in {INTENT_OBSERVE, INTENT_POST_OBSERVE_INTERACTION}
         )
 
@@ -900,6 +1026,13 @@ class PetSocialCareMixin:
                 visible_pet_count=visible_pet_count,
                 streak_count=observe_streak_count,
                 roll=random.random(),
+                chance_bonus=(
+                    TRANSFORMED_RUDOLF_OBSERVE_CHANCE_BONUS
+                    if self.has_transformed_rudolf_social_influence(
+                        target_pet
+                    )
+                    else 0.0
+                ),
             )
             if not start_decision.should_start:
                 self.intent_locked_until = 0.0
@@ -941,6 +1074,13 @@ class PetSocialCareMixin:
                 visible_pet_count=visible_pet_count,
                 streak_count=observe_streak_count,
                 roll=random.random(),
+                chance_bonus=(
+                    TRANSFORMED_RUDOLF_POST_OBSERVE_CHANCE_BONUS
+                    if self.has_transformed_rudolf_social_influence(
+                        target_pet
+                    )
+                    else 0.0
+                ),
             )
             if interaction_candidate.should_start and target_pet is not None:
                 return self.start_post_observe_interaction(
@@ -960,6 +1100,7 @@ class PetSocialCareMixin:
 
         self.intent_kind = INTENT_OBSERVE
         self.intent_target_name = observe_plan.target_name
+        self.intent_target_form = get_pet_form_key(target_pet)
         self.intent_locked_until = observe_plan.lock_until
         self.intent_reconsider_after = max(
             float(self.intent_reconsider_after or 0.0),
@@ -1245,6 +1386,11 @@ class PetSocialCareMixin:
         return True
 
     def select_interaction_animation(self, child):
+        if not pet_form_allows_capability(
+            self,
+            CAPABILITY_COMBINED_CARE,
+        ):
+            return None
         child_tokens = set(child.get_child_tokens())
         actions = self.asset_manager.get_action_keys("interaction")
         if not actions:
@@ -1317,7 +1463,10 @@ class PetSocialCareMixin:
 
     def update_care_behavior(self, now, all_pets):
         gate = SOCIAL_CARE_COORDINATOR.decide_care_gate(
-            is_adult=self.is_adult,
+            is_adult=pet_form_allows_capability(
+                self,
+                CAPABILITY_CARE_GIVER,
+            ),
             is_visible=self.isVisible(),
             care_enabled=self.is_care_feature_enabled(),
             care_mode=self.care_mode,
@@ -1439,7 +1588,10 @@ class PetSocialCareMixin:
             candidates.append(CareTargetCandidate(
                 pet=pet,
                 is_self=(pet == self),
-                is_adult=pet.is_adult,
+                is_adult=pet_form_allows_capability(
+                    pet,
+                    CAPABILITY_CARE_GIVER,
+                ),
                 is_visible=pet.isVisible(),
                 care_partner=pet.care_partner,
                 is_recovering=pet.is_recovering,
@@ -1450,7 +1602,18 @@ class PetSocialCareMixin:
                     if not pet.is_adult
                     else None
                 ),
-                care_blocked=bool(care_block_checker(now)) if callable(care_block_checker) else False,
+                care_blocked=(
+                    not pet_form_allows_care_target(self, pet.name)
+                    or (
+                        bool(care_block_checker(now))
+                        if callable(care_block_checker)
+                        else False
+                    )
+                ),
+                activity_busy=(
+                    pet_has_active_activity(pet)
+                    or pet_has_sleep_join_intent(pet)
+                ),
             ))
 
         decision = SOCIAL_CARE_COORDINATOR.decide_idle_care(IdleCareContext(
@@ -1467,6 +1630,19 @@ class PetSocialCareMixin:
         return decision.handled
 
     def update_social_behavior(self, now, all_pets):
+        if not (
+            pet_form_allows_capability(
+                self,
+                CAPABILITY_SOCIAL_FOLLOW,
+            )
+            or pet_form_allows_capability(
+                self,
+                CAPABILITY_SOCIAL_MIMIC,
+            )
+        ):
+            if self.social_mode != "none":
+                self.stop_social_mode(now, apply_cooldown=False)
+            return False
         if self.is_negative_afterglow_active(now):
             if self.social_mode != "none":
                 self.stop_social_mode(now, apply_cooldown=False)
@@ -1478,7 +1654,29 @@ class PetSocialCareMixin:
         if gate.action != SOCIAL_DECISION_CONTINUE:
             return False
 
-        rudolf = next((p for p in all_pets if p.name == "Symboli Rudolf" and p.isVisible()), None)
+        rudolf = next(
+            (
+                pet
+                for pet in all_pets
+                if (
+                    pet.name == "Symboli Rudolf"
+                    and pet.isVisible()
+                    and not pet_is_transforming(pet)
+                    and not pet_has_active_activity(pet)
+                    and not pet_has_sleep_join_intent(pet)
+                )
+            ),
+            None,
+        )
+        transformed_rudolf_influence = (
+            self.has_transformed_rudolf_social_influence(rudolf)
+            if rudolf is not None
+            else False
+        )
+        effective_social_distance = get_transformed_rudolf_social_distance(
+            self.social_distance,
+            influenced=transformed_rudolf_influence,
+        )
         if self.social_mode != "none":
             self.social_timer_frames -= get_pet_logic_step_count(self)
             decision = SOCIAL_CARE_COORDINATOR.decide_active_social(ActiveSocialContext(
@@ -1487,7 +1685,7 @@ class PetSocialCareMixin:
                 social_target_matches=rudolf is not None and self.social_target == rudolf,
                 distance_to_rudolf=self.distance_to(rudolf) if rudolf else 0.0,
                 timer_frames_remaining=self.social_timer_frames,
-                social_distance=self.social_distance,
+                social_distance=effective_social_distance,
                 rudolf_purpose=rudolf.current_purpose if rudolf else "",
                 can_mimic=can_mimic_socially(mood_state=self.mood_state),
             ))
@@ -1519,7 +1717,7 @@ class PetSocialCareMixin:
             now=now,
             social_cooldown_end=self.social_cooldown_end,
             distance_to_rudolf=self.distance_to(rudolf) if rudolf else 0.0,
-            social_distance=self.social_distance,
+            social_distance=effective_social_distance,
             rudolf_purpose=rudolf.current_purpose if rudolf else "",
             is_behind=((self.x() - rudolf.x()) * rudolf.direction < 0) if rudolf else False,
             can_strictly_mimic=self.can_strictly_mimic(rudolf) if rudolf else False,

@@ -1,4 +1,6 @@
-from PyQt6.QtCore import QSignalBlocker, Qt
+import time
+
+from PyQt6.QtCore import QSignalBlocker, Qt, QTimer
 from PyQt6.QtWidgets import (
     QButtonGroup,
     QGridLayout,
@@ -14,6 +16,11 @@ from PyQt6.QtWidgets import (
 from .ui_theme import DEFAULT_UI_THEME
 from .ui_localization import character_display_name
 from .ui_controls import ToggleSwitch
+from .transformation_control_presenter import (
+    TRANSFORMATION_CONTROL_NAMES,
+    build_transformation_completion_text,
+    build_transformation_control_presentation,
+)
 
 
 COMPACT_SETTINGS_WIDTH = 660
@@ -21,6 +28,16 @@ WORLD_MODE_LABELS = {
     "golden_legend": "黃金傳說",
     "sandbox": "沙盒",
 }
+RUDOLF_WORK_PREVIEW_IDLE_TEXT = (
+    "只播放工作與休息動畫，不套用金錢、家庭壓力或心情結算。"
+)
+RUDOLF_WORK_PREVIEW_ACTIVE_TEXT = (
+    "魯道夫工作預覽已開始；本次不會套用任何結算。"
+)
+TRANSFORMATION_PREVIEW_IDLE_TEXT = (
+    "沙盒也會自主變身；按鈕可手動切換形態，且不會觸發正式事件或結算。"
+)
+TRANSFORMATION_PREVIEW_NAMES = TRANSFORMATION_CONTROL_NAMES
 
 
 class StatusSettingsPanel(QWidget):
@@ -37,6 +54,20 @@ class StatusSettingsPanel(QWidget):
         self.tsuyoshi_duration_buttons = []
         self._button_groups = []
         self._compact_layout = None
+        self._waiting_for_rudolf_work_preview = False
+        self._pending_transformation_request = None
+        self._transformation_notice_text = ""
+        self._transformation_notice_until = 0.0
+        self.rudolf_work_preview_poll_timer = QTimer(self)
+        self.rudolf_work_preview_poll_timer.setInterval(250)
+        self.rudolf_work_preview_poll_timer.timeout.connect(
+            self._poll_rudolf_work_preview_status
+        )
+        self.transformation_preview_poll_timer = QTimer(self)
+        self.transformation_preview_poll_timer.setInterval(100)
+        self.transformation_preview_poll_timer.timeout.connect(
+            self._poll_transformation_preview_status
+        )
 
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
@@ -140,6 +171,70 @@ class StatusSettingsPanel(QWidget):
                 self.social_status_switch,
             )
         )
+        self.rudolf_work_preview_button = QPushButton(
+            "預覽魯道夫工作"
+        )
+        self.rudolf_work_preview_button.setProperty(
+            "tanukiRole",
+            "settingsAction",
+        )
+        self.rudolf_work_preview_button.setAccessibleName(
+            "預覽魯道夫工作"
+        )
+        self.rudolf_work_preview_button.clicked.connect(
+            self._handle_rudolf_work_preview
+        )
+        self.developer_layout.addWidget(
+            self.rudolf_work_preview_button
+        )
+        self.rudolf_work_preview_status = QLabel(
+            RUDOLF_WORK_PREVIEW_IDLE_TEXT
+        )
+        self.rudolf_work_preview_status.setProperty(
+            "tanukiRole",
+            "settingsNotice",
+        )
+        self.rudolf_work_preview_status.setWordWrap(True)
+        self.developer_layout.addWidget(
+            self.rudolf_work_preview_status
+        )
+        self.transformation_control_label = self._create_label(
+            "沙盒形態控制"
+        )
+        self.transformation_control_label.setAlignment(
+            Qt.AlignmentFlag.AlignLeft
+            | Qt.AlignmentFlag.AlignVCenter
+        )
+        self.developer_layout.addWidget(
+            self.transformation_control_label
+        )
+        self.transformation_preview_row = QHBoxLayout()
+        self.transformation_preview_buttons = {}
+        for pet_name, display_name in TRANSFORMATION_PREVIEW_NAMES.items():
+            button = QPushButton(f"手動變身{display_name}")
+            button.setProperty("tanukiRole", "settingsAction")
+            button.setAccessibleName(f"切換{display_name}變身形態")
+            button.clicked.connect(
+                lambda checked=False, name=pet_name: (
+                    self._handle_transformation_preview(name)
+                )
+            )
+            self.transformation_preview_row.addWidget(button)
+            self.transformation_preview_buttons[pet_name] = button
+        self.developer_layout.addLayout(
+            self.transformation_preview_row
+        )
+        self.transformation_preview_status = QLabel(
+            TRANSFORMATION_PREVIEW_IDLE_TEXT
+        )
+        self.transformation_preview_status.setProperty(
+            "tanukiRole",
+            "settingsNotice",
+        )
+        self.transformation_preview_status.setWordWrap(True)
+        self.developer_layout.addWidget(
+            self.transformation_preview_status
+        )
         self.validation_button = QPushButton("檢查 Config / Manifest")
         self.validation_button.setProperty("tanukiRole", "settingsAction")
         self.validation_button.clicked.connect(self._handle_validation)
@@ -159,7 +254,11 @@ class StatusSettingsPanel(QWidget):
 
     def set_binding(self, binding):
         binding_changed = binding is not self.binding
+        if binding_changed:
+            self._reset_transformation_preview_status()
         self.binding = binding
+        if binding is None:
+            self._reset_rudolf_work_preview_status()
         self.unavailable_label.setVisible(binding is None)
         self.settings_grid.setEnabled(binding is not None)
         if binding is not None:
@@ -193,6 +292,31 @@ class StatusSettingsPanel(QWidget):
             )
             self.social_status_switch.setChecked(
                 snapshot.social_status_enabled
+            )
+            preview_enabled = snapshot.world_mode == "sandbox"
+            self.rudolf_work_preview_button.setEnabled(
+                preview_enabled
+            )
+            self.rudolf_work_preview_button.setToolTip(
+                (
+                    "使用 manifest 的 activity_work_stationary 與 "
+                    "activity_work_rest 預覽；不套用正式結算。"
+                )
+                if preview_enabled
+                else "只可在沙盒模式使用工作預覽。"
+            )
+            transformation_states = (
+                self._transformation_control_states()
+            )
+            transformation_presentation = (
+                build_transformation_control_presentation(
+                    transformation_states,
+                    world_mode=snapshot.world_mode,
+                )
+            )
+            self._apply_transformation_control_presentation(
+                transformation_presentation,
+                transformation_states,
             )
             self._set_checked(
                 self.world_mode_buttons,
@@ -281,6 +405,12 @@ class StatusSettingsPanel(QWidget):
     def showEvent(self, event):
         self._update_responsive_layout()
         super().showEvent(event)
+        if self.binding is not None:
+            self.refresh_from_binding()
+
+    def hideEvent(self, event):
+        self.transformation_preview_poll_timer.stop()
+        super().hideEvent(event)
 
     def _update_responsive_layout(self, force=False):
         available_width = self.width()
@@ -335,6 +465,8 @@ class StatusSettingsPanel(QWidget):
     def _handle_world_mode(self, world_mode):
         if self.binding is None:
             return
+        self._reset_rudolf_work_preview_status()
+        self._reset_transformation_preview_status()
         self.binding.set_world_mode(world_mode)
         self.refresh_from_binding()
 
@@ -371,6 +503,249 @@ class StatusSettingsPanel(QWidget):
     def _handle_validation(self):
         if self.binding is not None:
             self.binding.run_validation_checks()
+
+    def _handle_rudolf_work_preview(self):
+        if self.binding is None:
+            return
+        result = self.binding.preview_rudolf_work()
+        self.rudolf_work_preview_status.setText(
+            self._rudolf_work_preview_message(result)
+        )
+        if bool(getattr(result, "started", False)):
+            self._waiting_for_rudolf_work_preview = True
+            self.rudolf_work_preview_poll_timer.start()
+
+    def _poll_rudolf_work_preview_status(self):
+        if (
+            not self._waiting_for_rudolf_work_preview
+            or self.binding is None
+        ):
+            self._reset_rudolf_work_preview_status()
+            return
+        active_provider = getattr(
+            self.binding,
+            "is_rudolf_work_preview_active",
+            None,
+        )
+        if callable(active_provider) and bool(active_provider()):
+            return
+        self._reset_rudolf_work_preview_status()
+
+    def _reset_rudolf_work_preview_status(self):
+        self._waiting_for_rudolf_work_preview = False
+        self.rudolf_work_preview_poll_timer.stop()
+        self.rudolf_work_preview_status.setText(
+            RUDOLF_WORK_PREVIEW_IDLE_TEXT
+        )
+
+    def _handle_transformation_preview(self, pet_name):
+        if self.binding is None:
+            return
+        toggle = getattr(
+            self.binding,
+            "toggle_transformation_preview",
+            None,
+        )
+        result = toggle(pet_name) if callable(toggle) else None
+        if (
+            bool(getattr(result, "started", False))
+            or bool(getattr(result, "queued", False))
+        ):
+            self._pending_transformation_request = (
+                str(getattr(result, "character_name", "") or pet_name),
+                str(getattr(result, "target_form", "") or ""),
+            )
+            self._transformation_notice_text = ""
+            self._transformation_notice_until = 0.0
+        else:
+            self._set_transformation_notice(
+                self._transformation_preview_message(result)
+            )
+        self.refresh_from_binding()
+
+    def _poll_transformation_preview_status(self):
+        if self.binding is None:
+            self._reset_transformation_preview_status()
+            return
+        self.refresh_from_binding()
+
+    def _reset_transformation_preview_status(self):
+        self.transformation_preview_poll_timer.stop()
+        self._pending_transformation_request = None
+        self._transformation_notice_text = ""
+        self._transformation_notice_until = 0.0
+        self.transformation_preview_status.setText(
+            TRANSFORMATION_PREVIEW_IDLE_TEXT
+        )
+
+    def _transformation_control_states(self):
+        state_provider = getattr(
+            self.binding,
+            "get_transformation_preview_state",
+            None,
+        )
+        return {
+            pet_name: (
+                dict(state_provider(pet_name) or {})
+                if callable(state_provider)
+                else {}
+            )
+            for pet_name in TRANSFORMATION_PREVIEW_NAMES
+        }
+
+    def _apply_transformation_control_presentation(
+        self,
+        presentation,
+        states,
+    ):
+        self._capture_transformation_completion(states)
+        for button_presentation in presentation.buttons:
+            button = self.transformation_preview_buttons[
+                button_presentation.character_name
+            ]
+            button.setText(button_presentation.text)
+            button.setEnabled(button_presentation.enabled)
+            button.setToolTip(button_presentation.tooltip)
+
+        now = time.monotonic()
+        if presentation.has_active_operation:
+            status_text = presentation.status_text
+        elif (
+            self._transformation_notice_text
+            and now < self._transformation_notice_until
+        ):
+            status_text = self._transformation_notice_text
+        else:
+            self._transformation_notice_text = ""
+            self._transformation_notice_until = 0.0
+            status_text = presentation.status_text
+        self.transformation_preview_status.setText(status_text)
+
+        if presentation.should_poll and self.isVisible():
+            if (
+                self.transformation_preview_poll_timer.interval()
+                != presentation.poll_interval_ms
+            ):
+                self.transformation_preview_poll_timer.setInterval(
+                    presentation.poll_interval_ms
+                )
+            if not self.transformation_preview_poll_timer.isActive():
+                self.transformation_preview_poll_timer.start()
+        else:
+            self.transformation_preview_poll_timer.stop()
+
+    def _capture_transformation_completion(self, states):
+        if self._pending_transformation_request is None:
+            return
+        character_name, target_form = (
+            self._pending_transformation_request
+        )
+        state = states.get(character_name, {})
+        if (
+            bool(state.get("active", False))
+            or bool(state.get("manual_end_requested", False))
+            or str(state.get("current_form", "") or "") != target_form
+        ):
+            return
+        self._pending_transformation_request = None
+        self._set_transformation_notice(
+            build_transformation_completion_text(
+                character_name,
+                target_form,
+            )
+        )
+
+    def _set_transformation_notice(self, text, duration_seconds=2.5):
+        self._transformation_notice_text = str(text or "")
+        self._transformation_notice_until = (
+            time.monotonic() + float(duration_seconds)
+        )
+
+    @staticmethod
+    def _transformation_preview_message(result):
+        if result is None:
+            return "無法預覽：請先切換至沙盒模式，或 Runtime 尚未連接。"
+        name = TRANSFORMATION_PREVIEW_NAMES.get(
+            str(getattr(result, "character_name", "") or ""),
+            "角色",
+        )
+        if bool(getattr(result, "started", False)):
+            target_form = str(
+                getattr(result, "target_form", "") or ""
+            )
+            action = "解除變身" if target_form == "base" else "變身"
+            return f"{name}{action}過場已開始。"
+        if bool(getattr(result, "queued", False)):
+            return (
+                f"{name}解除變身已排入等待；"
+                "回到地面且空閒後會自動安全解除。"
+            )
+        reason = str(getattr(result, "reason", "") or "")
+        messages = {
+            "preview_requires_sandbox": "無法預覽：請先切換至沙盒模式。",
+            "transition_active": "無法預覽：角色正在切換形態。",
+            "participant_unavailable": "無法預覽：找不到指定角色。",
+            "participant_disabled": "無法預覽：角色目前已停用。",
+            "participant_hidden": "無法預覽：角色目前未顯示。",
+            "participant_owned": "無法預覽：角色正在執行 Activity。",
+            "participant_dragging": "無法預覽：角色正在被拖曳。",
+            "participant_offer_busy": "無法預覽：角色正在進行道具互動。",
+            "participant_care_busy": "無法預覽：角色正在照護或被照護。",
+            "participant_social_busy": "無法預覽：角色正在進行社交互動。",
+            "participant_recovering": "無法預覽：角色正在恢復或鎖定狀態。",
+            "airborne": "無法預覽：角色必須先回到地面。",
+            "asset_directory_missing": "無法預覽：找不到變身素材資料夾。",
+            "capability_unavailable:random": "無法預覽：manifest 缺少可用的 random 素材。",
+        }
+        if reason in messages:
+            return messages[reason]
+        if reason.startswith("asset_load_failed:"):
+            return "無法預覽：變身素材載入失敗。"
+        return f"無法預覽：{reason}" if reason else "無法預覽。"
+
+    @staticmethod
+    def _rudolf_work_preview_message(result):
+        if result is None:
+            return "無法預覽：執行中的 Runtime 尚未連接。"
+        if bool(getattr(result, "started", False)):
+            return RUDOLF_WORK_PREVIEW_ACTIVE_TEXT
+
+        reason = str(getattr(result, "reason", "") or "")
+        messages = {
+            "preview_requires_sandbox": (
+                "無法預覽：請先切換至沙盒模式。"
+            ),
+            "severe_mood": (
+                "無法預覽：魯道夫心情為 severe，"
+                "沒有符合 band 的工作素材。"
+            ),
+            "rudolf_unavailable": (
+                "無法預覽：找不到魯道夫角色。"
+            ),
+            "participant_owned": (
+                "無法預覽：魯道夫正在執行其他 Activity。"
+            ),
+            "participant_hidden": (
+                "無法預覽：魯道夫目前未顯示。"
+            ),
+            "participant_disabled": (
+                "無法預覽：魯道夫目前已停用。"
+            ),
+            "settlement_pending": (
+                "無法預覽：正式工作的結算仍在等待完成。"
+            ),
+        }
+        if reason in messages:
+            return messages[reason]
+        if reason.startswith("participant_busy:"):
+            return "無法預覽：魯道夫目前正在進行其他互動。"
+        if reason.startswith("capability_unavailable:"):
+            return "無法預覽：manifest 中沒有符合目前狀態的工作素材。"
+        return (
+            f"無法預覽：{reason}"
+            if reason
+            else "無法預覽：Runtime 未啟動工作 Activity。"
+        )
 
     @staticmethod
     def _set_checked(buttons, index):

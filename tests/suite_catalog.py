@@ -57,6 +57,7 @@ TEST_SUITE_MEMBERS = {
         "test_relation_summon_ui",
         "test_skinned_window_frame",
         "test_status_settings_ui",
+        "test_transformation_control_presenter",
         "test_ui_localization",
         "test_ui_skin_spec",
         "test_window_chrome",

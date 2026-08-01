@@ -142,13 +142,21 @@ def resolve_post_observe_escape(*, previous_target_name, previous_target_dx, cur
     return True, direction, timer
 
 
-def resolve_observe_start_decision(*, expression_animation_context, visible_pet_count, streak_count, roll):
+def resolve_observe_start_decision(
+    *,
+    expression_animation_context,
+    visible_pet_count,
+    streak_count,
+    roll,
+    chance_bonus=0.0,
+):
     if expression_animation_context not in OBSERVE_EXPRESSION_CONTEXTS:
         return ObserveStartDecision(should_start=False, reason="invalid_expression")
 
     chance = OBSERVE_START_CHANCE
     if expression_animation_context == "relation_close":
         chance += OBSERVE_START_CLOSE_BONUS
+    chance += max(0.0, float(chance_bonus or 0.0))
     if int(visible_pet_count or 0) >= OBSERVE_ESCAPE_CROWD_VISIBLE_COUNT:
         chance -= OBSERVE_START_CROWD_PENALTY
     chance -= max(0, int(streak_count or 0) - 1) * OBSERVE_START_STREAK_PENALTY
@@ -197,6 +205,7 @@ def resolve_post_observe_interaction_candidate(
     visible_pet_count,
     streak_count,
     roll,
+    chance_bonus=0.0,
 ):
     if not previous_target_name:
         return PostObserveInteractionDecision(should_start=False, reason="no_target")
@@ -211,6 +220,7 @@ def resolve_post_observe_interaction_candidate(
     chance = POST_OBSERVE_INTERACTION_CHANCE
     if interaction_context == "relation_close":
         chance += POST_OBSERVE_INTERACTION_CLOSE_BONUS
+    chance += max(0.0, float(chance_bonus or 0.0))
     if int(visible_pet_count or 0) >= OBSERVE_ESCAPE_CROWD_VISIBLE_COUNT:
         chance -= POST_OBSERVE_INTERACTION_CROWD_PENALTY
     chance -= max(0, int(streak_count or 0) - 1) * POST_OBSERVE_INTERACTION_STREAK_PENALTY

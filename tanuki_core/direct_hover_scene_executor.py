@@ -26,6 +26,20 @@ from .runtime import app_now
 
 
 class DirectHoverSceneExecutor:
+    @staticmethod
+    def pet_can_interact_with_offer_item(runtime, pet, item_kind):
+        checker = getattr(
+            runtime,
+            "pet_can_interact_with_offer_item",
+            None,
+        )
+        if callable(checker):
+            return bool(checker(pet, item_kind))
+        return bool(
+            pet is not None
+            and can_pet_interact_with_offer_item(item_kind, pet.name)
+        )
+
     """Executes direct-offer and hover-reaction scenes through the runtime facade."""
 
     def apply_offer_hover_miss(self, runtime, pet, item_kind, now=None):
@@ -282,7 +296,11 @@ class DirectHoverSceneExecutor:
         if target_pet is None or not target_pet.isVisible():
             runtime.clear_offer_hover(apply_miss=False)
             return False
-        if not can_pet_interact_with_offer_item(runtime.offer_hover_item_kind, target_pet.name):
+        if not self.pet_can_interact_with_offer_item(
+            runtime,
+            target_pet,
+            runtime.offer_hover_item_kind,
+        ):
             runtime.clear_offer_hover(apply_miss=False)
             return False
         if runtime.pet_is_busy_for_offer_interaction(target_pet, now):

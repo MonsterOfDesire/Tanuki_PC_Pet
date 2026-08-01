@@ -7,6 +7,11 @@ from dataclasses import dataclass, field
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import QApplication
 
+from .activity_coordinator import ActivityCoordinator
+from .activity_runtime_adapter import (
+    ActivityRuntimeAdapter,
+    pet_has_active_activity,
+)
 from .asset_manager import AssetManager
 from .bottle_honey_scene_executor import BottleHoneySceneExecutor
 from .config_save_scheduler import ConfigSaveScheduler
@@ -55,6 +60,7 @@ from .offer_interaction_rules import (
     resolve_offer_preview_match,
 )
 from .pet_widget import TanukiPet
+from .pet_intent_rules import pet_has_sleep_join_intent
 from .runtime import (
     AdaptivePetLogicScheduler,
     SIM_CLOCK,
@@ -64,9 +70,25 @@ from .runtime import (
     resolve_timer_repeat_count,
     run_pet_physics_step,
 )
+from .rudolf_work_executor import RudolfWorkExecutor
+from .rudolf_work_rules import RUDOLF_NAME
+from .rudolf_work_settlement import RudolfWorkSettlementAdapter
 from .settings_provider import RuntimeSettings
 from .shared_food_profiles import get_shared_food_profile_for_holder
 from .shared_food_scene_executor import SharedFoodSceneExecutor
+from .sleep_executor import SleepExecutor
+from .transformation_profiles import (
+    CAPABILITY_HONEY_GUARDIAN,
+    get_pet_form_key,
+    pet_form_allows_capability,
+    pet_form_allows_offer_item,
+    pet_is_transformed,
+    pet_is_transforming,
+)
+from .transformation_executor import (
+    TransformationExecutor,
+    TransformationRuntimeResult,
+)
 from .window_tracker import WindowTracker
 
 
@@ -87,6 +109,12 @@ ITEM_SCENE_CANCELS_ON_HIDDEN = {
     "honey_guard",
     "bottle_feed",
     "deny_only",
+}
+
+
+TRANSFORMATION_EVENT_DISPLAY_NAMES = {
+    "Tokai Teio": "帝寶",
+    "Symboli Rudolf": "魯道夫",
 }
 
 
@@ -112,6 +140,12 @@ class TanukiAppRuntime:
     offer_scene: ActiveOfferScene | None = None
     item_scene_coordinator: ItemSceneCoordinator = field(init=False, repr=False)
     household_coordinator: HouseholdRuntimeCoordinator = field(init=False, repr=False)
+    activity_coordinator: ActivityCoordinator = field(init=False, repr=False)
+    activity_runtime_adapter: ActivityRuntimeAdapter = field(init=False, repr=False)
+    rudolf_work_settlement_adapter: RudolfWorkSettlementAdapter = field(init=False, repr=False)
+    rudolf_work_executor: RudolfWorkExecutor = field(init=False, repr=False)
+    sleep_executor: SleepExecutor = field(init=False, repr=False)
+    transformation_executor: TransformationExecutor = field(init=False, repr=False)
     ground_item_coordinator: GroundItemCoordinator = field(init=False, repr=False)
     direct_hover_scene_executor: DirectHoverSceneExecutor = field(init=False, repr=False)
     bottle_honey_scene_executor: BottleHoneySceneExecutor = field(init=False, repr=False)
@@ -130,6 +164,19 @@ class TanukiAppRuntime:
             event_log=self.household_event_log,
             event_schedule=self.household_event_schedule,
         )
+        self.activity_coordinator = ActivityCoordinator()
+        self.activity_runtime_adapter = ActivityRuntimeAdapter()
+        self.rudolf_work_settlement_adapter = RudolfWorkSettlementAdapter()
+        self.rudolf_work_executor = RudolfWorkExecutor(
+            coordinator=self.activity_coordinator,
+            runtime_adapter=self.activity_runtime_adapter,
+            settlement_adapter=self.rudolf_work_settlement_adapter,
+        )
+        self.sleep_executor = SleepExecutor(
+            coordinator=self.activity_coordinator,
+            runtime_adapter=self.activity_runtime_adapter,
+        )
+        self.transformation_executor = TransformationExecutor()
         self.ground_item_coordinator = GroundItemCoordinator(self.ground_offer_items)
         self.direct_hover_scene_executor = DirectHoverSceneExecutor()
         self.bottle_honey_scene_executor = BottleHoneySceneExecutor()
@@ -139,6 +186,25 @@ class TanukiAppRuntime:
         for timer in self.timers.values():
             if timer.isActive():
                 timer.stop()
+        self.rudolf_work_executor.interrupt_active(
+            now=app_now(),
+            reason="runtime_shutdown",
+            rudolf_pet=self.find_pet_by_name(
+                RUDOLF_NAME,
+                visible_only=False,
+            ),
+        )
+        self.sleep_executor.interrupt_all(
+            now=app_now(),
+            pets=self.pets_list,
+            reason="runtime_shutdown",
+        )
+        for pet in self.pets_list:
+            if self.transformation_executor.is_transition_active(pet):
+                self.transformation_executor.cancel_pet(
+                    pet,
+                    reason="runtime_shutdown",
+                )
         self.clear_ground_offer_items()
         for pet in self.pets_list:
             self.clear_pet_held_item(pet)
@@ -226,6 +292,9 @@ class TanukiAppRuntime:
         )
 
     def update_household_events(self, now=None):
+        now = app_now() if now is None else float(now)
+        self.update_rudolf_work(now=now)
+        self.update_sleep(now=now)
         return self.household_coordinator.update_events(
             world_mode=self.settings_provider.world_mode,
             pets=self.pets_list,
@@ -233,6 +302,211 @@ class TanukiAppRuntime:
             profiler=self.profiler,
             now=now,
         )
+
+    def update_rudolf_work(self, now=None):
+        now = app_now() if now is None else float(now)
+        rudolf_pet = self.find_pet_by_name(
+            RUDOLF_NAME,
+            visible_only=False,
+        )
+        return self.rudolf_work_executor.update(
+            now=now,
+            world_mode=self.settings_provider.world_mode,
+            household=self.household,
+            event_schedule=self.household_event_schedule,
+            rudolf_pet=rudolf_pet,
+            record_household_event=lambda event: (
+                self.household_coordinator.record_resolved_event(
+                    event,
+                    dashboard=self.dashboard,
+                    pets=self.pets_list,
+                )
+            ),
+        )
+
+    def preview_rudolf_work(self, now=None):
+        now = app_now() if now is None else float(now)
+        return self.rudolf_work_executor.start_preview(
+            now=now,
+            world_mode=self.settings_provider.world_mode,
+            rudolf_pet=self.find_pet_by_name(
+                RUDOLF_NAME,
+                visible_only=False,
+            ),
+        )
+
+    def is_rudolf_work_preview_active(self):
+        return self.rudolf_work_executor.is_preview_active()
+
+    def toggle_transformation_preview(self, pet_name, now=None):
+        if self.settings_provider.world_mode != "sandbox":
+            return TransformationRuntimeResult(
+                False,
+                "preview_requires_sandbox",
+                character_name=str(pet_name or ""),
+            )
+        transition_now = (
+            time.perf_counter()
+            if now is None
+            else float(now)
+        )
+        return self.transformation_executor.request_manual_toggle(
+            self.find_pet_by_name(
+                str(pet_name or ""),
+                visible_only=False,
+            ),
+            now=transition_now,
+            intent_now=(
+                app_now()
+                if now is None
+                else float(now)
+            ),
+        )
+
+    def get_transformation_preview_state(self, pet_name):
+        pet = self.find_pet_by_name(
+            str(pet_name or ""),
+            visible_only=False,
+        )
+        state = getattr(pet, "transformation_state", None)
+        return {
+            "character_name": str(pet_name or ""),
+            "available": pet is not None and state is not None,
+            "current_form": str(
+                getattr(state, "current_form", "base") or "base"
+            ),
+            "target_form": str(
+                getattr(state, "target_form", "") or ""
+            ),
+            "active": bool(
+                state is not None and getattr(state, "active", False)
+            ),
+            "manual_end_requested": bool(
+                state is not None
+                and getattr(state, "manual_end_requested", False)
+            ),
+            "auto_session": bool(
+                state is not None
+                and getattr(state, "auto_session", False)
+            ),
+            "auto_world_mode": str(
+                getattr(state, "auto_world_mode", "") or ""
+            ),
+            "source": str(getattr(state, "source", "") or ""),
+        }
+
+    def update_transformations(self, now=None):
+        transition_now = (
+            time.perf_counter()
+            if now is None
+            else float(now)
+        )
+        sim_now = app_now() if now is None else float(now)
+        transition_results = self.transformation_executor.update(
+            self.pets_list,
+            now=transition_now,
+        )
+        for result in transition_results:
+            if not result.completed:
+                continue
+            if result.source in {
+                "autonomous_start",
+                "autonomous_end",
+            }:
+                self.record_transformation_event(
+                    result,
+                    occurred_at=sim_now,
+                )
+                continue
+            refresh_summary = getattr(
+                self.dashboard,
+                "refresh_household_summary_if_open",
+                None,
+            )
+            if callable(refresh_summary):
+                refresh_summary()
+        auto_results = self.transformation_executor.update_auto(
+            self.pets_list,
+            world_mode=self.settings_provider.world_mode,
+            sim_now=sim_now,
+            transition_now=transition_now,
+        )
+        return (*transition_results, *auto_results)
+
+    def record_transformation_event(self, result, *, occurred_at):
+        entered_transformed = result.current_form == "transformed"
+        display_name = TRANSFORMATION_EVENT_DISPLAY_NAMES.get(
+            result.character_name,
+            result.character_name,
+        )
+        return self.record_household_event(
+            occurred_at=float(occurred_at),
+            category="system",
+            event_type=(
+                "transformation_started"
+                if entered_transformed
+                else "transformation_ended"
+            ),
+            channel="story",
+            importance="normal" if entered_transformed else "low",
+            summary=(
+                f"{display_name}完成變身。"
+                if entered_transformed
+                else f"{display_name}解除變身，回到普通形態。"
+            ),
+            actor_name=result.character_name,
+            tags=(
+                "transformation",
+                "transformed" if entered_transformed else "base",
+            ),
+            metadata={
+                "form": result.current_form,
+                "source": result.source,
+            },
+            apply_deltas=False,
+        )
+
+    def update_sleep(self, now=None):
+        now = app_now() if now is None else float(now)
+        return self.sleep_executor.update(
+            now=now,
+            pets=self.pets_list,
+            world_mode=self.settings_provider.world_mode,
+        )
+
+    def update_sleep_join_behavior(
+        self,
+        pet,
+        all_pets,
+        now=None,
+    ):
+        now = app_now() if now is None else float(now)
+        return self.sleep_executor.update_join_behavior(
+            pet,
+            all_pets,
+            now=now,
+            world_mode=self.settings_provider.world_mode,
+        )
+
+    def interrupt_pet_activity_for_user(
+        self,
+        pet,
+        *,
+        reason="user_drag",
+        now=None,
+    ):
+        now = app_now() if now is None else float(now)
+        if str(reason or "") == "user_click":
+            return self.sleep_executor.request_early_wake(
+                pet,
+                now=now,
+                reason=reason,
+            ).handled
+        return self.sleep_executor.interrupt_pet(
+            pet,
+            now=now,
+            reason=reason,
+        ).handled
 
     def capture_household_persistence_state(self):
         return self.household_coordinator.capture_persistence_state()
@@ -244,6 +518,20 @@ class TanukiAppRuntime:
         )
 
     def handle_world_mode_change(self, world_mode, previous_mode=None):
+        if str(world_mode or "") != str(previous_mode or ""):
+            self.rudolf_work_executor.interrupt_active(
+                now=app_now(),
+                reason="world_mode_changed",
+                rudolf_pet=self.find_pet_by_name(
+                    RUDOLF_NAME,
+                    visible_only=False,
+                ),
+            )
+            self.sleep_executor.interrupt_all(
+                now=app_now(),
+                pets=self.pets_list,
+                reason="world_mode_changed",
+            )
         return self.household_coordinator.handle_world_mode_change(
             world_mode,
             previous_mode=previous_mode,
@@ -348,11 +636,23 @@ class TanukiAppRuntime:
         is_under_care = getattr(pet, "is_under_care", None)
         care_locked = bool(is_under_care(now)) if callable(is_under_care) else False
         return bool(
+            pet_is_transforming(pet) or
+            pet_has_active_activity(pet) or
+            pet_has_sleep_join_intent(pet) or
+            getattr(pet, "dragging", False) or
+            getattr(pet, "drag_press_pending", False) or
             getattr(pet, "flight_mode", "none") != "none" or
             getattr(pet, "care_mode", "none") != "none" or
             getattr(pet, "care_partner", None) is not None or
             getattr(pet, "is_hugging", False) or
             care_locked
+        )
+
+    def pet_can_interact_with_offer_item(self, pet, item_kind):
+        return bool(
+            pet is not None
+            and pet_form_allows_offer_item(pet, item_kind)
+            and can_pet_interact_with_offer_item(item_kind, pet.name)
         )
 
     def hover_timeout_scene_accepts_offer_drop(self, item_kind, global_pos):
@@ -372,7 +672,7 @@ class TanukiAppRuntime:
     def start_offer_interaction_for_target(self, item_kind, target_pet, source="offer_tray"):
         if target_pet is None:
             return False
-        if not can_pet_interact_with_offer_item(item_kind, target_pet.name):
+        if not self.pet_can_interact_with_offer_item(target_pet, item_kind):
             return False
         if item_kind == ITEM_HONEY and target_pet.name == "Tsurumaru Tsuyoshi":
             return self.start_honey_guard_scene(target_pet, source=source)
@@ -499,7 +799,7 @@ class TanukiAppRuntime:
                 continue
             if self.pet_is_busy_for_offer_interaction(pet):
                 continue
-            if not can_pet_interact_with_offer_item(item_kind, pet.name):
+            if not self.pet_can_interact_with_offer_item(pet, item_kind):
                 continue
             reference_frame = self.get_offer_reference_frame(pet, item_kind, prefer_preview=True)
             frame_width = reference_frame.width() if reference_frame is not None else pet.width()
@@ -536,7 +836,7 @@ class TanukiAppRuntime:
                 continue
             if self.pet_is_busy_for_offer_interaction(pet, now):
                 continue
-            if not can_pet_interact_with_offer_item(item_kind, pet.name):
+            if not self.pet_can_interact_with_offer_item(pet, item_kind):
                 continue
             if (
                 not ignore_reaction_cooldown and
@@ -564,7 +864,7 @@ class TanukiAppRuntime:
         return matches[0][1]
 
     def get_offer_reference_frame(self, pet, item_kind, prefer_preview=False):
-        if not can_pet_interact_with_offer_item(item_kind, pet.name):
+        if not self.pet_can_interact_with_offer_item(pet, item_kind):
             return None
         context = (
             get_direct_offer_preview_context(item_kind, pet.name)
@@ -670,6 +970,7 @@ class TanukiAppRuntime:
             original_face_left=pet.original_face_left,
             offer_global_x=0.0,
             offer_global_y=0.0,
+            form_key=get_pet_form_key(pet),
         )
         return match.hotspot_global_x, match.hotspot_global_y
 
@@ -718,22 +1019,43 @@ class TanukiAppRuntime:
         )
 
     def choose_honey_guardian_for_child(self, child_pet):
-        return choose_honey_guardian(
-            [
-                OfferGuardianCandidate(
-                    name="Symboli Rudolf",
-                    distance=self.find_pet_by_name("Symboli Rudolf", visible_only=True).distance_to(child_pet)
-                    if self.find_pet_by_name("Symboli Rudolf", visible_only=True) is not None else 999999.0,
-                    is_visible=self.find_pet_by_name("Symboli Rudolf", visible_only=True) is not None,
-                ),
-                OfferGuardianCandidate(
-                    name="Sirius Symboli",
-                    distance=self.find_pet_by_name("Sirius Symboli", visible_only=True).distance_to(child_pet)
-                    if self.find_pet_by_name("Sirius Symboli", visible_only=True) is not None else 999999.0,
-                    is_visible=self.find_pet_by_name("Sirius Symboli", visible_only=True) is not None,
-                ),
-            ]
+        candidate_names = ["Symboli Rudolf", "Sirius Symboli"]
+        transformed_teio = self.find_pet_by_name(
+            "Tokai Teio",
+            visible_only=True,
         )
+        if (
+            getattr(child_pet, "name", "") == "Tsurumaru Tsuyoshi"
+            and transformed_teio is not None
+            and pet_is_transformed(transformed_teio)
+        ):
+            candidate_names.append("Tokai Teio")
+        candidates = []
+        for candidate_name in candidate_names:
+            guardian = self.find_pet_by_name(
+                candidate_name,
+                visible_only=True,
+            )
+            allowed = bool(
+                guardian is not None
+                and guardian is not child_pet
+                and pet_form_allows_capability(
+                    guardian,
+                    CAPABILITY_HONEY_GUARDIAN,
+                )
+            )
+            candidates.append(
+                OfferGuardianCandidate(
+                    name=candidate_name,
+                    distance=(
+                        guardian.distance_to(child_pet)
+                        if allowed
+                        else 999999.0
+                    ),
+                    is_visible=allowed,
+                )
+            )
+        return choose_honey_guardian(candidates)
 
     def choose_bottle_feed_child_for_holder(self, holder_pet, now=None):
         if holder_pet is None or holder_pet.name == "Tsurumaru Tsuyoshi":
@@ -1736,6 +2058,14 @@ def start_runtime_timers(runtime):
             profiler=runtime.profiler,
             timer_name="offer",
         ),
+        "transformation": register_runtime_timer(
+            runtime.app,
+            30,
+            runtime.update_transformations,
+            speed_scaled=False,
+            profiler=runtime.profiler,
+            timer_name="transformation",
+        ),
         "household": register_runtime_timer(
             runtime.app,
             1000,
@@ -1804,6 +2134,23 @@ def create_runtime(app=None):
     )
     for pet in pets_list:
         pet.runtime_profiler = runtime.profiler
+        pet.activity_user_interrupt_provider = (
+            lambda target_pet, reason="user_drag", runtime=runtime: (
+                runtime.interrupt_pet_activity_for_user(
+                    target_pet,
+                    reason=reason,
+                )
+            )
+        )
+        pet.sleep_join_behavior_provider = (
+            lambda target_pet, all_pets, now, runtime=runtime: (
+                runtime.update_sleep_join_behavior(
+                    target_pet,
+                    all_pets,
+                    now=now,
+                )
+            )
+        )
     seed_default_household_events(runtime.household, runtime.household_event_log, occurred_at=app_now())
     runtime.household_coordinator.reset_event_schedule(app_now())
     dashboard.set_household_data_providers(
@@ -1812,6 +2159,20 @@ def create_runtime(app=None):
     )
     dashboard.set_household_action_providers(
         household_donate_provider=lambda amount=100, runtime=runtime: runtime.donate_household_fund(amount=amount),
+    )
+    dashboard.set_activity_action_providers(
+        rudolf_work_preview_provider=lambda runtime=runtime: runtime.preview_rudolf_work(),
+        rudolf_work_preview_active_provider=lambda runtime=runtime: runtime.is_rudolf_work_preview_active(),
+        transformation_toggle_provider=(
+            lambda pet_name, runtime=runtime: (
+                runtime.toggle_transformation_preview(pet_name)
+            )
+        ),
+        transformation_state_provider=(
+            lambda pet_name, runtime=runtime: (
+                runtime.get_transformation_preview_state(pet_name)
+            )
+        ),
     )
     dashboard.set_household_persistence_providers(
         household_capture_provider=lambda runtime=runtime: runtime.capture_household_persistence_state(),

@@ -82,6 +82,20 @@ class PetRelationshipRuleTests(unittest.TestCase):
 
         self.assertEqual(focus.target_name, "")
 
+    def test_choose_relationship_focus_accepts_explicit_extended_distance(self):
+        focus = choose_relationship_focus(
+            entries={
+                "Symboli Rudolf": RelationshipEntry(
+                    familiarity=20.0,
+                )
+            },
+            nearest_visible_pet_name="Symboli Rudolf",
+            nearest_visible_pet_distance=300.0,
+            nearest_visible_max_distance=320.0,
+        )
+
+        self.assertEqual(focus.target_name, "Symboli Rudolf")
+
     def test_choose_relationship_focus_ignores_blocked_same_target(self):
         entries = {
             "Tokai Teio": RelationshipEntry(familiarity=12.0, trust=4.0, attachment=8.0, tension=1.0),

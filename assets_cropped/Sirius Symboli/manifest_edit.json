@@ -156,6 +156,57 @@
       ],
       "weight": 1.0
     },
+    "idle_rest-angry.gif": {
+      "band": [
+        "low",
+        "severe"
+      ],
+      "contexts": [
+        "activity_sleep_settling",
+        "activity_sleep_waking"
+      ],
+      "weight": 1.0
+    },
+    "idle_rest-angry-sleep.gif": {
+      "band": [
+        "low",
+        "severe"
+      ],
+      "contexts": [
+        "activity_sleeping"
+      ],
+      "weight": 1.0
+    },
+    "idle_rest-cool.gif": {
+      "band": [
+        "normal",
+        "low",
+        "severe"
+      ],
+      "contexts": [
+        "activity_sleep_join_settling"
+      ],
+      "weight": 1.0
+    },
+    "idle_rest-sleep.gif": {
+      "band": [
+        "normal"
+      ],
+      "contexts": [
+        "activity_sleeping"
+      ],
+      "weight": 1.0
+    },
+    "idle_rest-smile.gif": {
+      "band": [
+        "normal"
+      ],
+      "contexts": [
+        "activity_sleep_settling",
+        "activity_sleep_waking"
+      ],
+      "weight": 1.0
+    },
     "idle_side-angry.gif": {
       "band": [
         "low",
@@ -177,7 +228,8 @@
       "contexts": [
         "care_companion",
         "observe_hold",
-        "bottle_feed_watch"
+        "bottle_feed_watch",
+        "activity_sleep_observing"
       ],
       "weight": 1.0
     },
@@ -634,7 +686,8 @@
         "normal"
       ],
       "contexts": [
-        "random"
+        "random",
+        "activity_sleep_join_approach"
       ],
       "weight": 1.0
     },
@@ -667,7 +720,8 @@
       "contexts": [
         "window_walk",
         "offer_timeout_route_a_step3",
-        "random"
+        "random",
+        "activity_sleep_join_approach"
       ],
       "weight": 1.0
     },

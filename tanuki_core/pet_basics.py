@@ -22,8 +22,18 @@ class PetBasicsMixin:
         old_signature = (self.current_purpose, self.current_action_tag, self.current_mood_tag)
 
         self.display_scale_multiplier = multiplier
+        active_path_provider = getattr(
+            self,
+            "get_active_character_path",
+            None,
+        )
+        active_character_path = (
+            active_path_provider()
+            if callable(active_path_provider)
+            else self.character_path
+        )
         self.asset_manager = AssetManager(
-            self.character_path,
+            active_character_path,
             scale_factor=self.get_effective_scale(),
             frame_cache=self.asset_manager.frame_cache,
             store_cache=self.asset_manager.store_cache,
@@ -315,11 +325,55 @@ class PetBasicsMixin:
             preferred_moods=preferred_moods,
             mood_score=self.mood_score,
         )
-        if not result:
+        legacy_assets = getattr(self.asset_manager, "assets", None)
+        if not result and (
+            legacy_assets is None or "drag" in legacy_assets
+        ):
             result = self.asset_manager.get_frames_by_score(
                 "drag",
                 mood_score=self.mood_score,
                 is_adult=self.is_adult,
                 context="drag",
             )
-        return self.apply_animation_result("drag", result)
+        if self.apply_animation_result("drag", result):
+            return True
+        context_fallback = getattr(
+            self,
+            "change_state_for_context_any_purpose_with_preferences",
+            None,
+        )
+        if not callable(context_fallback):
+            return False
+        return bool(
+            context_fallback(
+                "drag",
+                preferred_moods=preferred_moods,
+            )
+        )
+
+    def apply_hard_landing_animation(self):
+        context_selector = getattr(
+            self,
+            "change_state_for_context_any_purpose_with_preferences",
+            None,
+        )
+        if not callable(context_selector):
+            return False
+        applied = bool(context_selector("hard_landing"))
+        if not applied:
+            applied = bool(
+                context_selector(
+                    "hard_landing",
+                    ignore_mood_band=True,
+                )
+            )
+        if applied:
+            self.state_timer = 80
+            reset_stationary = getattr(
+                self,
+                "reset_stationary_move_mode",
+                None,
+            )
+            if callable(reset_stationary):
+                reset_stationary()
+        return applied

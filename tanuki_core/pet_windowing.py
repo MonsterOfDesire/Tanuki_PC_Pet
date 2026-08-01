@@ -1,6 +1,8 @@
 import math
 import random
 
+from .activity_runtime_adapter import pet_has_active_activity
+from .pet_intent_rules import pet_has_sleep_join_intent
 from .pet_social_rules import CareTargetCandidate, choose_care_target
 from .runtime import app_now, get_pet_logic_step_count
 from .window_mode_rules import (
@@ -30,6 +32,10 @@ from .windowing_coordinator import (
     WINDOW_PERCH_DECISION_DETACH_TO_TASKBAR,
     WindowFlightContext,
     WindowPerchContext,
+)
+from .transformation_profiles import (
+    CAPABILITY_AUTONOMOUS_FLIGHT,
+    pet_form_allows_capability,
 )
 
 
@@ -104,7 +110,14 @@ class PetWindowingMixin:
         )
 
     def can_fly_freely(self):
-        return self.name not in self.AUTONOMOUS_FLY_DISABLED_NAMES and bool(self.get_window_flight_candidates())
+        return bool(
+            pet_form_allows_capability(
+                self,
+                CAPABILITY_AUTONOMOUS_FLIGHT,
+            )
+            and self.name not in self.AUTONOMOUS_FLY_DISABLED_NAMES
+            and self.get_window_flight_candidates()
+        )
 
     def has_free_fly_animation(self):
         return self.can_fly_freely()
@@ -146,7 +159,9 @@ class PetWindowingMixin:
             self.social_mode == "none" and
             not self.is_recovering and
             self.flight_mode == "none" and
-            not self.is_under_care(now)
+            not self.is_under_care(now) and
+            not pet_has_active_activity(self) and
+            not pet_has_sleep_join_intent(self)
         )
 
     def detach_from_window_surface(self):
@@ -217,6 +232,10 @@ class PetWindowingMixin:
                         bool(care_block_checker(now))
                         if callable(care_block_checker)
                         else False
+                    ),
+                    activity_busy=(
+                        pet_has_active_activity(pet)
+                        or pet_has_sleep_join_intent(pet)
                     ),
                 ))
             care_target = choose_care_target(
@@ -319,6 +338,8 @@ class PetWindowingMixin:
     def can_start_window_flight(self, now=None):
         if now is None:
             now = app_now()
+        if pet_has_active_activity(self) or pet_has_sleep_join_intent(self):
+            return False
         if not can_start_window_flight_gate(
             flight_mode=self.flight_mode,
             perched_window_hwnd=self.perched_window_hwnd,

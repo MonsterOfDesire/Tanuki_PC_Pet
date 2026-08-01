@@ -364,6 +364,24 @@ class PetAiSchedulerTests(unittest.TestCase):
         self.assertEqual(pet.tick_coordinator.intent_plan_calls, 0)
         self.assertEqual(pet.random_calls, 0)
 
+    def test_update_ai_behavior_prioritizes_sleep_join_provider(self):
+        pet = FakeAiSchedulerPet()
+        calls = []
+        pet.sleep_join_behavior_provider = (
+            lambda target_pet, all_pets, now: (
+                calls.append((target_pet, tuple(all_pets), now)) or True
+            )
+        )
+
+        with patch("tanuki_core.pet_widget.app_now", return_value=10.0):
+            TanukiPet.update_ai_behavior(pet, [pet])
+
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(pet.care_calls, 0)
+        self.assertEqual(pet.social_calls, 0)
+        self.assertEqual(pet.random_calls, 0)
+        self.assertEqual(pet.refresh_calls, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

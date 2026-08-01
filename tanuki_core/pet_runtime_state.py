@@ -1,5 +1,8 @@
 from dataclasses import dataclass, field
 
+from .activity_state import PetActivityState
+from .transformation_state import PetTransformationState
+
 
 PET_STATE_PROXY_FIELDS = {
     "behavior_state": (
@@ -24,6 +27,10 @@ PET_STATE_PROXY_FIELDS = {
     ),
     "interaction_state": (
         "dragging",
+        "drag_press_pending",
+        "drag_motion_detected",
+        "drag_press_global_x",
+        "drag_press_global_y",
         "drag_start_time",
         "click_count",
         "is_angry_locked",
@@ -107,6 +114,7 @@ PET_STATE_PROXY_FIELDS = {
     "intent_state": (
         "intent_kind",
         "intent_target_name",
+        "intent_target_form",
         "intent_locked_until",
         "intent_reconsider_after",
         "observe_blocked_target_name",
@@ -165,6 +173,10 @@ class PetBehaviorState:
 @dataclass
 class PetInteractionState:
     dragging: bool = False
+    drag_press_pending: bool = False
+    drag_motion_detected: bool = False
+    drag_press_global_x: int = 0
+    drag_press_global_y: int = 0
     drag_start_time: float = 0.0
     click_count: int = 0
     is_angry_locked: bool = False
@@ -260,6 +272,7 @@ class PetPerceptionState:
 class PetIntentState:
     intent_kind: str = "none"
     intent_target_name: str = ""
+    intent_target_form: str = ""
     intent_locked_until: float = 0.0
     intent_reconsider_after: float = 0.0
     observe_blocked_target_name: str = ""
@@ -317,6 +330,8 @@ class PetRuntimeStateBundle:
     intent: PetIntentState
     relationship: PetRelationshipState
     expression: PetExpressionState
+    activity: PetActivityState
+    transformation: PetTransformationState
 
 
 def build_pet_runtime_state(name):
@@ -339,4 +354,6 @@ def build_pet_runtime_state(name):
         intent=PetIntentState(),
         relationship=PetRelationshipState(),
         expression=PetExpressionState(),
+        activity=PetActivityState(),
+        transformation=PetTransformationState(),
     )

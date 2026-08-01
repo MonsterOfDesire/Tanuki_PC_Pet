@@ -208,6 +208,31 @@ class CareTargetRuleTests(unittest.TestCase):
 
         self.assertIsNone(target)
 
+    def test_choose_care_target_filters_child_in_activity(self):
+        adult = object()
+        busy_child = object()
+
+        target = choose_care_target(
+            adult,
+            "Air Groove",
+            [
+                CareTargetCandidate(
+                    busy_child,
+                    False,
+                    False,
+                    True,
+                    None,
+                    False,
+                    True,
+                    120,
+                    "Air Groove",
+                    activity_busy=True,
+                ),
+            ],
+        )
+
+        self.assertIsNone(target)
+
     def test_sirius_symboli_ignores_default_search_radius(self):
         adult = object()
         distant_child = object()
