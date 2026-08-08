@@ -12,6 +12,11 @@ from .activity_runtime_adapter import (
     ActivityRuntimeAdapter,
     pet_has_active_activity,
 )
+from .activity_rhythm import (
+    ActivityRhythmSnapshot,
+    CharacterRhythmSnapshot,
+    clamp_percent,
+)
 from .asset_manager import AssetManager
 from .bottle_honey_scene_executor import BottleHoneySceneExecutor
 from .config_save_scheduler import ConfigSaveScheduler
@@ -70,6 +75,9 @@ from .runtime import (
     resolve_timer_repeat_count,
     run_pet_physics_step,
 )
+from .race_executor import RaceExecutor
+from .race_event_adapter import RaceEventAdapter
+from .race_state import RaceEvent
 from .rudolf_work_executor import RudolfWorkExecutor
 from .rudolf_work_rules import RUDOLF_NAME
 from .rudolf_work_settlement import RudolfWorkSettlementAdapter
@@ -77,6 +85,7 @@ from .settings_provider import RuntimeSettings
 from .shared_food_profiles import get_shared_food_profile_for_holder
 from .shared_food_scene_executor import SharedFoodSceneExecutor
 from .sleep_executor import SleepExecutor
+from .sleep_rules import SLEEP_ACTIVITY_KIND
 from .transformation_profiles import (
     CAPABILITY_HONEY_GUARDIAN,
     get_pet_form_key,
@@ -84,6 +93,7 @@ from .transformation_profiles import (
     pet_form_allows_offer_item,
     pet_is_transformed,
     pet_is_transforming,
+    get_transformation_profile,
 )
 from .transformation_executor import (
     TransformationExecutor,
@@ -110,13 +120,13 @@ ITEM_SCENE_CANCELS_ON_HIDDEN = {
     "bottle_feed",
     "deny_only",
 }
+BOTTLE_HOLDER_WAIT_TIMEOUT_SECONDS = 2.5
 
 
 TRANSFORMATION_EVENT_DISPLAY_NAMES = {
     "Tokai Teio": "帝寶",
     "Symboli Rudolf": "魯道夫",
 }
-
 
 @dataclass
 class TanukiAppRuntime:
@@ -145,6 +155,8 @@ class TanukiAppRuntime:
     rudolf_work_settlement_adapter: RudolfWorkSettlementAdapter = field(init=False, repr=False)
     rudolf_work_executor: RudolfWorkExecutor = field(init=False, repr=False)
     sleep_executor: SleepExecutor = field(init=False, repr=False)
+    race_executor: RaceExecutor = field(init=False, repr=False)
+    race_event_adapter: RaceEventAdapter = field(init=False, repr=False)
     transformation_executor: TransformationExecutor = field(init=False, repr=False)
     ground_item_coordinator: GroundItemCoordinator = field(init=False, repr=False)
     direct_hover_scene_executor: DirectHoverSceneExecutor = field(init=False, repr=False)
@@ -176,6 +188,18 @@ class TanukiAppRuntime:
             coordinator=self.activity_coordinator,
             runtime_adapter=self.activity_runtime_adapter,
         )
+        self.race_executor = RaceExecutor(
+            coordinator=self.activity_coordinator,
+            runtime_adapter=self.activity_runtime_adapter,
+            frequency_provider=(
+                lambda: getattr(
+                    self.settings_provider,
+                    "race_frequency",
+                    "normal",
+                )
+            ),
+        )
+        self.race_event_adapter = RaceEventAdapter()
         self.transformation_executor = TransformationExecutor()
         self.ground_item_coordinator = GroundItemCoordinator(self.ground_offer_items)
         self.direct_hover_scene_executor = DirectHoverSceneExecutor()
@@ -199,6 +223,11 @@ class TanukiAppRuntime:
             pets=self.pets_list,
             reason="runtime_shutdown",
         )
+        self.race_executor.interrupt_active(
+            now=app_now(),
+            pets=self.pets_list,
+            reason="runtime_shutdown",
+        )
         for pet in self.pets_list:
             if self.transformation_executor.is_transition_active(pet):
                 self.transformation_executor.cancel_pet(
@@ -210,6 +239,113 @@ class TanukiAppRuntime:
             self.clear_pet_held_item(pet)
         if self.shell is not None:
             self.shell.shutdown()
+
+    def get_activity_rhythm_snapshot(self, *, now=None):
+        now = app_now() if now is None else float(now)
+        active_race = next(
+            (
+                activity
+                for activity in self.activity_coordinator.get_active_activities()
+                if activity.spec.kind == "race"
+            ),
+            None,
+        )
+        race_schedule = self.race_executor.schedule
+        if active_race is not None:
+            race_status = "active"
+            race_remaining = None
+            race_wait_reason = active_race.phase.name
+        elif race_schedule.next_proposal_at > 0.0:
+            race_remaining = max(
+                0.0,
+                float(race_schedule.next_proposal_at) - now,
+            )
+            race_status = "cooldown" if race_remaining > 0.0 else "ready"
+            race_wait_reason = str(race_schedule.last_wait_reason or "")
+        else:
+            race_status = "unscheduled"
+            race_remaining = None
+            race_wait_reason = ""
+
+        members = []
+        for pet in self.pets_list:
+            name = str(getattr(pet, "name", "") or "").strip()
+            if not name:
+                continue
+            summoned = bool(getattr(pet, "user_visible", False))
+            activity = self.activity_coordinator.get_activity_for_participant(
+                name
+            )
+            if activity is not None and activity.spec.kind == SLEEP_ACTIVITY_KIND:
+                sleep_status = str(activity.phase.name or "sleeping")
+                sleepiness = 100.0
+            elif not summoned:
+                sleep_status = "standby"
+                sleepiness = None
+            else:
+                schedule = self.sleep_executor.schedules.get(name)
+                sleep_status = "awake"
+                if schedule is None or schedule.awake_since < 0.0:
+                    sleepiness = None
+                elif schedule.next_proposal_at <= now:
+                    sleepiness = 100.0
+                else:
+                    sleepiness = clamp_percent(
+                        (now - float(schedule.awake_since))
+                        / max(
+                            1.0,
+                            float(schedule.next_proposal_at)
+                            - float(schedule.awake_since),
+                        )
+                        * 100.0
+                    )
+
+            profile = get_transformation_profile(name)
+            state = getattr(pet, "transformation_state", None)
+            transform_remaining = None
+            if profile is None or state is None:
+                transform_status = "unavailable"
+            elif state.active:
+                transform_status = "transition"
+            elif str(state.current_form or "base") == "transformed":
+                transform_status = "transformed"
+                if state.auto_form_expires_at > 0.0:
+                    transform_remaining = max(
+                        0.0,
+                        float(state.auto_form_expires_at) - now,
+                    )
+            elif state.auto_retry_at > now:
+                transform_status = "waiting"
+                transform_remaining = max(
+                    0.0,
+                    float(state.auto_retry_at) - now,
+                )
+            elif state.auto_next_attempt_at > 0.0:
+                transform_status = "cooldown"
+                transform_remaining = max(
+                    0.0,
+                    float(state.auto_next_attempt_at) - now,
+                )
+            else:
+                transform_status = "ready"
+
+            members.append(
+                CharacterRhythmSnapshot(
+                    character_name=name,
+                    summoned=summoned,
+                    sleep_status=sleep_status,
+                    sleepiness_percent=sleepiness,
+                    transformation_status=transform_status,
+                    transformation_remaining_seconds=transform_remaining,
+                )
+            )
+        return ActivityRhythmSnapshot(
+            observed_at=now,
+            race_status=race_status,
+            race_remaining_seconds=race_remaining,
+            race_wait_reason=race_wait_reason,
+            members=tuple(members),
+        )
 
     def record_household_event(
         self,
@@ -337,6 +473,47 @@ class TanukiAppRuntime:
 
     def is_rudolf_work_preview_active(self):
         return self.rudolf_work_executor.is_preview_active()
+
+    def update_race(self, now=None):
+        now = app_now() if now is None else float(now)
+        return self.race_executor.update(
+            now=now,
+            world_mode=self.settings_provider.world_mode,
+            pets=self.pets_list,
+            record_race_event=self.record_race_event,
+        )
+
+    def preview_rudolf_teio_race(self, now=None):
+        now = app_now() if now is None else float(now)
+        return self.race_executor.start_preview(
+            now=now,
+            world_mode=self.settings_provider.world_mode,
+            rudolf_pet=self.find_pet_by_name(
+                "Symboli Rudolf",
+                visible_only=False,
+            ),
+            teio_pet=self.find_pet_by_name(
+                "Tokai Teio",
+                visible_only=False,
+            ),
+        )
+
+    def is_race_preview_active(self):
+        return self.race_executor.is_preview_active()
+
+    def record_race_event(self, event: RaceEvent):
+        entry = self.race_event_adapter.apply(
+            event,
+            record_household_event=self.record_household_event,
+            race_statistics=self.household.race_statistics,
+        )
+        if (
+            entry is not None
+            and event.event_type == "race_completed"
+            and hasattr(self.dashboard, "refresh_relationship_table_if_open")
+        ):
+            self.dashboard.refresh_relationship_table_if_open()
+        return entry
 
     def toggle_transformation_preview(self, pet_name, now=None):
         if self.settings_provider.world_mode != "sandbox":
@@ -496,6 +673,23 @@ class TanukiAppRuntime:
         now=None,
     ):
         now = app_now() if now is None else float(now)
+        activity_coordinator = getattr(self, "activity_coordinator", None)
+        activity = (
+            activity_coordinator.get_activity_for_participant(
+                str(getattr(pet, "name", "") or "")
+            )
+            if activity_coordinator is not None
+            else None
+        )
+        if activity is not None and activity.spec.kind == "race":
+            if str(reason or "") == "user_click":
+                return False
+            return self.race_executor.interrupt_pet(
+                pet,
+                now=now,
+                reason=reason,
+                pets=self.pets_list,
+            ).handled
         if str(reason or "") == "user_click":
             return self.sleep_executor.request_early_wake(
                 pet,
@@ -528,6 +722,11 @@ class TanukiAppRuntime:
                 ),
             )
             self.sleep_executor.interrupt_all(
+                now=app_now(),
+                pets=self.pets_list,
+                reason="world_mode_changed",
+            )
+            self.race_executor.interrupt_active(
                 now=app_now(),
                 pets=self.pets_list,
                 reason="world_mode_changed",
@@ -1475,6 +1674,32 @@ class TanukiAppRuntime:
                 self.clear_pet_held_item(pet)
                 handled = True
                 continue
+            if (
+                pet.held_item_kind == ITEM_BOTTLE
+                and float(
+                    getattr(pet, "held_item_started_at", 0.0) or 0.0
+                ) <= 0.0
+            ):
+                pet.held_item_started_at = float(now)
+            if (
+                pet.name != "Tsurumaru Tsuyoshi"
+                and pet.held_item_kind == ITEM_BOTTLE
+                and not (
+                    self.offer_scene is not None
+                    and self.offer_scene.scene_kind == "bottle_feed"
+                    and self.offer_scene.actor_name == pet.name
+                )
+                and self.choose_bottle_feed_child_for_holder(
+                    pet,
+                    now=now,
+                ) is None
+                and float(now)
+                - float(pet.held_item_started_at)
+                >= BOTTLE_HOLDER_WAIT_TIMEOUT_SECONDS
+            ):
+                self.clear_pet_held_item(pet)
+                handled = True
+                continue
             if not (
                 self.offer_scene is not None and
                 self.offer_scene.scene_kind == "honey_guard" and
@@ -2066,6 +2291,14 @@ def start_runtime_timers(runtime):
             profiler=runtime.profiler,
             timer_name="transformation",
         ),
+        "race": register_runtime_timer(
+            runtime.app,
+            30,
+            runtime.update_race,
+            minimum_interval_ms=8,
+            profiler=runtime.profiler,
+            timer_name="race",
+        ),
         "household": register_runtime_timer(
             runtime.app,
             1000,
@@ -2156,6 +2389,9 @@ def create_runtime(app=None):
     dashboard.set_household_data_providers(
         household_state_provider=lambda runtime=runtime: runtime.household,
         household_events_provider=lambda limit=24, runtime=runtime: runtime.recent_household_events(limit=limit),
+        activity_rhythm_provider=(
+            lambda runtime=runtime: runtime.get_activity_rhythm_snapshot()
+        ),
     )
     dashboard.set_household_action_providers(
         household_donate_provider=lambda amount=100, runtime=runtime: runtime.donate_household_fund(amount=amount),
@@ -2163,6 +2399,8 @@ def create_runtime(app=None):
     dashboard.set_activity_action_providers(
         rudolf_work_preview_provider=lambda runtime=runtime: runtime.preview_rudolf_work(),
         rudolf_work_preview_active_provider=lambda runtime=runtime: runtime.is_rudolf_work_preview_active(),
+        race_preview_provider=lambda runtime=runtime: runtime.preview_rudolf_teio_race(),
+        race_preview_active_provider=lambda runtime=runtime: runtime.is_race_preview_active(),
         transformation_toggle_provider=(
             lambda pet_name, runtime=runtime: (
                 runtime.toggle_transformation_preview(pet_name)

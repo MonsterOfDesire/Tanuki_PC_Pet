@@ -110,6 +110,27 @@ class DashboardController:
         if save:
             dashboard.schedule_save()
 
+    def set_race_frequency(self, dashboard, value, save=True):
+        options = tuple(getattr(dashboard, "race_frequency_options", ()))
+        dashboard.race_frequency = (
+            str(value) if value in options else "normal"
+        )
+        dashboard.sync_settings_provider()
+        dashboard.refresh_information_center_settings()
+        dashboard.refresh_household_summary_if_open()
+        if save:
+            dashboard.schedule_save()
+
+    def set_mood_climate(self, dashboard, value, save=True):
+        options = tuple(getattr(dashboard, "mood_climate_options", ()))
+        dashboard.mood_climate = (
+            str(value) if value in options else "cheerful"
+        )
+        dashboard.sync_settings_provider()
+        dashboard.refresh_information_center_settings()
+        if save:
+            dashboard.schedule_save()
+
     def apply_display_scale(self, dashboard, save=True):
         self.actions.apply_display_scale(dashboard.pets_dict, dashboard.get_display_scale_multiplier())
         if save:
@@ -125,6 +146,9 @@ class DashboardController:
     def preview_rudolf_work(self, dashboard):
         return dashboard.apply_rudolf_work_preview()
 
+    def preview_rudolf_teio_race(self, dashboard):
+        return dashboard.apply_race_preview()
+
     def toggle_transformation_preview(self, dashboard, pet_name):
         return dashboard.apply_transformation_preview(pet_name)
 
@@ -132,6 +156,25 @@ class DashboardController:
         return self.presenter.build_household_summary(
             dashboard.get_household_state_snapshot(),
             dashboard.get_recent_household_events(limit=128),
+            pet_states=(
+                dashboard.get_pet_summon_states()
+                if hasattr(dashboard, "get_pet_summon_states") else
+                ()
+            ),
+            rhythm_snapshot=(
+                dashboard.get_activity_rhythm_snapshot()
+                if hasattr(dashboard, "get_activity_rhythm_snapshot") else
+                None
+            ),
+        )
+
+    def build_household_rhythm_presentation(self, dashboard):
+        return self.presenter.build_household_rhythm(
+            (
+                dashboard.get_activity_rhythm_snapshot()
+                if hasattr(dashboard, "get_activity_rhythm_snapshot") else
+                None
+            ),
             pet_states=(
                 dashboard.get_pet_summon_states()
                 if hasattr(dashboard, "get_pet_summon_states") else

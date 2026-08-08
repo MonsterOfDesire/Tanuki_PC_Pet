@@ -23,6 +23,17 @@ ANIMATION_EXTENSION = ".gif"
 
 KNOWN_CONTEXTS = frozenset(
     {
+        "activity_race_accept",
+        "activity_race_challenge",
+        "activity_race_consider",
+        "activity_race_decline",
+        "activity_race_finish_lose",
+        "activity_race_finish_win",
+        "activity_race_ready",
+        "activity_race_recovery",
+        "activity_race_running",
+        "activity_race_running_teio",
+        "activity_race_to_start",
         "activity_sleep_join_approach",
         "activity_sleep_join_settling",
         "activity_sleep_observing",

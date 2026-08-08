@@ -55,13 +55,27 @@ class ActivityAnimationBinding:
         object.__setattr__(self, "band_policy", band_policy)
         object.__setattr__(self, "fallback_bands", fallback_bands)
 
-    def build_request(self, mood_score: float) -> ManifestAnimationRequest:
+    def build_request(
+        self,
+        mood_score: float,
+        *,
+        band_override: str = "",
+    ) -> ManifestAnimationRequest:
+        band_override = str(band_override or "").strip()
+        if band_override and band_override not in VALID_BANDS:
+            raise ValueError(
+                f"unknown activity animation band override: {band_override}"
+            )
         if self.band_policy == BAND_POLICY_IGNORE:
+            if band_override:
+                raise ValueError(
+                    "ignore-band activity animation cannot override band"
+                )
             return ManifestAnimationRequest(
                 contexts=self.contexts,
                 band_policy=BAND_POLICY_IGNORE,
             )
-        current_band = get_mood_band(float(mood_score))
+        current_band = band_override or get_mood_band(float(mood_score))
         band_order = _normalize_unique_strings(
             (current_band, *self.fallback_bands)
         )

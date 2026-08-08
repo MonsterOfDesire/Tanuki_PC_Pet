@@ -4,9 +4,10 @@ from .information_center_state import (
     information_center_config_state_to_payload,
     normalize_information_center_config_state,
 )
+from .settings_provider import RuntimeSettings
 
 
-CONFIG_SCHEMA_VERSION = 5
+CONFIG_SCHEMA_VERSION = 6
 
 DEFAULT_INFORMATION_CENTER_STATE = information_center_config_state_to_payload(
     InformationCenterConfigState()
@@ -21,6 +22,8 @@ DEFAULT_DASHBOARD_STATE = {
     "display_scale_idx": 0,
     "debug_enabled": False,
     "social_status_enabled": False,
+    "race_frequency": "normal",
+    "mood_climate": "cheerful",
     "information_center": DEFAULT_INFORMATION_CENTER_STATE,
 }
 
@@ -120,6 +123,21 @@ def migrate_config_state(raw):
             migrated["dashboard"] = dashboard
         schema_version = 5
 
+    if schema_version < 6:
+        dashboard = migrated.get("dashboard", {})
+        if isinstance(dashboard, dict):
+            dashboard = dict(dashboard)
+            dashboard.setdefault(
+                "race_frequency",
+                DEFAULT_DASHBOARD_STATE["race_frequency"],
+            )
+            dashboard.setdefault(
+                "mood_climate",
+                DEFAULT_DASHBOARD_STATE["mood_climate"],
+            )
+            migrated["dashboard"] = dashboard
+        schema_version = 6
+
     migrated["schema_version"] = CONFIG_SCHEMA_VERSION
     if original_schema_version != CONFIG_SCHEMA_VERSION:
         warnings.append(f"config schema {original_schema_version} 已升級到 {CONFIG_SCHEMA_VERSION}")
@@ -170,6 +188,24 @@ def normalize_config_state(raw):
                     "social_status_enabled",
                     DEFAULT_DASHBOARD_STATE["social_status_enabled"],
                 )
+            ),
+            "race_frequency": (
+                dashboard.get(
+                    "race_frequency",
+                    DEFAULT_DASHBOARD_STATE["race_frequency"],
+                )
+                if dashboard.get("race_frequency")
+                in RuntimeSettings.RACE_FREQUENCY_OPTIONS
+                else DEFAULT_DASHBOARD_STATE["race_frequency"]
+            ),
+            "mood_climate": (
+                dashboard.get(
+                    "mood_climate",
+                    DEFAULT_DASHBOARD_STATE["mood_climate"],
+                )
+                if dashboard.get("mood_climate")
+                in RuntimeSettings.MOOD_CLIMATE_OPTIONS
+                else DEFAULT_DASHBOARD_STATE["mood_climate"]
             ),
             "information_center": normalized_information_center,
         },

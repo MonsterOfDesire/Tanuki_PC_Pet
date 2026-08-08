@@ -1,6 +1,8 @@
 from datetime import datetime
 from dataclasses import dataclass
 
+from .activity_rhythm import format_compact_duration
+
 
 @dataclass(frozen=True)
 class DashboardStatusPresentation:
@@ -32,6 +34,8 @@ class HouseholdMemberPresentation:
     mood_label: str
     form_key: str = "base"
     form_label: str = "普通形態"
+    sleep_rhythm_text: str = ""
+    transformation_rhythm_text: str = ""
 
 
 @dataclass(frozen=True)
@@ -59,6 +63,13 @@ class HouseholdSummaryPresentation:
     recent_event_count: int = 0
     recent_fund_delta: int = 0
     recent_pressure_delta: float = 0.0
+    race_rhythm_text: str = ""
+
+
+@dataclass(frozen=True)
+class HouseholdRhythmPresentation:
+    race_rhythm_text: str = ""
+    members: tuple[HouseholdMemberPresentation, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -66,6 +77,12 @@ class SocialLogEffectPresentation:
     key: str
     label: str
     value: float
+    value_text: str
+
+
+@dataclass(frozen=True)
+class SocialLogDetailPresentation:
+    label: str
     value_text: str
 
 
@@ -84,6 +101,7 @@ class SocialLogEntryPresentation:
     participant_text: str
     effects: tuple[SocialLogEffectPresentation, ...]
     tags: tuple[str, ...]
+    details: tuple[SocialLogDetailPresentation, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -179,8 +197,20 @@ class DashboardPresenter:
             severity="warning" if result.has_warnings else "information",
         )
 
-    def build_household_summary(self, household, entries, pet_states=()):
-        members = self.build_household_member_presentations(pet_states)
+    def build_household_summary(
+        self,
+        household,
+        entries,
+        pet_states=(),
+        rhythm_snapshot=None,
+    ):
+        rhythm_members = tuple(
+            getattr(rhythm_snapshot, "members", ()) or ()
+        )
+        members = self.build_household_member_presentations(
+            pet_states,
+            rhythm_members=rhythm_members,
+        )
         member_count = len(members)
         summoned_count = sum(1 for member in members if member.summoned)
         mood_scores = [
@@ -219,6 +249,9 @@ class DashboardPresenter:
             "recent_event_count": len(statistic_entries),
             "recent_fund_delta": recent_fund_delta,
             "recent_pressure_delta": recent_pressure_delta,
+            "race_rhythm_text": self._build_race_rhythm_text(
+                rhythm_snapshot
+            ),
         }
         if household is None:
             return HouseholdSummaryPresentation(
@@ -269,7 +302,33 @@ class DashboardPresenter:
             **summary_data,
         )
 
-    def build_household_member_presentations(self, pet_states):
+    def build_household_rhythm(
+        self,
+        rhythm_snapshot,
+        *,
+        pet_states=(),
+    ):
+        return HouseholdRhythmPresentation(
+            race_rhythm_text=self._build_race_rhythm_text(
+                rhythm_snapshot
+            ),
+            members=self.build_household_member_presentations(
+                pet_states,
+                rhythm_members=tuple(
+                    getattr(rhythm_snapshot, "members", ()) or ()
+                ),
+            ),
+        )
+
+    def build_household_member_presentations(
+        self,
+        pet_states,
+        rhythm_members=(),
+    ):
+        rhythm_by_name = {
+            str(getattr(item, "character_name", "") or ""): item
+            for item in rhythm_members or ()
+        }
         members = []
         for state in pet_states or ():
             try:
@@ -294,6 +353,7 @@ class DashboardPresenter:
             ).strip()
             if form_key not in self.FORM_LABELS:
                 form_key = "base"
+            rhythm = rhythm_by_name.get(character_name)
             members.append(
                 HouseholdMemberPresentation(
                     character_name=character_name,
@@ -306,9 +366,83 @@ class DashboardPresenter:
                     ),
                     form_key=form_key,
                     form_label=self.FORM_LABELS[form_key],
+                    sleep_rhythm_text=self._build_sleep_rhythm_text(
+                        rhythm
+                    ),
+                    transformation_rhythm_text=(
+                        self._build_transformation_rhythm_text(rhythm)
+                    ),
                 )
             )
         return tuple(members)
+
+    @staticmethod
+    def _build_race_rhythm_text(snapshot):
+        if snapshot is None:
+            return ""
+        status = str(getattr(snapshot, "race_status", "") or "")
+        if status == "active":
+            return "競賽：進行中"
+        if status == "cooldown":
+            duration = format_compact_duration(
+                getattr(snapshot, "race_remaining_seconds", None)
+            )
+            return f"競賽：約 {duration} 後再提案" if duration else "競賽：冷卻中"
+        if status == "ready":
+            return "競賽：等待合適參賽者"
+        return "競賽：排程尚未啟動"
+
+    @staticmethod
+    def _build_sleep_rhythm_text(rhythm):
+        if rhythm is None:
+            return ""
+        status = str(getattr(rhythm, "sleep_status", "") or "")
+        labels = {
+            "settling": "準備入睡",
+            "sleeping": "睡眠中",
+            "waking": "正在醒來",
+            "standby": "睡意：待命",
+        }
+        if status in labels:
+            return labels[status]
+        value = getattr(rhythm, "sleepiness_percent", None)
+        if value is None:
+            return "睡意：計算中"
+        return f"睡意 {max(0, min(100, int(round(value))))}%"
+
+    @staticmethod
+    def _build_transformation_rhythm_text(rhythm):
+        if rhythm is None:
+            return ""
+        status = str(
+            getattr(rhythm, "transformation_status", "") or ""
+        )
+        if status == "unavailable":
+            return ""
+        if status == "transition":
+            return "形態切換中"
+        duration = format_compact_duration(
+            getattr(rhythm, "transformation_remaining_seconds", None)
+        )
+        if status == "transformed":
+            return (
+                f"變身剩餘約 {duration}"
+                if duration else
+                "目前為變身形態"
+            )
+        if status == "cooldown":
+            return (
+                f"變身冷卻約 {duration}"
+                if duration else
+                "變身冷卻中"
+            )
+        if status == "waiting":
+            return (
+                f"變身重試約 {duration}"
+                if duration else
+                "等待安全變身"
+            )
+        return "變身：可排程"
 
     def build_household_recent_event_presentation(self, entry):
         sequence = int(getattr(entry, "sequence", 0) or 0)
@@ -509,6 +643,44 @@ class DashboardPresenter:
                 )
             )
 
+        metadata = dict(getattr(entry, "metadata", {}) or {})
+        details = []
+        event_type = str(getattr(entry, "event_type", "") or "")
+        if event_type.startswith("race_"):
+            direction_key = str(metadata.get("direction_key", "") or "")
+            direction_label = {
+                "clockwise_left": "順時鐘（朝左）",
+                "counterclockwise_right": "逆時鐘（朝右）",
+            }.get(direction_key, "未記錄")
+            details.extend((
+                SocialLogDetailPresentation(
+                    "挑戰者",
+                    str(metadata.get("challenger_name", "") or "未記錄"),
+                ),
+                SocialLogDetailPresentation(
+                    "對手",
+                    str(metadata.get("opponent_name", "") or "未記錄"),
+                ),
+            ))
+            completed_race = event_type == "race_completed"
+            if completed_race and str(metadata.get("winner_name", "") or ""):
+                details.append(SocialLogDetailPresentation(
+                    "贏家",
+                    str(metadata.get("winner_name", "")),
+                ))
+            if completed_race and "race_distance_px" in metadata:
+                details.append(SocialLogDetailPresentation(
+                    "比賽距離",
+                    f"{int(round(float(metadata.get('race_distance_px', 0.0) or 0.0)))} px",
+                ))
+            if completed_race:
+                details.append(SocialLogDetailPresentation("方向", direction_label))
+            if completed_race and float(metadata.get("race_elapsed_seconds", 0.0) or 0.0) > 0.0:
+                details.append(SocialLogDetailPresentation(
+                    "比賽用時",
+                    f"{float(metadata.get('race_elapsed_seconds', 0.0)):.1f} 秒",
+                ))
+
         return SocialLogEntryPresentation(
             sequence=sequence,
             timestamp_text=timestamp_text,
@@ -523,6 +695,7 @@ class DashboardPresenter:
             participant_text=participant_text,
             effects=tuple(effects),
             tags=tuple(str(tag) for tag in (getattr(entry, "tags", ()) or ()) if str(tag)),
+            details=tuple(details),
         )
 
     def format_social_log_entry(self, entry):

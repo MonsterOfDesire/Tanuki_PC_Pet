@@ -20,6 +20,8 @@ class DashboardConfigState:
     display_scale_idx: int
     debug_enabled: bool
     social_status_enabled: bool = False
+    race_frequency: str = "normal"
+    mood_climate: str = "cheerful"
     information_center: InformationCenterConfigState = field(
         default_factory=InformationCenterConfigState
     )
@@ -61,6 +63,10 @@ def safe_world_mode(value, default):
     return str(default)
 
 
+def safe_option(value, default, options):
+    return str(value) if value in tuple(options or ()) else str(default)
+
+
 def build_dashboard_config_state(
     *,
     world_mode,
@@ -71,6 +77,8 @@ def build_dashboard_config_state(
     display_scale_idx,
     debug_enabled,
     social_status_enabled=False,
+    race_frequency="normal",
+    mood_climate="cheerful",
     information_center=None,
 ):
     return DashboardConfigState(
@@ -82,6 +90,16 @@ def build_dashboard_config_state(
         display_scale_idx=int(display_scale_idx),
         debug_enabled=bool(debug_enabled),
         social_status_enabled=bool(social_status_enabled),
+        race_frequency=safe_option(
+            race_frequency,
+            RuntimeSettings.RACE_FREQUENCY_OPTIONS[1],
+            RuntimeSettings.RACE_FREQUENCY_OPTIONS,
+        ),
+        mood_climate=safe_option(
+            mood_climate,
+            RuntimeSettings.MOOD_CLIMATE_OPTIONS[0],
+            RuntimeSettings.MOOD_CLIMATE_OPTIONS,
+        ),
         information_center=(
             information_center
             if isinstance(information_center, InformationCenterConfigState)
@@ -126,6 +144,22 @@ def normalize_dashboard_config_state(raw_state, defaults, option_bounds):
                 getattr(defaults, "social_status_enabled", False),
             )
         ),
+        race_frequency=safe_option(
+            raw_state.get(
+                "race_frequency",
+                getattr(defaults, "race_frequency", "normal"),
+            ),
+            getattr(defaults, "race_frequency", "normal"),
+            RuntimeSettings.RACE_FREQUENCY_OPTIONS,
+        ),
+        mood_climate=safe_option(
+            raw_state.get(
+                "mood_climate",
+                getattr(defaults, "mood_climate", "cheerful"),
+            ),
+            getattr(defaults, "mood_climate", "cheerful"),
+            RuntimeSettings.MOOD_CLIMATE_OPTIONS,
+        ),
         information_center=normalize_information_center_config_state(
             raw_state.get("information_center", {}),
             defaults=default_information_center,
@@ -143,6 +177,12 @@ def dashboard_config_state_to_payload(state):
         "display_scale_idx": int(state.display_scale_idx),
         "debug_enabled": bool(state.debug_enabled),
         "social_status_enabled": bool(state.social_status_enabled),
+        "race_frequency": str(
+            getattr(state, "race_frequency", "normal")
+        ),
+        "mood_climate": str(
+            getattr(state, "mood_climate", "cheerful")
+        ),
         "information_center": information_center_config_state_to_payload(
             getattr(
                 state,
@@ -164,6 +204,16 @@ def apply_dashboard_config_to_settings(settings_provider, state):
     settings_provider.tsuyoshi_dur_idx = int(state.tsuyoshi_dur_idx)
     settings_provider.time_scale_idx = int(state.time_scale_idx)
     settings_provider.display_scale_idx = int(state.display_scale_idx)
+    settings_provider.race_frequency = safe_option(
+        getattr(state, "race_frequency", "normal"),
+        "normal",
+        RuntimeSettings.RACE_FREQUENCY_OPTIONS,
+    )
+    settings_provider.mood_climate = safe_option(
+        getattr(state, "mood_climate", "cheerful"),
+        "cheerful",
+        RuntimeSettings.MOOD_CLIMATE_OPTIONS,
+    )
 
 
 def build_pet_config_state(*, x, y, user_visible):

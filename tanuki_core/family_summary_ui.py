@@ -1,4 +1,4 @@
-from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtCore import QSize, Qt, QTimer
 from PyQt6.QtGui import QColor, QIcon
 from PyQt6.QtWidgets import (
     QAbstractItemView,
@@ -39,7 +39,7 @@ class FamilyMemberCard(QFrame):
         self.setProperty("tanukiRole", "familyMemberCard")
         self.setProperty("summoned", bool(member.summoned))
         self.setFixedWidth(116)
-        self.setMinimumHeight(160)
+        self.setMinimumHeight(194)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(7, 7, 7, 7)
         layout.setSpacing(3)
@@ -81,6 +81,7 @@ class FamilyMemberCard(QFrame):
         )
         mood_icon.setFixedSize(17, 17)
         mood_icon.setToolTip(f"心情：{member.mood_label}")
+        self.mood_icon = mood_icon
         mood_row.addWidget(mood_icon)
         self.mood_bar = QProgressBar()
         self.mood_bar.setRange(0, 100)
@@ -123,6 +124,31 @@ class FamilyMemberCard(QFrame):
         )
         layout.addWidget(self.form_status_label)
 
+        self.sleep_rhythm_label = QLabel(member.sleep_rhythm_text)
+        self.sleep_rhythm_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.sleep_rhythm_label.setProperty(
+            "tanukiRole",
+            "familyRhythmStatus",
+        )
+        self.sleep_rhythm_label.setVisible(bool(member.sleep_rhythm_text))
+        layout.addWidget(self.sleep_rhythm_label)
+
+        self.transformation_rhythm_label = QLabel(
+            member.transformation_rhythm_text
+        )
+        self.transformation_rhythm_label.setAlignment(
+            Qt.AlignmentFlag.AlignCenter
+        )
+        self.transformation_rhythm_label.setWordWrap(True)
+        self.transformation_rhythm_label.setProperty(
+            "tanukiRole",
+            "familyRhythmStatus",
+        )
+        self.transformation_rhythm_label.setVisible(
+            bool(member.transformation_rhythm_text)
+        )
+        layout.addWidget(self.transformation_rhythm_label)
+
         self.summon_status_label = QLabel(
             "● 召喚中" if member.summoned else "○ 待命"
         )
@@ -130,6 +156,86 @@ class FamilyMemberCard(QFrame):
         self.summon_status_label.setProperty("tanukiRole", "familySummonStatus")
         self.summon_status_label.setProperty("summoned", bool(member.summoned))
         layout.addWidget(self.summon_status_label)
+        self._apply_tooltip(member)
+
+    def apply_live_member(self, member):
+        """Update mutable labels without rebuilding the card or its layout."""
+        if member.character_name != self.member.character_name:
+            return False
+        self.member = member
+        summoned = bool(member.summoned)
+        if bool(self.property("summoned")) != summoned:
+            self.setProperty("summoned", summoned)
+            self._refresh_dynamic_style(self)
+
+        mood_band = (
+            member.mood_state
+            if member.mood_state in MOOD_BAND_COLORS else
+            "unknown"
+        )
+        if self.mood_bar.property("moodBand") != mood_band:
+            self.mood_bar.setProperty("moodBand", mood_band)
+            self._refresh_dynamic_style(self.mood_bar)
+            self.mood_icon.setPixmap(
+                create_ui_pixmap(
+                    "mood",
+                    color=MOOD_BAND_COLORS[mood_band],
+                    size=15,
+                )
+            )
+        self.mood_icon.setToolTip(f"心情：{member.mood_label}")
+        mood_value = (
+            0
+            if member.mood_score is None else
+            int(round(member.mood_score))
+        )
+        if self.mood_bar.value() != mood_value:
+            self.mood_bar.setValue(mood_value)
+        mood_value_text = (
+            "--"
+            if member.mood_score is None else
+            f"{member.mood_score:.0f}"
+        )
+        self._set_label_text(self.mood_value_label, mood_value_text)
+        self.mood_bar.setToolTip(
+            f"{member.mood_label}"
+            if member.mood_score is None else
+            f"{member.mood_label}（{member.mood_score:.0f}/100）"
+        )
+
+        transformed = member.form_key == "transformed"
+        self._set_label_text(
+            self.form_status_label,
+            "✦ 變身形態" if transformed else "◇ 普通形態",
+        )
+        if bool(self.form_status_label.property("transformed")) != transformed:
+            self.form_status_label.setProperty("transformed", transformed)
+            self._refresh_dynamic_style(self.form_status_label)
+
+        self._set_optional_label_text(
+            self.sleep_rhythm_label,
+            member.sleep_rhythm_text,
+        )
+        self._set_optional_label_text(
+            self.transformation_rhythm_label,
+            member.transformation_rhythm_text,
+        )
+
+        self._set_label_text(
+            self.summon_status_label,
+            "● 召喚中" if summoned else "○ 待命",
+        )
+        if (
+            bool(self.summon_status_label.property("summoned"))
+            != summoned
+        ):
+            self.summon_status_label.setProperty("summoned", summoned)
+            self._refresh_dynamic_style(self.summon_status_label)
+        self._apply_tooltip(member)
+        return True
+
+    def _apply_tooltip(self, member):
+        display_name = character_display_name(member.character_name)
         self.setToolTip(
             f"{display_name}\n"
             f"心情：{member.mood_label}"
@@ -138,8 +244,38 @@ class FamilyMemberCard(QFrame):
                 f"（{member.mood_score:.0f}/100）"
             )
             + f"\n形態：{member.form_label}"
+            + (
+                f"\n{member.sleep_rhythm_text}"
+                if member.sleep_rhythm_text else
+                ""
+            )
+            + (
+                f"\n{member.transformation_rhythm_text}"
+                if member.transformation_rhythm_text else
+                ""
+            )
             + f"\n{'目前已召喚' if member.summoned else '目前待命'}"
         )
+
+    @staticmethod
+    def _set_label_text(label, text):
+        text = str(text or "")
+        if label.text() != text:
+            label.setText(text)
+
+    @classmethod
+    def _set_optional_label_text(cls, label, text):
+        text = str(text or "")
+        cls._set_label_text(label, text)
+        visible = bool(text)
+        if label.isVisible() != visible:
+            label.setVisible(visible)
+
+    @staticmethod
+    def _refresh_dynamic_style(widget):
+        widget.style().unpolish(widget)
+        widget.style().polish(widget)
+        widget.update()
 
 
 class FamilySummaryPanel(QWidget):
@@ -156,6 +292,11 @@ class FamilySummaryPanel(QWidget):
         self.assets = assets
         self.member_cards = {}
         self.avatar_pixmaps = self._load_avatar_pixmaps(assets)
+        self.rhythm_refresh_timer = QTimer(self)
+        self.rhythm_refresh_timer.setInterval(1000)
+        self.rhythm_refresh_timer.timeout.connect(
+            self.refresh_rhythm_from_binding
+        )
 
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
@@ -169,6 +310,15 @@ class FamilySummaryPanel(QWidget):
         self.title_label.setProperty("tanukiRole", "familyHeading")
         heading_row.addWidget(self.title_label)
         heading_row.addStretch(1)
+        self.race_rhythm_label = QLabel("")
+        self.race_rhythm_label.setProperty(
+            "tanukiRole",
+            "familyRhythmStatus",
+        )
+        self.race_rhythm_label.setToolTip(
+            "顯示下一次自主競賽提案的排程；實際開始仍需通過資格與距離判定。"
+        )
+        heading_row.addWidget(self.race_rhythm_label)
         root_layout.addLayout(heading_row)
 
         self.unavailable_label = QLabel("家庭資料尚未連接執行中的 Dashboard。")
@@ -421,14 +571,59 @@ class FamilySummaryPanel(QWidget):
             self.apply_presentation(None)
         self._update_donation_state()
 
+    def showEvent(self, event):
+        super().showEvent(event)
+        if self.binding is not None:
+            self.rhythm_refresh_timer.start()
+            self.refresh_from_binding()
+
+    def hideEvent(self, event):
+        self.rhythm_refresh_timer.stop()
+        super().hideEvent(event)
+
     def refresh_from_binding(self):
         if self.binding is None:
             return
         self.apply_presentation(self.binding.presentation())
 
+    def refresh_rhythm_from_binding(self):
+        if self.binding is None:
+            return
+        provider = getattr(self.binding, "rhythm_presentation", None)
+        presentation = (
+            provider()
+            if callable(provider) else
+            self.binding.presentation()
+        )
+        self.apply_rhythm_presentation(presentation)
+
+    def apply_rhythm_presentation(self, presentation):
+        if presentation is None:
+            return
+        members = tuple(getattr(presentation, "members", ()) or ())
+        member_names = {
+            str(member.character_name or "")
+            for member in members
+        }
+        if member_names != set(self.member_cards):
+            # Character roster changes are rare and do require a structural
+            # refresh. Ordinary one-second ticks never enter this path.
+            self.refresh_from_binding()
+            return
+        race_text = str(
+            getattr(presentation, "race_rhythm_text", "") or ""
+        )
+        if self.race_rhythm_label.text() != race_text:
+            self.race_rhythm_label.setText(race_text)
+        for member in members:
+            card = self.member_cards.get(member.character_name)
+            if card is not None:
+                card.apply_live_member(member)
+
     def apply_presentation(self, presentation):
         if presentation is None:
             self.title_label.setText("家庭狀態")
+            self.race_rhythm_label.setText("")
             self.fund_value_label.setText("--")
             self.pressure_value_label.setText("--")
             self.pressure_level_label.setText("--")
@@ -442,6 +637,9 @@ class FamilySummaryPanel(QWidget):
             return
 
         self.title_label.setText(presentation.title or "家庭狀態")
+        self.race_rhythm_label.setText(
+            getattr(presentation, "race_rhythm_text", "") or ""
+        )
         living_fund = presentation.living_fund
         pressure = presentation.household_pressure
         self.fund_value_label.setText(
@@ -470,7 +668,7 @@ class FamilySummaryPanel(QWidget):
             "尚無成員"
         )
         self.member_count_label.setText(f"{presentation.member_count} 人")
-        self._replace_member_cards(presentation.members)
+        self._sync_member_cards(presentation.members)
         self._populate_recent_events(presentation.recent_events)
         self._apply_stats(presentation)
         self._update_donation_state()
@@ -520,6 +718,20 @@ class FamilySummaryPanel(QWidget):
             self.member_cards[member.character_name] = card
         self.members_row.addStretch(1)
         self.members_stack.setCurrentWidget(self.members_scroll)
+
+    def _sync_member_cards(self, members):
+        members = tuple(members or ())
+        member_names = {
+            str(member.character_name or "")
+            for member in members
+        }
+        if member_names != set(self.member_cards):
+            self._replace_member_cards(members)
+            return
+        for member in members:
+            card = self.member_cards.get(member.character_name)
+            if card is not None:
+                card.apply_live_member(member)
 
     def _populate_recent_events(self, events):
         events = tuple(events or ())

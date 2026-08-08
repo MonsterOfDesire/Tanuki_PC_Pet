@@ -361,6 +361,18 @@ class Dashboard(QWidget):
         self.teio_dur_idx = int(self.settings_provider.teio_dur_idx)
         self.tsuyoshi_dur_list = list(RuntimeSettings.TSUYOSHI_DURATIONS)
         self.tsuyoshi_dur_idx = int(self.settings_provider.tsuyoshi_dur_idx)
+        self.race_frequency_options = list(
+            RuntimeSettings.RACE_FREQUENCY_OPTIONS
+        )
+        self.race_frequency = str(
+            getattr(self.settings_provider, "race_frequency", "normal")
+        )
+        self.mood_climate_options = list(
+            RuntimeSettings.MOOD_CLIMATE_OPTIONS
+        )
+        self.mood_climate = str(
+            getattr(self.settings_provider, "mood_climate", "cheerful")
+        )
         self.teio_duration_buttons = []
         self.tsuyoshi_duration_buttons = []
         self.target_rect = target_rect
@@ -368,9 +380,12 @@ class Dashboard(QWidget):
         self.resource_resolver = resource_resolver
         self.household_state_provider = household_state_provider
         self.household_events_provider = household_events_provider
+        self.activity_rhythm_provider = None
         self.household_donate_provider = household_donate_provider
         self.rudolf_work_preview_provider = None
         self.rudolf_work_preview_active_provider = None
+        self.race_preview_provider = None
+        self.race_preview_active_provider = None
         self.transformation_toggle_provider = None
         self.transformation_state_provider = None
         self.household_capture_provider = None
@@ -672,6 +687,8 @@ class Dashboard(QWidget):
             display_scale_idx=self.display_scale_idx,
             debug_enabled=self.debug_enabled,
             social_status_enabled=self.social_status_enabled,
+            race_frequency=self.race_frequency,
+            mood_climate=self.mood_climate,
             information_center=(
                 self.information_center_window.capture_config_state()
                 if self.information_center_window is not None
@@ -696,6 +713,8 @@ class Dashboard(QWidget):
         self.tsuyoshi_dur_idx = int(state.tsuyoshi_dur_idx)
         self.time_scale_idx = int(state.time_scale_idx)
         self.display_scale_idx = int(state.display_scale_idx)
+        self.race_frequency = str(state.race_frequency)
+        self.mood_climate = str(state.mood_climate)
         self.information_center_config_state = state.information_center
         if self.information_center_window is not None:
             self.information_center_window.restore_config_state(
@@ -886,6 +905,12 @@ class Dashboard(QWidget):
     def set_display_scale_index(self, index, save=True):
         self.controller.set_display_scale_index(self, index, save=save)
 
+    def set_race_frequency(self, value, save=True):
+        self.controller.set_race_frequency(self, value, save=save)
+
+    def set_mood_climate(self, value, save=True):
+        self.controller.set_mood_climate(self, value, save=save)
+
     def apply_display_scale(self, save=True):
         self.controller.apply_display_scale(self, save=save)
 
@@ -895,15 +920,24 @@ class Dashboard(QWidget):
     def preview_rudolf_work(self):
         return self.controller.preview_rudolf_work(self)
 
+    def preview_rudolf_teio_race(self):
+        return self.controller.preview_rudolf_teio_race(self)
+
     def toggle_transformation_preview(self, pet_name):
         return self.controller.toggle_transformation_preview(
             self,
             pet_name,
         )
 
-    def set_household_data_providers(self, household_state_provider=None, household_events_provider=None):
+    def set_household_data_providers(
+        self,
+        household_state_provider=None,
+        household_events_provider=None,
+        activity_rhythm_provider=None,
+    ):
         self.household_state_provider = household_state_provider
         self.household_events_provider = household_events_provider
+        self.activity_rhythm_provider = activity_rhythm_provider
 
     def set_household_action_providers(self, household_donate_provider=None):
         self.household_donate_provider = household_donate_provider
@@ -912,6 +946,8 @@ class Dashboard(QWidget):
         self,
         rudolf_work_preview_provider=None,
         rudolf_work_preview_active_provider=None,
+        race_preview_provider=None,
+        race_preview_active_provider=None,
         transformation_toggle_provider=None,
         transformation_state_provider=None,
     ):
@@ -921,6 +957,8 @@ class Dashboard(QWidget):
         self.rudolf_work_preview_active_provider = (
             rudolf_work_preview_active_provider
         )
+        self.race_preview_provider = race_preview_provider
+        self.race_preview_active_provider = race_preview_active_provider
         self.transformation_toggle_provider = (
             transformation_toggle_provider
         )
@@ -952,6 +990,11 @@ class Dashboard(QWidget):
         if callable(self.household_events_provider):
             return list(self.household_events_provider(limit=limit))
         return []
+
+    def get_activity_rhythm_snapshot(self):
+        if callable(self.activity_rhythm_provider):
+            return self.activity_rhythm_provider()
+        return None
 
     def open_household_summary(self):
         self.controller.open_household_summary(self)
@@ -990,6 +1033,18 @@ class Dashboard(QWidget):
             return bool(
                 self.rudolf_work_preview_active_provider()
             )
+        return False
+
+    def apply_race_preview(self):
+        if self.world_mode != "sandbox":
+            return None
+        if callable(self.race_preview_provider):
+            return self.race_preview_provider()
+        return None
+
+    def is_race_preview_active(self):
+        if callable(self.race_preview_active_provider):
+            return bool(self.race_preview_active_provider())
         return False
 
     def apply_transformation_preview(self, pet_name):

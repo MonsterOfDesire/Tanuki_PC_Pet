@@ -39,6 +39,11 @@ class FakeStatusSettingsBinding:
             reason="",
         )
         self.preview_active = False
+        self.race_preview_result = SimpleNamespace(
+            started=True,
+            reason="",
+        )
+        self.race_preview_active = False
         self.transformation_states = {
             "Tokai Teio": {
                 "available": True,
@@ -107,6 +112,14 @@ class FakeStatusSettingsBinding:
         field_name = f"{character_key}_duration_index"
         self.state = replace(self.state, **{field_name: index})
 
+    def set_race_frequency(self, value):
+        self.calls.append(("race_frequency", value))
+        self.state = replace(self.state, race_frequency=value)
+
+    def set_mood_climate(self, value):
+        self.calls.append(("mood_climate", value))
+        self.state = replace(self.state, mood_climate=value)
+
     def run_validation_checks(self):
         self.calls.append(("validate",))
 
@@ -118,6 +131,15 @@ class FakeStatusSettingsBinding:
     def is_rudolf_work_preview_active(self):
         self.calls.append(("preview_active",))
         return self.preview_active
+
+    def preview_rudolf_teio_race(self):
+        self.calls.append(("preview_race",))
+        self.race_preview_active = bool(self.race_preview_result.started)
+        return self.race_preview_result
+
+    def is_race_preview_active(self):
+        self.calls.append(("race_preview_active",))
+        return self.race_preview_active
 
     def toggle_transformation_preview(self, pet_name):
         self.calls.append(("transformation", pet_name))
@@ -150,6 +172,8 @@ class FakeDashboardForBinding:
         self.display_scale_options = [1.0, 1.5, 2.0, 3.0]
         self.teio_dur_list = [2, 5, 10, 20, 30]
         self.tsuyoshi_dur_list = [2, 10, 20, 40, 60]
+        self.race_frequency_options = ["frequent", "normal", "occasional"]
+        self.mood_climate_options = ["cheerful", "balanced", "expressive"]
         self.calls = []
 
     def capture_config_state(self):
@@ -162,6 +186,8 @@ class FakeDashboardForBinding:
             display_scale_idx=1,
             teio_dur_idx=3,
             tsuyoshi_dur_idx=4,
+            race_frequency="normal",
+            mood_climate="cheerful",
         )
 
     def set_debug_enabled(self, value):
@@ -185,6 +211,12 @@ class FakeDashboardForBinding:
     def set_duration(self, character_key, index):
         self.calls.append((character_key, index))
 
+    def set_race_frequency(self, value):
+        self.calls.append(("race_frequency", value))
+
+    def set_mood_climate(self, value):
+        self.calls.append(("mood_climate", value))
+
     def run_validation_checks(self):
         self.calls.append(("validate",))
 
@@ -194,6 +226,14 @@ class FakeDashboardForBinding:
 
     def is_rudolf_work_preview_active(self):
         self.calls.append(("preview_active",))
+        return True
+
+    def preview_rudolf_teio_race(self):
+        self.calls.append(("preview_race",))
+        return "race-preview-result"
+
+    def is_race_preview_active(self):
+        self.calls.append(("race_preview_active",))
         return True
 
     def toggle_transformation_preview(self, pet_name):
@@ -259,6 +299,15 @@ class StatusSettingsPanelTests(unittest.TestCase):
         self.app.processEvents()
 
         self.assertTrue(compact_panel._compact_layout)
+        self.assertTrue(compact_panel._single_column_layout)
+        self.assertGreater(
+            compact_panel.settings_scroll.verticalScrollBar().maximum(),
+            0,
+        )
+        self.assertEqual(
+            compact_panel.settings_scroll.horizontalScrollBar().maximum(),
+            0,
+        )
         self.assertTrue(
             all(
                 button.property("compact")
@@ -268,6 +317,8 @@ class StatusSettingsPanelTests(unittest.TestCase):
                     + compact_panel.display_scale_buttons
                     + compact_panel.teio_duration_buttons
                     + compact_panel.tsuyoshi_duration_buttons
+                    + compact_panel.race_frequency_buttons
+                    + compact_panel.mood_climate_buttons
                 )
             )
         )
@@ -288,6 +339,13 @@ class StatusSettingsPanelTests(unittest.TestCase):
                 (
                     compact_panel.teio_duration_buttons,
                     compact_panel.tsuyoshi_duration_buttons,
+                ),
+            ),
+            (
+                compact_panel.rhythm_group,
+                (
+                    compact_panel.race_frequency_buttons,
+                    compact_panel.mood_climate_buttons,
                 ),
             ),
         ):
@@ -312,6 +370,44 @@ class StatusSettingsPanelTests(unittest.TestCase):
         compact_panel.deleteLater()
         host.deleteLater()
 
+    def test_wide_layout_stacks_settings_beside_full_height_developer_tools(self):
+        host = QWidget()
+        host.setFixedSize(988, 383)
+        wide_panel = StatusSettingsPanel(self.binding, parent=host)
+        wide_panel.setGeometry(host.rect())
+        host.show()
+        self.app.processEvents()
+
+        self.assertFalse(wide_panel._single_column_layout)
+        expected_positions = {
+            wide_panel.runtime_group: (0, 0, 1, 1),
+            wide_panel.timing_group: (1, 0, 1, 1),
+            wide_panel.social_group: (2, 0, 1, 1),
+            wide_panel.rhythm_group: (3, 0, 1, 1),
+            wide_panel.developer_group: (0, 1, 4, 1),
+        }
+        actual_positions = {}
+        for index in range(wide_panel.grid_layout.count()):
+            item = wide_panel.grid_layout.itemAt(index)
+            widget = item.widget()
+            if widget in expected_positions:
+                actual_positions[widget] = (
+                    wide_panel.grid_layout.getItemPosition(index)
+                )
+
+        self.assertEqual(actual_positions, expected_positions)
+        self.assertGreater(
+            wide_panel.developer_group.height(),
+            wide_panel.social_group.height(),
+        )
+        self.assertEqual(
+            wide_panel.settings_scroll.horizontalScrollBar().maximum(),
+            0,
+        )
+        host.close()
+        wide_panel.deleteLater()
+        host.deleteLater()
+
     def test_wide_width_restores_regular_option_spacing(self):
         self.panel.resize(900, 300)
         self.app.processEvents()
@@ -333,6 +429,8 @@ class StatusSettingsPanelTests(unittest.TestCase):
         self.panel.care_switch.click()
         self.panel.debug_switch.click()
         self.panel.social_status_switch.click()
+        self.panel.race_frequency_buttons[0].click()
+        self.panel.mood_climate_buttons[2].click()
 
         self.assertEqual(
             self.binding.calls,
@@ -345,6 +443,8 @@ class StatusSettingsPanelTests(unittest.TestCase):
                 ("care", False),
                 ("debug", True),
                 ("social_status", True),
+                ("race_frequency", "frequent"),
+                ("mood_climate", "expressive"),
             ],
         )
 
@@ -401,6 +501,79 @@ class StatusSettingsPanelTests(unittest.TestCase):
             "severe",
             self.panel.rudolf_work_preview_status.text(),
         )
+
+    def test_race_preview_is_sandbox_only_and_resets_after_completion(self):
+        self.assertFalse(self.panel.race_preview_button.isEnabled())
+
+        self.panel.world_mode_buttons[1].click()
+        self.panel.race_preview_button.click()
+
+        self.assertEqual(
+            self.binding.calls,
+            [
+                ("world_mode", "sandbox"),
+                ("preview_race",),
+            ],
+        )
+        self.assertIn(
+            "競賽預覽已開始",
+            self.panel.race_preview_status.text(),
+        )
+        self.assertTrue(self.panel.race_preview_poll_timer.isActive())
+
+        self.binding.race_preview_active = False
+        self.panel._poll_race_preview_status()
+
+        self.assertIn(
+            "不寫入事件",
+            self.panel.race_preview_status.text(),
+        )
+        self.assertFalse(self.panel.race_preview_poll_timer.isActive())
+
+    def test_race_preview_explains_transformed_teio_capability_gate(self):
+        self.binding.state = replace(
+            self.binding.state,
+            world_mode="sandbox",
+        )
+        self.binding.race_preview_result = SimpleNamespace(
+            started=False,
+            reason="Tokai Teio:form_blocks_race",
+        )
+        self.panel.refresh_from_binding()
+
+        self.panel.race_preview_button.click()
+
+        self.assertIn("帝寶目前形態不能參賽", self.panel.race_preview_status.text())
+
+    def test_race_preview_explains_that_participants_must_be_nearby(self):
+        self.binding.state = replace(
+            self.binding.state,
+            world_mode="sandbox",
+        )
+        self.binding.race_preview_result = SimpleNamespace(
+            started=False,
+            reason="participants_too_far",
+        )
+        self.panel.refresh_from_binding()
+
+        self.panel.race_preview_button.click()
+
+        self.assertIn("距離太遠", self.panel.race_preview_status.text())
+
+    def test_race_preview_explains_that_overlapping_participants_must_separate(self):
+        self.binding.state = replace(
+            self.binding.state,
+            world_mode="sandbox",
+        )
+        self.binding.race_preview_result = SimpleNamespace(
+            started=False,
+            reason="participants_too_close",
+        )
+        self.panel.refresh_from_binding()
+
+        self.panel.race_preview_button.click()
+
+        self.assertIn("距離太近", self.panel.race_preview_status.text())
 
     def test_transformation_preview_is_sandbox_only_and_refreshes_form(self):
         teio_button = self.panel.transformation_preview_buttons[
@@ -591,6 +764,8 @@ class DashboardStatusSettingsBindingTests(unittest.TestCase):
         self.assertEqual(snapshot.time_scale_index, 2)
         self.assertEqual(snapshot.display_scale_options, (1.0, 1.5, 2.0, 3.0))
         self.assertEqual(snapshot.tsuyoshi_duration_index, 4)
+        self.assertEqual(snapshot.race_frequency, "normal")
+        self.assertEqual(snapshot.mood_climate, "cheerful")
 
     def test_actions_delegate_to_existing_dashboard_controller_entry_points(self):
         dashboard = FakeDashboardForBinding()
@@ -603,9 +778,13 @@ class DashboardStatusSettingsBindingTests(unittest.TestCase):
         binding.set_time_scale_index(1)
         binding.set_display_scale_index(3)
         binding.set_social_duration_index("teio", 2)
+        binding.set_race_frequency("occasional")
+        binding.set_mood_climate("balanced")
         binding.run_validation_checks()
         preview_result = binding.preview_rudolf_work()
         preview_active = binding.is_rudolf_work_preview_active()
+        race_preview_result = binding.preview_rudolf_teio_race()
+        race_preview_active = binding.is_race_preview_active()
         transformation_result = binding.toggle_transformation_preview(
             "Tokai Teio"
         )
@@ -615,6 +794,8 @@ class DashboardStatusSettingsBindingTests(unittest.TestCase):
 
         self.assertEqual(preview_result, "preview-result")
         self.assertTrue(preview_active)
+        self.assertEqual(race_preview_result, "race-preview-result")
+        self.assertTrue(race_preview_active)
         self.assertEqual(
             transformation_result,
             "transformation-result:Tokai Teio",
@@ -633,9 +814,13 @@ class DashboardStatusSettingsBindingTests(unittest.TestCase):
                 ("time", 1),
                 ("display", 3),
                 ("teio", 2),
+                ("race_frequency", "occasional"),
+                ("mood_climate", "balanced"),
                 ("validate",),
                 ("preview_rudolf_work",),
                 ("preview_active",),
+                ("preview_race",),
+                ("race_preview_active",),
                 ("transformation", "Tokai Teio"),
                 ("transformation_state", "Tokai Teio"),
             ],

@@ -78,6 +78,8 @@ class DashboardStateMapperTests(unittest.TestCase):
             display_scale_idx=3,
             debug_enabled=True,
             social_status_enabled=True,
+            race_frequency="frequent",
+            mood_climate="expressive",
         )
 
         apply_dashboard_config_to_settings(settings, state)
@@ -90,6 +92,8 @@ class DashboardStateMapperTests(unittest.TestCase):
         self.assertEqual(settings.display_scale_idx, 3)
         self.assertTrue(settings.debug_enabled)
         self.assertTrue(settings.social_status_enabled)
+        self.assertEqual(settings.race_frequency, "frequent")
+        self.assertEqual(settings.mood_climate, "expressive")
 
     def test_dashboard_payload_round_trip_uses_expected_shape(self):
         state = build_dashboard_config_state(
@@ -124,6 +128,8 @@ class DashboardStateMapperTests(unittest.TestCase):
                 "display_scale_idx": 0,
                 "debug_enabled": False,
                 "social_status_enabled": True,
+                "race_frequency": "normal",
+                "mood_climate": "cheerful",
                 "information_center": {
                     "x": 120,
                     "y": 80,

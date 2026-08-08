@@ -28,6 +28,7 @@ TEST_SUITE_MEMBERS = {
         "test_asset_selection_rules",
         "test_asset_store",
         "test_manifest_rules",
+        "test_race_asset_integration",
         "test_ui_skin_assets",
     },
     "config": {
@@ -86,6 +87,7 @@ TEST_SUITE_MEMBERS = {
         "test_pet_widget_runtime",
     },
     "runtime": {
+        "test_activity_rhythm",
         "test_bottle_honey_scene_executor",
         "test_direct_hover_scene_executor",
         "test_ground_item_coordinator",
@@ -95,6 +97,10 @@ TEST_SUITE_MEMBERS = {
         "test_item_scene_coordinator",
         "test_offer_interaction_runtime",
         "test_offer_release_ui",
+        "test_race_executor",
+        "test_race_event_adapter",
+        "test_race_profiles",
+        "test_race_rules",
         "test_household_state",
         "test_offer_interaction_rules",
         "test_runtime_clock",

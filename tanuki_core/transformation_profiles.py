@@ -19,6 +19,7 @@ CAPABILITY_COMBINED_CARE = "combined_care"
 CAPABILITY_SOCIAL_FOLLOW = "social_follow"
 CAPABILITY_SOCIAL_MIMIC = "social_mimic"
 CAPABILITY_AUTONOMOUS_FLIGHT = "autonomous_flight"
+CAPABILITY_RACE = "race"
 
 
 @dataclass(frozen=True)
@@ -33,6 +34,7 @@ class FormCapabilities:
     social_follow: bool = True
     social_mimic: bool = True
     autonomous_flight: bool = True
+    race: bool = True
     direct_offer_items: frozenset[str] | None = None
     care_target_names: frozenset[str] | None = None
     minimum_mood_score: float = 0.0
@@ -64,6 +66,7 @@ TRANSFORMATION_PROFILES = {
             social_follow=False,
             social_mimic=False,
             autonomous_flight=True,
+            race=False,
             direct_offer_items=frozenset({"bottle"}),
             care_target_names=frozenset({TSURUMARU_TSUYOSHI_NAME}),
             minimum_mood_score=50.0,
@@ -83,6 +86,7 @@ TRANSFORMATION_PROFILES = {
             social_follow=False,
             social_mimic=False,
             autonomous_flight=False,
+            race=True,
             direct_offer_items=frozenset(),
             minimum_mood_score=50.0,
         ),

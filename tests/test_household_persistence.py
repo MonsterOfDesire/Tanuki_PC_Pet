@@ -7,6 +7,7 @@ from tanuki_core.household_persistence import (
     capture_household_persistence_state,
 )
 from tanuki_core.household_state import HouseholdEventLog, HouseholdState, record_household_event
+from tanuki_core.race_state import RaceCharacterStatistics
 
 
 class HouseholdPersistenceTests(unittest.TestCase):
@@ -43,6 +44,15 @@ class HouseholdPersistenceTests(unittest.TestCase):
             next_rudolf_work_at=150.0,
             next_rudolf_collectible_at=160.0,
         )
+        household.race_statistics.entries["Tokai Teio"] = RaceCharacterStatistics(
+            character_name="Tokai Teio",
+            completed_races=12,
+            wins=8,
+            losses=4,
+            sandbox_races=12,
+            autonomous_races=12,
+        )
+        household.race_statistics.processed_activity_ids.add("race-12")
 
         payload = capture_household_persistence_state(household, event_log, schedule)
 
@@ -57,6 +67,11 @@ class HouseholdPersistenceTests(unittest.TestCase):
         self.assertEqual(payload["relationship_ledger"][0]["target_name"], "Tokai Teio")
         self.assertEqual(payload["relationship_ledger"][0]["trust"], 0.5)
         self.assertEqual(payload["event_schedule"]["next_rudolf_work_at"], 150.0)
+        self.assertEqual(payload["race_statistics"]["entries"][0]["wins"], 8)
+        self.assertEqual(
+            payload["race_statistics"]["processed_activity_ids"],
+            ["race-12"],
+        )
 
     def test_capture_household_persistence_state_limits_log_entries(self):
         household = HouseholdState()
@@ -120,6 +135,21 @@ class HouseholdPersistenceTests(unittest.TestCase):
                         "event_count": 3,
                     }
                 ],
+                "race_statistics": {
+                    "entries": [
+                        {
+                            "character_name": "Tokai Teio",
+                            "completed_races": 5,
+                            "wins": 3,
+                            "losses": 2,
+                            "golden_races": 1,
+                            "sandbox_races": 4,
+                            "autonomous_races": 5,
+                            "manual_races": 0,
+                        }
+                    ],
+                    "processed_activity_ids": ["race-5"],
+                },
                 "event_schedule": {
                     "next_teio_drink_at": 91.0,
                     "next_rudolf_work_at": 111.0,
@@ -142,6 +172,13 @@ class HouseholdPersistenceTests(unittest.TestCase):
         self.assertEqual(household.relationships.get_entry("Symboli Rudolf", "Tokai Teio").familiarity, 7.0)
         self.assertEqual(event_log.next_sequence, 12)
         self.assertEqual(schedule.next_rudolf_work_at, 111.0)
+        race_stats = household.race_statistics.entries["Tokai Teio"]
+        self.assertEqual((race_stats.completed_races, race_stats.wins), (5, 3))
+        self.assertEqual(race_stats.win_rate, 60.0)
+        self.assertIn(
+            "race-5",
+            household.race_statistics.processed_activity_ids,
+        )
 
     def test_apply_household_persistence_state_defaults_extended_log_fields_for_legacy_payload(self):
         household = HouseholdState()

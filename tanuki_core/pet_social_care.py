@@ -1262,6 +1262,17 @@ class PetSocialCareMixin:
     def get_adult_companion_candidates(self):
         return catalog_get_adult_companion_candidates(self.name)
 
+    def apply_care_companion_animation(self):
+        if self.change_state_for_context_with_preferences(
+            "idle",
+            "care_companion",
+            preserve=True,
+        ):
+            return True
+        return self.ensure_candidate_animation(
+            self.get_adult_companion_candidates(),
+        )
+
     def get_move_candidates(self):
         return catalog_get_move_candidates()
 
@@ -1552,7 +1563,7 @@ class PetSocialCareMixin:
             if decision.action == CARE_DECISION_SIT_TICK:
                 self.direction = -1 if child.x() < self.x() else 1
                 child.direction = -1 if self.x() < child.x() else 1
-                self.ensure_candidate_animation(self.get_adult_companion_candidates())
+                self.apply_care_companion_animation()
                 child.ensure_candidate_animation(child.get_child_comfort_candidates())
                 child.mood_score = min(100, child.mood_score + 0.10)
                 if hasattr(child, "sync_mood_state_with_score"):
@@ -1599,7 +1610,10 @@ class PetSocialCareMixin:
                 distance=self.distance_to(pet),
                 preferred_adult_name=(
                     self.get_preferred_care_adult_name(pet, all_pets)
-                    if not pet.is_adult
+                    if not pet_form_allows_capability(
+                        pet,
+                        CAPABILITY_CARE_GIVER,
+                    )
                     else None
                 ),
                 care_blocked=(

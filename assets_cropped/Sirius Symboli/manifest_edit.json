@@ -64,7 +64,8 @@
         "severe"
       ],
       "contexts": [
-        "shared_food_request"
+        "shared_food_request",
+        "activity_race_challenge"
       ],
       "weight": 1.0
     },
@@ -215,7 +216,9 @@
       "contexts": [
         "window_perch",
         "offer_timeout_route_a_step2",
-        "random"
+        "random",
+        "activity_race_ready",
+        "activity_race_finish_lose"
       ],
       "weight": 1.0
     },
@@ -229,7 +232,8 @@
         "care_companion",
         "observe_hold",
         "bottle_feed_watch",
-        "activity_sleep_observing"
+        "activity_sleep_observing",
+        "activity_race_finish_win"
       ],
       "weight": 1.0
     },
@@ -255,7 +259,8 @@
         "care_companion",
         "relation_watch",
         "honey_guard_take",
-        "random"
+        "random",
+        "activity_race_finish_lose"
       ],
       "weight": 1.0
     },
@@ -279,7 +284,9 @@
         "window_perch",
         "care_companion",
         "relation_close",
-        "random"
+        "random",
+        "activity_race_ready",
+        "activity_race_finish_lose"
       ],
       "weight": 1.0
     },
@@ -292,7 +299,8 @@
         "care_companion",
         "observe_hold",
         "honey_guard_take",
-        "shared_food_react"
+        "shared_food_react",
+        "activity_race_recovery"
       ],
       "weight": 1.0
     },
@@ -314,7 +322,8 @@
       "contexts": [
         "care_companion",
         "observe_hold",
-        "shared_food_react"
+        "shared_food_react",
+        "activity_race_recovery"
       ],
       "weight": 1.0
     },
@@ -368,7 +377,8 @@
       "contexts": [
         "bottle_feed_hold",
         "shared_food_watch",
-        "shared_food_hold"
+        "shared_food_hold",
+        "activity_race_accept"
       ],
       "weight": 1.0
     },
@@ -427,7 +437,8 @@
         "severe"
       ],
       "contexts": [
-        "post_observe"
+        "post_observe",
+        "activity_race_finish_win"
       ],
       "weight": 1.0
     },
@@ -457,7 +468,9 @@
       "contexts": [
         "window_perch",
         "post_observe",
-        "random"
+        "random",
+        "activity_race_decline",
+        "activity_race_consider"
       ],
       "weight": 1.0
     },
@@ -469,7 +482,8 @@
       ],
       "contexts": [
         "bottle_feed_watch",
-        "shared_food_react"
+        "shared_food_react",
+        "activity_race_accept"
       ],
       "weight": 1.0
     },
@@ -480,7 +494,8 @@
       "contexts": [
         "window_perch",
         "random",
-        "shared_food_react"
+        "shared_food_react",
+        "activity_race_decline"
       ],
       "weight": 1.0
     },
@@ -504,7 +519,8 @@
       "contexts": [
         "window_perch",
         "random",
-        "shared_food_react"
+        "shared_food_react",
+        "activity_race_consider"
       ],
       "weight": 1.0
     },
@@ -564,7 +580,8 @@
       ],
       "contexts": [
         "random",
-        "shared_food_approach"
+        "shared_food_approach",
+        "activity_race_running_teio"
       ],
       "weight": 1.0
     },
@@ -617,7 +634,8 @@
         "severe"
       ],
       "contexts": [
-        "honey_guard_move"
+        "honey_guard_move",
+        "activity_race_running"
       ],
       "weight": 1.0
     },
@@ -628,7 +646,6 @@
         "severe"
       ],
       "contexts": [
-        "future_work",
         "care_approach"
       ],
       "weight": 1.0
@@ -648,7 +665,8 @@
         "severe"
       ],
       "contexts": [
-        "random"
+        "random",
+        "activity_race_running_teio"
       ],
       "weight": 1.0
     },
@@ -668,7 +686,8 @@
         "normal"
       ],
       "contexts": [
-        "random"
+        "random",
+        "activity_race_running"
       ],
       "weight": 1.0
     },
@@ -721,7 +740,8 @@
         "window_walk",
         "offer_timeout_route_a_step3",
         "random",
-        "activity_sleep_join_approach"
+        "activity_sleep_join_approach",
+        "activity_race_to_start"
       ],
       "weight": 1.0
     },
@@ -754,7 +774,8 @@
       "contexts": [
         "window_walk",
         "random",
-        "shared_food_approach"
+        "shared_food_approach",
+        "activity_race_to_start"
       ],
       "weight": 1.0
     }

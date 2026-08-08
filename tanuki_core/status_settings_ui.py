@@ -3,11 +3,13 @@ import time
 from PyQt6.QtCore import QSignalBlocker, Qt, QTimer
 from PyQt6.QtWidgets import (
     QButtonGroup,
+    QFrame,
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QScrollArea,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
@@ -24,15 +26,42 @@ from .transformation_control_presenter import (
 
 
 COMPACT_SETTINGS_WIDTH = 660
+SINGLE_COLUMN_SETTINGS_WIDTH = 820
 WORLD_MODE_LABELS = {
     "golden_legend": "黃金傳說",
     "sandbox": "沙盒",
+}
+RACE_FREQUENCY_LABELS = {
+    "frequent": "經常",
+    "normal": "普通",
+    "occasional": "偶爾",
+}
+MOOD_CLIMATE_LABELS = {
+    "cheerful": "明朗",
+    "balanced": "均衡",
+    "expressive": "多彩",
+}
+RACE_FREQUENCY_TOOLTIPS = {
+    "frequent": "自主競賽等待與冷卻約為普通的一半。",
+    "normal": "使用沙盒或黃金傳說各自的標準競賽排程。",
+    "occasional": "自主競賽等待與冷卻約為普通的兩倍。",
+}
+MOOD_CLIMATE_TOOLTIPS = {
+    "cheerful": "長期心情傾向約 85，較常維持笑臉。",
+    "balanced": "長期心情傾向約 65，保留較多自然波動。",
+    "expressive": "長期心情傾向約 50，較容易看見低落表情。",
 }
 RUDOLF_WORK_PREVIEW_IDLE_TEXT = (
     "只播放工作與休息動畫，不套用金錢、家庭壓力或心情結算。"
 )
 RUDOLF_WORK_PREVIEW_ACTIVE_TEXT = (
     "魯道夫工作預覽已開始；本次不會套用任何結算。"
+)
+RACE_PREVIEW_IDLE_TEXT = (
+    "播放魯道夫與帝寶的完整競賽；不寫入事件，也不套用數值變動。"
+)
+RACE_PREVIEW_ACTIVE_TEXT = (
+    "魯道夫 vs 帝寶競賽預覽已開始；本次不寫入正式事件或數值。"
 )
 TRANSFORMATION_PREVIEW_IDLE_TEXT = (
     "沙盒也會自主變身；按鈕可手動切換形態，且不會觸發正式事件或結算。"
@@ -52,9 +81,13 @@ class StatusSettingsPanel(QWidget):
         self.display_scale_buttons = []
         self.teio_duration_buttons = []
         self.tsuyoshi_duration_buttons = []
+        self.race_frequency_buttons = []
+        self.mood_climate_buttons = []
         self._button_groups = []
         self._compact_layout = None
+        self._single_column_layout = None
         self._waiting_for_rudolf_work_preview = False
+        self._waiting_for_race_preview = False
         self._pending_transformation_request = None
         self._transformation_notice_text = ""
         self._transformation_notice_until = 0.0
@@ -62,6 +95,11 @@ class StatusSettingsPanel(QWidget):
         self.rudolf_work_preview_poll_timer.setInterval(250)
         self.rudolf_work_preview_poll_timer.timeout.connect(
             self._poll_rudolf_work_preview_status
+        )
+        self.race_preview_poll_timer = QTimer(self)
+        self.race_preview_poll_timer.setInterval(250)
+        self.race_preview_poll_timer.timeout.connect(
+            self._poll_race_preview_status
         )
         self.transformation_preview_poll_timer = QTimer(self)
         self.transformation_preview_poll_timer.setInterval(100)
@@ -142,6 +180,25 @@ class StatusSettingsPanel(QWidget):
         self.tsuyoshi_duration_row = QHBoxLayout()
         self.social_layout.addLayout(self.tsuyoshi_duration_row, 1, 1)
 
+        self.rhythm_group = self._create_group("生活節奏")
+        self.rhythm_layout = QGridLayout(self.rhythm_group)
+        self.rhythm_layout.setHorizontalSpacing(theme.spacing_sm)
+        self.rhythm_layout.setVerticalSpacing(theme.spacing_sm)
+        race_frequency_label = self._create_label("競賽頻率")
+        race_frequency_label.setToolTip(
+            "調整自主競賽的等待與冷卻時間；不略過資格、距離或接受判定。"
+        )
+        self.rhythm_layout.addWidget(race_frequency_label, 0, 0)
+        self.race_frequency_row = QHBoxLayout()
+        self.rhythm_layout.addLayout(self.race_frequency_row, 0, 1)
+        mood_climate_label = self._create_label("情緒氣候")
+        mood_climate_label.setToolTip(
+            "調整角色長期心情的回歸目標；事件造成的即時心情變化仍會保留。"
+        )
+        self.rhythm_layout.addWidget(mood_climate_label, 1, 0)
+        self.mood_climate_row = QHBoxLayout()
+        self.rhythm_layout.addLayout(self.mood_climate_row, 1, 1)
+
         self.developer_group = self._create_group("開發工具")
         self.developer_layout = QVBoxLayout(self.developer_group)
         self.developer_layout.setSpacing(theme.spacing_sm)
@@ -198,6 +255,27 @@ class StatusSettingsPanel(QWidget):
         self.developer_layout.addWidget(
             self.rudolf_work_preview_status
         )
+        self.race_preview_button = QPushButton(
+            "預覽魯道夫 vs 帝寶競賽"
+        )
+        self.race_preview_button.setProperty(
+            "tanukiRole",
+            "settingsAction",
+        )
+        self.race_preview_button.setAccessibleName(
+            "預覽魯道夫與帝寶競賽"
+        )
+        self.race_preview_button.clicked.connect(
+            self._handle_race_preview
+        )
+        self.developer_layout.addWidget(self.race_preview_button)
+        self.race_preview_status = QLabel(RACE_PREVIEW_IDLE_TEXT)
+        self.race_preview_status.setProperty(
+            "tanukiRole",
+            "settingsNotice",
+        )
+        self.race_preview_status.setWordWrap(True)
+        self.developer_layout.addWidget(self.race_preview_status)
         self.transformation_control_label = self._create_label(
             "沙盒形態控制"
         )
@@ -240,14 +318,26 @@ class StatusSettingsPanel(QWidget):
         self.validation_button.clicked.connect(self._handle_validation)
         self.developer_layout.addWidget(self.validation_button)
 
-        self.grid_layout.addWidget(self.runtime_group, 0, 0)
-        self.grid_layout.addWidget(self.timing_group, 0, 1)
-        self.grid_layout.addWidget(self.social_group, 1, 0)
-        self.grid_layout.addWidget(self.developer_group, 1, 1)
-        self.grid_layout.setColumnStretch(0, 1)
-        self.grid_layout.setColumnStretch(1, 1)
-        root_layout.addWidget(self.settings_grid)
-        root_layout.addStretch(1)
+        self.settings_scroll = QScrollArea()
+        self.settings_scroll.setObjectName("tanukiStatusSettingsScroll")
+        self.settings_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.settings_scroll.setWidgetResizable(True)
+        self.settings_scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.settings_scroll.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+        self.settings_scroll.setAutoFillBackground(False)
+        self.settings_scroll.viewport().setAutoFillBackground(False)
+        self.settings_scroll.setStyleSheet(
+            "QScrollArea#tanukiStatusSettingsScroll {"
+            " background: transparent; border: none; }"
+            "QScrollArea#tanukiStatusSettingsScroll > QWidget > QWidget {"
+            " background: transparent; }"
+        )
+        self.settings_scroll.setWidget(self.settings_grid)
+        root_layout.addWidget(self.settings_scroll, stretch=1)
 
         self.set_binding(binding)
         self._update_responsive_layout(force=True)
@@ -255,10 +345,12 @@ class StatusSettingsPanel(QWidget):
     def set_binding(self, binding):
         binding_changed = binding is not self.binding
         if binding_changed:
+            self._reset_race_preview_status()
             self._reset_transformation_preview_status()
         self.binding = binding
         if binding is None:
             self._reset_rudolf_work_preview_status()
+            self._reset_race_preview_status()
         self.unavailable_label.setVisible(binding is None)
         self.settings_grid.setEnabled(binding is not None)
         if binding is not None:
@@ -274,6 +366,8 @@ class StatusSettingsPanel(QWidget):
             snapshot.display_scale_options,
             snapshot.teio_duration_options,
             snapshot.tsuyoshi_duration_options,
+            snapshot.race_frequency_options,
+            snapshot.mood_climate_options,
         )
         if force_rebuild or signature != self._option_signature:
             self._rebuild_option_buttons(snapshot)
@@ -305,6 +399,15 @@ class StatusSettingsPanel(QWidget):
                 if preview_enabled
                 else "只可在沙盒模式使用工作預覽。"
             )
+            self.race_preview_button.setEnabled(preview_enabled)
+            self.race_preview_button.setToolTip(
+                (
+                    "使用競賽 manifest contexts 播放完整流程；"
+                    "不寫入正式事件或數值。"
+                )
+                if preview_enabled
+                else "只可在沙盒模式使用競賽預覽。"
+            )
             transformation_states = (
                 self._transformation_control_states()
             )
@@ -329,6 +432,20 @@ class StatusSettingsPanel(QWidget):
             self._set_checked(self.display_scale_buttons, snapshot.display_scale_index)
             self._set_checked(self.teio_duration_buttons, snapshot.teio_duration_index)
             self._set_checked(self.tsuyoshi_duration_buttons, snapshot.tsuyoshi_duration_index)
+            self._set_checked(
+                self.race_frequency_buttons,
+                self._option_index(
+                    snapshot.race_frequency_options,
+                    snapshot.race_frequency,
+                ),
+            )
+            self._set_checked(
+                self.mood_climate_buttons,
+                self._option_index(
+                    snapshot.mood_climate_options,
+                    snapshot.mood_climate,
+                ),
+            )
             del social_status_blocker
             del care_blocker
             del debug_blocker
@@ -371,6 +488,34 @@ class StatusSettingsPanel(QWidget):
             lambda value: f"{value}s",
             lambda index: self._handle_social_duration("tsuyoshi", index),
         )
+        self.race_frequency_buttons = self._populate_selector(
+            self.race_frequency_row,
+            snapshot.race_frequency_options,
+            lambda value: RACE_FREQUENCY_LABELS.get(value, str(value)),
+            lambda index: self._handle_race_frequency(
+                snapshot.race_frequency_options[index]
+            ),
+        )
+        self.mood_climate_buttons = self._populate_selector(
+            self.mood_climate_row,
+            snapshot.mood_climate_options,
+            lambda value: MOOD_CLIMATE_LABELS.get(value, str(value)),
+            lambda index: self._handle_mood_climate(
+                snapshot.mood_climate_options[index]
+            ),
+        )
+        for value, button in zip(
+            snapshot.race_frequency_options,
+            self.race_frequency_buttons,
+        ):
+            button.setToolTip(
+                RACE_FREQUENCY_TOOLTIPS.get(value, "")
+            )
+        for value, button in zip(
+            snapshot.mood_climate_options,
+            self.mood_climate_buttons,
+        ):
+            button.setToolTip(MOOD_CLIMATE_TOOLTIPS.get(value, ""))
         self._update_responsive_layout(force=True)
 
     def _populate_selector(self, layout, options, formatter, handler):
@@ -409,6 +554,7 @@ class StatusSettingsPanel(QWidget):
             self.refresh_from_binding()
 
     def hideEvent(self, event):
+        self.race_preview_poll_timer.stop()
         self.transformation_preview_poll_timer.stop()
         super().hideEvent(event)
 
@@ -421,28 +567,41 @@ class StatusSettingsPanel(QWidget):
                 parent.contentsRect().width(),
             )
         compact = available_width < COMPACT_SETTINGS_WIDTH
-        if compact == self._compact_layout and not force:
+        single_column = (
+            available_width < SINGLE_COLUMN_SETTINGS_WIDTH
+        )
+        layout_changed = (
+            single_column != self._single_column_layout
+        )
+        spacing_changed = compact != self._compact_layout
+        if not force and not layout_changed and not spacing_changed:
             return
+        if force or layout_changed:
+            self._apply_settings_grid_layout(single_column)
         self._compact_layout = compact
+        self._single_column_layout = single_column
         horizontal_spacing = (
             self.theme.spacing_xs
             if compact else
             self.theme.spacing_sm
         )
         self.grid_layout.setHorizontalSpacing(
-            self.theme.spacing_sm
-            if compact else
+            0
+            if single_column else
             self.theme.spacing_md
         )
         self.timing_layout.setHorizontalSpacing(horizontal_spacing)
         self.runtime_layout.setHorizontalSpacing(horizontal_spacing)
         self.social_layout.setHorizontalSpacing(horizontal_spacing)
+        self.rhythm_layout.setHorizontalSpacing(horizontal_spacing)
         for selector_layout in (
             self.world_mode_row,
             self.time_scale_row,
             self.display_scale_row,
             self.teio_duration_row,
             self.tsuyoshi_duration_row,
+            self.race_frequency_row,
+            self.mood_climate_row,
         ):
             selector_layout.setSpacing(horizontal_spacing)
         for button in (
@@ -451,10 +610,44 @@ class StatusSettingsPanel(QWidget):
             + self.display_scale_buttons
             + self.teio_duration_buttons
             + self.tsuyoshi_duration_buttons
+            + self.race_frequency_buttons
+            + self.mood_climate_buttons
         ):
             button.setProperty("compact", compact)
             button.style().unpolish(button)
             button.style().polish(button)
+
+    def _apply_settings_grid_layout(self, single_column):
+        groups = (
+            self.runtime_group,
+            self.timing_group,
+            self.social_group,
+            self.rhythm_group,
+            self.developer_group,
+        )
+        for group in groups:
+            self.grid_layout.removeWidget(group)
+
+        if single_column:
+            for row, group in enumerate(groups):
+                self.grid_layout.addWidget(group, row, 0)
+            self.grid_layout.setColumnStretch(0, 1)
+            self.grid_layout.setColumnStretch(1, 0)
+            return
+
+        self.grid_layout.addWidget(self.runtime_group, 0, 0)
+        self.grid_layout.addWidget(self.timing_group, 1, 0)
+        self.grid_layout.addWidget(self.social_group, 2, 0)
+        self.grid_layout.addWidget(self.rhythm_group, 3, 0)
+        self.grid_layout.addWidget(
+            self.developer_group,
+            0,
+            1,
+            4,
+            1,
+        )
+        self.grid_layout.setColumnStretch(0, 52)
+        self.grid_layout.setColumnStretch(1, 48)
 
     def _handle_debug_toggled(self, enabled):
         if self._refreshing or self.binding is None:
@@ -466,6 +659,7 @@ class StatusSettingsPanel(QWidget):
         if self.binding is None:
             return
         self._reset_rudolf_work_preview_status()
+        self._reset_race_preview_status()
         self._reset_transformation_preview_status()
         self.binding.set_world_mode(world_mode)
         self.refresh_from_binding()
@@ -498,6 +692,18 @@ class StatusSettingsPanel(QWidget):
         if self.binding is None:
             return
         self.binding.set_social_duration_index(character_key, index)
+        self.refresh_from_binding()
+
+    def _handle_race_frequency(self, value):
+        if self.binding is None:
+            return
+        self.binding.set_race_frequency(value)
+        self.refresh_from_binding()
+
+    def _handle_mood_climate(self, value):
+        if self.binding is None:
+            return
+        self.binding.set_mood_climate(value)
         self.refresh_from_binding()
 
     def _handle_validation(self):
@@ -537,6 +743,35 @@ class StatusSettingsPanel(QWidget):
         self.rudolf_work_preview_status.setText(
             RUDOLF_WORK_PREVIEW_IDLE_TEXT
         )
+
+    def _handle_race_preview(self):
+        if self.binding is None:
+            return
+        result = self.binding.preview_rudolf_teio_race()
+        self.race_preview_status.setText(
+            self._race_preview_message(result)
+        )
+        if bool(getattr(result, "started", False)):
+            self._waiting_for_race_preview = True
+            self.race_preview_poll_timer.start()
+
+    def _poll_race_preview_status(self):
+        if not self._waiting_for_race_preview or self.binding is None:
+            self._reset_race_preview_status()
+            return
+        active_provider = getattr(
+            self.binding,
+            "is_race_preview_active",
+            None,
+        )
+        if callable(active_provider) and bool(active_provider()):
+            return
+        self._reset_race_preview_status()
+
+    def _reset_race_preview_status(self):
+        self._waiting_for_race_preview = False
+        self.race_preview_poll_timer.stop()
+        self.race_preview_status.setText(RACE_PREVIEW_IDLE_TEXT)
 
     def _handle_transformation_preview(self, pet_name):
         if self.binding is None:
@@ -746,6 +981,44 @@ class StatusSettingsPanel(QWidget):
             if reason
             else "無法預覽：Runtime 未啟動工作 Activity。"
         )
+
+    @staticmethod
+    def _race_preview_message(result):
+        if result is None:
+            return "無法預覽：請先切換至沙盒模式，或 Runtime 尚未連接。"
+        if bool(getattr(result, "started", False)):
+            return RACE_PREVIEW_ACTIVE_TEXT
+        reason = str(getattr(result, "reason", "") or "")
+        participant_name = ""
+        if ":" in reason and not reason.startswith(
+            ("participant_busy:", "capability_unavailable:")
+        ):
+            participant_name, reason = reason.split(":", 1)
+        display_name = {
+            "Symboli Rudolf": "魯道夫",
+            "Tokai Teio": "帝寶",
+        }.get(participant_name, participant_name or "角色")
+        messages = {
+            "preview_requires_sandbox": "無法預覽：請先切換至沙盒模式。",
+            "participant_unavailable": "無法預覽：找不到魯道夫或帝寶。",
+            "participant_hidden": f"無法預覽：{display_name}目前未顯示。",
+            "participant_disabled": f"無法預覽：{display_name}目前已停用。",
+            "participant_busy": f"無法預覽：{display_name}正在進行其他互動。",
+            "participant_airborne": f"無法預覽：{display_name}必須先回到地面。",
+            "form_blocks_race": f"無法預覽：{display_name}目前形態不能參賽。",
+            "severe_mood": f"無法預覽：{display_name}心情為 severe。",
+            "race_already_active": "無法預覽：目前已有競賽正在進行。",
+            "participants_too_far": "無法預覽：魯道夫與帝寶距離太遠，請先將兩人移近。",
+            "participants_too_close": "無法預覽：魯道夫與帝寶距離太近，請稍候兩人自然分開。",
+            "participant_owned": "無法預覽：參賽者正在執行其他 Activity。",
+        }
+        if reason in messages:
+            return messages[reason]
+        if reason.startswith("participant_busy:"):
+            return "無法預覽：參賽者正在進行其他互動。"
+        if reason.startswith("capability_unavailable:"):
+            return "無法預覽：manifest 缺少符合目前形態與 band 的競賽素材。"
+        return f"無法預覽：{reason}" if reason else "無法預覽。"
 
     @staticmethod
     def _set_checked(buttons, index):

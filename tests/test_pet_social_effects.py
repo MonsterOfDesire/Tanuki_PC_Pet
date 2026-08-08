@@ -81,6 +81,7 @@ class FakeAdult:
         self.released_child = None
         self.changed_state_args = []
         self.ensure_candidate_animation_args = []
+        self.care_companion_animation_calls = 0
 
     def get_social_duration_frames(self, mode):
         return 123 if mode == "following" else 77
@@ -93,6 +94,10 @@ class FakeAdult:
 
     def ensure_candidate_animation(self, candidates):
         self.ensure_candidate_animation_args.append(candidates)
+
+    def apply_care_companion_animation(self):
+        self.care_companion_animation_calls += 1
+        return True
 
     def release_hidden_child_nearby(self, child):
         self.released_child = child
@@ -208,7 +213,8 @@ class SocialCareEffectsTests(unittest.TestCase):
         self.assertEqual(child.care_lock_end_time, 45.0)
         self.assertEqual(adult.state, "idle")
         self.assertEqual(child.state, "idle")
-        self.assertEqual(adult.ensure_candidate_animation_args, [[("idle", "companion")]])
+        self.assertEqual(adult.care_companion_animation_calls, 1)
+        self.assertEqual(adult.ensure_candidate_animation_args, [])
         self.assertEqual(child.ensure_candidate_animation_args, [[("idle", "comfort")]])
 
     def test_finish_care_mode_success_releases_child_and_starts_recovery(self):

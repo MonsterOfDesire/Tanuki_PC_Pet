@@ -66,12 +66,21 @@ class FakePresenter:
             severity="information",
         )
 
-    def build_household_summary(self, household, entries, pet_states=()):
+    def build_household_summary(
+        self,
+        household,
+        entries,
+        pet_states=(),
+        rhythm_snapshot=None,
+    ):
         return HouseholdSummaryPresentation(
             title="家庭摘要",
             overview_text=f"fund={household.living_fund} pets={len(pet_states)}",
             log_text=f"entries={len(entries)}",
         )
+
+    def build_household_rhythm(self, rhythm_snapshot, pet_states=()):
+        return (rhythm_snapshot, tuple(pet_states))
 
     def build_social_log(self, entries, filter_mode="all", participant_name=""):
         return SocialLogPresentation(
@@ -104,6 +113,10 @@ class FakeDashboard:
         self.care_feature_enabled = False
         self.debug_enabled = False
         self.social_status_enabled = False
+        self.race_frequency_options = ["frequent", "normal", "occasional"]
+        self.race_frequency = "normal"
+        self.mood_climate_options = ["cheerful", "balanced", "expressive"]
+        self.mood_climate = "cheerful"
         self.teio_dur_idx = 0
         self.tsuyoshi_dur_idx = 0
         self.time_scale_options = [0.5, 1.0, 2.0]
@@ -132,6 +145,7 @@ class FakeDashboard:
         self.household_entries = [SimpleNamespace(sequence=1)]
         self.household_fund_donations = []
         self.household_summary_refresh_calls = 0
+        self.information_center_settings_refresh_calls = 0
         self.social_log_refresh_calls = 0
         self.relationship_table_refresh_calls = 0
         self.social_log_filter_mode = "all"
@@ -230,6 +244,12 @@ class FakeDashboard:
 
     def refresh_household_summary_if_open(self):
         self.household_summary_refresh_calls += 1
+
+    def refresh_information_center_settings(self):
+        self.information_center_settings_refresh_calls += 1
+
+    def get_activity_rhythm_snapshot(self):
+        return None
 
     def refresh_social_log_if_open(self):
         self.social_log_refresh_calls += 1
@@ -371,6 +391,23 @@ class DashboardControllerTests(unittest.TestCase):
         self.assertEqual(dashboard.display_scale_button_updates, 1)
         self.assertEqual(self.actions.display_scale_calls, [(dashboard.pets_dict, 2.0)])
         self.assertEqual(dashboard.save_calls, 1)
+
+    def test_life_rhythm_settings_normalize_refresh_and_save(self):
+        controller = self.build_controller()
+        dashboard = FakeDashboard()
+
+        controller.set_race_frequency(dashboard, "frequent")
+        controller.set_mood_climate(dashboard, "expressive")
+
+        self.assertEqual(dashboard.race_frequency, "frequent")
+        self.assertEqual(dashboard.mood_climate, "expressive")
+        self.assertEqual(dashboard.sync_calls, 2)
+        self.assertEqual(
+            dashboard.information_center_settings_refresh_calls,
+            2,
+        )
+        self.assertEqual(dashboard.household_summary_refresh_calls, 1)
+        self.assertEqual(dashboard.save_calls, 2)
 
     def test_run_validation_checks_builds_and_shows_dialog(self):
         controller = self.build_controller()

@@ -75,6 +75,33 @@ class MoodLogicTests(unittest.TestCase):
         self.assertEqual(derive_mood_state(25), "unhappy")
         self.assertEqual(derive_mood_state(80), "normal")
 
+    def test_expressive_climate_pulls_high_mood_down_without_hard_cap(self):
+        update = compute_mood_update(
+            current_score=90.0,
+            lonely_timer=0,
+            is_adult=True,
+            nearby_count=2,
+            has_adult_nearby=True,
+            noise=0.0,
+            climate_key="expressive",
+        )
+
+        self.assertLess(update.mood_score, 90.0)
+        self.assertGreater(update.mood_score, 50.0)
+
+    def test_cheerful_climate_recovers_low_mood_toward_high_target(self):
+        update = compute_mood_update(
+            current_score=40.0,
+            lonely_timer=0,
+            is_adult=True,
+            nearby_count=0,
+            has_adult_nearby=False,
+            noise=0.0,
+            climate_key="cheerful",
+        )
+
+        self.assertGreater(update.mood_score, 40.0)
+
 
 class ReleaseDecisionTests(unittest.TestCase):
     def test_click_release_increments_clicks_and_rewards_pet(self):

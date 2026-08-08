@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .dashboard_presenter import RelationshipRowPresentation
 
@@ -13,12 +13,23 @@ class SummonMemberPresentation:
 
 
 @dataclass(frozen=True)
+class RaceSummaryPresentation:
+    completed_races: int = 0
+    wins: int = 0
+    losses: int = 0
+    win_rate: float = 0.0
+
+
+@dataclass(frozen=True)
 class RelationSummonPresentation:
     title: str
     selected_character_name: str
     members: tuple[SummonMemberPresentation, ...]
     relationship_rows: tuple[RelationshipRowPresentation, ...]
     empty_text: str = "目前沒有可顯示的關係資料。"
+    race_summary: RaceSummaryPresentation = field(
+        default_factory=RaceSummaryPresentation
+    )
 
 
 class DashboardRelationSummonBinding:
@@ -55,12 +66,29 @@ class DashboardRelationSummonBinding:
             for row in relationship.rows
             if row.actor_name == selected_character_name
         )
+        race_summary = self._race_summary(selected_character_name)
         return RelationSummonPresentation(
             title="角色關係＋召喚",
             selected_character_name=selected_character_name,
             members=members,
             relationship_rows=relationship_rows,
             empty_text=relationship.table_text if not relationship_rows else "",
+            race_summary=race_summary,
+        )
+
+    def _race_summary(self, character_name):
+        provider = getattr(self.dashboard, "get_household_state_snapshot", None)
+        household = provider() if callable(provider) else None
+        ledger = getattr(household, "race_statistics", None)
+        entries = getattr(ledger, "entries", {}) if ledger is not None else {}
+        entry = entries.get(str(character_name or ""))
+        if entry is None:
+            return RaceSummaryPresentation()
+        return RaceSummaryPresentation(
+            completed_races=int(getattr(entry, "completed_races", 0) or 0),
+            wins=int(getattr(entry, "wins", 0) or 0),
+            losses=int(getattr(entry, "losses", 0) or 0),
+            win_rate=float(getattr(entry, "win_rate", 0.0) or 0.0),
         )
 
     def mood_snapshot(self):

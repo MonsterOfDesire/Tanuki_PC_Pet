@@ -32,6 +32,15 @@ class ActivityAnimationBindingTests(unittest.TestCase):
         self.assertEqual(request.band_policy, BAND_POLICY_IGNORE)
         self.assertEqual(request.band_order, ())
 
+    def test_result_phase_can_override_current_mood_band(self):
+        binding = ActivityAnimationBinding(
+            contexts=("activity_race_finish_lose",),
+        )
+
+        request = binding.build_request(60.0, band_override="low")
+
+        self.assertEqual(request.band_order, ("low",))
+
     def test_binding_rejects_empty_context_or_ignore_fallback(self):
         with self.assertRaises(ValueError):
             ActivityAnimationBinding(contexts=())

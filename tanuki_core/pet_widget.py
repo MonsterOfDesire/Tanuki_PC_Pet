@@ -314,6 +314,11 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             nearby_count=nearby_count,
             has_adult_nearby=has_adult_nearby,
             noise=random.uniform(-1, 1),
+            climate_key=getattr(
+                getattr(self, "settings_provider", None),
+                "mood_climate",
+                "cheerful",
+            ),
         )
         self.mood_score = mood_update.mood_score
         self.lonely_timer = mood_update.lonely_timer

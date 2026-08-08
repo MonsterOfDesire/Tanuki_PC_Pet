@@ -78,6 +78,23 @@ class TransformationAssetIntegrationTests(unittest.TestCase):
         self.assertEqual(result[1], "move")
         self.assertIn(result[3], {"cute", "happy", "serious", "smile"})
 
+    def test_transformed_teio_resolves_both_companion_care_phases(self):
+        manager = self.build_manager("Tokai Teio")
+
+        approach = manager.get_contextual_result(
+            "move",
+            context="care_approach",
+            mood_score=60.0,
+        )
+        companion = manager.get_contextual_result(
+            "idle",
+            context="care_companion",
+            mood_score=60.0,
+        )
+
+        self.assertIsNotNone(approach)
+        self.assertIsNotNone(companion)
+
     def test_both_transformed_forms_have_random_swap_entry(self):
         for character_name in ("Tokai Teio", "Symboli Rudolf"):
             manager = self.build_manager(character_name)

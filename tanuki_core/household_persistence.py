@@ -10,6 +10,7 @@ from .household_state import (
     normalize_relation_delta,
     resolve_event_channel,
 )
+from .race_state import RaceCharacterStatistics
 
 
 PERSISTED_HOUSEHOLD_LOG_LIMIT = 32
@@ -44,6 +45,18 @@ def capture_household_persistence_state(
             household_relationship_entry_to_payload(entry)
             for entry in household.relationships.all_entries()
         ],
+        "race_statistics": {
+            "entries": [
+                race_statistics_entry_to_payload(entry)
+                for entry in sorted(
+                    household.race_statistics.entries.values(),
+                    key=lambda item: item.character_name,
+                )
+            ],
+            "processed_activity_ids": sorted(
+                household.race_statistics.processed_activity_ids
+            ),
+        },
         "event_log_next_sequence": int(event_log.next_sequence),
         "event_log": [household_event_entry_to_payload(entry) for entry in entries],
         "event_schedule": {
@@ -88,6 +101,19 @@ def household_relationship_entry_to_payload(entry: HouseholdRelationshipEntry) -
     }
 
 
+def race_statistics_entry_to_payload(entry: RaceCharacterStatistics) -> dict:
+    return {
+        "character_name": str(entry.character_name),
+        "completed_races": int(entry.completed_races),
+        "wins": int(entry.wins),
+        "losses": int(entry.losses),
+        "golden_races": int(entry.golden_races),
+        "sandbox_races": int(entry.sandbox_races),
+        "autonomous_races": int(entry.autonomous_races),
+        "manual_races": int(entry.manual_races),
+    }
+
+
 def apply_household_persistence_state(
     payload: dict,
     household: HouseholdState,
@@ -103,6 +129,7 @@ def apply_household_persistence_state(
     )
 
     _restore_household_relationships(payload.get("relationship_ledger", []), household)
+    _restore_race_statistics(payload.get("race_statistics", {}), household)
     _restore_household_event_log(payload.get("event_log", []), payload.get("event_log_next_sequence"), event_log)
     _restore_household_event_schedule(payload.get("event_schedule", {}), event_schedule)
     return True
@@ -163,6 +190,38 @@ def _restore_household_relationships(raw_entries, household: HouseholdState) -> 
                 updated_at=_safe_float(raw_entry.get("updated_at"), 0.0),
                 event_count=max(0, _safe_int(raw_entry.get("event_count"), 0)),
             )
+        )
+
+
+def _restore_race_statistics(raw_statistics, household: HouseholdState) -> None:
+    ledger = household.race_statistics
+    ledger.clear()
+    if not isinstance(raw_statistics, dict):
+        return
+    raw_entries = raw_statistics.get("entries", [])
+    if isinstance(raw_entries, list):
+        for raw_entry in raw_entries:
+            if not isinstance(raw_entry, dict):
+                continue
+            character_name = str(raw_entry.get("character_name", "")).strip()
+            if not character_name:
+                continue
+            ledger.entries[character_name] = RaceCharacterStatistics(
+                character_name=character_name,
+                completed_races=max(0, _safe_int(raw_entry.get("completed_races"), 0)),
+                wins=max(0, _safe_int(raw_entry.get("wins"), 0)),
+                losses=max(0, _safe_int(raw_entry.get("losses"), 0)),
+                golden_races=max(0, _safe_int(raw_entry.get("golden_races"), 0)),
+                sandbox_races=max(0, _safe_int(raw_entry.get("sandbox_races"), 0)),
+                autonomous_races=max(0, _safe_int(raw_entry.get("autonomous_races"), 0)),
+                manual_races=max(0, _safe_int(raw_entry.get("manual_races"), 0)),
+            )
+    raw_activity_ids = raw_statistics.get("processed_activity_ids", [])
+    if isinstance(raw_activity_ids, list):
+        ledger.processed_activity_ids.update(
+            str(activity_id).strip()
+            for activity_id in raw_activity_ids
+            if str(activity_id).strip()
         )
 
 

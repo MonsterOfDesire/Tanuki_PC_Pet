@@ -67,6 +67,7 @@ class EventLogPanel(QWidget):
         self._applying_presentation = False
         self.effect_value_labels = {}
         self.effect_icon_labels = {}
+        self.detail_value_labels = {}
 
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
@@ -242,6 +243,18 @@ class EventLogPanel(QWidget):
         detail_participant_row.addWidget(self.detail_participant_icon_label)
         detail_participant_row.addWidget(self.detail_participant_label, stretch=1)
         detail_layout.addLayout(detail_participant_row)
+
+        self.structured_details_frame = QFrame()
+        self.structured_details_frame.setProperty(
+            "tanukiRole",
+            "eventStructuredDetails",
+        )
+        self.structured_details_layout = QVBoxLayout(
+            self.structured_details_frame
+        )
+        self.structured_details_layout.setContentsMargins(0, 0, 0, 0)
+        self.structured_details_layout.setSpacing(theme.spacing_xs)
+        detail_layout.addWidget(self.structured_details_frame)
 
         self.detail_separator = QFrame()
         self.detail_separator.setFrameShape(QFrame.Shape.HLine)
@@ -483,6 +496,7 @@ class EventLogPanel(QWidget):
             participant_text = "家庭／系統事件"
         self.detail_participant_label.setText(participant_text)
 
+        self._replace_structured_detail_rows(entry.details)
         self._replace_effect_rows(entry.effects)
         tags_text = " · ".join(f"#{tag}" for tag in entry.tags) if entry.tags else "沒有標籤"
         self.detail_tags_label.setText(f"標籤　{tags_text}")
@@ -500,6 +514,32 @@ class EventLogPanel(QWidget):
         )
         self.detail_stack.setCurrentWidget(self.detail_scroll)
         self.detail_scroll.verticalScrollBar().setValue(0)
+
+    def _replace_structured_detail_rows(self, details):
+        while self.structured_details_layout.count():
+            item = self.structured_details_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+        self.detail_value_labels = {}
+        self.structured_details_frame.setVisible(bool(details))
+        for detail in details or ():
+            row = QWidget()
+            row_layout = QHBoxLayout(row)
+            row_layout.setContentsMargins(0, 0, 0, 0)
+            row_layout.setSpacing(self.theme.spacing_sm)
+            label = QLabel(str(detail.label))
+            label.setProperty("tanukiRole", "eventDetailKey")
+            label.setMinimumWidth(76)
+            row_layout.addWidget(label)
+            value = QLabel(
+                localize_character_names_in_text(str(detail.value_text))
+            )
+            value.setProperty("tanukiRole", "eventDetailValue")
+            value.setWordWrap(True)
+            row_layout.addWidget(value, stretch=1)
+            self.structured_details_layout.addWidget(row)
+            self.detail_value_labels[str(detail.label)] = value
 
     def _replace_effect_rows(self, effects):
         while self.effects_layout.count():

@@ -451,6 +451,46 @@ class OfferInteractionRuntimeTests(QtApplicationTestCase):
             ],
         )
 
+    def test_user_drag_routes_race_interrupt_with_all_participants(self):
+        calls = []
+        pet = SimpleNamespace(name="Tokai Teio")
+        other = SimpleNamespace(name="Symboli Rudolf")
+        runtime = object.__new__(TanukiAppRuntime)
+        runtime.pets_list = (pet, other)
+        runtime.activity_coordinator = SimpleNamespace(
+            get_activity_for_participant=lambda _name: SimpleNamespace(
+                spec=SimpleNamespace(kind="race")
+            )
+        )
+        runtime.race_executor = SimpleNamespace(
+            interrupt_pet=lambda target, **kwargs: (
+                calls.append((target, kwargs))
+                or SimpleNamespace(handled=True)
+            )
+        )
+
+        handled = TanukiAppRuntime.interrupt_pet_activity_for_user(
+            runtime,
+            pet,
+            reason="user_drag",
+            now=30.0,
+        )
+
+        self.assertTrue(handled)
+        self.assertEqual(
+            calls,
+            [
+                (
+                    pet,
+                    {
+                        "now": 30.0,
+                        "reason": "user_drag",
+                        "pets": (pet, other),
+                    },
+                )
+            ],
+        )
+
     def build_runtime(self, pets, dashboard=None):
         dashboard = dashboard or SimpleNamespace(refresh_household_summary_if_open=lambda: None)
         runtime = TanukiAppRuntime(
@@ -1200,6 +1240,48 @@ class OfferInteractionRuntimeTests(QtApplicationTestCase):
         self.assertEqual(child.state, "move")
         self.assertEqual(child.current_action_tag, "climb")
         self.assertEqual(child.move_toward_calls[0][2], 2.0)
+
+    def test_bottle_holder_releases_item_after_child_stays_unavailable(self):
+        holder = FakePet("Symboli Rudolf")
+        child = FakePet("Tsurumaru Tsuyoshi")
+        runtime = self.build_runtime([holder, child])
+        runtime.ensure_pet_held_item(holder, ITEM_BOTTLE, source="offer_tray")
+        holder.held_item_started_at = 10.0
+
+        with patch.object(
+            runtime,
+            "choose_bottle_feed_child_for_holder",
+            return_value=None,
+        ):
+            waiting = runtime.update_pet_held_items(12.4)
+            released = runtime.update_pet_held_items(12.5)
+
+        self.assertTrue(waiting)
+        self.assertTrue(released)
+        self.assertEqual(holder.held_item_kind, "")
+        self.assertIsNone(holder.held_item_widget)
+        self.assertEqual(holder.offer_scene_kind, "none")
+
+    def test_bottle_holder_starts_feeding_if_child_becomes_available_before_timeout(self):
+        holder = FakePet("Symboli Rudolf")
+        child = FakePet("Tsurumaru Tsuyoshi")
+        runtime = self.build_runtime([holder, child])
+        runtime.ensure_pet_held_item(holder, ITEM_BOTTLE, source="offer_tray")
+        holder.held_item_started_at = 10.0
+
+        with patch.object(
+            runtime,
+            "start_bottle_feed_scene",
+            return_value=True,
+        ) as start_scene:
+            handled = runtime.update_pet_held_items(12.5)
+
+        self.assertTrue(handled)
+        self.assertEqual(holder.held_item_kind, ITEM_BOTTLE)
+        start_scene.assert_called_once_with(
+            holder,
+            source="offer_tray",
+        )
 
     def test_update_bottle_feed_scene_approach_prefers_manifest_contexts(self):
         holder = FakePet("Symboli Rudolf")

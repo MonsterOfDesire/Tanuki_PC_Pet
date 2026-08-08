@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import QApplication
 from tanuki_core.dashboard_presenter import (
     HouseholdMemberPresentation,
     HouseholdRecentEventPresentation,
+    HouseholdRhythmPresentation,
     HouseholdSummaryPresentation,
 )
 from tanuki_core.family_summary_binding import DashboardFamilySummaryBinding
@@ -17,6 +18,7 @@ from tanuki_core.family_summary_ui import FamilySummaryPanel
 class FakeFamilySummaryBinding:
     def __init__(self):
         self.calls = 0
+        self.rhythm_calls = 0
         self.donation_calls = []
         self.donation_enabled = True
         self.value = HouseholdSummaryPresentation(
@@ -32,6 +34,7 @@ class FakeFamilySummaryBinding:
                     mood_score=72.0,
                     mood_state="normal",
                     mood_label="平穩",
+                    sleep_rhythm_text="睡意 42%",
                 ),
                 HouseholdMemberPresentation(
                     character_name="Tokai Teio",
@@ -41,6 +44,8 @@ class FakeFamilySummaryBinding:
                     mood_label="低落",
                     form_key="transformed",
                     form_label="變身形態",
+                    sleep_rhythm_text="睡眠中",
+                    transformation_rhythm_text="變身剩餘約 1分30秒",
                 ),
             ),
             recent_events=(
@@ -59,11 +64,20 @@ class FakeFamilySummaryBinding:
             recent_event_count=2,
             recent_fund_delta=250,
             recent_pressure_delta=-3.0,
+            race_rhythm_text="競賽：約 2分05秒 後再提案",
+        )
+        self.rhythm_value = HouseholdRhythmPresentation(
+            race_rhythm_text="競賽：約 2分04秒 後再提案",
+            members=self.value.members,
         )
 
     def presentation(self):
         self.calls += 1
         return self.value
+
+    def rhythm_presentation(self):
+        self.rhythm_calls += 1
+        return self.rhythm_value
 
     def can_donate_fund(self):
         return self.donation_enabled
@@ -131,14 +145,74 @@ class FamilySummaryPanelTests(unittest.TestCase):
             self.panel.stat_value_labels["fund_delta"].text(),
             "+250 元",
         )
+        self.assertEqual(
+            self.panel.race_rhythm_label.text(),
+            "競賽：約 2分05秒 後再提案",
+        )
+        self.assertEqual(
+            self.panel.member_cards["Air Groove"].sleep_rhythm_label.text(),
+            "睡意 42%",
+        )
+        self.assertEqual(
+            self.panel.member_cards["Tokai Teio"].transformation_rhythm_label.text(),
+            "變身剩餘約 1分30秒",
+        )
 
     def test_panel_omits_redundant_manual_refresh_control(self):
         initial_calls = self.binding.calls
+        cards_before = dict(self.panel.member_cards)
 
         self.panel.refresh_from_binding()
 
         self.assertFalse(hasattr(self.panel, "refresh_button"))
         self.assertEqual(self.binding.calls, initial_calls + 1)
+        self.assertIs(
+            self.panel.member_cards["Air Groove"],
+            cards_before["Air Groove"],
+        )
+
+    def test_rhythm_tick_updates_widgets_in_place_without_rebuilding_page(self):
+        cards_before = dict(self.panel.member_cards)
+        event_item_before = self.panel.recent_event_table.item(0, 2)
+        members = list(self.binding.value.members)
+        members[0] = HouseholdMemberPresentation(
+            character_name="Air Groove",
+            summoned=True,
+            mood_score=71.0,
+            mood_state="normal",
+            mood_label="平穩",
+            sleep_rhythm_text="睡意 43%",
+        )
+        self.binding.rhythm_value = HouseholdRhythmPresentation(
+            race_rhythm_text="競賽：約 2分03秒 後再提案",
+            members=tuple(members),
+        )
+        full_refresh_calls = self.binding.calls
+
+        self.panel.refresh_rhythm_from_binding()
+
+        self.assertEqual(self.binding.calls, full_refresh_calls)
+        self.assertEqual(self.binding.rhythm_calls, 1)
+        self.assertIs(
+            self.panel.member_cards["Air Groove"],
+            cards_before["Air Groove"],
+        )
+        self.assertIs(
+            self.panel.member_cards["Tokai Teio"],
+            cards_before["Tokai Teio"],
+        )
+        self.assertIs(
+            self.panel.recent_event_table.item(0, 2),
+            event_item_before,
+        )
+        self.assertEqual(
+            self.panel.member_cards["Air Groove"].sleep_rhythm_label.text(),
+            "睡意 43%",
+        )
+        self.assertEqual(
+            self.panel.race_rhythm_label.text(),
+            "競賽：約 2分03秒 後再提案",
+        )
 
     def test_donation_action_uses_family_binding_and_refreshes(self):
         initial_calls = self.binding.calls
@@ -199,6 +273,10 @@ class DashboardFamilySummaryBindingTests(unittest.TestCase):
                 self.calls.append(dashboard)
                 return expected
 
+            def build_household_rhythm_presentation(self, dashboard):
+                self.calls.append(("rhythm", dashboard))
+                return "rhythm"
+
         class Dashboard:
             def __init__(self):
                 self.controller = Controller()
@@ -216,6 +294,14 @@ class DashboardFamilySummaryBindingTests(unittest.TestCase):
         self.assertIs(result, expected)
         self.assertEqual(dashboard.controller.calls, [dashboard])
         self.assertTrue(binding.can_donate_fund())
+
+        rhythm = binding.rhythm_presentation()
+
+        self.assertEqual(rhythm, "rhythm")
+        self.assertEqual(
+            dashboard.controller.calls[-1],
+            ("rhythm", dashboard),
+        )
 
         binding.donate_fund(100)
 

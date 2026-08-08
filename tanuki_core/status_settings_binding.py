@@ -16,6 +16,18 @@ class StatusSettingsSnapshot:
     teio_duration_index: int
     tsuyoshi_duration_options: tuple[int, ...]
     tsuyoshi_duration_index: int
+    race_frequency: str = "normal"
+    race_frequency_options: tuple[str, ...] = (
+        "frequent",
+        "normal",
+        "occasional",
+    )
+    mood_climate: str = "cheerful"
+    mood_climate_options: tuple[str, ...] = (
+        "cheerful",
+        "balanced",
+        "expressive",
+    )
 
 
 class DashboardStatusSettingsBinding:
@@ -45,6 +57,16 @@ class DashboardStatusSettingsBinding:
             teio_duration_index=int(state.teio_dur_idx),
             tsuyoshi_duration_options=tuple(int(value) for value in self.dashboard.tsuyoshi_dur_list),
             tsuyoshi_duration_index=int(state.tsuyoshi_dur_idx),
+            race_frequency=str(state.race_frequency),
+            race_frequency_options=tuple(
+                str(value)
+                for value in self.dashboard.race_frequency_options
+            ),
+            mood_climate=str(state.mood_climate),
+            mood_climate_options=tuple(
+                str(value)
+                for value in self.dashboard.mood_climate_options
+            ),
         )
 
     def set_debug_enabled(self, enabled):
@@ -70,6 +92,12 @@ class DashboardStatusSettingsBinding:
             raise ValueError(f"unknown social duration character: {character_key}")
         self.dashboard.set_duration(character_key, int(index))
 
+    def set_race_frequency(self, value):
+        self.dashboard.set_race_frequency(str(value))
+
+    def set_mood_climate(self, value):
+        self.dashboard.set_mood_climate(str(value))
+
     def run_validation_checks(self):
         self.dashboard.run_validation_checks()
 
@@ -80,6 +108,12 @@ class DashboardStatusSettingsBinding:
         return bool(
             self.dashboard.is_rudolf_work_preview_active()
         )
+
+    def preview_rudolf_teio_race(self):
+        return self.dashboard.preview_rudolf_teio_race()
+
+    def is_race_preview_active(self):
+        return bool(self.dashboard.is_race_preview_active())
 
     def toggle_transformation_preview(self, pet_name):
         return self.dashboard.toggle_transformation_preview(

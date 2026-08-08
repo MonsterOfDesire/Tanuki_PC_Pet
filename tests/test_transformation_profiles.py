@@ -7,6 +7,7 @@ from tanuki_core.transformation_profiles import (
     CAPABILITY_CARE_GIVER,
     CAPABILITY_COMBINED_CARE,
     CAPABILITY_HONEY_GUARDIAN,
+    CAPABILITY_RACE,
     CAPABILITY_SHARED_FOOD,
     CAPABILITY_SLEEP,
     CAPABILITY_SOCIAL_FOLLOW,
@@ -47,6 +48,7 @@ class TransformationProfileTests(unittest.TestCase):
         self.assertTrue(pet_form_allows_capability(pet, CAPABILITY_HONEY_GUARDIAN))
         self.assertTrue(pet_form_allows_capability(pet, CAPABILITY_CARE_GIVER))
         self.assertTrue(pet_form_allows_capability(pet, CAPABILITY_AUTONOMOUS_FLIGHT))
+        self.assertFalse(pet_form_allows_capability(pet, CAPABILITY_RACE))
         self.assertTrue(pet_form_allows_offer_item(pet, "bottle"))
         self.assertFalse(pet_form_allows_offer_item(pet, "ramen"))
         self.assertTrue(pet_form_allows_care_target(pet, "Tsurumaru Tsuyoshi"))
@@ -61,6 +63,7 @@ class TransformationProfileTests(unittest.TestCase):
         self.assertFalse(pet_form_allows_capability(pet, CAPABILITY_BOTTLE_FEED_HOLDER))
         self.assertFalse(pet_form_allows_capability(pet, CAPABILITY_COMBINED_CARE))
         self.assertFalse(pet_form_allows_capability(pet, CAPABILITY_AUTONOMOUS_FLIGHT))
+        self.assertTrue(pet_form_allows_capability(pet, CAPABILITY_RACE))
         self.assertTrue(pet_form_allows_capability(pet, CAPABILITY_HONEY_GUARDIAN))
         self.assertTrue(pet_form_allows_capability(pet, CAPABILITY_CARE_GIVER))
         self.assertFalse(pet_form_allows_offer_item(pet, "bottle"))

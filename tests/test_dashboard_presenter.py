@@ -2,6 +2,10 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from tanuki_core.activity_rhythm import (
+    ActivityRhythmSnapshot,
+    CharacterRhythmSnapshot,
+)
 from tanuki_core.dashboard_presenter import DashboardPresenter
 from tanuki_core.dashboard_tools_actions import ValidationCheckResult
 from tanuki_core.household_state import HouseholdState
@@ -136,6 +140,51 @@ class DashboardPresenterTests(unittest.TestCase):
         self.assertEqual(presentation.recent_event_count, 2)
         self.assertEqual(presentation.recent_fund_delta, 300)
         self.assertEqual(presentation.recent_pressure_delta, -1.0)
+
+    def test_build_household_summary_formats_activity_rhythm(self):
+        presenter = DashboardPresenter()
+        rhythm = ActivityRhythmSnapshot(
+            observed_at=100.0,
+            race_status="cooldown",
+            race_remaining_seconds=125.0,
+            members=(
+                CharacterRhythmSnapshot(
+                    character_name="Tokai Teio",
+                    summoned=True,
+                    sleep_status="awake",
+                    sleepiness_percent=62.0,
+                    transformation_status="cooldown",
+                    transformation_remaining_seconds=75.0,
+                ),
+            ),
+        )
+
+        presentation = presenter.build_household_summary(
+            SimpleNamespace(living_fund=0, household_pressure=0.0),
+            (),
+            pet_states=(("Tokai Teio", True, 70.0, "normal"),),
+            rhythm_snapshot=rhythm,
+        )
+
+        self.assertEqual(presentation.race_rhythm_text, "競賽：約 2分05秒 後再提案")
+        self.assertEqual(presentation.members[0].sleep_rhythm_text, "睡意 62%")
+        self.assertEqual(
+            presentation.members[0].transformation_rhythm_text,
+            "變身冷卻約 1分15秒",
+        )
+
+        rhythm_only = presenter.build_household_rhythm(
+            rhythm,
+            pet_states=(("Tokai Teio", True, 70.0, "normal"),),
+        )
+        self.assertEqual(
+            rhythm_only.race_rhythm_text,
+            presentation.race_rhythm_text,
+        )
+        self.assertEqual(
+            rhythm_only.members[0].sleep_rhythm_text,
+            "睡意 62%",
+        )
 
     def test_build_household_summary_filters_out_social_noise(self):
         presenter = DashboardPresenter()
@@ -340,6 +389,47 @@ class DashboardPresenterTests(unittest.TestCase):
 
         self.assertEqual(presentation.participant_name, "Air Groove")
         self.assertIn("氣槽和魯道夫", presentation.log_text)
+
+    def test_build_social_log_exposes_structured_race_details(self):
+        presenter = DashboardPresenter()
+        entry = SimpleNamespace(
+            sequence=8,
+            wall_clock_time=0.0,
+            channel="social",
+            category="social",
+            event_type="race_completed",
+            importance="normal",
+            actor_name="Tokai Teio",
+            target_name="Symboli Rudolf",
+            summary="帝寶在賽跑中勝過魯道夫。",
+            living_fund_delta=0,
+            household_pressure_delta=0.0,
+            mood_delta=0.0,
+            relation_delta={},
+            tags=("race", "completed"),
+            metadata={
+                "challenger_name": "Symboli Rudolf",
+                "opponent_name": "Tokai Teio",
+                "winner_name": "Tokai Teio",
+                "race_distance_px": 842.0,
+                "direction_key": "counterclockwise_right",
+                "race_elapsed_seconds": 12.4,
+            },
+        )
+
+        presentation = presenter.build_social_log((entry,), filter_mode="social")
+
+        self.assertEqual(
+            tuple((detail.label, detail.value_text) for detail in presentation.entries[0].details),
+            (
+                ("挑戰者", "Symboli Rudolf"),
+                ("對手", "Tokai Teio"),
+                ("贏家", "Tokai Teio"),
+                ("比賽距離", "842 px"),
+                ("方向", "逆時鐘（朝右）"),
+                ("比賽用時", "12.4 秒"),
+            ),
+        )
 
     def test_build_relationship_table_includes_all_pet_pairs_and_details(self):
         presenter = DashboardPresenter()

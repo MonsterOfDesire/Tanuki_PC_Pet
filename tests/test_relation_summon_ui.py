@@ -16,6 +16,7 @@ from tanuki_core.dashboard_ui import Dashboard
 from tanuki_core.information_center_spec import PAGE_RELATION_SUMMON
 from tanuki_core.relation_summon_binding import (
     DashboardRelationSummonBinding,
+    RaceSummaryPresentation,
     RelationSummonPresentation,
     SummonMemberPresentation,
 )
@@ -69,6 +70,12 @@ class FakeRelationSummonBinding:
                 for name, summoned in self.states.items()
             ),
             relationship_rows=rows,
+            race_summary=RaceSummaryPresentation(
+                completed_races=12,
+                wins=8,
+                losses=4,
+                win_rate=66.666,
+            ),
         )
 
     def set_summoned(self, character_name, summoned):
@@ -130,6 +137,10 @@ class RelationSummonPanelTests(unittest.TestCase):
         self.assertEqual(row_card.affinity_value_label.toolTip(), "好感度 18.50")
         self.assertEqual(row_card.event_count_label.text(), "3")
         self.assertEqual(row_card.event_count_label.toolTip(), "事件次數 3")
+        self.assertEqual(
+            self.panel.race_summary_label.text(),
+            "🏁 競賽 12 場　8 勝 4 敗　勝率 66.7%",
+        )
         self.assertEqual(
             self.panel.affinity_formula_label.text(),
             "好感度＝熟悉×45%＋信任×30%\n"
@@ -205,6 +216,18 @@ class DashboardRelationSummonBindingTests(unittest.TestCase):
             ("Air Groove", True, 72.0, "normal"),
             ("Tokai Teio", False, 34.0, "unhappy"),
         )
+        dashboard.get_household_state_snapshot = lambda: SimpleNamespace(
+            race_statistics=SimpleNamespace(
+                entries={
+                    "Air Groove": SimpleNamespace(
+                        completed_races=5,
+                        wins=3,
+                        losses=2,
+                        win_rate=60.0,
+                    )
+                }
+            )
+        )
         binding = DashboardRelationSummonBinding(dashboard)
 
         presentation = binding.presentation("Air Groove")
@@ -213,6 +236,8 @@ class DashboardRelationSummonBindingTests(unittest.TestCase):
 
         self.assertEqual(presentation.selected_character_name, "Air Groove")
         self.assertEqual(presentation.relationship_rows, (relationship.rows[0],))
+        self.assertEqual(presentation.race_summary.completed_races, 5)
+        self.assertEqual(presentation.race_summary.win_rate, 60.0)
         self.assertTrue(presentation.members[0].summoned)
         self.assertEqual(presentation.members[0].mood_score, 72.0)
         self.assertEqual(presentation.members[0].mood_state, "normal")

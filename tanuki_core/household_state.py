@@ -1,6 +1,8 @@
 import time
 from dataclasses import dataclass, field
 
+from .race_state import RaceStatisticsLedger
+
 
 DEFAULT_LIVING_FUND = 1000
 DEFAULT_HOUSEHOLD_PRESSURE = 0.0
@@ -162,6 +164,7 @@ class HouseholdState:
     living_fund: int = DEFAULT_LIVING_FUND
     household_pressure: float = DEFAULT_HOUSEHOLD_PRESSURE
     relationships: HouseholdRelationshipLedger = field(default_factory=HouseholdRelationshipLedger)
+    race_statistics: RaceStatisticsLedger = field(default_factory=RaceStatisticsLedger)
 
     def apply_delta(
         self,

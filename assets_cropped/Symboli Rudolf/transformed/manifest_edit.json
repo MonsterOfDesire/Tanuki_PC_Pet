@@ -25,7 +25,8 @@
       ],
       "contexts": [
         "random",
-        "window_perch"
+        "window_perch",
+        "activity_race_challenge"
       ],
       "weight": 1.0
     },
@@ -39,15 +40,6 @@
       ],
       "weight": 1.0
     },
-    "idle_music_electricguitar-h.gif": {
-      "band": [
-        "normal"
-      ],
-      "contexts": [
-        "future_work"
-      ],
-      "weight": 1.0
-    },
     "idle_music_electricguitar-happy.gif": {
       "band": [
         "normal"
@@ -58,6 +50,15 @@
       "weight": 1.0
     },
     "idle_music_electricguitar-smile.gif": {
+      "band": [
+        "normal"
+      ],
+      "contexts": [
+        "future_work"
+      ],
+      "weight": 1.0
+    },
+    "idle_music_guitar-happy.gif": {
       "band": [
         "normal"
       ],
@@ -80,7 +81,8 @@
         "normal"
       ],
       "contexts": [
-        "random"
+        "random",
+        "activity_race_finish_win"
       ],
       "weight": 1.0
     },
@@ -89,7 +91,8 @@
         "normal"
       ],
       "contexts": [
-        "relation_close"
+        "relation_close",
+        "activity_race_accept"
       ],
       "weight": 1.0
     },
@@ -98,7 +101,8 @@
         "normal"
       ],
       "contexts": [
-        "hard_landing"
+        "hard_landing",
+        "activity_race_ready"
       ],
       "weight": 1.0
     },
@@ -108,7 +112,8 @@
       ],
       "contexts": [
         "care_companion",
-        "observe_hold"
+        "observe_hold",
+        "activity_race_consider"
       ],
       "weight": 1.0
     },
@@ -119,7 +124,8 @@
       "contexts": [
         "relation_watch",
         "random",
-        "window_perch"
+        "window_perch",
+        "activity_race_recovery"
       ],
       "weight": 1.0
     },
@@ -139,7 +145,9 @@
       ],
       "contexts": [
         "honey_guard_take",
-        "negative_reaction"
+        "negative_reaction",
+        "activity_race_finish_lose",
+        "activity_race_decline"
       ],
       "weight": 1.0
     },
@@ -148,7 +156,7 @@
         "normal"
       ],
       "contexts": [
-        "future_work"
+        "activity_race_running"
       ],
       "weight": 1.0
     },
@@ -157,7 +165,8 @@
         "normal"
       ],
       "contexts": [
-        "care_approach"
+        "care_approach",
+        "activity_race_running"
       ],
       "weight": 1.0
     },
@@ -166,7 +175,8 @@
         "normal"
       ],
       "contexts": [
-        "random"
+        "random",
+        "activity_race_running"
       ],
       "weight": 1.0
     },
@@ -185,7 +195,8 @@
       ],
       "contexts": [
         "honey_guard_move",
-        "negative_reaction"
+        "negative_reaction",
+        "activity_race_running"
       ],
       "weight": 1.0
     },
@@ -195,7 +206,8 @@
       ],
       "contexts": [
         "care_approach",
-        "random"
+        "random",
+        "activity_race_running"
       ],
       "weight": 1.0
     },
@@ -204,7 +216,8 @@
         "normal"
       ],
       "contexts": [
-        "random"
+        "random",
+        "activity_race_to_start"
       ],
       "weight": 1.0
     },
@@ -251,7 +264,8 @@
       ],
       "contexts": [
         "random",
-        "window_walk"
+        "window_walk",
+        "activity_race_to_start"
       ],
       "weight": 1.0
     },
@@ -261,7 +275,8 @@
       ],
       "contexts": [
         "random",
-        "window_walk"
+        "window_walk",
+        "activity_race_to_start"
       ],
       "weight": 1.0
     },

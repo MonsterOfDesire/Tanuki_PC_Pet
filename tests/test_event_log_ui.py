@@ -8,6 +8,7 @@ from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QApplication
 
 from tanuki_core.dashboard_presenter import (
+    SocialLogDetailPresentation,
     SocialLogEffectPresentation,
     SocialLogEntryPresentation,
     SocialLogPresentation,
@@ -79,6 +80,10 @@ class FakeEventLogBinding:
                     ),
                 ),
                 tags=("social", "chat"),
+                details=(
+                    SocialLogDetailPresentation("比賽距離", "842 px"),
+                    SocialLogDetailPresentation("贏家", "Tokai Teio"),
+                ),
             ),
             SocialLogEntryPresentation(
                 sequence=101,
@@ -212,6 +217,20 @@ class EventLogPanelTests(unittest.TestCase):
             "+5,000 元",
         )
         self.assertIn("#salary", self.panel.detail_tags_label.text())
+
+    def test_structured_race_details_are_rendered_and_localized(self):
+        self.panel.event_table.selectRow(0)
+        self.panel.event_table.setCurrentCell(0, self.panel.SUMMARY_COLUMN)
+        self.app.processEvents()
+
+        self.assertEqual(
+            self.panel.detail_value_labels["比賽距離"].text(),
+            "842 px",
+        )
+        self.assertEqual(
+            self.panel.detail_value_labels["贏家"].text(),
+            "東海帝皇",
+        )
 
     def test_relationship_effects_use_canonical_relation_icons_and_colors(self):
         for metric_kind, expected_color in METRIC_COLORS.items():

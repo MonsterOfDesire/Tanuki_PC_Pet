@@ -662,6 +662,18 @@ class FakeCareLockPet(PetSocialCareMixin):
 class FakeCareApproachAssetManager(FakeContextualSelectionMixin):
     def __init__(self):
         self.asset_records = {
+            "idle": {
+                "watch_close": {
+                    "happy": {
+                        "frames": ["care-companion-happy"],
+                        "manifest": {
+                            "band": ["normal"],
+                            "contexts": ["care_companion"],
+                            "weight": 1.0,
+                        },
+                    },
+                },
+            },
             "move": {
                 "run_stretch": {
                     "hurry": {
@@ -999,6 +1011,19 @@ class PetSocialCareMixinTests(unittest.TestCase):
         )
         self.assertEqual(pet.get_care_approach_speed_scale(), 1.6)
         self.assertEqual(pet.get_care_approach_speed(), 5.0)
+
+    def test_transformed_teio_companion_care_uses_manifest_context(self):
+        pet = FakeCareApproachPet()
+        pet.name = "Tokai Teio"
+
+        handled = pet.apply_care_companion_animation()
+
+        self.assertTrue(handled)
+        self.assertEqual(pet.get_adult_companion_candidates(), [])
+        self.assertEqual(
+            pet.applied,
+            [("idle", "watch_close", "happy", ("care-companion-happy",))],
+        )
 
     def test_select_interaction_animation_can_prefer_stationary_care_context(self):
         pet = FakeCareInteractionPet()

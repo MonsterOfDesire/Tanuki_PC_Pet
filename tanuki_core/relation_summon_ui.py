@@ -299,6 +299,11 @@ class RelationSummonPanel(QWidget):
         legend_row.addStretch(1)
         relationship_column.addLayout(legend_row)
 
+        self.race_summary_label = QLabel()
+        self.race_summary_label.setProperty("tanukiRole", "relationRaceSummary")
+        self.race_summary_label.setWordWrap(True)
+        relationship_column.addWidget(self.race_summary_label)
+
         self.relationship_list = QListWidget()
         self.relationship_list.setProperty("tanukiRole", "relationList")
         self.relationship_list.setSelectionMode(
@@ -391,6 +396,17 @@ class RelationSummonPanel(QWidget):
                 del summon_blocker
                 del avatar_blocker
             self.relationship_list.clear()
+            race_summary = presentation.race_summary
+            win_rate_text = (
+                f"{race_summary.win_rate:.1f}%"
+                if race_summary.completed_races > 0
+                else "—"
+            )
+            self.race_summary_label.setText(
+                f"🏁 競賽 {race_summary.completed_races} 場　"
+                f"{race_summary.wins} 勝 {race_summary.losses} 敗　"
+                f"勝率 {win_rate_text}"
+            )
             if presentation.relationship_rows:
                 for row in presentation.relationship_rows:
                     item = QListWidgetItem()

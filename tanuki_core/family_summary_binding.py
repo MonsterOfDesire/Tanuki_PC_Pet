@@ -7,6 +7,11 @@ class DashboardFamilySummaryBinding:
     def presentation(self):
         return self.dashboard.controller.build_household_summary_presentation(self.dashboard)
 
+    def rhythm_presentation(self):
+        return self.dashboard.controller.build_household_rhythm_presentation(
+            self.dashboard
+        )
+
     def can_donate_fund(self):
         return getattr(self.dashboard, "world_mode", "") == "golden_legend"
 

@@ -17,7 +17,12 @@ from .pet_relationship_rules import (
 )
 from .pet_runtime_state import RelationshipEntry
 from .runtime import SIM_CLOCK, app_now, get_pet_logic_step_scale
-from .transformation_profiles import get_pet_form_key, pet_is_transforming
+from .transformation_profiles import (
+    CAPABILITY_CARE_GIVER,
+    get_pet_form_key,
+    pet_form_allows_capability,
+    pet_is_transforming,
+)
 from .transformation_social_rules import (
     TRANSFORMED_RUDOLF_FOCUS_DISTANCE,
     TRANSFORMED_RUDOLF_NAME,
@@ -200,7 +205,10 @@ class PetBehaviorLayersMixin:
             observations.append(NearbyPetObservation(
                 name=other.name,
                 distance=self.distance_to(other),
-                is_adult=other.is_adult,
+                is_adult=pet_form_allows_capability(
+                    other,
+                    CAPABILITY_CARE_GIVER,
+                ),
                 is_visible=other.isVisible(),
                 is_distressed=(other.is_distressed() if other.isVisible() else False),
             ))
@@ -215,7 +223,10 @@ class PetBehaviorLayersMixin:
             is_recovering=self.is_recovering,
             care_lock_active=self.is_under_care(app_now()),
             vertical_velocity=self.vy,
-            is_adult=self.is_adult,
+            is_adult=pet_form_allows_capability(
+                self,
+                CAPABILITY_CARE_GIVER,
+            ),
             window_perch_available=perch_available,
             window_flight_target_available=flight_available,
         )

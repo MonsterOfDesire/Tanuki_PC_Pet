@@ -27,6 +27,24 @@ class MoodUpdate:
 
 
 @dataclass(frozen=True)
+class MoodClimateProfile:
+    target_score: float
+    return_rate: float
+    positive_scale: float
+    negative_scale: float
+    volatility: float
+
+
+MOOD_CLIMATE_PROFILES = {
+    # Keeps the existing mostly-happy household tone, but no longer pushes
+    # every visible character permanently against the 100-point ceiling.
+    "cheerful": MoodClimateProfile(85.0, 0.08, 0.45, 0.75, 0.75),
+    "balanced": MoodClimateProfile(65.0, 0.10, 0.20, 1.00, 1.00),
+    "expressive": MoodClimateProfile(50.0, 0.08, 0.10, 1.25, 1.40),
+}
+
+
+@dataclass(frozen=True)
 class ReleaseDecision:
     kind: str
     next_click_count: int
@@ -47,7 +65,15 @@ def derive_mood_state(mood_score):
     return "normal"
 
 
-def compute_mood_update(current_score, lonely_timer, is_adult, nearby_count, has_adult_nearby, noise=0.0):
+def compute_mood_update(
+    current_score,
+    lonely_timer,
+    is_adult,
+    nearby_count,
+    has_adult_nearby,
+    noise=0.0,
+    climate_key=None,
+):
     recovery = 0.5 + (0.0 if is_adult else 0.5)
     next_lonely_timer = int(lonely_timer)
 
@@ -64,7 +90,24 @@ def compute_mood_update(current_score, lonely_timer, is_adult, nearby_count, has
         else:
             next_lonely_timer = 0
 
-    next_score = clamp_mood_score(float(current_score) + recovery + float(noise))
+    profile = MOOD_CLIMATE_PROFILES.get(str(climate_key or ""))
+    if profile is None:
+        # Keep this pure helper backward-compatible for callers that do not
+        # opt into a climate. Runtime always supplies the configured climate.
+        mood_delta = recovery + float(noise)
+    else:
+        environmental_scale = (
+            profile.positive_scale
+            if recovery >= 0.0 else
+            profile.negative_scale
+        )
+        mood_delta = (
+            (profile.target_score - float(current_score))
+            * profile.return_rate
+            + recovery * environmental_scale
+            + float(noise) * profile.volatility
+        )
+    next_score = clamp_mood_score(float(current_score) + mood_delta)
     return MoodUpdate(
         mood_score=next_score,
         mood_state=derive_mood_state(next_score),

@@ -50,7 +50,8 @@
         "normal"
       ],
       "contexts": [
-        "observe_hold"
+        "observe_hold",
+        "activity_race_finish_win"
       ],
       "weight": 1.0
     },
@@ -79,7 +80,8 @@
         "normal"
       ],
       "contexts": [
-        "observe_hold"
+        "observe_hold",
+        "activity_race_finish_win"
       ],
       "weight": 1.0
     },
@@ -227,7 +229,8 @@
         "bottle_feed_hold",
         "shared_food_hold",
         "random",
-        "shared_food_watch"
+        "shared_food_watch",
+        "activity_race_accept"
       ],
       "weight": 1.0
     },
@@ -242,7 +245,8 @@
         "offer_timeout_route_b_step1",
         "bottle_feed_hold",
         "shared_food_watch",
-        "random"
+        "random",
+        "activity_race_accept"
       ],
       "weight": 1.0
     },
@@ -257,7 +261,8 @@
         "bottle_feed_hold",
         "shared_food_hold",
         "random",
-        "shared_food_watch"
+        "shared_food_watch",
+        "activity_race_accept"
       ],
       "weight": 1.0
     },
@@ -327,7 +332,8 @@
       "contexts": [
         "window_perch",
         "negative_reaction",
-        "random"
+        "random",
+        "activity_race_consider"
       ],
       "weight": 1.0
     },
@@ -354,7 +360,8 @@
         "observe_hold",
         "bottle_feed_watch",
         "shared_food_request",
-        "random"
+        "random",
+        "activity_race_consider"
       ],
       "weight": 1.0
     },
@@ -367,7 +374,9 @@
         "care_child_comfort",
         "observe_hold",
         "shared_food_request",
-        "random"
+        "random",
+        "activity_race_decline",
+        "activity_race_consider"
       ],
       "weight": 1.0
     },
@@ -377,7 +386,8 @@
       ],
       "contexts": [
         "offer_accept_honey",
-        "shared_food_consume"
+        "shared_food_consume",
+        "activity_race_recovery"
       ],
       "weight": 1.0
     },
@@ -387,7 +397,8 @@
         "severe"
       ],
       "contexts": [
-        "offer_accept_honey"
+        "offer_accept_honey",
+        "activity_race_recovery"
       ],
       "weight": 1.0
     },
@@ -442,7 +453,8 @@
         "severe"
       ],
       "contexts": [
-        "negative_reaction"
+        "negative_reaction",
+        "activity_race_finish_lose"
       ],
       "weight": 1.0
     },
@@ -568,7 +580,8 @@
         "low"
       ],
       "contexts": [
-        "shared_food_request"
+        "shared_food_request",
+        "activity_race_decline"
       ],
       "weight": 1.0
     },
@@ -579,7 +592,8 @@
         "severe"
       ],
       "contexts": [
-        "shared_food_request"
+        "shared_food_request",
+        "activity_race_challenge"
       ],
       "weight": 1.0
     },
@@ -593,7 +607,9 @@
         "post_observe",
         "offer_timeout_route_a_step3",
         "negative_reaction",
-        "random"
+        "random",
+        "activity_race_to_start",
+        "activity_race_finish_lose"
       ],
       "weight": 1.0
     },
@@ -607,7 +623,8 @@
         "care_child_comfort",
         "post_observe",
         "negative_reaction",
-        "random"
+        "random",
+        "activity_race_finish_lose"
       ],
       "weight": 1.0
     },
@@ -622,7 +639,8 @@
         "post_observe",
         "shared_food_request",
         "negative_reaction",
-        "random"
+        "random",
+        "activity_race_finish_lose"
       ],
       "weight": 1.0
     },
@@ -641,7 +659,8 @@
         "normal"
       ],
       "contexts": [
-        "random"
+        "random",
+        "activity_race_running"
       ],
       "weight": 1.0
     },
@@ -650,7 +669,8 @@
         "normal"
       ],
       "contexts": [
-        "random"
+        "random",
+        "activity_race_running"
       ],
       "weight": 1.0
     },
@@ -659,7 +679,8 @@
         "low"
       ],
       "contexts": [
-        "random"
+        "random",
+        "activity_race_running"
       ],
       "weight": 1.0
     },
@@ -707,7 +728,8 @@
       "contexts": [
         "window_walk",
         "post_observe",
-        "random"
+        "random",
+        "activity_race_to_start"
       ],
       "weight": 1.0
     },
@@ -733,7 +755,8 @@
         "post_observe",
         "random",
         "shared_food_approach",
-        "activity_sleep_join_approach"
+        "activity_sleep_join_approach",
+        "activity_race_ready"
       ],
       "weight": 1.0
     },
@@ -745,7 +768,8 @@
         "window_walk",
         "post_observe",
         "random",
-        "activity_sleep_join_approach"
+        "activity_sleep_join_approach",
+        "activity_race_ready"
       ],
       "weight": 1.0
     }

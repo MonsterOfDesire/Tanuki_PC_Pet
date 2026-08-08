@@ -83,7 +83,7 @@ class SocialCareEffects:
         child.care_lock_end_time = adult.care_end_time
         child.show()
         adult.state = "idle"
-        adult.ensure_candidate_animation(adult.get_adult_companion_candidates())
+        adult.apply_care_companion_animation()
         child.state = "idle"
         child.ensure_candidate_animation(child.get_child_comfort_candidates())
 

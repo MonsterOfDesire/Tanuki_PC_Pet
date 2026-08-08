@@ -62,6 +62,8 @@ class ConfigRuleTests(unittest.TestCase):
         self.assertTrue(
             normalized["dashboard"]["social_status_enabled"]
         )
+        self.assertEqual(normalized["dashboard"]["race_frequency"], "normal")
+        self.assertEqual(normalized["dashboard"]["mood_climate"], "cheerful")
         self.assertEqual(normalized["pets"]["Tokai Teio"]["x"], 10)
         self.assertEqual(normalized["household"], {})
         self.assertTrue(any("config schema 1 已升級" in warning for warning in warnings))
@@ -201,6 +203,34 @@ class ConfigRuleTests(unittest.TestCase):
         self.assertTrue(
             any("config schema 4 已升級" in warning for warning in warnings)
         )
+
+    def test_schema_five_config_receives_life_rhythm_defaults(self):
+        normalized, warnings = normalize_config_state(
+            {
+                "schema_version": 5,
+                "dashboard": {"world_mode": "sandbox"},
+            }
+        )
+
+        self.assertEqual(normalized["dashboard"]["race_frequency"], "normal")
+        self.assertEqual(normalized["dashboard"]["mood_climate"], "cheerful")
+        self.assertTrue(
+            any("config schema 5 已升級" in warning for warning in warnings)
+        )
+
+    def test_invalid_life_rhythm_options_fall_back_to_defaults(self):
+        normalized, _warnings = normalize_config_state(
+            {
+                "schema_version": CONFIG_SCHEMA_VERSION,
+                "dashboard": {
+                    "race_frequency": "always",
+                    "mood_climate": "chaos",
+                },
+            }
+        )
+
+        self.assertEqual(normalized["dashboard"]["race_frequency"], "normal")
+        self.assertEqual(normalized["dashboard"]["mood_climate"], "cheerful")
 
 
 if __name__ == "__main__":
