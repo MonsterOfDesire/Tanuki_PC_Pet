@@ -105,6 +105,16 @@ def write_minimal_xlsx(path, rows, stale_rows=None):
 
 
 class ManifestXlsxConverterTests(unittest.TestCase):
+    def test_activity_chorus_contexts_are_registered(self):
+        self.assertTrue(
+            {
+                "activity_chorus_approach",
+                "activity_chorus_finish",
+                "activity_chorus_observe",
+                "activity_chorus_perform",
+            }.issubset(KNOWN_CONTEXTS)
+        )
+
     def test_activity_sleep_contexts_are_registered(self):
         self.assertTrue(
             {

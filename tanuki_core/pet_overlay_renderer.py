@@ -60,6 +60,39 @@ def compute_log_icon_draw_spec(widget_width, draw_y, overlay_scale, log_icon_y_o
     return IconSpriteSpec(x=x, y=y, size=size)
 
 
+def compute_chorus_music_draw_spec(widget_width, draw_y, overlay_scale):
+    size = int(42 * overlay_scale)
+    x = (int(widget_width) - size) // 2
+    y = int(draw_y) - size - int(26 * overlay_scale)
+    return IconSpriteSpec(x=x, y=y, size=size)
+
+
+def should_show_chorus_music_indicator(activity_state) -> bool:
+    return bool(
+        activity_state is not None
+        and getattr(activity_state, "active", False)
+        and str(getattr(activity_state, "activity_kind", "") or "")
+        == "chorus"
+        and str(getattr(activity_state, "participant_role", "") or "")
+        == "perform"
+        and str(getattr(activity_state, "phase", "") or "")
+        in {"approaching", "performing"}
+    )
+
+
+def should_show_chorus_audience_indicator(activity_state) -> bool:
+    return bool(
+        activity_state is not None
+        and getattr(activity_state, "active", False)
+        and str(getattr(activity_state, "activity_kind", "") or "")
+        == "chorus"
+        and str(getattr(activity_state, "participant_role", "") or "")
+        == "audience"
+        and str(getattr(activity_state, "phase", "") or "")
+        in {"approaching", "observing"}
+    )
+
+
 def compute_debug_overlay_layout(line_widths, line_height, max_debug_width, widget_width):
     box_height = (len(line_widths) * line_height) + 10
     box_width = min(max_debug_width, max(line_widths) + 12)
@@ -161,6 +194,62 @@ class PetOverlayRenderer:
         painter.setOpacity(log_icon_opacity)
         spec = compute_log_icon_draw_spec(widget_width, draw_y, overlay_scale, log_icon_y_offset)
         painter.drawPixmap(spec.x, spec.y, spec.size, spec.size, log_icon_pixmap)
+
+    def draw_chorus_music_icon(
+        self,
+        painter,
+        widget_width,
+        draw_y,
+        overlay_scale,
+        music_pixmap,
+        activity_state,
+    ):
+        if (
+            music_pixmap.isNull()
+            or not should_show_chorus_music_indicator(activity_state)
+        ):
+            return
+        painter.setOpacity(1.0)
+        spec = compute_chorus_music_draw_spec(
+            widget_width,
+            draw_y,
+            overlay_scale,
+        )
+        painter.drawPixmap(
+            spec.x,
+            spec.y,
+            spec.size,
+            spec.size,
+            music_pixmap,
+        )
+
+    def draw_chorus_audience_icon(
+        self,
+        painter,
+        widget_width,
+        draw_y,
+        overlay_scale,
+        audience_pixmap,
+        activity_state,
+    ):
+        if (
+            audience_pixmap.isNull()
+            or not should_show_chorus_audience_indicator(activity_state)
+        ):
+            return
+        painter.setOpacity(1.0)
+        spec = compute_chorus_music_draw_spec(
+            widget_width,
+            draw_y,
+            overlay_scale,
+        )
+        painter.drawPixmap(
+            spec.x,
+            spec.y,
+            spec.size,
+            spec.size,
+            audience_pixmap,
+        )
 
     def draw_head_status_label(self, painter, label_text, widget_width, draw_y):
         label_text = str(label_text or "").strip()

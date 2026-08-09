@@ -7,7 +7,7 @@ from .information_center_state import (
 from .settings_provider import RuntimeSettings
 
 
-CONFIG_SCHEMA_VERSION = 6
+CONFIG_SCHEMA_VERSION = 7
 
 DEFAULT_INFORMATION_CENTER_STATE = information_center_config_state_to_payload(
     InformationCenterConfigState()
@@ -23,6 +23,7 @@ DEFAULT_DASHBOARD_STATE = {
     "debug_enabled": False,
     "social_status_enabled": False,
     "race_frequency": "normal",
+    "chorus_frequency": "normal",
     "mood_climate": "cheerful",
     "information_center": DEFAULT_INFORMATION_CENTER_STATE,
 }
@@ -138,6 +139,17 @@ def migrate_config_state(raw):
             migrated["dashboard"] = dashboard
         schema_version = 6
 
+    if schema_version < 7:
+        dashboard = migrated.get("dashboard", {})
+        if isinstance(dashboard, dict):
+            dashboard = dict(dashboard)
+            dashboard.setdefault(
+                "chorus_frequency",
+                DEFAULT_DASHBOARD_STATE["chorus_frequency"],
+            )
+            migrated["dashboard"] = dashboard
+        schema_version = 7
+
     migrated["schema_version"] = CONFIG_SCHEMA_VERSION
     if original_schema_version != CONFIG_SCHEMA_VERSION:
         warnings.append(f"config schema {original_schema_version} 已升級到 {CONFIG_SCHEMA_VERSION}")
@@ -197,6 +209,15 @@ def normalize_config_state(raw):
                 if dashboard.get("race_frequency")
                 in RuntimeSettings.RACE_FREQUENCY_OPTIONS
                 else DEFAULT_DASHBOARD_STATE["race_frequency"]
+            ),
+            "chorus_frequency": (
+                dashboard.get(
+                    "chorus_frequency",
+                    DEFAULT_DASHBOARD_STATE["chorus_frequency"],
+                )
+                if dashboard.get("chorus_frequency")
+                in RuntimeSettings.CHORUS_FREQUENCY_OPTIONS
+                else DEFAULT_DASHBOARD_STATE["chorus_frequency"]
             ),
             "mood_climate": (
                 dashboard.get(

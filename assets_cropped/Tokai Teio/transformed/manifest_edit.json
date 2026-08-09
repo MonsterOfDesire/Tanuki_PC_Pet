@@ -15,7 +15,7 @@
         "normal"
       ],
       "contexts": [
-        "future_work"
+        "activity_chorus_perform"
       ],
       "weight": 1.0
     },
@@ -24,7 +24,7 @@
         "normal"
       ],
       "contexts": [
-        "future_work"
+        "activity_chorus_perform"
       ],
       "weight": 1.0
     },
@@ -63,7 +63,8 @@
         "normal"
       ],
       "contexts": [
-        "relation_watch"
+        "relation_watch",
+        "activity_chorus_finish"
       ],
       "weight": 1.0
     },
@@ -75,7 +76,8 @@
         "care_companion",
         "relation_watch",
         "random",
-        "window_perch"
+        "window_perch",
+        "activity_chorus_finish"
       ],
       "weight": 1.0
     },
@@ -97,7 +99,8 @@
       ],
       "contexts": [
         "care_companion",
-        "relation_watch"
+        "relation_watch",
+        "activity_chorus_finish"
       ],
       "weight": 1.0
     },
@@ -176,7 +179,8 @@
       "contexts": [
         "bottle_feed_watch",
         "random",
-        "window_perch"
+        "window_perch",
+        "activity_chorus_observe"
       ],
       "weight": 1.0
     },
@@ -185,7 +189,8 @@
         "normal"
       ],
       "contexts": [
-        "bottle_feed_watch"
+        "bottle_feed_watch",
+        "activity_chorus_observe"
       ],
       "weight": 1.0
     },
@@ -195,7 +200,8 @@
       ],
       "contexts": [
         "drag",
-        "window_flight"
+        "window_flight",
+        "activity_chorus_approach"
       ],
       "weight": 1.0
     },

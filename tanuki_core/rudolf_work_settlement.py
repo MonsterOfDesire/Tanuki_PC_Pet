@@ -3,6 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
+from .activity_event_contract import (
+    ACTIVITY_EVENT_WORK_COMPLETED,
+    build_activity_event_metadata,
+)
 from .activity_state import ActivityDomainEvent
 from .household_event_rules import HouseholdResolvedEvent
 from .rudolf_work_rules import (
@@ -103,9 +107,33 @@ class RudolfWorkSettlementAdapter:
             participant.name: participant.role
             for participant in event.participants
         }
-        elapsed_seconds = max(
-            0.0,
-            float(event.occurred_at) - float(event.started_at),
+        metadata = build_activity_event_metadata(
+            event_name=ACTIVITY_EVENT_WORK_COMPLETED,
+            event_id=event.event_id,
+            activity_id=activity_id,
+            activity_kind=event.activity_kind,
+            participants=participant_roles,
+            source="activity_coordinator",
+            execution_mode=str(
+                event.metadata.get("execution_mode", "normal")
+            ),
+            world_mode=str(
+                event.metadata.get("start_world_mode", "golden_legend")
+            ),
+            phase=event.phase,
+            started_at=event.started_at,
+            ended_at=event.occurred_at,
+            outcome=result["outcome"],
+            extra={
+                "source": "activity_coordinator",
+                "activity_schema_version": event.schema_version,
+                "participant_roles": participant_roles,
+                "settlement_key": RUDOLF_WORK_SETTLEMENT_KEY,
+                "outcome": result["outcome"],
+                "completion_ratio": float(
+                    result.get("completion_ratio", 1.0)
+                ),
+            },
         )
         household_event = HouseholdResolvedEvent(
             occurred_at=float(event.occurred_at),
@@ -119,23 +147,7 @@ class RudolfWorkSettlementAdapter:
             tags=("activity", "work", "completed"),
             living_fund_delta=living_fund_delta,
             household_pressure_delta=household_pressure_delta,
-            metadata={
-                "source": "activity_coordinator",
-                "activity_schema_version": event.schema_version,
-                "activity_event_id": event.event_id,
-                "activity_id": activity_id,
-                "activity_kind": event.activity_kind,
-                "activity_phase": event.phase,
-                "activity_started_at": event.started_at,
-                "activity_ended_at": event.occurred_at,
-                "activity_elapsed_seconds": elapsed_seconds,
-                "participant_roles": participant_roles,
-                "settlement_key": RUDOLF_WORK_SETTLEMENT_KEY,
-                "outcome": result["outcome"],
-                "completion_ratio": float(
-                    result.get("completion_ratio", 1.0)
-                ),
-            },
+            metadata=metadata,
         )
         return RudolfWorkSettlementDecision(
             True,

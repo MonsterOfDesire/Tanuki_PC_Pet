@@ -218,6 +218,43 @@ class SleepExecutorTests(unittest.TestCase):
             ["activity_sleep_waking-frame"],
         )
 
+    def test_sandbox_control_starts_sleep_and_reuses_waking_flow(self):
+        started = self.executor.request_sandbox_toggle(
+            self.pet,
+            now=10.0,
+            world_mode="sandbox",
+            pets=(self.pet,),
+        )
+
+        self.assertTrue(started.started)
+        activity = self.coordinator.get_activity(started.activity_id)
+        self.assertEqual(activity.source, "sleep_sandbox_control")
+        self.assertEqual(
+            activity.metadata["sleep_trigger"],
+            "sandbox_control",
+        )
+
+        waking = self.executor.request_sandbox_toggle(
+            self.pet,
+            now=11.0,
+            world_mode="sandbox",
+            pets=(self.pet,),
+        )
+
+        self.assertTrue(waking.phase_changed)
+        self.assertEqual(self.pet.activity_state.phase, SLEEP_WAKING_PHASE)
+
+    def test_sleep_control_is_sandbox_only(self):
+        result = self.executor.request_sandbox_toggle(
+            self.pet,
+            now=10.0,
+            world_mode="golden_legend",
+            pets=(self.pet,),
+        )
+
+        self.assertFalse(result.handled)
+        self.assertEqual(result.reason, "sandbox_required")
+
     def test_multiple_pets_can_auto_sleep_independently(self):
         second_pet = FakePet("Tokai Teio")
         pets = (self.pet, second_pet)

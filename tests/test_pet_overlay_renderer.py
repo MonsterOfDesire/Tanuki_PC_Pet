@@ -1,11 +1,15 @@
 import unittest
+from types import SimpleNamespace
 
 from tanuki_core.pet_overlay_renderer import (
     clamp_whiteness,
     compute_debug_overlay_layout,
     compute_head_status_label_layout,
     compute_log_icon_draw_spec,
+    compute_chorus_music_draw_spec,
     compute_star_draw_specs,
+    should_show_chorus_music_indicator,
+    should_show_chorus_audience_indicator,
 )
 
 
@@ -53,6 +57,44 @@ class PetOverlayRendererTests(unittest.TestCase):
         self.assertEqual(spec.size, 34)
         self.assertGreater(spec.x, 120)
         self.assertEqual(spec.y, 142)
+
+    def test_chorus_music_icon_is_centered_above_character(self):
+        spec = compute_chorus_music_draw_spec(
+            widget_width=240,
+            draw_y=180,
+            overlay_scale=1.0,
+        )
+
+        self.assertEqual(spec.size, 42)
+        self.assertEqual(spec.x, 99)
+        self.assertEqual(spec.y, 112)
+
+    def test_music_indicator_only_marks_chorus_performers(self):
+        performer = SimpleNamespace(
+            active=True,
+            activity_kind="chorus",
+            participant_role="perform",
+            phase="approaching",
+        )
+        audience = SimpleNamespace(
+            active=True,
+            activity_kind="chorus",
+            participant_role="audience",
+            phase="approaching",
+        )
+
+        self.assertTrue(should_show_chorus_music_indicator(performer))
+        performer.phase = "performing"
+        self.assertTrue(should_show_chorus_music_indicator(performer))
+        performer.phase = "finishing"
+        self.assertFalse(should_show_chorus_music_indicator(performer))
+        self.assertFalse(should_show_chorus_music_indicator(audience))
+        self.assertTrue(should_show_chorus_audience_indicator(audience))
+        audience.phase = "observing"
+        self.assertTrue(should_show_chorus_audience_indicator(audience))
+        audience.phase = "finishing"
+        self.assertFalse(should_show_chorus_audience_indicator(audience))
+        self.assertFalse(should_show_chorus_audience_indicator(performer))
 
     def test_compute_head_status_label_layout_places_compact_label_above_character(self):
         layout = compute_head_status_label_layout(

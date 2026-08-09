@@ -12,6 +12,7 @@ class RuntimeSettings:
     time_scale_idx: int = 0
     display_scale_idx: int = 0
     race_frequency: str = "normal"
+    chorus_frequency: str = "normal"
     mood_climate: str = "cheerful"
 
     WORLD_MODE_OPTIONS = ("golden_legend", "sandbox")
@@ -20,6 +21,7 @@ class RuntimeSettings:
     TEIO_DURATIONS = (2, 5, 10, 20, 30)
     TSUYOSHI_DURATIONS = (2, 10, 20, 40, 60)
     RACE_FREQUENCY_OPTIONS = ("frequent", "normal", "occasional")
+    CHORUS_FREQUENCY_OPTIONS = ("frequent", "normal", "occasional")
     MOOD_CLIMATE_OPTIONS = ("cheerful", "balanced", "expressive")
 
     def get_time_scale(self):

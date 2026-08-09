@@ -535,7 +535,8 @@
       ],
       "contexts": [
         "window_perch",
-        "random"
+        "random",
+        "activity_chorus_perform"
       ],
       "weight": 1.0
     },
@@ -894,7 +895,6 @@
     },
     "idle_side-scared.gif": {
       "band": [
-        "low",
         "severe"
       ],
       "contexts": [
@@ -1023,7 +1023,8 @@
         "normal"
       ],
       "contexts": [
-        "relation_close"
+        "relation_close",
+        "activity_chorus_observe"
       ],
       "weight": 1.0
     },
@@ -1100,7 +1101,8 @@
         "normal"
       ],
       "contexts": [
-        "random"
+        "random",
+        "activity_chorus_observe"
       ],
       "weight": 1.0
     },
@@ -1119,7 +1121,8 @@
         "normal"
       ],
       "contexts": [
-        "random"
+        "random",
+        "activity_chorus_observe"
       ],
       "weight": 1.0
     },
@@ -1147,7 +1150,8 @@
         "normal"
       ],
       "contexts": [
-        "random"
+        "random",
+        "activity_chorus_observe"
       ],
       "weight": 1.0
     },
@@ -1199,7 +1203,8 @@
       ],
       "contexts": [
         "window_perch",
-        "random"
+        "random",
+        "activity_chorus_observe"
       ],
       "weight": 1.0
     },
@@ -1209,7 +1214,8 @@
       ],
       "contexts": [
         "window_perch",
-        "random"
+        "random",
+        "activity_chorus_observe"
       ],
       "weight": 1.0
     },
@@ -1290,7 +1296,8 @@
       ],
       "contexts": [
         "window_perch",
-        "random"
+        "random",
+        "activity_chorus_finish"
       ],
       "weight": 1.0
     },
@@ -1301,7 +1308,8 @@
       "contexts": [
         "window_perch",
         "negative_reaction",
-        "random"
+        "random",
+        "activity_chorus_finish"
       ],
       "weight": 1.0
     },
@@ -1313,7 +1321,8 @@
         "window_walk",
         "offer_timeout_route_a_step3",
         "negative_reaction",
-        "random"
+        "random",
+        "activity_chorus_approach"
       ],
       "weight": 1.0
     },
@@ -1337,7 +1346,8 @@
         "window_walk",
         "bottle_feed_child_approach",
         "random",
-        "activity_sleep_join_approach"
+        "activity_sleep_join_approach",
+        "activity_chorus_approach"
       ],
       "weight": 1.0
     },
@@ -1362,7 +1372,8 @@
         "bottle_feed_child_approach",
         "negative_reaction",
         "random",
-        "activity_sleep_join_approach"
+        "activity_sleep_join_approach",
+        "activity_chorus_approach"
       ],
       "weight": 1.0
     },
@@ -1374,7 +1385,8 @@
         "window_walk",
         "bottle_feed_child_approach",
         "random",
-        "activity_sleep_join_approach"
+        "activity_sleep_join_approach",
+        "activity_chorus_approach"
       ],
       "weight": 1.0
     },

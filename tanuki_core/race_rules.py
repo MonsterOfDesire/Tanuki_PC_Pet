@@ -44,8 +44,8 @@ RACE_START_GAP = 84.0
 RACE_START_GAP_MAX = 160.0
 RACE_START_GAP_WIDTH_SCALE = 0.25
 RACE_LANE_PADDING = 48.0
-RACE_MIN_DISTANCE = 420.0
-RACE_MAX_DISTANCE = 1100.0
+RACE_MIN_DISTANCE = 500.0
+RACE_MAX_DISTANCE = 1500.0
 RACE_ARRIVAL_DISTANCE = 6.0
 RACE_TO_START_SPEED_SCALE = 1.35
 RACE_RUNNING_SPEED_SCALE = 1.0
@@ -59,6 +59,25 @@ RACE_SPEED_MOOD_MAX = 100.0
 RACE_POST_INTERACTION_SECONDS = 1.6
 RACE_CHALLENGE_SPACING_PADDING = 24.0
 RACE_TO_START_STALL_REPLAN_SECONDS = 2.0
+RACE_WINNER_MOOD_REWARD = 4.0
+RACE_RELATION_FAMILIARITY_REWARD = 2.0
+RACE_RELATION_TRUST_REWARD = 1.0
+
+
+@dataclass(frozen=True)
+class RaceCourseSpec:
+    key: str
+    nominal_meters: int
+    distance_px: float
+    weight: float
+
+
+RACE_COURSES = (
+    RaceCourseSpec("practice_100m", 100, 500.0, 0.10),
+    RaceCourseSpec("practice_200m", 200, 720.0, 0.30),
+    RaceCourseSpec("practice_400m", 400, 1100.0, 0.40),
+    RaceCourseSpec("practice_800m", 800, 1500.0, 0.20),
+)
 
 RACE_SANDBOX_INITIAL_DELAY_MIN_SECONDS = 120.0
 RACE_SANDBOX_INITIAL_DELAY_MAX_SECONDS = 240.0
@@ -396,14 +415,13 @@ def resolve_race_finish_band(
     return "low"
 
 
-def build_race_lane_geometry(
+def _resolve_race_lane_space(
     *,
     left_bound: float,
     right_bound: float,
     participant_widths: tuple[float, float],
     participant_radii: tuple[float, float] | None = None,
-    participant_positions: tuple[float, float] | None = None,
-) -> RaceLaneGeometry:
+) -> tuple[float, float, float, float]:
     left = float(left_bound)
     right = float(right_bound)
     maximum_width = max(1.0, *(float(value) for value in participant_widths))
@@ -424,6 +442,75 @@ def build_race_lane_geometry(
             + RACE_CHALLENGE_SPACING_PADDING,
         )
     usable_gap = min(desired_gap, max(0.0, safe_right - safe_left))
+    capacity = max(0.0, safe_right - safe_left - usable_gap)
+    return safe_left, safe_right, usable_gap, capacity
+
+
+def get_feasible_race_courses(
+    *,
+    left_bound: float,
+    right_bound: float,
+    participant_widths: tuple[float, float],
+    participant_radii: tuple[float, float] | None = None,
+) -> tuple[RaceCourseSpec, ...]:
+    _safe_left, _safe_right, _usable_gap, capacity = (
+        _resolve_race_lane_space(
+            left_bound=left_bound,
+            right_bound=right_bound,
+            participant_widths=participant_widths,
+            participant_radii=participant_radii,
+        )
+    )
+    return tuple(
+        course
+        for course in RACE_COURSES
+        if course.distance_px <= capacity + 0.001
+    )
+
+
+def select_race_course(
+    feasible_courses: tuple[RaceCourseSpec, ...],
+    *,
+    roll: float,
+) -> RaceCourseSpec | None:
+    courses = tuple(feasible_courses or ())
+    if not courses:
+        return None
+    total_weight = sum(max(0.0, course.weight) for course in courses)
+    if total_weight <= 0.0:
+        return courses[0]
+    threshold = max(0.0, min(0.999999999, float(roll))) * total_weight
+    cumulative = 0.0
+    for course in courses:
+        cumulative += max(0.0, course.weight)
+        if threshold < cumulative:
+            return course
+    return courses[-1]
+
+
+def get_race_course(course_key: str) -> RaceCourseSpec | None:
+    key = str(course_key or "")
+    return next((course for course in RACE_COURSES if course.key == key), None)
+
+
+def build_race_lane_geometry(
+    *,
+    left_bound: float,
+    right_bound: float,
+    participant_widths: tuple[float, float],
+    course_distance: float,
+    participant_radii: tuple[float, float] | None = None,
+    participant_positions: tuple[float, float] | None = None,
+) -> RaceLaneGeometry:
+    safe_left, safe_right, usable_gap, capacity = _resolve_race_lane_space(
+        left_bound=left_bound,
+        right_bound=right_bound,
+        participant_widths=participant_widths,
+        participant_radii=participant_radii,
+    )
+    distance = float(course_distance)
+    if distance <= 0.0 or distance > capacity + 0.001:
+        raise ValueError("race course does not fit available lane space")
     half_gap = usable_gap / 2.0
     if participant_positions is None:
         course_center_x = safe_left + half_gap
@@ -442,27 +529,17 @@ def build_race_lane_geometry(
         0.0,
         (right_distance if direction > 0 else left_distance) - half_gap,
     )
-    if (
-        available_distance < RACE_MIN_DISTANCE
-        and safe_right - safe_left >= RACE_MIN_DISTANCE + usable_gap
-    ):
+    if available_distance < distance:
         if direction > 0:
             course_center_x = max(
                 safe_left + half_gap,
-                safe_right - half_gap - RACE_MIN_DISTANCE,
+                safe_right - half_gap - distance,
             )
         else:
             course_center_x = min(
                 safe_right - half_gap,
-                safe_left + half_gap + RACE_MIN_DISTANCE,
+                safe_left + half_gap + distance,
             )
-        left_distance = max(0.0, course_center_x - safe_left)
-        right_distance = max(0.0, safe_right - course_center_x)
-        available_distance = max(
-            0.0,
-            (right_distance if direction > 0 else left_distance) - half_gap,
-        )
-    distance = min(RACE_MAX_DISTANCE, available_distance)
     finish_x = course_center_x + (direction * distance)
     challenger_start_x = course_center_x - (direction * half_gap)
     opponent_start_x = course_center_x + (direction * half_gap)

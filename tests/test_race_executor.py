@@ -190,6 +190,9 @@ class RaceExecutorTests(unittest.TestCase):
 
     def test_complete_race_uses_manifest_phases_and_records_one_event(self):
         self.advance_to_running()
+        active = self.coordinator.get_active_activities()[0]
+        self.assertEqual(active.metadata["race_course_key"], "practice_100m")
+        self.assertEqual(active.metadata["race_distance"], 500.0)
 
         self.update(16.2)
         self.assertEqual(self.rudolf.activity_state.phase, RACE_FINISH_PHASE)
@@ -203,6 +206,8 @@ class RaceExecutorTests(unittest.TestCase):
         self.assertEqual(len(self.events), 1)
         self.assertEqual(self.events[0].event_type, "race_completed")
         self.assertEqual(self.events[0].winner_name, "Tokai Teio")
+        self.assertEqual(self.events[0].race_course_key, "practice_100m")
+        self.assertEqual(self.events[0].race_nominal_meters, 100)
         self.assertIn(
             ("activity_race_finish_lose", 60.0),
             self.rudolf.asset_manager.calls,
@@ -327,6 +332,22 @@ class RaceExecutorTests(unittest.TestCase):
         self.assertEqual(self.rudolf.activity_state.phase, RACE_TO_START_PHASE)
         activity = self.coordinator.get_active_activities()[0]
         self.assertEqual(activity.metadata["to_start_last_progress_at"], 50.0)
+        self.assertEqual(activity.metadata["race_course_key"], "practice_100m")
+        self.assertEqual(activity.metadata["race_distance"], 500.0)
+
+    def test_full_lane_uses_course_roll_and_keeps_discrete_1500px_distance(self):
+        self.executor, self.coordinator = build_executor(
+            (0.0, 0.0, 0.0, 0.0, 0.0, 0.85)
+        )
+        self.executor.bounds_provider = lambda pets: (0.0, 2400.0)
+
+        started = self.update(10.0)
+
+        self.assertTrue(started.started)
+        activity = self.coordinator.get_active_activities()[0]
+        self.assertEqual(activity.metadata["race_course_key"], "practice_800m")
+        self.assertEqual(activity.metadata["race_nominal_meters"], 800)
+        self.assertEqual(activity.metadata["race_distance"], 1500.0)
 
     def test_winner_waits_for_loser_to_regroup_before_finish_phase(self):
         self.advance_to_running()

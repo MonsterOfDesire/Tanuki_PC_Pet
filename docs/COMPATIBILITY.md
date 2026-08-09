@@ -4,7 +4,7 @@
 
 ## 目前狀態
 
-- 目前 config schema：`6`
+- 目前 config schema：`7`
 - manifest schema：`1`
 - migration 實作：`tanuki_core/config_rules.py`
 - config 載入與保存：`tanuki_core/config_store.py`
@@ -17,6 +17,7 @@
 - schema 3 → 4：補入資訊中心 geometry、分頁與建議尺寸設定。
 - schema 4 → 5：補入 `social_status_enabled`。
 - schema 5 → 6：補入 `race_frequency=normal` 與 `mood_climate=cheerful`。
+- schema 6 → 7：補入 `chorus_frequency=normal`。
 
 所有既有 schema 都會依序 migration 後再 normalize；無法識別、低於 1 或高於目前支援版本的值會採保守預設並保留 warning。
 
@@ -36,7 +37,7 @@
 
 ## 發版前相容性檢查
 
-- [ ] schema 1–5 均可載入並升級至 schema 6。
+- [ ] schema 1–6 均可載入並升級至 schema 7。
 - [ ] 無效設定值會回到已記錄的預設值並產生 warning。
 - [ ] 舊 household 資料可在沒有競賽戰績時載入。
 - [ ] `config.json` 未進入 staged changes。

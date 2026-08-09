@@ -22,6 +22,10 @@ class PetTransformationState:
     auto_next_attempt_at: float = 0.0
     auto_form_expires_at: float = 0.0
     auto_retry_at: float = 0.0
+    auto_attempt_serial: int = 0
+    auto_tendency_score: float = 0.0
+    auto_pending_tendency_advance_seconds: float = 0.0
+    auto_tendency_last_signal: str = ""
     manual_end_requested: bool = False
 
     @property

@@ -9,6 +9,10 @@ from PyQt6.QtWidgets import QWidget
 
 from .asset_manager import AssetManager
 from .geometry import DesktopGeometry, PetMovementState
+from .pet_ambient_expression_rules import (
+    apply_ambient_low_mood_tendency,
+    reset_ambient_low_mood_tendency_if_inactive,
+)
 from .pet_basics import PetBasicsMixin
 from .pet_behavior_layers import PetBehaviorLayersMixin
 from .pet_collision_rules import CollisionSnapshot, compute_collision_resolution
@@ -142,7 +146,9 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         self.lock_timer.timeout.connect(self.unlock_interaction)
         self.is_adult = self.name in self.ADULT_NAMES
         self.setFixedSize(int(600 * self.get_effective_scale()), int(600 * self.get_effective_scale()))
-        self.star_pixmap = QPixmap(AssetManager.get_resource_path("star.png"))
+        self.star_pixmap = QPixmap(
+            AssetManager.get_resource_path("UI/pet_overlays/star.png")
+        )
         self.star_opacity = 0.0
         self.star_y_offset = 0
         self.star_anim_counter = 0
@@ -158,7 +164,9 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         self.fade_anim = QVariantAnimation(self)
         self.fade_anim.setDuration(300)
         self.fade_anim.valueChanged.connect(self.update_bar_opacity)
-        self.heart_pixmap = QPixmap(AssetManager.get_resource_path("heart.png"))
+        self.heart_pixmap = QPixmap(
+            AssetManager.get_resource_path("UI/pet_overlays/heart.png")
+        )
         self.show_heart = False
         self.heart_opacity = 0.0
         self.heart_y_offset = 0
@@ -168,7 +176,15 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         self.heart_anim.setEndValue(1.0)
         self.heart_anim.valueChanged.connect(self.animate_heart)
         self.heart_anim.finished.connect(lambda: setattr(self, "show_heart", False))
-        self.log_icon_pixmap = QPixmap(AssetManager.get_resource_path("think.png"))
+        self.log_icon_pixmap = QPixmap(
+            AssetManager.get_resource_path("UI/pet_overlays/think.png")
+        )
+        self.music_pixmap = QPixmap(
+            AssetManager.get_resource_path("UI/pet_overlays/music.png")
+        )
+        self.audience_pixmap = QPixmap(
+            AssetManager.get_resource_path("UI/pet_overlays/audience.png")
+        )
         self.show_log_icon = False
         self.log_icon_opacity = 0.0
         self.log_icon_y_offset = 0
@@ -248,6 +264,22 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             self.show_log_icon,
             self.log_icon_opacity,
             self.log_icon_y_offset,
+        )
+        self.overlay_renderer.draw_chorus_music_icon(
+            painter,
+            self.width(),
+            draw_y,
+            overlay_scale,
+            self.music_pixmap,
+            self.activity_state,
+        )
+        self.overlay_renderer.draw_chorus_audience_icon(
+            painter,
+            self.width(),
+            draw_y,
+            overlay_scale,
+            self.audience_pixmap,
+            self.activity_state,
         )
         painter.setOpacity(1.0)
 
@@ -471,6 +503,7 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
     def update_random_behavior(self, allow_reselect=True):
         expression_context = self.get_random_animation_context()
         random_context = "random"
+        reset_ambient_low_mood_tendency_if_inactive(self)
         if self.mood_score < 20 and self.current_purpose != "interaction":
             self.last_x = self.x()
             self.state_timer -= get_pet_logic_step_count(self)
@@ -594,14 +627,19 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
                 visual_purpose,
                 context=random_context,
             )
-            if self.change_state_candidates(self.get_randomized_candidates(candidates), context=random_context):
+            if apply_ambient_low_mood_tendency(
+                self,
+                self.get_randomized_candidates(candidates),
+                context=random_context,
+            ):
                 self.configure_stationary_move_mode("random", force=True)
 
         if self.state == "move":
             if not self.stationary_move_mode:
                 self.move_logic()
             if self.current_purpose != "move":
-                if self.change_state_candidates(
+                if apply_ambient_low_mood_tendency(
+                    self,
                     self.get_randomized_candidates(
                         self.get_random_manifest_candidates("move", context=random_context)
                     ),
@@ -611,7 +649,8 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         else:
             self.reset_stationary_move_mode()
             if self.current_purpose != "idle":
-                if self.change_state_candidates(
+                if apply_ambient_low_mood_tendency(
+                    self,
                     self.get_randomized_candidates(
                         self.get_random_manifest_candidates("idle", context=random_context)
                     ),

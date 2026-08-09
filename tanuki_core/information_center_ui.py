@@ -20,6 +20,7 @@ from .information_center_spec import (
     PAGE_STATUS_SETTINGS,
     PAGE_FAMILY_STATUS,
     PAGE_EVENT_LOG,
+    PAGE_ACHIEVEMENTS,
     get_information_center_page_spec,
 )
 from .skinned_window_frame import SkinnedWindowFrame
@@ -43,6 +44,7 @@ from .status_settings_ui import StatusSettingsPanel
 from .family_summary_ui import FamilySummaryPanel
 from .event_log_ui import EventLogPanel
 from .relation_summon_ui import RelationSummonPanel
+from .achievement_cabinet_ui import AchievementCabinetPanel
 
 
 COMPACT_NAVIGATION_WIDTH = 900
@@ -51,6 +53,7 @@ NAVIGATION_ICON_NAMES = {
     PAGE_EVENT_LOG: "story",
     PAGE_FAMILY_STATUS: "participants",
     PAGE_STATUS_SETTINGS: "system",
+    PAGE_ACHIEVEMENTS: "achievement",
 }
 
 
@@ -91,6 +94,7 @@ class InformationCenterWindow(QWidget):
         family_summary_binding=None,
         event_log_binding=None,
         relation_summon_binding=None,
+        achievement_binding=None,
     ):
         super().__init__(parent, Qt.WindowType.Tool)
         self.setAttribute(Qt.WidgetAttribute.WA_QuitOnClose, False)
@@ -116,6 +120,7 @@ class InformationCenterWindow(QWidget):
         self.family_summary_panel = None
         self.event_log_panel = None
         self.relation_summon_panel = None
+        self.achievement_cabinet_panel = None
         self._navigation_compact = None
 
         root_layout = QVBoxLayout(self)
@@ -230,6 +235,19 @@ class InformationCenterWindow(QWidget):
                     theme=theme,
                 )
                 page.set_content_widget(self.event_log_panel)
+            elif page_spec.page_id == PAGE_ACHIEVEMENTS:
+                page.set_content_margins(
+                    theme.spacing_sm,
+                    theme.spacing_sm,
+                    theme.spacing_sm,
+                    theme.spacing_sm,
+                )
+                self.achievement_cabinet_panel = AchievementCabinetPanel(
+                    resource_resolver,
+                    binding=achievement_binding,
+                    theme=theme,
+                )
+                page.set_content_widget(self.achievement_cabinet_panel)
             self.pages[page_spec.page_id] = page
             page_host = QWidget()
             page_host_layout = QVBoxLayout(page_host)
@@ -327,6 +345,8 @@ class InformationCenterWindow(QWidget):
     def detach_page(self, page_id):
         page_spec = get_information_center_page_spec(page_id)
         page_id = page_spec.page_id
+        if page_id == PAGE_ACHIEVEMENTS:
+            return None
         if page_id in self.detached_page_windows:
             self._activate_detached_page(page_id)
             return self.detached_page_windows[page_id]
@@ -506,6 +526,8 @@ class InformationCenterWindow(QWidget):
             self.refresh_family_summary()
         elif page_id == PAGE_EVENT_LOG:
             self.refresh_event_log()
+        elif page_id == PAGE_ACHIEVEMENTS:
+            self.refresh_achievement_cabinet()
 
     def apply_size_preset(self, preset_id):
         preset = get_information_center_size_preset(preset_id)
@@ -645,6 +667,17 @@ class InformationCenterWindow(QWidget):
         if self.relation_summon_panel is not None:
             self.relation_summon_panel.refresh_from_binding()
 
+    def set_achievement_binding(self, binding):
+        if self.achievement_cabinet_panel is not None:
+            self.achievement_cabinet_panel.set_binding(binding)
+
+    def refresh_achievement_cabinet(self, *, sync_world_mode=False):
+        if self.achievement_cabinet_panel is not None:
+            return self.achievement_cabinet_panel.refresh_from_binding(
+                sync_world_mode=sync_world_mode
+            )
+        return False
+
     def move_near_anchor(self, x, y):
         self._moving_programmatically = True
         try:
@@ -718,7 +751,9 @@ class InformationCenterWindow(QWidget):
             self.current_page_id in self.detached_page_windows
         )
         self.detach_button.setEnabled(
-            bool(self.current_page_id) and not current_is_detached
+            bool(self.current_page_id)
+            and not current_is_detached
+            and self.current_page_id != PAGE_ACHIEVEMENTS
         )
         self.detach_button.setText("" if compact else "分離頁面")
         self.detach_button.setMinimumWidth(44 if compact else 0)

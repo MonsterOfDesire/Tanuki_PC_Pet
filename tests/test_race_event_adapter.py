@@ -5,8 +5,10 @@ from tanuki_core.race_state import RaceEvent, RaceStatisticsLedger
 
 
 class RaceEventAdapterTests(unittest.TestCase):
-    def test_completed_race_records_story_event_without_numeric_deltas(self):
+    def test_completed_race_records_story_event_and_applies_positive_rewards(self):
         calls = []
+        mood_rewards = []
+        reverse_rewards = []
         event = RaceEvent(
             event_type="race_completed",
             occurred_at=50.0,
@@ -15,6 +17,9 @@ class RaceEventAdapterTests(unittest.TestCase):
             winner_name="Tokai Teio",
             loser_name="Symboli Rudolf",
             activity_id="race-1",
+            activity_started_at=40.0,
+            race_course_key="practice_200m",
+            race_nominal_meters=200,
             race_distance=842.0,
             race_direction=1,
             race_elapsed_seconds=12.4,
@@ -23,6 +28,12 @@ class RaceEventAdapterTests(unittest.TestCase):
         RaceEventAdapter().apply(
             event,
             record_household_event=lambda **kwargs: calls.append(kwargs),
+            apply_winner_mood_reward=(
+                lambda name, amount: mood_rewards.append((name, amount))
+            ),
+            apply_reverse_relationship_reward=(
+                lambda *args: reverse_rewards.append(args)
+            ),
         )
 
         self.assertEqual(len(calls), 1)
@@ -33,8 +44,36 @@ class RaceEventAdapterTests(unittest.TestCase):
         )
         self.assertEqual(calls[0]["channel"], "social")
         self.assertEqual(calls[0]["metadata"]["race_distance_px"], 842.0)
-        self.assertFalse(calls[0]["apply_deltas"])
-        self.assertNotIn("mood_delta", calls[0])
+        self.assertEqual(
+            calls[0]["metadata"]["race_course_key"],
+            "practice_200m",
+        )
+        self.assertEqual(calls[0]["metadata"]["race_nominal_meters"], 200)
+        self.assertTrue(calls[0]["apply_deltas"])
+        self.assertEqual(calls[0]["mood_delta"], 4.0)
+        self.assertEqual(
+            calls[0]["relation_delta"],
+            {"familiarity": 2.0, "trust": 1.0},
+        )
+        self.assertEqual(mood_rewards, [("Tokai Teio", 4.0)])
+        self.assertEqual(
+            reverse_rewards,
+            [
+                (
+                    "Symboli Rudolf",
+                    "Tokai Teio",
+                    {"familiarity": 2.0, "trust": 1.0},
+                    50.0,
+                )
+            ],
+        )
+        metadata = calls[0]["metadata"]
+        self.assertEqual(
+            metadata["activity_event_name"],
+            "activity.race.completed",
+        )
+        self.assertEqual(metadata["activity_elapsed_seconds"], 10.0)
+        self.assertEqual(metadata["race_rewards"]["loser_penalty"], 0.0)
 
     def test_declined_race_records_challenge_participants(self):
         calls = []
@@ -87,6 +126,7 @@ class RaceEventAdapterTests(unittest.TestCase):
         self.assertEqual((rudolf.completed_races, rudolf.wins, rudolf.losses), (1, 0, 1))
         self.assertEqual(teio.sandbox_races, 1)
         self.assertEqual(teio.autonomous_races, 1)
+        self.assertEqual(len(calls), 1)
 
 
 if __name__ == "__main__":

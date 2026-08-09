@@ -64,11 +64,13 @@ class HouseholdSummaryPresentation:
     recent_fund_delta: int = 0
     recent_pressure_delta: float = 0.0
     race_rhythm_text: str = ""
+    chorus_rhythm_text: str = ""
 
 
 @dataclass(frozen=True)
 class HouseholdRhythmPresentation:
     race_rhythm_text: str = ""
+    chorus_rhythm_text: str = ""
     members: tuple[HouseholdMemberPresentation, ...] = ()
 
 
@@ -252,6 +254,9 @@ class DashboardPresenter:
             "race_rhythm_text": self._build_race_rhythm_text(
                 rhythm_snapshot
             ),
+            "chorus_rhythm_text": self._build_chorus_rhythm_text(
+                rhythm_snapshot
+            ),
         }
         if household is None:
             return HouseholdSummaryPresentation(
@@ -310,6 +315,9 @@ class DashboardPresenter:
     ):
         return HouseholdRhythmPresentation(
             race_rhythm_text=self._build_race_rhythm_text(
+                rhythm_snapshot
+            ),
+            chorus_rhythm_text=self._build_chorus_rhythm_text(
                 rhythm_snapshot
             ),
             members=self.build_household_member_presentations(
@@ -391,6 +399,22 @@ class DashboardPresenter:
         if status == "ready":
             return "競賽：等待合適參賽者"
         return "競賽：排程尚未啟動"
+
+    @staticmethod
+    def _build_chorus_rhythm_text(snapshot):
+        if snapshot is None:
+            return ""
+        status = str(getattr(snapshot, "chorus_status", "") or "")
+        if status == "active":
+            return "合奏：進行中"
+        if status == "cooldown":
+            duration = format_compact_duration(
+                getattr(snapshot, "chorus_remaining_seconds", None)
+            )
+            return f"合奏：約 {duration} 後再提案" if duration else "合奏：冷卻中"
+        if status == "ready":
+            return "合奏：等待合適表演者"
+        return "合奏：排程尚未啟動"
 
     @staticmethod
     def _build_sleep_rhythm_text(rhythm):

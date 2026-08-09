@@ -27,6 +27,7 @@ TEST_SUITE_MEMBERS = {
         "test_asset_manager",
         "test_asset_selection_rules",
         "test_asset_store",
+        "test_chorus_asset_integration",
         "test_manifest_rules",
         "test_race_asset_integration",
         "test_ui_skin_assets",
@@ -38,6 +39,8 @@ TEST_SUITE_MEMBERS = {
         "test_config_store",
     },
     "dashboard": {
+        "test_achievement_cabinet_ui",
+        "test_achievement_presenter",
         "test_dashboard_actions",
         "test_dashboard_controller",
         "test_dashboard_information_center_state",
@@ -64,6 +67,7 @@ TEST_SUITE_MEMBERS = {
         "test_window_chrome",
     },
     "pet": {
+        "test_pet_ambient_expression_rules",
         "test_pet_ambient_mood_rules",
         "test_pet_ai_scheduler",
         "test_pet_behavior_scheduler",
@@ -87,8 +91,14 @@ TEST_SUITE_MEMBERS = {
         "test_pet_widget_runtime",
     },
     "runtime": {
+        "test_activity_event_contract",
         "test_activity_rhythm",
         "test_bottle_honey_scene_executor",
+        "test_chorus_event_adapter",
+        "test_chorus_executor",
+        "test_chorus_profiles",
+        "test_chorus_rules",
+        "test_chorus_settlement",
         "test_direct_hover_scene_executor",
         "test_ground_item_coordinator",
         "test_household_event_rules",
@@ -109,6 +119,7 @@ TEST_SUITE_MEMBERS = {
         "test_shared_food_runtime",
         "test_shared_food_scene_executor",
         "test_shared_food_asset_integration",
+        "test_transformation_tendency",
     },
     "tooling": {
         "test_asset_action_audit",

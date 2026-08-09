@@ -1,4 +1,4 @@
-from PyQt6.QtCore import QSize, Qt, QTimer
+from PyQt6.QtCore import QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QIcon
 from PyQt6.QtWidgets import (
     QAbstractItemView,
@@ -30,6 +30,31 @@ MOOD_BAND_COLORS = {
     "depressed": "#4f83b7",
     "unknown": "#8a938c",
 }
+
+
+class ClickableSummaryFrame(QFrame):
+    clicked = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton and self.rect().contains(
+            event.position().toPoint()
+        ):
+            self.clicked.emit()
+            event.accept()
+            return
+        super().mouseReleaseEvent(event)
+
+    def keyPressEvent(self, event):
+        if event.key() in {Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Space}:
+            self.clicked.emit()
+            event.accept()
+            return
+        super().keyPressEvent(event)
 
 
 class FamilyMemberCard(QFrame):
@@ -318,7 +343,20 @@ class FamilySummaryPanel(QWidget):
         self.race_rhythm_label.setToolTip(
             "顯示下一次自主競賽提案的排程；實際開始仍需通過資格與距離判定。"
         )
-        heading_row.addWidget(self.race_rhythm_label)
+        self.chorus_rhythm_label = QLabel("")
+        self.chorus_rhythm_label.setProperty(
+            "tanukiRole",
+            "familyRhythmStatus",
+        )
+        self.chorus_rhythm_label.setToolTip(
+            "顯示下一次自主合奏提案的排程；實際開始仍需通過資格與反應判定。"
+        )
+        rhythm_status_layout = QVBoxLayout()
+        rhythm_status_layout.setContentsMargins(0, 0, 0, 0)
+        rhythm_status_layout.setSpacing(0)
+        rhythm_status_layout.addWidget(self.race_rhythm_label)
+        rhythm_status_layout.addWidget(self.chorus_rhythm_label)
+        heading_row.addLayout(rhythm_status_layout)
         root_layout.addLayout(heading_row)
 
         self.unavailable_label = QLabel("家庭資料尚未連接執行中的 Dashboard。")
@@ -523,14 +561,14 @@ class FamilySummaryPanel(QWidget):
             stats_layout.addWidget(stat_widget, stretch=1)
             self.stat_value_labels[key] = value_label
 
-        self.achievement_slot = QFrame()
+        self.achievement_slot = ClickableSummaryFrame()
         self.achievement_slot.setObjectName("tanukiAchievementSummarySlot")
         self.achievement_slot.setProperty("tanukiRole", "familyAchievementSlot")
-        self.achievement_slot.setAccessibleName("成就摘要；尚未啟用")
-        self.achievement_slot.setToolTip(
-            "成就規則與資料格式確定後，將由此區塊顯示正式摘要。"
+        self.achievement_slot.setAccessibleName("開啟獎盃蒐集櫃")
+        self.achievement_slot.setToolTip("開啟獎盃蒐集櫃")
+        self.achievement_slot.clicked.connect(
+            self._handle_open_achievement_cabinet
         )
-        self.achievement_slot.setEnabled(False)
         achievement_layout = QHBoxLayout(self.achievement_slot)
         achievement_layout.setContentsMargins(0, 0, 0, 0)
         achievement_layout.setSpacing(theme.spacing_xs)
@@ -545,7 +583,7 @@ class FamilySummaryPanel(QWidget):
         achievement_caption = QLabel("成就摘要")
         achievement_caption.setProperty("tanukiRole", "familyStatCaption")
         achievement_text_column.addWidget(achievement_caption)
-        self.achievement_status_label = QLabel("尚未啟用")
+        self.achievement_status_label = QLabel("尚無成就資料")
         self.achievement_status_label.setProperty(
             "tanukiRole",
             "familyAchievementStatus",
@@ -585,6 +623,37 @@ class FamilySummaryPanel(QWidget):
         if self.binding is None:
             return
         self.apply_presentation(self.binding.presentation())
+        self.refresh_achievement_summary_from_binding()
+
+    def refresh_achievement_summary_from_binding(self):
+        provider = getattr(self.binding, "achievement_summary", None)
+        presentation = provider() if callable(provider) else None
+        self.apply_achievement_summary(presentation)
+
+    def apply_achievement_summary(self, presentation):
+        if presentation is None:
+            self.achievement_status_label.setText("尚無成就資料")
+            self.achievement_slot.setAccessibleName(
+                "開啟獎盃蒐集櫃；尚無成就資料"
+            )
+            self.achievement_icon_label.setPixmap(
+                create_ui_pixmap("achievement", color="#8d8a78", size=18)
+            )
+            return
+        status_text = str(
+            getattr(presentation, "summary_text", "") or ""
+        )
+        mode_label = str(
+            getattr(presentation, "mode_label", "") or ""
+        )
+        self.achievement_status_label.setText(status_text)
+        self.achievement_status_label.setToolTip(status_text)
+        self.achievement_slot.setAccessibleName(
+            f"開啟獎盃蒐集櫃；{mode_label}；{status_text}"
+        )
+        self.achievement_icon_label.setPixmap(
+            create_ui_pixmap("achievement", color="#8b672d", size=18)
+        )
 
     def refresh_rhythm_from_binding(self):
         if self.binding is None:
@@ -615,6 +684,11 @@ class FamilySummaryPanel(QWidget):
         )
         if self.race_rhythm_label.text() != race_text:
             self.race_rhythm_label.setText(race_text)
+        chorus_text = str(
+            getattr(presentation, "chorus_rhythm_text", "") or ""
+        )
+        if self.chorus_rhythm_label.text() != chorus_text:
+            self.chorus_rhythm_label.setText(chorus_text)
         for member in members:
             card = self.member_cards.get(member.character_name)
             if card is not None:
@@ -624,6 +698,7 @@ class FamilySummaryPanel(QWidget):
         if presentation is None:
             self.title_label.setText("家庭狀態")
             self.race_rhythm_label.setText("")
+            self.chorus_rhythm_label.setText("")
             self.fund_value_label.setText("--")
             self.pressure_value_label.setText("--")
             self.pressure_level_label.setText("--")
@@ -639,6 +714,9 @@ class FamilySummaryPanel(QWidget):
         self.title_label.setText(presentation.title or "家庭狀態")
         self.race_rhythm_label.setText(
             getattr(presentation, "race_rhythm_text", "") or ""
+        )
+        self.chorus_rhythm_label.setText(
+            getattr(presentation, "chorus_rhythm_text", "") or ""
         )
         living_fund = presentation.living_fund
         pressure = presentation.household_pressure
@@ -681,6 +759,13 @@ class FamilySummaryPanel(QWidget):
             return
         donate(100)
         self.refresh_from_binding()
+
+    def _handle_open_achievement_cabinet(self):
+        if self.binding is None:
+            return
+        opener = getattr(self.binding, "open_achievement_cabinet", None)
+        if callable(opener):
+            opener()
 
     def _update_donation_state(self):
         can_donate = False

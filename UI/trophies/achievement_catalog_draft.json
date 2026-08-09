@@ -1,0 +1,761 @@
+{
+  "schema_version": 1,
+  "status": "draft",
+  "purpose": "TanukiProject trophy cabinet achievement definitions",
+  "source_catalog": "race_achievements.json",
+  "source_catalog_role": "asset provenance only; app achievement rules are defined in this file",
+  "global_eligibility": {
+    "progress_scope": "per_achievement_world_mode",
+    "world_modes_are_isolated": true,
+    "definition_scope": "single_world_mode",
+    "definitions_are_shared_between_modes": false,
+    "similar_rules_require_distinct_achievement_ids": true,
+    "require_full_session_at_1x": true,
+    "exclude_source_kinds": [
+      "settings_preview",
+      "settings_test_control",
+      "debug",
+      "test"
+    ]
+  },
+  "implementation_status_values": {
+    "ready_existing_event": "Existing canonical event and payload are sufficient.",
+    "ready_live_event": "Canonical gameplay event is connected to the live achievement Runtime.",
+    "needs_gameplay_event": "The gameplay exists but needs an achievement-facing canonical event or payload.",
+    "ready_evaluator": "The pure evaluator is implemented; live Runtime event or snapshot wiring may still be pending.",
+    "reserved": "Trophy asset is intentionally not assigned yet."
+  },
+  "cabinet": {
+    "entry_point": "family_summary_achievement_slot",
+    "presentation": "dedicated_trophy_cabinet_window",
+    "design_document": "../../docs/ACHIEVEMENT_UI_DESIGN.md",
+    "skin": {
+      "background": {
+        "image": "achievement.png",
+        "source_size": [
+          1600,
+          900
+        ],
+        "fit": "contain"
+      },
+      "foreground": {
+        "image": "achievement_char.gif",
+        "source_size": [
+          500,
+          500
+        ],
+        "animated": true,
+        "frame_count": 8,
+        "frame_duration_ms": 100,
+        "layer": "fixed_bottom_right"
+      },
+      "content_rect_normalized": [
+        0.05,
+        0.055,
+        0.68,
+        0.775
+      ],
+      "foreground_rect_normalized": [
+        0.69,
+        0.465,
+        0.31,
+        0.525
+      ]
+    },
+    "mode_tabs": [
+      "sandbox",
+      "golden_legend"
+    ],
+    "shelf_order": [
+      "G1",
+      "G2",
+      "G3"
+    ],
+    "locked_trophy": {
+      "render": "black_alpha_silhouette",
+      "show_title_on_hover": false,
+      "show_description_on_hover": false,
+      "show_progress_on_hover": false,
+      "show_acquisition_method_on_hover": false,
+      "accessible_label_zh_tw": "未取得的 {tier} 獎盃",
+      "locked_information_policy": "do_not_reveal_title_condition_or_progress"
+    },
+    "unassigned_trophy": {
+      "render": "empty_pedestal",
+      "label_zh_tw": "後續追加",
+      "must_not_render_as_locked_achievement": true
+    },
+    "unlocked_trophy": {
+      "render": "original_color",
+      "show_unlocked_at": true,
+      "show_world_mode": true,
+      "show_acquisition_method_on_hover": true
+    },
+    "asset_fit": "crop transparent bounds in memory, then fit while preserving aspect ratio",
+    "refresh_policy": "refresh on unlock, mode change, tier change, or window show; never rebuild every second"
+  },
+  "mode_catalogs": {
+    "sandbox": {
+      "assigned_achievement_count": 24,
+      "notes": "Current non-economy gameplay achievement draft. Definitions and unlocks belong only to Sandbox."
+    },
+    "golden_legend": {
+      "assigned_achievement_count": 2,
+      "notes": "Current draft only includes Rudolf work achievements. More definitions wait for Golden Legend 2.0.0 design."
+    }
+  },
+  "tiers": {
+    "G3": {
+      "difficulty": "introductory",
+      "design_rule_zh_tw": "首次完成、首次看見或容易自然發生的單一步驟成就。"
+    },
+    "G2": {
+      "difficulty": "intermediate",
+      "design_rule_zh_tw": "需要累積、蒐集不同條件，或讓多名角色參與的中期成就。"
+    },
+    "G1": {
+      "difficulty": "advanced",
+      "design_rule_zh_tw": "需要稀有同場條件、跨系統完成，或長期蒐集的高難度成就。"
+    }
+  },
+  "achievements": [
+    {
+      "achievement_id": "race.first_natural_finish",
+      "title_zh_tw": "初次奔馳",
+      "description_zh_tw": "在全程 1x 下，見證第一場非測試競賽自然完成。",
+      "tier": "G3",
+      "trophy": {
+        "type": "race",
+        "id": "3008",
+        "image": "trophies/race/3008.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "event_count",
+        "event_name": "activity.race.completed",
+        "target": 1
+      },
+      "implementation_status": "ready_existing_event"
+    },
+    {
+      "achievement_id": "chorus.first_natural_finish",
+      "title_zh_tw": "初次合奏",
+      "description_zh_tw": "在全程 1x 下，見證第一場合奏自然完成。",
+      "tier": "G3",
+      "trophy": {
+        "type": "race",
+        "id": "3010",
+        "image": "trophies/race/3010.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "event_count",
+        "event_name": "activity.chorus.completed",
+        "target": 1
+      },
+      "implementation_status": "ready_existing_event"
+    },
+    {
+      "achievement_id": "sleep.first_natural_finish",
+      "title_zh_tw": "好夢初醒",
+      "description_zh_tw": "見證第一名角色自主睡眠並自然醒來。",
+      "tier": "G3",
+      "trophy": {
+        "type": "race",
+        "id": "3011",
+        "image": "trophies/race/3011.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "event_count",
+        "event_name": "activity.sleep.completed",
+        "target": 1,
+        "filters": {
+          "source_kind": "autonomous_gameplay"
+        }
+      },
+      "implementation_status": "ready_live_event"
+    },
+    {
+      "achievement_id": "sleep.first_group_join",
+      "title_zh_tw": "靠在一起",
+      "description_zh_tw": "見證一名角色注意到睡眠者後，自主加入睡眠群。",
+      "tier": "G3",
+      "trophy": {
+        "type": "race",
+        "id": "3012",
+        "image": "trophies/race/3012.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "event_count",
+        "event_name": "activity.sleep.group_joined",
+        "target": 1
+      },
+      "implementation_status": "ready_live_event"
+    },
+    {
+      "achievement_id": "transformation.teio_first_autonomous",
+      "title_zh_tw": "帝寶的新姿態",
+      "description_zh_tw": "在全程 1x 下，第一次看見帝寶自主完成變身。",
+      "tier": "G3",
+      "trophy": {
+        "type": "race",
+        "id": "3015",
+        "image": "trophies/race/3015.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "event_count",
+        "event_name": "activity.transformation.completed",
+        "target": 1,
+        "filters": {
+          "character_name": "Tokai Teio",
+          "source_kind": "autonomous_gameplay",
+          "target_form": "transformed"
+        }
+      },
+      "implementation_status": "ready_live_event"
+    },
+    {
+      "achievement_id": "transformation.rudolf_first_autonomous",
+      "title_zh_tw": "白色皇帝",
+      "description_zh_tw": "在全程 1x 下，第一次看見魯道夫自主完成變身。",
+      "tier": "G3",
+      "trophy": {
+        "type": "race",
+        "id": "3016",
+        "image": "trophies/race/3016.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "event_count",
+        "event_name": "activity.transformation.completed",
+        "target": 1,
+        "filters": {
+          "character_name": "Symboli Rudolf",
+          "source_kind": "autonomous_gameplay",
+          "target_form": "transformed"
+        }
+      },
+      "implementation_status": "ready_live_event"
+    },
+    {
+      "achievement_id": "care.first_complete",
+      "title_zh_tw": "第一次照護",
+      "description_zh_tw": "見證第一場非測試照護自然完成。",
+      "tier": "G3",
+      "trophy": {
+        "type": "race",
+        "id": "3020",
+        "image": "trophies/race/3020.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "event_count",
+        "event_name": "interaction.care.completed",
+        "target": 1
+      },
+      "implementation_status": "ready_live_event"
+    },
+    {
+      "achievement_id": "honey.first_guard",
+      "title_zh_tw": "蜂蜜守護",
+      "description_zh_tw": "第一次成功阻止鶴寶拿走蜂蜜。",
+      "tier": "G3",
+      "trophy": {
+        "type": "race",
+        "id": "3025",
+        "image": "trophies/race/3025.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "event_count",
+        "event_name": "interaction.honey_guard.completed",
+        "target": 1
+      },
+      "implementation_status": "ready_live_event"
+    },
+    {
+      "achievement_id": "food.first_shared_finish",
+      "title_zh_tw": "一起吃更好吃",
+      "description_zh_tw": "第一次見證角色自然完成分享食物。",
+      "tier": "G3",
+      "trophy": {
+        "type": "race",
+        "id": "3032",
+        "image": "trophies/race/3032.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "event_count",
+        "event_name": "interaction.food_share.completed",
+        "target": 1
+      },
+      "implementation_status": "ready_live_event"
+    },
+    {
+      "achievement_id": "work.rudolf_first_complete",
+      "title_zh_tw": "今天也辛苦了",
+      "description_zh_tw": "在黃金傳說中，第一次見證魯道夫自然完成工作。",
+      "tier": "G3",
+      "trophy": {
+        "type": "race",
+        "id": "3033",
+        "image": "trophies/race/3033.png"
+      },
+      "world_modes": [
+        "golden_legend"
+      ],
+      "rule": {
+        "type": "event_count",
+        "event_name": "activity.work.completed",
+        "target": 1
+      },
+      "implementation_status": "ready_existing_event"
+    },
+    {
+      "achievement_id": "race.ten_natural_finishes",
+      "title_zh_tw": "賽道常客",
+      "description_zh_tw": "累積見證十場非測試競賽自然完成。",
+      "tier": "G2",
+      "trophy": {
+        "type": "race",
+        "id": "2003",
+        "image": "trophies/race/2003.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "event_count",
+        "event_name": "activity.race.completed",
+        "target": 10
+      },
+      "implementation_status": "ready_existing_event"
+    },
+    {
+      "achievement_id": "race.all_course_lengths",
+      "title_zh_tw": "長短皆宜",
+      "description_zh_tw": "在 500、720、1100、1500px 四種場地各完成一場競賽。",
+      "tier": "G2",
+      "trophy": {
+        "type": "race",
+        "id": "2006",
+        "image": "trophies/race/2006.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "distinct_values",
+        "event_name": "activity.race.completed",
+        "payload_key": "race_course_key",
+        "required_values": [
+          "practice_100m",
+          "practice_200m",
+          "practice_400m",
+          "practice_800m"
+        ]
+      },
+      "implementation_status": "ready_existing_event"
+    },
+    {
+      "achievement_id": "race.both_directions",
+      "title_zh_tw": "左右皆宜",
+      "description_zh_tw": "分別完成一場順時鐘朝左與逆時鐘朝右的競賽。",
+      "tier": "G2",
+      "trophy": {
+        "type": "race",
+        "id": "2013",
+        "image": "trophies/race/2013.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "distinct_values",
+        "event_name": "activity.race.completed",
+        "payload_key": "direction_key",
+        "required_values": [
+          "clockwise_left",
+          "counterclockwise_right"
+        ]
+      },
+      "implementation_status": "ready_existing_event"
+    },
+    {
+      "achievement_id": "chorus.three_performers",
+      "title_zh_tw": "三重奏",
+      "description_zh_tw": "自然完成一場至少三名表演者同台的合奏。",
+      "tier": "G2",
+      "trophy": {
+        "type": "race",
+        "id": "2015",
+        "image": "trophies/race/2015.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "single_event_threshold",
+        "event_name": "activity.chorus.completed",
+        "payload_key": "performer_count",
+        "minimum": 3
+      },
+      "implementation_status": "ready_existing_event"
+    },
+    {
+      "achievement_id": "sleep.every_character_natural_finish",
+      "title_zh_tw": "全家的好眠",
+      "description_zh_tw": "分別見證五名角色各自完成一次自主睡眠。",
+      "tier": "G2",
+      "trophy": {
+        "type": "race",
+        "id": "2016",
+        "image": "trophies/race/2016.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "distinct_values",
+        "event_name": "activity.sleep.completed",
+        "payload_key": "character_name",
+        "required_values": [
+          "Air Groove",
+          "Sirius Symboli",
+          "Symboli Rudolf",
+          "Tokai Teio",
+          "Tsurumaru Tsuyoshi"
+        ]
+      },
+      "implementation_status": "ready_live_event"
+    },
+    {
+      "achievement_id": "transformation.both_characters_autonomous",
+      "title_zh_tw": "雙重奇蹟",
+      "description_zh_tw": "分別見證帝寶與魯道夫各自自主完成一次變身。",
+      "tier": "G2",
+      "trophy": {
+        "type": "race",
+        "id": "2018",
+        "image": "trophies/race/2018.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "distinct_values",
+        "event_name": "activity.transformation.completed",
+        "payload_key": "character_name",
+        "required_values": [
+          "Symboli Rudolf",
+          "Tokai Teio"
+        ],
+        "filters": {
+          "source_kind": "autonomous_gameplay",
+          "target_form": "transformed"
+        }
+      },
+      "implementation_status": "ready_live_event"
+    },
+    {
+      "achievement_id": "care.three_distinct_guardians",
+      "title_zh_tw": "照護接力",
+      "description_zh_tw": "見證三名不同的照護者各自完成一次照護。",
+      "tier": "G2",
+      "trophy": {
+        "type": "race",
+        "id": "2026",
+        "image": "trophies/race/2026.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "distinct_values",
+        "event_name": "interaction.care.completed",
+        "payload_key": "caregiver_name",
+        "target": 3
+      },
+      "implementation_status": "ready_live_event"
+    },
+    {
+      "achievement_id": "chorus.every_character_performed",
+      "title_zh_tw": "輪流登台",
+      "description_zh_tw": "讓五名角色都曾在自然完成的合奏中擔任表演者。",
+      "tier": "G2",
+      "trophy": {
+        "type": "race",
+        "id": "2028",
+        "image": "trophies/race/2028.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "distinct_participants_by_role",
+        "event_name": "activity.chorus.completed",
+        "participant_role": "perform",
+        "required_values": [
+          "Air Groove",
+          "Sirius Symboli",
+          "Symboli Rudolf",
+          "Tokai Teio",
+          "Tsurumaru Tsuyoshi"
+        ]
+      },
+      "implementation_status": "ready_evaluator"
+    },
+    {
+      "achievement_id": "activity.variety_sampler",
+      "title_zh_tw": "生活觀察家",
+      "description_zh_tw": "分別見證競賽、合奏、睡眠、照護與自主變身各自然完成一次。",
+      "tier": "G2",
+      "trophy": {
+        "type": "race",
+        "id": "2030",
+        "image": "trophies/race/2030.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "all_of",
+        "event_names": [
+          "activity.race.completed",
+          "activity.chorus.completed",
+          "activity.sleep.completed",
+          "interaction.care.completed",
+          "activity.transformation.completed"
+        ]
+      },
+      "implementation_status": "ready_live_event"
+    },
+    {
+      "achievement_id": "work.rudolf_ten_completions",
+      "title_zh_tw": "家庭支柱",
+      "description_zh_tw": "在黃金傳說中，累積見證魯道夫自然完成十次工作。",
+      "tier": "G2",
+      "trophy": {
+        "type": "race",
+        "id": "2031",
+        "image": "trophies/race/2031.png"
+      },
+      "world_modes": [
+        "golden_legend"
+      ],
+      "rule": {
+        "type": "event_count",
+        "event_name": "activity.work.completed",
+        "target": 10
+      },
+      "implementation_status": "ready_existing_event"
+    },
+    {
+      "achievement_id": "chorus.five_performers_same_session",
+      "title_zh_tw": "五人同台",
+      "description_zh_tw": "自然完成一場五名角色全都擔任表演者的合奏。",
+      "tier": "G1",
+      "trophy": {
+        "type": "race",
+        "id": "1001",
+        "image": "trophies/race/1001.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "single_event_threshold",
+        "event_name": "activity.chorus.completed",
+        "payload_key": "performer_count",
+        "minimum": 5
+      },
+      "implementation_status": "ready_existing_event"
+    },
+    {
+      "achievement_id": "race.all_course_direction_pairs",
+      "title_zh_tw": "八方奔馳",
+      "description_zh_tw": "在四種競賽距離中，分別完成朝左與朝右的全部八種組合。",
+      "tier": "G1",
+      "trophy": {
+        "type": "race",
+        "id": "1002",
+        "image": "trophies/race/1002.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "distinct_composite_values",
+        "event_name": "activity.race.completed",
+        "payload_keys": [
+          "race_course_key",
+          "direction_key"
+        ],
+        "target": 8
+      },
+      "implementation_status": "ready_evaluator"
+    },
+    {
+      "achievement_id": "race.every_competitor_form_wins",
+      "title_zh_tw": "各展所長",
+      "description_zh_tw": "分別見證普通帝寶、天狼星、普通魯道夫與變身魯道夫取得勝利。",
+      "tier": "G1",
+      "trophy": {
+        "type": "race",
+        "id": "1003",
+        "image": "trophies/race/1003.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "distinct_composite_values",
+        "event_name": "activity.race.completed",
+        "payload_keys": [
+          "winner_name",
+          "winner_form"
+        ],
+        "payload_derivations": {
+          "winner_form": "Match winner_name against challenger_name/opponent_name and select the corresponding challenger_form/opponent_form."
+        },
+        "required_values": [
+          [
+            "Tokai Teio",
+            "base"
+          ],
+          [
+            "Sirius Symboli",
+            "base"
+          ],
+          [
+            "Symboli Rudolf",
+            "base"
+          ],
+          [
+            "Symboli Rudolf",
+            "transformed"
+          ]
+        ]
+      },
+      "implementation_status": "ready_evaluator"
+    },
+    {
+      "achievement_id": "sleep.five_simultaneous",
+      "title_zh_tw": "全家安眠",
+      "description_zh_tw": "在全程 1x 下，讓五名角色同時處於自然睡眠狀態。",
+      "tier": "G1",
+      "trophy": {
+        "type": "race",
+        "id": "1004",
+        "image": "trophies/race/1004.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "simultaneous_state_threshold",
+        "state_key": "naturally_sleeping_character_names",
+        "minimum": 5
+      },
+      "implementation_status": "ready_evaluator"
+    },
+    {
+      "achievement_id": "care.sirius_shallow_sleep_rescue",
+      "title_zh_tw": "淺眠的守護者",
+      "description_zh_tw": "見證睡眠中的天狼星自主醒來並完成對鶴寶的照護。",
+      "tier": "G1",
+      "trophy": {
+        "type": "race",
+        "id": "1005",
+        "image": "trophies/race/1005.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "event_count",
+        "event_name": "interaction.care.completed",
+        "target": 1,
+        "filters": {
+          "caregiver_name": "Sirius Symboli",
+          "target_name": "Tsurumaru Tsuyoshi",
+          "caregiver_woke_from_sleep": true
+        }
+      },
+      "implementation_status": "ready_live_event"
+    },
+    {
+      "achievement_id": "activity.family_mastery",
+      "title_zh_tw": "狸貓家族大事記",
+      "description_zh_tw": "完成指定的競賽、合奏、睡眠、變身與照護高階蒐集成就。",
+      "tier": "G1",
+      "trophy": {
+        "type": "race",
+        "id": "1006",
+        "image": "trophies/race/1006.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "all_of_achievements",
+        "achievement_ids": [
+          "race.all_course_lengths",
+          "chorus.every_character_performed",
+          "sleep.every_character_natural_finish",
+          "transformation.both_characters_autonomous",
+          "care.three_distinct_guardians"
+        ]
+      },
+      "implementation_status": "ready_evaluator"
+    }
+  ],
+  "reserved_trophies": {
+    "policy": "All unassigned PNG files remain available for later achievements. They do not create locked cabinet slots until assigned.",
+    "course_trophies": "Reserved for future category-completion or meta achievements.",
+    "examples": {
+      "G1": [
+        "trophies/race/1007.png",
+        "trophies/race/1008.png",
+        "trophies/race/1009.png"
+      ],
+      "G2": [
+        "trophies/race/2036.png",
+        "trophies/race/2037.png",
+        "trophies/race/2038.png"
+      ],
+      "G3": [
+        "trophies/race/3064.png",
+        "trophies/race/3069.png",
+        "trophies/race/3071.png"
+      ]
+    }
+  },
+  "known_source_asset_gaps": [
+    "trophies/race/2023.png",
+    "trophies/course/10103.png",
+    "trophies/course/10104.png",
+    "trophies/course/10105.png"
+  ]
+}

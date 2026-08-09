@@ -74,6 +74,9 @@ class RaceEvent:
     opponent_form: str = "base"
     execution_mode: str = RACE_EXECUTION_AUTONOMOUS
     world_mode: str = "golden_legend"
+    activity_started_at: float = 0.0
+    race_course_key: str = ""
+    race_nominal_meters: int = 0
     race_distance: float = 0.0
     race_direction: int = 1
     running_started_at: float = 0.0

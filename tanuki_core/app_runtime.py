@@ -17,8 +17,21 @@ from .activity_rhythm import (
     CharacterRhythmSnapshot,
     clamp_percent,
 )
+from .achievement_eligibility import AchievementEligibilityGuard
+from .achievement_gameplay_bridge import AchievementGameplayBridge
+from .achievement_catalog import load_achievement_catalog
+from .achievement_runtime_service import AchievementRuntimeService
+from .achievement_presenter import build_achievement_cabinet_snapshot
+from .achievement_state import (
+    AchievementState,
+    apply_achievement_persistence_state,
+    capture_achievement_persistence_state,
+)
 from .asset_manager import AssetManager
 from .bottle_honey_scene_executor import BottleHoneySceneExecutor
+from .chorus_event_adapter import ChorusEventAdapter
+from .chorus_executor import ChorusExecutor
+from .chorus_state import ChorusEvent
 from .config_save_scheduler import ConfigSaveScheduler
 from .config_store import ConfigStore
 from .dashboard_shell import GlobalMouseListener, SensorZone
@@ -85,9 +98,14 @@ from .settings_provider import RuntimeSettings
 from .shared_food_profiles import get_shared_food_profile_for_holder
 from .shared_food_scene_executor import SharedFoodSceneExecutor
 from .sleep_executor import SleepExecutor
-from .sleep_rules import SLEEP_ACTIVITY_KIND
+from .sleep_rules import (
+    SLEEP_ACTIVITY_KIND,
+    SLEEP_TRIGGER_OBSERVED_JOIN,
+)
 from .transformation_profiles import (
     CAPABILITY_HONEY_GUARDIAN,
+    CAPABILITY_SLEEP,
+    apply_pet_form_mood_floor,
     get_pet_form_key,
     pet_form_allows_capability,
     pet_form_allows_offer_item,
@@ -99,6 +117,7 @@ from .transformation_executor import (
     TransformationExecutor,
     TransformationRuntimeResult,
 )
+from .transformation_tendency import TransformationTendencyCoordinator
 from .window_tracker import WindowTracker
 
 
@@ -145,6 +164,21 @@ class TanukiAppRuntime:
     household: HouseholdState = field(default_factory=build_default_household_state)
     household_event_log: HouseholdEventLog = field(default_factory=build_default_household_event_log)
     household_event_schedule: HouseholdEventScheduleState = field(default_factory=build_household_event_schedule)
+    achievement_state: AchievementState = field(
+        default_factory=AchievementState
+    )
+    achievement_eligibility_guard: AchievementEligibilityGuard = field(
+        default_factory=AchievementEligibilityGuard,
+        repr=False,
+    )
+    achievement_runtime_service: AchievementRuntimeService = field(
+        init=False,
+        repr=False,
+    )
+    achievement_gameplay_bridge: AchievementGameplayBridge = field(
+        init=False,
+        repr=False,
+    )
     profiler: RuntimeProfiler = field(default_factory=RuntimeProfiler)
     logic_scheduler: AdaptivePetLogicScheduler = field(default_factory=AdaptivePetLogicScheduler)
     offer_scene: ActiveOfferScene | None = None
@@ -157,7 +191,13 @@ class TanukiAppRuntime:
     sleep_executor: SleepExecutor = field(init=False, repr=False)
     race_executor: RaceExecutor = field(init=False, repr=False)
     race_event_adapter: RaceEventAdapter = field(init=False, repr=False)
+    chorus_executor: ChorusExecutor = field(init=False, repr=False)
+    chorus_event_adapter: ChorusEventAdapter = field(init=False, repr=False)
     transformation_executor: TransformationExecutor = field(init=False, repr=False)
+    transformation_tendency_coordinator: TransformationTendencyCoordinator = field(
+        init=False,
+        repr=False,
+    )
     ground_item_coordinator: GroundItemCoordinator = field(init=False, repr=False)
     direct_hover_scene_executor: DirectHoverSceneExecutor = field(init=False, repr=False)
     bottle_honey_scene_executor: BottleHoneySceneExecutor = field(init=False, repr=False)
@@ -200,11 +240,45 @@ class TanukiAppRuntime:
             ),
         )
         self.race_event_adapter = RaceEventAdapter()
+        self.chorus_executor = ChorusExecutor(
+            coordinator=self.activity_coordinator,
+            runtime_adapter=self.activity_runtime_adapter,
+            frequency_provider=(
+                lambda: getattr(
+                    self.settings_provider,
+                    "chorus_frequency",
+                    "normal",
+                )
+            ),
+        )
+        self.chorus_event_adapter = ChorusEventAdapter()
         self.transformation_executor = TransformationExecutor()
+        self.transformation_tendency_coordinator = (
+            TransformationTendencyCoordinator()
+        )
         self.ground_item_coordinator = GroundItemCoordinator(self.ground_offer_items)
         self.direct_hover_scene_executor = DirectHoverSceneExecutor()
         self.bottle_honey_scene_executor = BottleHoneySceneExecutor()
         self.shared_food_scene_executor = SharedFoodSceneExecutor()
+        self.achievement_runtime_service = AchievementRuntimeService(
+            catalog=load_achievement_catalog(
+                AssetManager.get_resource_path(
+                    "UI/trophies/achievement_catalog_draft.json"
+                )
+            ),
+            state=self.achievement_state,
+            eligibility_guard=self.achievement_eligibility_guard,
+            time_scale_provider=lambda: float(SIM_CLOCK.speed),
+            state_changed_callback=(
+                self._handle_achievement_state_changed
+            ),
+        )
+        self.achievement_gameplay_bridge = AchievementGameplayBridge(
+            service=self.achievement_runtime_service,
+            world_mode_provider=(
+                lambda: str(self.settings_provider.world_mode or "")
+            ),
+        )
 
     def shutdown(self):
         for timer in self.timers.values():
@@ -227,6 +301,14 @@ class TanukiAppRuntime:
             now=app_now(),
             pets=self.pets_list,
             reason="runtime_shutdown",
+        )
+        self.chorus_executor.interrupt_all(
+            now=app_now(),
+            pets=self.pets_list,
+            reason="runtime_shutdown",
+        )
+        self.achievement_runtime_service.cancel_all_activity_sessions(
+            reason="runtime_shutdown"
         )
         for pet in self.pets_list:
             if self.transformation_executor.is_transition_active(pet):
@@ -266,6 +348,35 @@ class TanukiAppRuntime:
             race_status = "unscheduled"
             race_remaining = None
             race_wait_reason = ""
+
+        active_chorus = next(
+            (
+                activity
+                for activity in self.activity_coordinator.get_active_activities()
+                if activity.spec.kind == "chorus"
+            ),
+            None,
+        )
+        chorus_schedule = self.chorus_executor.schedule
+        if active_chorus is not None:
+            chorus_status = "active"
+            chorus_remaining = None
+            chorus_wait_reason = active_chorus.phase.name
+        elif chorus_schedule.next_proposal_at > 0.0:
+            chorus_remaining = max(
+                0.0,
+                float(chorus_schedule.next_proposal_at) - now,
+            )
+            chorus_status = (
+                "cooldown" if chorus_remaining > 0.0 else "ready"
+            )
+            chorus_wait_reason = str(
+                chorus_schedule.last_wait_reason or ""
+            )
+        else:
+            chorus_status = "unscheduled"
+            chorus_remaining = None
+            chorus_wait_reason = ""
 
         members = []
         for pet in self.pets_list:
@@ -344,6 +455,9 @@ class TanukiAppRuntime:
             race_status=race_status,
             race_remaining_seconds=race_remaining,
             race_wait_reason=race_wait_reason,
+            chorus_status=chorus_status,
+            chorus_remaining_seconds=chorus_remaining,
+            chorus_wait_reason=chorus_wait_reason,
             members=tuple(members),
         )
 
@@ -366,7 +480,7 @@ class TanukiAppRuntime:
         metadata: dict[str, object] | None = None,
         apply_deltas: bool = True,
     ):
-        return self.household_coordinator.record_event(
+        entry = self.household_coordinator.record_event(
             dashboard=self.dashboard,
             pets=self.pets_list,
             occurred_at=occurred_at,
@@ -384,6 +498,116 @@ class TanukiAppRuntime:
             household_pressure_delta=household_pressure_delta,
             metadata=metadata,
             apply_deltas=apply_deltas,
+        )
+        tendency_coordinator = getattr(
+            self,
+            "transformation_tendency_coordinator",
+            None,
+        )
+        if tendency_coordinator is not None:
+            tendency_coordinator.process_household_entry(
+                entry,
+                pets=self.pets_list,
+                executor=self.transformation_executor,
+                now=float(occurred_at),
+            )
+        self._consume_achievement_metadata(entry)
+        return entry
+
+    def _record_resolved_household_event(self, event):
+        entry = self.household_coordinator.record_resolved_event(
+            event,
+            dashboard=self.dashboard,
+            pets=self.pets_list,
+        )
+        tendency_coordinator = getattr(
+            self,
+            "transformation_tendency_coordinator",
+            None,
+        )
+        if tendency_coordinator is not None:
+            tendency_coordinator.process_household_entry(
+                entry,
+                pets=self.pets_list,
+                executor=self.transformation_executor,
+                now=float(getattr(event, "occurred_at", app_now())),
+            )
+        self._consume_achievement_metadata(entry)
+        return entry
+
+    def _consume_achievement_metadata(self, entry):
+        metadata = getattr(entry, "metadata", None)
+        return self._consume_achievement_payload(metadata)
+
+    def _consume_achievement_payload(
+        self,
+        metadata,
+        *,
+        instantaneous=False,
+    ):
+        service = getattr(self, "achievement_runtime_service", None)
+        if service is None or not isinstance(metadata, dict):
+            return None
+        if not str(metadata.get("activity_event_name", "") or ""):
+            return None
+        if instantaneous:
+            return service.consume_instantaneous_activity_metadata(metadata)
+        return service.consume_activity_metadata(metadata)
+
+    def _handle_achievement_state_changed(self, result):
+        schedule_save = getattr(self.dashboard, "schedule_save", None)
+        if callable(schedule_save):
+            schedule_save()
+        notify_unlocks = getattr(
+            self.dashboard,
+            "handle_achievement_unlocks",
+            None,
+        )
+        if callable(notify_unlocks):
+            unlocked_ids = tuple(
+                getattr(result, "unlocked_achievement_ids", ()) or ()
+            )
+            if unlocked_ids:
+                notify_unlocks(unlocked_ids)
+
+    def _begin_achievement_activity_session(
+        self,
+        activity_id,
+        *,
+        world_mode,
+    ):
+        service = getattr(self, "achievement_runtime_service", None)
+        if service is None:
+            return False
+        activity = self.activity_coordinator.get_activity(
+            str(activity_id or "")
+        )
+        if activity is None:
+            return False
+        return service.begin_activity_session(
+            activity_id=activity.activity_id,
+            world_mode=str(
+                activity.metadata.get("world_mode", world_mode) or world_mode
+            ),
+            source=activity.source,
+            execution_mode=str(
+                activity.metadata.get("execution_mode", "") or ""
+            ),
+            started_at=float(activity.started_at),
+        )
+
+    def _cancel_achievement_activity_session(
+        self,
+        activity_id,
+        *,
+        reason,
+    ):
+        service = getattr(self, "achievement_runtime_service", None)
+        if service is None:
+            return False
+        return service.cancel_activity_session(
+            str(activity_id or ""),
+            reason=str(reason or "activity_cancelled"),
         )
 
     def refresh_dashboard_views_for_household_entry(self, entry):
@@ -431,13 +655,27 @@ class TanukiAppRuntime:
         now = app_now() if now is None else float(now)
         self.update_rudolf_work(now=now)
         self.update_sleep(now=now)
-        return self.household_coordinator.update_events(
+        entries = self.household_coordinator.update_events(
             world_mode=self.settings_provider.world_mode,
             pets=self.pets_list,
             dashboard=self.dashboard,
             profiler=self.profiler,
             now=now,
         )
+        tendency_coordinator = getattr(
+            self,
+            "transformation_tendency_coordinator",
+            None,
+        )
+        if tendency_coordinator is not None:
+            for entry in tuple(entries or ()):
+                tendency_coordinator.process_household_entry(
+                    entry,
+                    pets=self.pets_list,
+                    executor=self.transformation_executor,
+                    now=now,
+                )
+        return entries
 
     def update_rudolf_work(self, now=None):
         now = app_now() if now is None else float(now)
@@ -445,20 +683,25 @@ class TanukiAppRuntime:
             RUDOLF_NAME,
             visible_only=False,
         )
-        return self.rudolf_work_executor.update(
+        result = self.rudolf_work_executor.update(
             now=now,
             world_mode=self.settings_provider.world_mode,
             household=self.household,
             event_schedule=self.household_event_schedule,
             rudolf_pet=rudolf_pet,
-            record_household_event=lambda event: (
-                self.household_coordinator.record_resolved_event(
-                    event,
-                    dashboard=self.dashboard,
-                    pets=self.pets_list,
-                )
-            ),
+            record_household_event=self._record_resolved_household_event,
         )
+        if result.started:
+            self._begin_achievement_activity_session(
+                result.activity_id,
+                world_mode=self.settings_provider.world_mode,
+            )
+        if result.interrupted or result.finished:
+            self._cancel_achievement_activity_session(
+                result.activity_id,
+                reason=result.reason,
+            )
+        return result
 
     def preview_rudolf_work(self, now=None):
         now = app_now() if now is None else float(now)
@@ -476,12 +719,77 @@ class TanukiAppRuntime:
 
     def update_race(self, now=None):
         now = app_now() if now is None else float(now)
-        return self.race_executor.update(
+        result = self.race_executor.update(
             now=now,
             world_mode=self.settings_provider.world_mode,
             pets=self.pets_list,
             record_race_event=self.record_race_event,
         )
+        if result.started:
+            self._begin_achievement_activity_session(
+                result.activity_id,
+                world_mode=self.settings_provider.world_mode,
+            )
+        if result.interrupted or result.finished:
+            self._cancel_achievement_activity_session(
+                result.activity_id,
+                reason=result.reason,
+            )
+        return result
+
+    def update_chorus(self, now=None):
+        now = app_now() if now is None else float(now)
+        results = self.chorus_executor.update(
+            now=now,
+            world_mode=self.settings_provider.world_mode,
+            pets=self.pets_list,
+            record_chorus_event=self.record_chorus_event,
+        )
+        for result in tuple(results or ()):
+            if result.started:
+                session = self.chorus_executor.session
+                if session is not None:
+                    self.achievement_runtime_service.begin_activity_session(
+                        activity_id=session.session_id,
+                        world_mode=session.world_mode,
+                        source=session.source,
+                        execution_mode="autonomous",
+                        started_at=session.started_at,
+                    )
+            if result.interrupted or result.finished:
+                self._cancel_achievement_activity_session(
+                    result.session_id,
+                    reason=result.reason,
+                )
+        return results
+
+    def preview_chorus(self, now=None):
+        now = app_now() if now is None else float(now)
+        return self.chorus_executor.start_preview(
+            now=now,
+            world_mode=self.settings_provider.world_mode,
+            pets=self.pets_list,
+        )
+
+    def is_chorus_preview_active(self):
+        return self.chorus_executor.is_preview_active()
+
+    def record_chorus_event(self, event: ChorusEvent):
+        entry = self.chorus_event_adapter.apply(
+            event,
+            record_household_event=self.record_household_event,
+            apply_mood_reward=self.apply_chorus_mood_reward,
+            apply_relationship_reward=(
+                self.apply_chorus_relationship_reward
+            ),
+        )
+        if (
+            entry is not None
+            and event.event_type == "chorus_completed"
+            and hasattr(self.dashboard, "refresh_relationship_table_if_open")
+        ):
+            self.dashboard.refresh_relationship_table_if_open()
+        return entry
 
     def preview_rudolf_teio_race(self, now=None):
         now = app_now() if now is None else float(now)
@@ -506,7 +814,23 @@ class TanukiAppRuntime:
             event,
             record_household_event=self.record_household_event,
             race_statistics=self.household.race_statistics,
+            apply_winner_mood_reward=self.apply_race_mood_reward,
+            apply_reverse_relationship_reward=(
+                self.apply_reverse_race_relationship_reward
+            ),
         )
+        tendency_coordinator = getattr(
+            self,
+            "transformation_tendency_coordinator",
+            None,
+        )
+        if tendency_coordinator is not None:
+            tendency_coordinator.process_race_event(
+                event,
+                pets=self.pets_list,
+                executor=self.transformation_executor,
+                now=float(event.occurred_at),
+            )
         if (
             entry is not None
             and event.event_type == "race_completed"
@@ -586,7 +910,16 @@ class TanukiAppRuntime:
         for result in transition_results:
             if not result.completed:
                 continue
-            if result.source in {
+            if (
+                getattr(result, "source", "")
+                in {"autonomous_start", "sandbox_autonomous_start"}
+                and getattr(result, "current_form", "") == "transformed"
+            ):
+                self._complete_transformation_achievement(
+                    result,
+                    occurred_at=sim_now,
+                )
+            if getattr(result, "source", "") in {
                 "autonomous_start",
                 "autonomous_end",
             }:
@@ -608,7 +941,63 @@ class TanukiAppRuntime:
             sim_now=sim_now,
             transition_now=transition_now,
         )
+        for result in tuple(auto_results or ()):
+            if (
+                bool(getattr(result, "started", False))
+                and getattr(result, "target_form", "") == "transformed"
+                and getattr(result, "source", "")
+                in {"autonomous_start", "sandbox_autonomous_start"}
+            ):
+                self._begin_transformation_achievement(
+                    result,
+                    started_at=sim_now,
+                )
+        self._cancel_orphaned_transformation_achievement_sessions()
+        tendency_coordinator = getattr(
+            self,
+            "transformation_tendency_coordinator",
+            None,
+        )
+        if tendency_coordinator is not None:
+            tendency_coordinator.update_context(
+                pets=self.pets_list,
+                household_pressure=float(self.household.household_pressure),
+                executor=self.transformation_executor,
+                now=sim_now,
+            )
         return (*transition_results, *auto_results)
+
+    def _begin_transformation_achievement(self, result, *, started_at):
+        bridge = getattr(self, "achievement_gameplay_bridge", None)
+        if bridge is None:
+            return False
+        return bridge.begin_transformation(
+            result,
+            started_at=float(started_at),
+        )
+
+    def _complete_transformation_achievement(self, result, *, occurred_at):
+        bridge = getattr(self, "achievement_gameplay_bridge", None)
+        if bridge is None:
+            return None
+        return bridge.complete_transformation(
+            result,
+            occurred_at=float(occurred_at),
+        )
+        return self._consume_achievement_payload(metadata)
+
+    def _cancel_orphaned_transformation_achievement_sessions(self):
+        bridge = getattr(self, "achievement_gameplay_bridge", None)
+        if bridge is None:
+            return
+        active_names = []
+        for pet in self.pets_list:
+            state = getattr(pet, "transformation_state", None)
+            if state is not None and bool(getattr(state, "active", False)):
+                active_names.append(str(getattr(pet, "name", "") or ""))
+        bridge.cancel_orphaned_transformations(
+            active_names
+        )
 
     def record_transformation_event(self, result, *, occurred_at):
         entered_transformed = result.current_form == "transformed"
@@ -645,11 +1034,74 @@ class TanukiAppRuntime:
 
     def update_sleep(self, now=None):
         now = app_now() if now is None else float(now)
-        return self.sleep_executor.update(
+        results = self.sleep_executor.update(
             now=now,
             pets=self.pets_list,
             world_mode=self.settings_provider.world_mode,
         )
+        for result in tuple(results or ()):
+            self._handle_sleep_achievement_result(result, now=now)
+        self._sync_sleep_join_achievement_sessions(now=now)
+        self._update_sleep_achievement_snapshot(now=now)
+        return results
+
+    def toggle_sleep_control(self, pet_name, now=None):
+        now = app_now() if now is None else float(now)
+        result = self.sleep_executor.request_sandbox_toggle(
+            self.find_pet_by_name(
+                str(pet_name or ""),
+                visible_only=False,
+            ),
+            now=now,
+            world_mode=self.settings_provider.world_mode,
+            pets=self.pets_list,
+        )
+        self._handle_sleep_achievement_result(result, now=now)
+        self._update_sleep_achievement_snapshot(now=now)
+        return result
+
+    def get_sleep_control_state(self, pet_name):
+        pet = self.find_pet_by_name(
+            str(pet_name or ""),
+            visible_only=False,
+        )
+        activity = (
+            self.activity_coordinator.get_activity_for_participant(
+                str(pet_name or "")
+            )
+            if pet is not None
+            else None
+        )
+        sleep_activity = (
+            activity
+            if activity is not None
+            and activity.spec.kind == SLEEP_ACTIVITY_KIND
+            else None
+        )
+        visible = bool(
+            pet is not None
+            and getattr(pet, "user_visible", True)
+            and getattr(pet, "isVisible", lambda: False)()
+        )
+        return {
+            "character_name": str(pet_name or ""),
+            "available": pet is not None,
+            "visible": visible,
+            "active": sleep_activity is not None,
+            "phase": str(
+                getattr(
+                    getattr(sleep_activity, "phase", None),
+                    "name",
+                    "",
+                )
+                or ""
+            ),
+            "form_allows_sleep": bool(
+                pet is not None
+                and pet_form_allows_capability(pet, CAPABILITY_SLEEP)
+            ),
+            "world_mode": str(self.settings_provider.world_mode or ""),
+        }
 
     def update_sleep_join_behavior(
         self,
@@ -658,11 +1110,134 @@ class TanukiAppRuntime:
         now=None,
     ):
         now = app_now() if now is None else float(now)
-        return self.sleep_executor.update_join_behavior(
+        participant_name = str(getattr(pet, "name", "") or "")
+        before_activity = self.activity_coordinator.get_activity_for_participant(
+            participant_name
+        )
+        handled = self.sleep_executor.update_join_behavior(
             pet,
             all_pets,
             now=now,
             world_mode=self.settings_provider.world_mode,
+        )
+        after_activity = self.activity_coordinator.get_activity_for_participant(
+            participant_name
+        )
+        if (
+            before_activity is None
+            and after_activity is not None
+            and after_activity.spec.kind == SLEEP_ACTIVITY_KIND
+            and str(
+                after_activity.metadata.get("sleep_trigger", "") or ""
+            )
+            == SLEEP_TRIGGER_OBSERVED_JOIN
+        ):
+            metadata = dict(after_activity.metadata)
+            metadata.update(
+                {
+                    "source": str(after_activity.source or ""),
+                    "started_at": float(after_activity.started_at),
+                }
+            )
+            self._complete_sleep_group_join_achievement(
+                participant_name,
+                activity=after_activity,
+                now=now,
+            )
+            self._begin_sleep_achievement_session(
+                after_activity.activity_id,
+                participant_name=participant_name,
+                metadata=metadata,
+            )
+        self._sync_sleep_join_achievement_sessions(now=now)
+        self._update_sleep_achievement_snapshot(now=now)
+        return handled
+
+    def _handle_sleep_achievement_result(self, result, *, now):
+        bridge = getattr(self, "achievement_gameplay_bridge", None)
+        if bridge is None:
+            return None
+        return bridge.handle_sleep_result(
+            result,
+            now=float(now),
+        )
+        return self._consume_achievement_payload(event_metadata)
+
+    def _begin_sleep_achievement_session(
+        self,
+        activity_id,
+        *,
+        participant_name,
+        metadata,
+    ):
+        _ = participant_name
+        bridge = getattr(self, "achievement_gameplay_bridge", None)
+        if bridge is None:
+            return False
+        return bridge.begin_sleep_session(
+            str(activity_id or ""),
+            metadata=metadata,
+        )
+
+    def _sync_sleep_join_achievement_sessions(self, *, now):
+        executor = getattr(self, "sleep_executor", None)
+        bridge = getattr(self, "achievement_gameplay_bridge", None)
+        if executor is None or bridge is None:
+            return
+        bridge.sync_sleep_join_sessions(
+            getattr(executor, "join_attempts", {}),
+            now=float(now),
+        )
+
+    def _complete_sleep_group_join_achievement(
+        self,
+        participant_name,
+        *,
+        activity,
+        now,
+    ):
+        bridge = getattr(self, "achievement_gameplay_bridge", None)
+        if bridge is None:
+            return None
+        return bridge.complete_sleep_group_join(
+            str(participant_name or ""),
+            activity=activity,
+            now=float(now),
+        )
+
+    def _update_sleep_achievement_snapshot(self, *, now):
+        coordinator = getattr(self, "activity_coordinator", None)
+        bridge = getattr(self, "achievement_gameplay_bridge", None)
+        if coordinator is None or bridge is None:
+            return None
+        return bridge.update_sleep_snapshot(
+            coordinator.get_active_activities(),
+            now=float(now),
+        )
+
+    def handle_care_activity_event(
+        self,
+        stage,
+        caregiver,
+        target,
+        *,
+        now,
+        success=None,
+        care_mode="",
+    ):
+        caregiver_name = str(getattr(caregiver, "name", "") or "")
+        target_name = str(getattr(target, "name", "") or "")
+        bridge = getattr(self, "achievement_gameplay_bridge", None)
+        if bridge is None:
+            return None
+        return bridge.handle_care_event(
+            str(stage or ""),
+            caregiver_name=caregiver_name,
+            target_name=target_name,
+            caregiver_form=get_pet_form_key(caregiver),
+            now=float(now),
+            success=success,
+            care_mode=str(care_mode or ""),
         )
 
     def interrupt_pet_activity_for_user(
@@ -684,35 +1259,92 @@ class TanukiAppRuntime:
         if activity is not None and activity.spec.kind == "race":
             if str(reason or "") == "user_click":
                 return False
-            return self.race_executor.interrupt_pet(
+            result = self.race_executor.interrupt_pet(
                 pet,
                 now=now,
                 reason=reason,
                 pets=self.pets_list,
-            ).handled
+            )
+            if result.handled:
+                cancel_achievement = getattr(
+                    self,
+                    "_cancel_achievement_activity_session",
+                    None,
+                )
+                if callable(cancel_achievement):
+                    cancel_achievement(
+                        getattr(activity, "activity_id", ""),
+                        reason=reason,
+                    )
+            return result.handled
+        if activity is not None and activity.spec.kind == "chorus":
+            if str(reason or "") == "user_click":
+                return False
+            result = self.chorus_executor.remove_pet(
+                pet,
+                now=now,
+                reason=reason,
+                pets=self.pets_list,
+            )
+            if result.handled and self.chorus_executor.session is None:
+                cancel_achievement = getattr(
+                    self,
+                    "_cancel_achievement_activity_session",
+                    None,
+                )
+                if callable(cancel_achievement):
+                    cancel_achievement(
+                        result.session_id,
+                        reason=reason,
+                    )
+            return result.handled
         if str(reason or "") == "user_click":
             return self.sleep_executor.request_early_wake(
                 pet,
                 now=now,
                 reason=reason,
             ).handled
-        return self.sleep_executor.interrupt_pet(
+        result = self.sleep_executor.interrupt_pet(
             pet,
             now=now,
             reason=reason,
-        ).handled
+        )
+        if result.handled and result.activity_id:
+            self._cancel_achievement_activity_session(
+                result.activity_id,
+                reason=reason,
+            )
+        return result.handled
 
     def capture_household_persistence_state(self):
-        return self.household_coordinator.capture_persistence_state()
+        payload = self.household_coordinator.capture_persistence_state()
+        payload["achievements"] = capture_achievement_persistence_state(
+            self.achievement_state
+        )
+        return payload
 
     def apply_household_persistence_state(self, payload):
-        return self.household_coordinator.apply_persistence_state(
+        applied = self.household_coordinator.apply_persistence_state(
             payload,
             dashboard=self.dashboard,
         )
+        achievement_payload = (
+            payload.get("achievements")
+            if isinstance(payload, dict)
+            else None
+        )
+        if isinstance(achievement_payload, dict):
+            apply_achievement_persistence_state(
+                achievement_payload,
+                self.achievement_state,
+            )
+        return applied
 
     def handle_world_mode_change(self, world_mode, previous_mode=None):
         if str(world_mode or "") != str(previous_mode or ""):
+            self.achievement_eligibility_guard.observe_world_mode(
+                str(world_mode or "")
+            )
             self.rudolf_work_executor.interrupt_active(
                 now=app_now(),
                 reason="world_mode_changed",
@@ -730,6 +1362,14 @@ class TanukiAppRuntime:
                 now=app_now(),
                 pets=self.pets_list,
                 reason="world_mode_changed",
+            )
+            self.chorus_executor.interrupt_all(
+                now=app_now(),
+                pets=self.pets_list,
+                reason="world_mode_changed",
+            )
+            self.achievement_runtime_service.cancel_all_activity_sessions(
+                reason="world_mode_changed"
             )
         return self.household_coordinator.handle_world_mode_change(
             world_mode,
@@ -766,6 +1406,14 @@ class TanukiAppRuntime:
 
     def clear_offer_scene(self):
         scene = self.offer_scene
+        if scene is not None and scene.scene_kind in {
+            "honey_guard",
+            "shared_food",
+        }:
+            self._cancel_achievement_activity_session(
+                self.item_scene_coordinator.get_scene_id(scene),
+                reason="offer_scene_cleared",
+            )
         if scene is not None and scene.scene_kind == "shared_food":
             shared_state = scene.shared_food_state
             if not shared_state.item_hidden:
@@ -1800,7 +2448,7 @@ class TanukiAppRuntime:
         source="offer_tray",
         outcome_roll=None,
     ):
-        return self.shared_food_scene_executor.start_shared_food_scene(
+        started = self.shared_food_scene_executor.start_shared_food_scene(
             self,
             holder_pet,
             partner_pet,
@@ -1810,13 +2458,37 @@ class TanukiAppRuntime:
             now=app_now(),
             roll_provider=random.random,
         )
+        if (
+            started
+            and self.offer_scene is not None
+            and self.offer_scene.scene_kind == "shared_food"
+        ):
+            self._begin_offer_achievement_session(self.offer_scene)
+        return started
 
     def start_honey_guard_scene(self, child_pet, source="offer_tray"):
-        return self.bottle_honey_scene_executor.start_honey_guard_scene(
+        started = self.bottle_honey_scene_executor.start_honey_guard_scene(
             self,
             child_pet,
             source=source,
             now=app_now(),
+        )
+        if (
+            started
+            and self.offer_scene is not None
+            and self.offer_scene.scene_kind == "honey_guard"
+        ):
+            self._begin_offer_achievement_session(self.offer_scene)
+        return started
+
+    def _begin_offer_achievement_session(self, scene):
+        bridge = getattr(self, "achievement_gameplay_bridge", None)
+        if scene is None or bridge is None:
+            return False
+        return bridge.begin_offer_session(
+            scene_id=self.item_scene_coordinator.get_scene_id(scene),
+            source=str(scene.source or "offer_tray"),
+            started_at=float(scene.started_at or app_now()),
         )
 
     def record_offer_event(self, item_kind, actor_name, target_name, scene_kind, source="offer_tray"):
@@ -1895,8 +2567,32 @@ class TanukiAppRuntime:
             )
             return
         if item_kind == ITEM_HONEY and scene_kind == "honey_guard":
+            occurred_at = app_now()
+            scene = self.offer_scene
+            activity_id = self.item_scene_coordinator.get_scene_id(scene)
+            bridge = getattr(self, "achievement_gameplay_bridge", None)
+            metadata = (
+                bridge.build_honey_guard_metadata(
+                    scene_id=activity_id,
+                    source=str(source or "offer_tray"),
+                    started_at=float(
+                        getattr(scene, "started_at", occurred_at)
+                        or occurred_at
+                    ),
+                    occurred_at=float(occurred_at),
+                    guardian_name=actor_name,
+                    target_name=target_name,
+                    item_kind=item_kind,
+                )
+                if bridge is not None
+                else {
+                    "source": source,
+                    "item_kind": item_kind,
+                    "scene_kind": scene_kind,
+                }
+            )
             self.record_household_event(
-                occurred_at=app_now(),
+                occurred_at=occurred_at,
                 category="player_offer",
                 event_type="offer_honey_guarded",
                 summary=f"{actor_name} 趕緊把鶴寶手邊的蜂蜜拿走，免得她誤食。",
@@ -1904,7 +2600,7 @@ class TanukiAppRuntime:
                 target_name=target_name,
                 relation_delta={"trust": -0.05, "attachment": 0.05, "tension": 0.35},
                 household_pressure_delta=1.5,
-                metadata={"source": source, "item_kind": item_kind, "scene_kind": scene_kind},
+                metadata=metadata,
             )
             return
         if item_kind == ITEM_HONEY and scene_kind == "deny_only":
@@ -1942,6 +2638,40 @@ class TanukiAppRuntime:
             now=app_now(),
         )
 
+    def build_shared_food_achievement_metadata(
+        self,
+        profile,
+        shared_state,
+        *,
+        source,
+        now,
+    ):
+        scene = self.offer_scene
+        activity_id = self.item_scene_coordinator.get_scene_id(scene)
+        bridge = getattr(self, "achievement_gameplay_bridge", None)
+        if bridge is None:
+            return {
+                "source": source,
+                "item_kind": profile.item_kind,
+                "scene_kind": "shared_food",
+                "profile_key": profile.profile_key,
+                "outcome": shared_state.outcome_key,
+            }
+        return bridge.build_shared_food_metadata(
+            scene_id=activity_id,
+            source=str(source or "offer_tray"),
+            started_at=float(
+                getattr(scene, "started_at", now) or now
+            ),
+            occurred_at=float(now),
+            holder_name=shared_state.holder_name,
+            partner_name=shared_state.partner_name,
+            consumer_names=shared_state.consumer_names,
+            item_kind=profile.item_kind,
+            profile_key=profile.profile_key,
+            outcome=shared_state.outcome_key,
+        )
+
     def apply_shared_food_outcome_effects(self, shared_state):
         return self.shared_food_scene_executor.apply_shared_food_outcome_effects(
             self,
@@ -1966,6 +2696,50 @@ class TanukiAppRuntime:
         if hasattr(pet, "pop_heart"):
             pet.pop_heart()
         return True
+
+    def apply_race_mood_reward(self, target_name, amount):
+        pet = self.find_pet_by_name(target_name, visible_only=False)
+        if pet is None:
+            return False
+        pet.mood_score = apply_pet_form_mood_floor(
+            pet,
+            min(100.0, float(pet.mood_score) + float(amount)),
+        )
+        sync_mood = getattr(pet, "sync_mood_state_with_score", None)
+        if callable(sync_mood):
+            sync_mood()
+        return True
+
+    def apply_reverse_race_relationship_reward(
+        self,
+        actor_name,
+        target_name,
+        relation_delta,
+        occurred_at,
+    ):
+        return self.household.relationships.apply_delta(
+            actor_name=str(actor_name or ""),
+            target_name=str(target_name or ""),
+            relation_delta=dict(relation_delta or {}),
+            updated_at=float(occurred_at),
+        )
+
+    def apply_chorus_mood_reward(self, target_name, amount):
+        return self.apply_race_mood_reward(target_name, amount)
+
+    def apply_chorus_relationship_reward(
+        self,
+        actor_name,
+        target_name,
+        relation_delta,
+        occurred_at,
+    ):
+        return self.apply_reverse_race_relationship_reward(
+            actor_name,
+            target_name,
+            relation_delta,
+            occurred_at,
+        )
 
     def drop_ground_offer_item(self, item_kind, global_pos):
         return self.ground_item_coordinator.drop_item(
@@ -2299,6 +3073,14 @@ def start_runtime_timers(runtime):
             profiler=runtime.profiler,
             timer_name="race",
         ),
+        "chorus": register_runtime_timer(
+            runtime.app,
+            60,
+            runtime.update_chorus,
+            minimum_interval_ms=12,
+            profiler=runtime.profiler,
+            timer_name="chorus",
+        ),
         "household": register_runtime_timer(
             runtime.app,
             1000,
@@ -2384,6 +3166,19 @@ def create_runtime(app=None):
                 )
             )
         )
+        pet.care_activity_event_provider = (
+            lambda stage, caregiver, target, now, success=None,
+            care_mode="", runtime=runtime: (
+                runtime.handle_care_activity_event(
+                    stage,
+                    caregiver,
+                    target,
+                    now=now,
+                    success=success,
+                    care_mode=care_mode,
+                )
+            )
+        )
     seed_default_household_events(runtime.household, runtime.household_event_log, occurred_at=app_now())
     runtime.household_coordinator.reset_event_schedule(app_now())
     dashboard.set_household_data_providers(
@@ -2391,6 +3186,14 @@ def create_runtime(app=None):
         household_events_provider=lambda limit=24, runtime=runtime: runtime.recent_household_events(limit=limit),
         activity_rhythm_provider=(
             lambda runtime=runtime: runtime.get_activity_rhythm_snapshot()
+        ),
+    )
+    dashboard.set_achievement_data_provider(
+        achievement_snapshot_provider=(
+            lambda runtime=runtime: build_achievement_cabinet_snapshot(
+                runtime.achievement_runtime_service.catalog,
+                runtime.achievement_state,
+            )
         ),
     )
     dashboard.set_household_action_providers(
@@ -2401,6 +3204,10 @@ def create_runtime(app=None):
         rudolf_work_preview_active_provider=lambda runtime=runtime: runtime.is_rudolf_work_preview_active(),
         race_preview_provider=lambda runtime=runtime: runtime.preview_rudolf_teio_race(),
         race_preview_active_provider=lambda runtime=runtime: runtime.is_race_preview_active(),
+        chorus_preview_provider=lambda runtime=runtime: runtime.preview_chorus(),
+        chorus_preview_active_provider=(
+            lambda runtime=runtime: runtime.is_chorus_preview_active()
+        ),
         transformation_toggle_provider=(
             lambda pet_name, runtime=runtime: (
                 runtime.toggle_transformation_preview(pet_name)
@@ -2411,6 +3218,16 @@ def create_runtime(app=None):
                 runtime.get_transformation_preview_state(pet_name)
             )
         ),
+        sleep_toggle_provider=(
+            lambda pet_name, runtime=runtime: (
+                runtime.toggle_sleep_control(pet_name)
+            )
+        ),
+        sleep_state_provider=(
+            lambda pet_name, runtime=runtime: (
+                runtime.get_sleep_control_state(pet_name)
+            )
+        ),
     )
     dashboard.set_household_persistence_providers(
         household_capture_provider=lambda runtime=runtime: runtime.capture_household_persistence_state(),
@@ -2418,6 +3235,13 @@ def create_runtime(app=None):
         world_mode_change_provider=lambda mode, previous_mode=None, runtime=runtime: runtime.handle_world_mode_change(
             mode,
             previous_mode=previous_mode,
+        ),
+        achievement_time_scale_provider=(
+            lambda time_scale, runtime=runtime: (
+                runtime.achievement_eligibility_guard.observe_time_scale(
+                    time_scale
+                )
+            )
         ),
     )
     dashboard.set_offer_interaction_provider(

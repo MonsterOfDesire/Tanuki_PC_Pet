@@ -3,6 +3,7 @@ from types import SimpleNamespace
 
 from tanuki_core.activity_rhythm import clamp_percent, format_compact_duration
 from tanuki_core.app_runtime import TanukiAppRuntime
+from tanuki_core.chorus_state import ChorusScheduleState
 from tanuki_core.race_state import RaceScheduleState
 from tanuki_core.sleep_rules import SleepScheduleState
 from tanuki_core.transformation_state import PetTransformationState
@@ -43,6 +44,12 @@ class ActivityRhythmTests(unittest.TestCase):
                     last_wait_reason="cooldown",
                 )
             ),
+            chorus_executor=SimpleNamespace(
+                schedule=ChorusScheduleState(
+                    next_proposal_at=145.0,
+                    last_wait_reason="initial_delay",
+                )
+            ),
             sleep_executor=SimpleNamespace(
                 schedules={
                     "Tokai Teio": SleepScheduleState(
@@ -61,6 +68,8 @@ class ActivityRhythmTests(unittest.TestCase):
 
         self.assertEqual(snapshot.race_status, "cooldown")
         self.assertEqual(snapshot.race_remaining_seconds, 60.0)
+        self.assertEqual(snapshot.chorus_status, "cooldown")
+        self.assertEqual(snapshot.chorus_remaining_seconds, 45.0)
         self.assertEqual(snapshot.members[0].sleepiness_percent, 37.5)
         self.assertEqual(
             snapshot.members[0].transformation_remaining_seconds,

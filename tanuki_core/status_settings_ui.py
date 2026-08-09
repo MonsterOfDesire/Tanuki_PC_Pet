@@ -46,6 +46,11 @@ RACE_FREQUENCY_TOOLTIPS = {
     "normal": "使用沙盒或黃金傳說各自的標準競賽排程。",
     "occasional": "自主競賽等待與冷卻約為普通的兩倍。",
 }
+CHORUS_FREQUENCY_TOOLTIPS = {
+    "frequent": "自主合奏等待、重試與冷卻約為普通的一半。",
+    "normal": "使用標準自主合奏排程。",
+    "occasional": "自主合奏等待、重試與冷卻約為普通的兩倍。",
+}
 MOOD_CLIMATE_TOOLTIPS = {
     "cheerful": "長期心情傾向約 85，較常維持笑臉。",
     "balanced": "長期心情傾向約 65，保留較多自然波動。",
@@ -63,10 +68,24 @@ RACE_PREVIEW_IDLE_TEXT = (
 RACE_PREVIEW_ACTIVE_TEXT = (
     "魯道夫 vs 帝寶競賽預覽已開始；本次不寫入正式事件或數值。"
 )
+CHORUS_PREVIEW_IDLE_TEXT = (
+    "立即開始一場沙盒合奏；沿用自主反應，不寫事件或套用收益。"
+)
+CHORUS_PREVIEW_ACTIVE_TEXT = (
+    "合奏預覽已開始；本次不寫入事件，也不套用心情或關係收益。"
+)
 TRANSFORMATION_PREVIEW_IDLE_TEXT = (
     "沙盒也會自主變身；按鈕可手動切換形態，且不會觸發正式事件或結算。"
 )
 TRANSFORMATION_PREVIEW_NAMES = TRANSFORMATION_CONTROL_NAMES
+SLEEP_CONTROL_NAMES = {
+    "Symboli Rudolf": "魯道夫",
+    "Tokai Teio": "帝寶",
+    "Sirius Symboli": "天狼星",
+    "Tsurumaru Tsuyoshi": "鶴寶",
+    "Air Groove": "氣槽",
+}
+SLEEP_CONTROL_IDLE_TEXT = "指定角色睡覺或用既有 waking 流程喚醒；僅限沙盒。"
 
 
 class StatusSettingsPanel(QWidget):
@@ -82,12 +101,14 @@ class StatusSettingsPanel(QWidget):
         self.teio_duration_buttons = []
         self.tsuyoshi_duration_buttons = []
         self.race_frequency_buttons = []
+        self.chorus_frequency_buttons = []
         self.mood_climate_buttons = []
         self._button_groups = []
         self._compact_layout = None
         self._single_column_layout = None
         self._waiting_for_rudolf_work_preview = False
         self._waiting_for_race_preview = False
+        self._waiting_for_chorus_preview = False
         self._pending_transformation_request = None
         self._transformation_notice_text = ""
         self._transformation_notice_until = 0.0
@@ -100,6 +121,11 @@ class StatusSettingsPanel(QWidget):
         self.race_preview_poll_timer.setInterval(250)
         self.race_preview_poll_timer.timeout.connect(
             self._poll_race_preview_status
+        )
+        self.chorus_preview_poll_timer = QTimer(self)
+        self.chorus_preview_poll_timer.setInterval(250)
+        self.chorus_preview_poll_timer.timeout.connect(
+            self._poll_chorus_preview_status
         )
         self.transformation_preview_poll_timer = QTimer(self)
         self.transformation_preview_poll_timer.setInterval(100)
@@ -191,13 +217,20 @@ class StatusSettingsPanel(QWidget):
         self.rhythm_layout.addWidget(race_frequency_label, 0, 0)
         self.race_frequency_row = QHBoxLayout()
         self.rhythm_layout.addLayout(self.race_frequency_row, 0, 1)
+        chorus_frequency_label = self._create_label("合奏頻率")
+        chorus_frequency_label.setToolTip(
+            "調整自主合奏的等待、重試與冷卻時間；不略過資格、距離或反應判定。"
+        )
+        self.rhythm_layout.addWidget(chorus_frequency_label, 1, 0)
+        self.chorus_frequency_row = QHBoxLayout()
+        self.rhythm_layout.addLayout(self.chorus_frequency_row, 1, 1)
         mood_climate_label = self._create_label("情緒氣候")
         mood_climate_label.setToolTip(
             "調整角色長期心情的回歸目標；事件造成的即時心情變化仍會保留。"
         )
-        self.rhythm_layout.addWidget(mood_climate_label, 1, 0)
+        self.rhythm_layout.addWidget(mood_climate_label, 2, 0)
         self.mood_climate_row = QHBoxLayout()
-        self.rhythm_layout.addLayout(self.mood_climate_row, 1, 1)
+        self.rhythm_layout.addLayout(self.mood_climate_row, 2, 1)
 
         self.developer_group = self._create_group("開發工具")
         self.developer_layout = QVBoxLayout(self.developer_group)
@@ -276,6 +309,23 @@ class StatusSettingsPanel(QWidget):
         )
         self.race_preview_status.setWordWrap(True)
         self.developer_layout.addWidget(self.race_preview_status)
+        self.chorus_preview_button = QPushButton("立即預覽合奏")
+        self.chorus_preview_button.setProperty(
+            "tanukiRole",
+            "settingsAction",
+        )
+        self.chorus_preview_button.setAccessibleName("立即預覽合奏")
+        self.chorus_preview_button.clicked.connect(
+            self._handle_chorus_preview
+        )
+        self.developer_layout.addWidget(self.chorus_preview_button)
+        self.chorus_preview_status = QLabel(CHORUS_PREVIEW_IDLE_TEXT)
+        self.chorus_preview_status.setProperty(
+            "tanukiRole",
+            "settingsNotice",
+        )
+        self.chorus_preview_status.setWordWrap(True)
+        self.developer_layout.addWidget(self.chorus_preview_status)
         self.transformation_control_label = self._create_label(
             "沙盒形態控制"
         )
@@ -313,6 +363,37 @@ class StatusSettingsPanel(QWidget):
         self.developer_layout.addWidget(
             self.transformation_preview_status
         )
+        self.sleep_control_label = self._create_label("沙盒睡眠控制")
+        self.developer_layout.addWidget(self.sleep_control_label)
+        self.sleep_control_grid = QGridLayout()
+        self.sleep_control_grid.setHorizontalSpacing(theme.spacing_sm)
+        self.sleep_control_grid.setVerticalSpacing(theme.spacing_sm)
+        self.sleep_control_buttons = {}
+        for index, (pet_name, display_name) in enumerate(
+            SLEEP_CONTROL_NAMES.items()
+        ):
+            button = QPushButton(f"讓{display_name}睡覺")
+            button.setProperty("tanukiRole", "settingsAction")
+            button.setAccessibleName(f"切換{display_name}睡眠狀態")
+            button.clicked.connect(
+                lambda checked=False, name=pet_name: (
+                    self._handle_sleep_control(name)
+                )
+            )
+            self.sleep_control_grid.addWidget(
+                button,
+                index // 3,
+                index % 3,
+            )
+            self.sleep_control_buttons[pet_name] = button
+        self.developer_layout.addLayout(self.sleep_control_grid)
+        self.sleep_control_status = QLabel(SLEEP_CONTROL_IDLE_TEXT)
+        self.sleep_control_status.setProperty(
+            "tanukiRole",
+            "settingsNotice",
+        )
+        self.sleep_control_status.setWordWrap(True)
+        self.developer_layout.addWidget(self.sleep_control_status)
         self.validation_button = QPushButton("檢查 Config / Manifest")
         self.validation_button.setProperty("tanukiRole", "settingsAction")
         self.validation_button.clicked.connect(self._handle_validation)
@@ -346,11 +427,13 @@ class StatusSettingsPanel(QWidget):
         binding_changed = binding is not self.binding
         if binding_changed:
             self._reset_race_preview_status()
+            self._reset_chorus_preview_status()
             self._reset_transformation_preview_status()
         self.binding = binding
         if binding is None:
             self._reset_rudolf_work_preview_status()
             self._reset_race_preview_status()
+            self._reset_chorus_preview_status()
         self.unavailable_label.setVisible(binding is None)
         self.settings_grid.setEnabled(binding is not None)
         if binding is not None:
@@ -367,6 +450,7 @@ class StatusSettingsPanel(QWidget):
             snapshot.teio_duration_options,
             snapshot.tsuyoshi_duration_options,
             snapshot.race_frequency_options,
+            snapshot.chorus_frequency_options,
             snapshot.mood_climate_options,
         )
         if force_rebuild or signature != self._option_signature:
@@ -408,6 +492,15 @@ class StatusSettingsPanel(QWidget):
                 if preview_enabled
                 else "只可在沙盒模式使用競賽預覽。"
             )
+            self.chorus_preview_button.setEnabled(preview_enabled)
+            self.chorus_preview_button.setToolTip(
+                (
+                    "立即開始合奏並沿用自主加入／觀看反應；"
+                    "不寫入事件或套用收益。"
+                )
+                if preview_enabled
+                else "只可在沙盒模式使用合奏預覽。"
+            )
             transformation_states = (
                 self._transformation_control_states()
             )
@@ -421,6 +514,7 @@ class StatusSettingsPanel(QWidget):
                 transformation_presentation,
                 transformation_states,
             )
+            self._refresh_sleep_controls(snapshot.world_mode)
             self._set_checked(
                 self.world_mode_buttons,
                 self._option_index(
@@ -437,6 +531,13 @@ class StatusSettingsPanel(QWidget):
                 self._option_index(
                     snapshot.race_frequency_options,
                     snapshot.race_frequency,
+                ),
+            )
+            self._set_checked(
+                self.chorus_frequency_buttons,
+                self._option_index(
+                    snapshot.chorus_frequency_options,
+                    snapshot.chorus_frequency,
                 ),
             )
             self._set_checked(
@@ -496,6 +597,14 @@ class StatusSettingsPanel(QWidget):
                 snapshot.race_frequency_options[index]
             ),
         )
+        self.chorus_frequency_buttons = self._populate_selector(
+            self.chorus_frequency_row,
+            snapshot.chorus_frequency_options,
+            lambda value: RACE_FREQUENCY_LABELS.get(value, str(value)),
+            lambda index: self._handle_chorus_frequency(
+                snapshot.chorus_frequency_options[index]
+            ),
+        )
         self.mood_climate_buttons = self._populate_selector(
             self.mood_climate_row,
             snapshot.mood_climate_options,
@@ -511,6 +620,11 @@ class StatusSettingsPanel(QWidget):
             button.setToolTip(
                 RACE_FREQUENCY_TOOLTIPS.get(value, "")
             )
+        for value, button in zip(
+            snapshot.chorus_frequency_options,
+            self.chorus_frequency_buttons,
+        ):
+            button.setToolTip(CHORUS_FREQUENCY_TOOLTIPS.get(value, ""))
         for value, button in zip(
             snapshot.mood_climate_options,
             self.mood_climate_buttons,
@@ -555,6 +669,7 @@ class StatusSettingsPanel(QWidget):
 
     def hideEvent(self, event):
         self.race_preview_poll_timer.stop()
+        self._reset_chorus_preview_status()
         self.transformation_preview_poll_timer.stop()
         super().hideEvent(event)
 
@@ -601,6 +716,7 @@ class StatusSettingsPanel(QWidget):
             self.teio_duration_row,
             self.tsuyoshi_duration_row,
             self.race_frequency_row,
+            self.chorus_frequency_row,
             self.mood_climate_row,
         ):
             selector_layout.setSpacing(horizontal_spacing)
@@ -611,6 +727,7 @@ class StatusSettingsPanel(QWidget):
             + self.teio_duration_buttons
             + self.tsuyoshi_duration_buttons
             + self.race_frequency_buttons
+            + self.chorus_frequency_buttons
             + self.mood_climate_buttons
         ):
             button.setProperty("compact", compact)
@@ -660,6 +777,7 @@ class StatusSettingsPanel(QWidget):
             return
         self._reset_rudolf_work_preview_status()
         self._reset_race_preview_status()
+        self._reset_chorus_preview_status()
         self._reset_transformation_preview_status()
         self.binding.set_world_mode(world_mode)
         self.refresh_from_binding()
@@ -698,6 +816,12 @@ class StatusSettingsPanel(QWidget):
         if self.binding is None:
             return
         self.binding.set_race_frequency(value)
+        self.refresh_from_binding()
+
+    def _handle_chorus_frequency(self, value):
+        if self.binding is None:
+            return
+        self.binding.set_chorus_frequency(value)
         self.refresh_from_binding()
 
     def _handle_mood_climate(self, value):
@@ -773,6 +897,35 @@ class StatusSettingsPanel(QWidget):
         self.race_preview_poll_timer.stop()
         self.race_preview_status.setText(RACE_PREVIEW_IDLE_TEXT)
 
+    def _handle_chorus_preview(self):
+        if self.binding is None:
+            return
+        result = self.binding.preview_chorus()
+        self.chorus_preview_status.setText(
+            self._chorus_preview_message(result)
+        )
+        if bool(getattr(result, "started", False)):
+            self._waiting_for_chorus_preview = True
+            self.chorus_preview_poll_timer.start()
+
+    def _poll_chorus_preview_status(self):
+        if not self._waiting_for_chorus_preview or self.binding is None:
+            self._reset_chorus_preview_status()
+            return
+        active_provider = getattr(
+            self.binding,
+            "is_chorus_preview_active",
+            None,
+        )
+        if callable(active_provider) and bool(active_provider()):
+            return
+        self._reset_chorus_preview_status()
+
+    def _reset_chorus_preview_status(self):
+        self._waiting_for_chorus_preview = False
+        self.chorus_preview_poll_timer.stop()
+        self.chorus_preview_status.setText(CHORUS_PREVIEW_IDLE_TEXT)
+
     def _handle_transformation_preview(self, pet_name):
         if self.binding is None:
             return
@@ -797,6 +950,70 @@ class StatusSettingsPanel(QWidget):
                 self._transformation_preview_message(result)
             )
         self.refresh_from_binding()
+
+    def _handle_sleep_control(self, pet_name):
+        if self.binding is None:
+            return
+        toggle = getattr(self.binding, "toggle_sleep_control", None)
+        result = toggle(pet_name) if callable(toggle) else None
+        display_name = SLEEP_CONTROL_NAMES.get(pet_name, "角色")
+        if bool(getattr(result, "started", False)):
+            message = f"{display_name}已開始進入睡眠。"
+        elif bool(getattr(result, "phase_changed", False)):
+            message = f"{display_name}已進入喚醒過場。"
+        else:
+            reason = str(getattr(result, "reason", "") or "")
+            messages = {
+                "sandbox_required": "睡眠控制僅可在沙盒模式使用。",
+                "participant_unavailable": "找不到指定角色。",
+                "participant_hidden": "角色目前未召喚，無法指定睡眠。",
+                "participant_owned": "角色正在進行其他活動，暫時無法睡覺。",
+                "form_blocks_sleep": "角色目前形態不允許睡眠。",
+                "already_waking": "角色已在喚醒過場中。",
+                "sleep_capacity_reached": "目前沒有可用的睡眠名額。",
+            }
+            message = messages.get(
+                reason,
+                f"無法切換睡眠：{reason}" if reason else "無法切換睡眠。",
+            )
+        self.sleep_control_status.setText(message)
+        self.refresh_from_binding()
+
+    def _refresh_sleep_controls(self, world_mode):
+        provider = getattr(self.binding, "get_sleep_control_state", None)
+        sandbox = str(world_mode or "") == "sandbox"
+        for pet_name, display_name in SLEEP_CONTROL_NAMES.items():
+            state = (
+                dict(provider(pet_name) or {})
+                if callable(provider)
+                else {}
+            )
+            button = self.sleep_control_buttons[pet_name]
+            active = bool(state.get("active", False))
+            phase = str(state.get("phase", "") or "")
+            available = bool(state.get("available", False))
+            visible = bool(state.get("visible", False))
+            form_allows = bool(state.get("form_allows_sleep", False))
+            if active and phase == "waking":
+                button.setText(f"{display_name}喚醒中")
+                button.setEnabled(False)
+                button.setToolTip("角色正在播放既有 waking 過場。")
+            elif active:
+                button.setText(f"喚醒{display_name}")
+                button.setEnabled(sandbox)
+                button.setToolTip("使用既有 waking 流程提早喚醒。")
+            elif not form_allows and available:
+                button.setText(f"{display_name}無法睡眠")
+                button.setEnabled(False)
+                button.setToolTip("角色目前形態不允許睡眠。")
+            else:
+                button.setText(f"讓{display_name}睡覺")
+                button.setEnabled(sandbox and available and visible)
+                button.setToolTip(
+                    "指定角色立即進入既有睡眠流程。"
+                    if sandbox and available and visible
+                    else "僅可在沙盒中對已召喚角色使用。"
+                )
 
     def _poll_transformation_preview_status(self):
         if self.binding is None:
@@ -1010,6 +1227,7 @@ class StatusSettingsPanel(QWidget):
             "race_already_active": "無法預覽：目前已有競賽正在進行。",
             "participants_too_far": "無法預覽：魯道夫與帝寶距離太遠，請先將兩人移近。",
             "participants_too_close": "無法預覽：魯道夫與帝寶距離太近，請稍候兩人自然分開。",
+            "race_course_unavailable": "無法預覽：目前桌面寬度不足以容納最短 500px 跑道。",
             "participant_owned": "無法預覽：參賽者正在執行其他 Activity。",
         }
         if reason in messages:
@@ -1018,6 +1236,28 @@ class StatusSettingsPanel(QWidget):
             return "無法預覽：參賽者正在進行其他互動。"
         if reason.startswith("capability_unavailable:"):
             return "無法預覽：manifest 缺少符合目前形態與 band 的競賽素材。"
+        return f"無法預覽：{reason}" if reason else "無法預覽。"
+
+    @staticmethod
+    def _chorus_preview_message(result):
+        if result is None:
+            return "無法預覽：請先切換至沙盒模式，或 Runtime 尚未連接。"
+        if bool(getattr(result, "started", False)):
+            return CHORUS_PREVIEW_ACTIVE_TEXT
+        reason = str(getattr(result, "reason", "") or "")
+        messages = {
+            "preview_requires_sandbox": "無法預覽：請先切換至沙盒模式。",
+            "chorus_already_active": "無法預覽：目前已有合奏正在進行。",
+            "no_eligible_performer": (
+                "無法預覽：沒有可發起合奏的空閒角色或相符素材。"
+            ),
+            "empty_session_id": "無法預覽：無法建立合奏識別碼。",
+            "perform_animation_unavailable": (
+                "無法預覽：manifest 缺少符合目前形態與 band 的演奏素材。"
+            ),
+        }
+        if reason in messages:
+            return messages[reason]
         return f"無法預覽：{reason}" if reason else "無法預覽。"
 
     @staticmethod

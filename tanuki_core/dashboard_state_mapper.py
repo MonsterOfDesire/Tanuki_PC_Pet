@@ -21,6 +21,7 @@ class DashboardConfigState:
     debug_enabled: bool
     social_status_enabled: bool = False
     race_frequency: str = "normal"
+    chorus_frequency: str = "normal"
     mood_climate: str = "cheerful"
     information_center: InformationCenterConfigState = field(
         default_factory=InformationCenterConfigState
@@ -78,6 +79,7 @@ def build_dashboard_config_state(
     debug_enabled,
     social_status_enabled=False,
     race_frequency="normal",
+    chorus_frequency="normal",
     mood_climate="cheerful",
     information_center=None,
 ):
@@ -94,6 +96,11 @@ def build_dashboard_config_state(
             race_frequency,
             RuntimeSettings.RACE_FREQUENCY_OPTIONS[1],
             RuntimeSettings.RACE_FREQUENCY_OPTIONS,
+        ),
+        chorus_frequency=safe_option(
+            chorus_frequency,
+            RuntimeSettings.CHORUS_FREQUENCY_OPTIONS[1],
+            RuntimeSettings.CHORUS_FREQUENCY_OPTIONS,
         ),
         mood_climate=safe_option(
             mood_climate,
@@ -152,6 +159,14 @@ def normalize_dashboard_config_state(raw_state, defaults, option_bounds):
             getattr(defaults, "race_frequency", "normal"),
             RuntimeSettings.RACE_FREQUENCY_OPTIONS,
         ),
+        chorus_frequency=safe_option(
+            raw_state.get(
+                "chorus_frequency",
+                getattr(defaults, "chorus_frequency", "normal"),
+            ),
+            getattr(defaults, "chorus_frequency", "normal"),
+            RuntimeSettings.CHORUS_FREQUENCY_OPTIONS,
+        ),
         mood_climate=safe_option(
             raw_state.get(
                 "mood_climate",
@@ -179,6 +194,9 @@ def dashboard_config_state_to_payload(state):
         "social_status_enabled": bool(state.social_status_enabled),
         "race_frequency": str(
             getattr(state, "race_frequency", "normal")
+        ),
+        "chorus_frequency": str(
+            getattr(state, "chorus_frequency", "normal")
         ),
         "mood_climate": str(
             getattr(state, "mood_climate", "cheerful")
@@ -208,6 +226,11 @@ def apply_dashboard_config_to_settings(settings_provider, state):
         getattr(state, "race_frequency", "normal"),
         "normal",
         RuntimeSettings.RACE_FREQUENCY_OPTIONS,
+    )
+    settings_provider.chorus_frequency = safe_option(
+        getattr(state, "chorus_frequency", "normal"),
+        "normal",
+        RuntimeSettings.CHORUS_FREQUENCY_OPTIONS,
     )
     settings_provider.mood_climate = safe_option(
         getattr(state, "mood_climate", "cheerful"),

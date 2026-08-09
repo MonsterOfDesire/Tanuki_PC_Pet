@@ -23,6 +23,10 @@ ANIMATION_EXTENSION = ".gif"
 
 KNOWN_CONTEXTS = frozenset(
     {
+        "activity_chorus_approach",
+        "activity_chorus_finish",
+        "activity_chorus_observe",
+        "activity_chorus_perform",
         "activity_race_accept",
         "activity_race_challenge",
         "activity_race_consider",

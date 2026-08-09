@@ -46,10 +46,12 @@ $uiFamilyPath = Join-Path $uiDir "family_status_abstract.png"
 $uiFamilyCharacterPath = Join-Path $uiDir "family_status_abstract_char.gif"
 $uiSettingsPath = Join-Path $uiDir "status_setting.png"
 $uiSettingsCharacterPath = Join-Path $uiDir "status_setting_char.gif"
+$uiAchievementPath = Join-Path $uiDir "achievement.png"
+$uiAchievementCharacterPath = Join-Path $uiDir "achievement_char.gif"
+$uiTrophiesDir = Join-Path $uiDir "trophies"
+$uiAchievementCatalogPath = Join-Path $uiTrophiesDir "achievement_catalog_draft.json"
 $uiDashboardSideIconPath = Join-Path $uiDir "side.png"
-$heartPath = Join-Path $repoRoot "heart.png"
-$starPath = Join-Path $repoRoot "star.png"
-$thinkPath = Join-Path $repoRoot "think.png"
+$petOverlaysDir = Join-Path $uiDir "pet_overlays"
 $distDir = Join-Path $OutputRoot "dist"
 $workDir = Join-Path $OutputRoot "build\lab_2"
 $buildName = "TanukiPet"
@@ -79,10 +81,16 @@ $requiredPaths = @(
     @{ Label = "family UI character"; Path = $uiFamilyCharacterPath },
     @{ Label = "settings UI background"; Path = $uiSettingsPath },
     @{ Label = "settings UI character"; Path = $uiSettingsCharacterPath },
+    @{ Label = "achievement UI background"; Path = $uiAchievementPath },
+    @{ Label = "achievement UI character"; Path = $uiAchievementCharacterPath },
+    @{ Label = "achievement trophy directory"; Path = $uiTrophiesDir },
+    @{ Label = "achievement definition catalog"; Path = $uiAchievementCatalogPath },
     @{ Label = "dashboard launcher side icon"; Path = $uiDashboardSideIconPath },
-    @{ Label = "heart image"; Path = $heartPath },
-    @{ Label = "star image"; Path = $starPath },
-    @{ Label = "thought icon"; Path = $thinkPath }
+    @{ Label = "heart image"; Path = (Join-Path $petOverlaysDir "heart.png") },
+    @{ Label = "star image"; Path = (Join-Path $petOverlaysDir "star.png") },
+    @{ Label = "thought icon"; Path = (Join-Path $petOverlaysDir "think.png") },
+    @{ Label = "chorus music icon"; Path = (Join-Path $petOverlaysDir "music.png") },
+    @{ Label = "chorus audience icon"; Path = (Join-Path $petOverlaysDir "audience.png") }
 )
 foreach ($required in $requiredPaths) {
     if (-not (Test-Path -LiteralPath $required.Path)) {
@@ -136,11 +144,12 @@ if ($CheckOnly) {
   --add-data "${uiFamilyCharacterPath};UI" `
   --add-data "${uiSettingsPath};UI" `
   --add-data "${uiSettingsCharacterPath};UI" `
+  --add-data "${uiAchievementPath};UI" `
+  --add-data "${uiAchievementCharacterPath};UI" `
+  --add-data "${uiTrophiesDir};UI/trophies" `
   --add-data "${uiDashboardSideIconPath};UI" `
   --add-data "${uiFamilyIconsDir};UI/family_icon" `
-  --add-data "${heartPath};." `
-  --add-data "${starPath};." `
-  --add-data "${thinkPath};." `
+  --add-data "${petOverlaysDir};UI/pet_overlays" `
   --collect-all pynput `
   --clean `
   --specpath $workDir `

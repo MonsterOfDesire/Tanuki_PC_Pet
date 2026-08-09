@@ -8,6 +8,7 @@ from tanuki_core.transformation_state import (
     FORM_TRANSFORMED,
     PetTransformationState,
 )
+from tanuki_core.transformation_tendency import TENDENCY_TEIO_RACE_STIMULUS
 
 
 class FakeAssetManager:
@@ -233,6 +234,36 @@ class TransformationExecutorTests(unittest.TestCase):
                 pet.transformation_state.auto_world_mode,
                 "sandbox",
             )
+
+    def test_pending_tendency_shortens_new_auto_schedule(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            manager = FakeAssetManager(temp_dir)
+            pet = FakePet("Tokai Teio", temp_dir, manager)
+            pet.mood_score = 60.0
+            executor = TransformationExecutor(random_source=FixedRandom())
+
+            tendency = executor.apply_tendency_signal(
+                pet,
+                signal_kind=TENDENCY_TEIO_RACE_STIMULUS,
+                sim_now=5.0,
+            )
+            executor.update_auto(
+                [pet],
+                world_mode="sandbox",
+                sim_now=10.0,
+                transition_now=100.0,
+            )
+
+            self.assertTrue(tendency.applied)
+            self.assertEqual(
+                pet.transformation_state.auto_next_attempt_at,
+                415.0,
+            )
+            self.assertEqual(
+                pet.transformation_state.auto_pending_tendency_advance_seconds,
+                0.0,
+            )
+            self.assertEqual(pet.transformation_state.auto_attempt_serial, 1)
 
     def test_expired_auto_form_retries_end_while_airborne(self):
         with tempfile.TemporaryDirectory() as temp_dir:

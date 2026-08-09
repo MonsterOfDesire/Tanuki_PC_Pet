@@ -87,9 +87,9 @@
         "severe"
       ],
       "contexts": [
-        "future_work"
+        "activity_chorus_perform"
       ],
-      "weight": 1.0
+      "weight": 0.2
     },
     "idle_music_drum_b-happy.gif": {
       "band": [
@@ -98,9 +98,9 @@
         "severe"
       ],
       "contexts": [
-        "future_work"
+        "activity_chorus_perform"
       ],
-      "weight": 1.0
+      "weight": 0.2
     },
     "idle_music_drum_c-happy.gif": {
       "band": [
@@ -109,9 +109,9 @@
         "severe"
       ],
       "contexts": [
-        "future_work"
+        "activity_chorus_perform"
       ],
-      "weight": 1.0
+      "weight": 0.2
     },
     "idle_music_drum_d-happy.gif": {
       "band": [
@@ -120,9 +120,9 @@
         "severe"
       ],
       "contexts": [
-        "future_work"
+        "activity_chorus_perform"
       ],
-      "weight": 1.0
+      "weight": 0.2
     },
     "idle_music_electricguitar_solo-cool.gif": {
       "band": [
@@ -131,9 +131,9 @@
         "severe"
       ],
       "contexts": [
-        "future_work"
+        "activity_chorus_perform"
       ],
-      "weight": 1.0
+      "weight": 0.5
     },
     "idle_music_electricguitar-happy.gif": {
       "band": [
@@ -142,9 +142,9 @@
         "severe"
       ],
       "contexts": [
-        "future_work"
+        "activity_chorus_perform"
       ],
-      "weight": 1.0
+      "weight": 3.0
     },
     "idle_music_guitar-happy.gif": {
       "band": [
@@ -153,9 +153,9 @@
         "severe"
       ],
       "contexts": [
-        "future_work"
+        "activity_chorus_perform"
       ],
-      "weight": 1.0
+      "weight": 5.0
     },
     "idle_rest-angry.gif": {
       "band": [
@@ -233,7 +233,8 @@
         "observe_hold",
         "bottle_feed_watch",
         "activity_sleep_observing",
-        "activity_race_finish_win"
+        "activity_race_finish_win",
+        "activity_chorus_observe"
       ],
       "weight": 1.0
     },
@@ -336,7 +337,8 @@
         "care_companion",
         "relation_close",
         "bottle_feed_watch",
-        "random"
+        "random",
+        "activity_chorus_observe"
       ],
       "weight": 1.0
     },
@@ -351,7 +353,8 @@
         "relation_close",
         "honey_guard_take",
         "bottle_feed_watch",
-        "random"
+        "random",
+        "activity_chorus_observe"
       ],
       "weight": 1.0
     },
@@ -364,7 +367,8 @@
         "care_companion",
         "relation_close",
         "bottle_feed_watch",
-        "random"
+        "random",
+        "activity_chorus_observe"
       ],
       "weight": 1.0
     },
@@ -483,7 +487,8 @@
       "contexts": [
         "bottle_feed_watch",
         "shared_food_react",
-        "activity_race_accept"
+        "activity_race_accept",
+        "activity_chorus_finish"
       ],
       "weight": 1.0
     },
@@ -706,7 +711,8 @@
       ],
       "contexts": [
         "random",
-        "activity_sleep_join_approach"
+        "activity_sleep_join_approach",
+        "activity_chorus_approach"
       ],
       "weight": 1.0
     },
@@ -716,7 +722,8 @@
         "severe"
       ],
       "contexts": [
-        "random"
+        "random",
+        "activity_chorus_approach"
       ],
       "weight": 1.0
     },
@@ -775,7 +782,8 @@
         "window_walk",
         "random",
         "shared_food_approach",
-        "activity_race_to_start"
+        "activity_race_to_start",
+        "activity_chorus_approach"
       ],
       "weight": 1.0
     }

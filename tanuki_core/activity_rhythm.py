@@ -17,6 +17,9 @@ class ActivityRhythmSnapshot:
     race_status: str = "unscheduled"
     race_remaining_seconds: float | None = None
     race_wait_reason: str = ""
+    chorus_status: str = "unscheduled"
+    chorus_remaining_seconds: float | None = None
+    chorus_wait_reason: str = ""
     members: tuple[CharacterRhythmSnapshot, ...] = ()
 
 

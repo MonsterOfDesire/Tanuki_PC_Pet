@@ -147,6 +147,8 @@ class DashboardPresenterTests(unittest.TestCase):
             observed_at=100.0,
             race_status="cooldown",
             race_remaining_seconds=125.0,
+            chorus_status="cooldown",
+            chorus_remaining_seconds=70.0,
             members=(
                 CharacterRhythmSnapshot(
                     character_name="Tokai Teio",
@@ -167,6 +169,7 @@ class DashboardPresenterTests(unittest.TestCase):
         )
 
         self.assertEqual(presentation.race_rhythm_text, "競賽：約 2分05秒 後再提案")
+        self.assertEqual(presentation.chorus_rhythm_text, "合奏：約 1分10秒 後再提案")
         self.assertEqual(presentation.members[0].sleep_rhythm_text, "睡意 62%")
         self.assertEqual(
             presentation.members[0].transformation_rhythm_text,
@@ -180,6 +183,10 @@ class DashboardPresenterTests(unittest.TestCase):
         self.assertEqual(
             rhythm_only.race_rhythm_text,
             presentation.race_rhythm_text,
+        )
+        self.assertEqual(
+            rhythm_only.chorus_rhythm_text,
+            presentation.chorus_rhythm_text,
         )
         self.assertEqual(
             rhythm_only.members[0].sleep_rhythm_text,

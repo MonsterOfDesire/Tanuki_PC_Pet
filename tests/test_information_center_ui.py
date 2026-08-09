@@ -13,6 +13,7 @@ from tanuki_core.information_center_spec import (
     PAGE_FAMILY_STATUS,
     PAGE_RELATION_SUMMON,
     PAGE_STATUS_SETTINGS,
+    PAGE_ACHIEVEMENTS,
 )
 from tanuki_core.information_center_ui import InformationCenterWindow
 from tanuki_core.information_center_size_rules import SIZE_16_10, SIZE_COMPACT
@@ -30,6 +31,12 @@ from tanuki_core.dashboard_presenter import (
 from tanuki_core.relation_summon_binding import (
     RelationSummonPresentation,
     SummonMemberPresentation,
+)
+from tanuki_core.achievement_presenter import (
+    AchievementCabinetSnapshot,
+    AchievementCardSnapshot,
+    AchievementModeSnapshot,
+    AchievementTierSnapshot,
 )
 
 
@@ -151,6 +158,35 @@ class FakeRelationSummonBinding:
         return True
 
 
+class FakeAchievementBinding:
+    def snapshot(self):
+        card = AchievementCardSnapshot(
+            slot_key="race.first_natural_finish",
+            tier="G3",
+            unlocked=False,
+            image_relative_path="UI/trophies/race/3008.png",
+            accessible_name="未取得的 G3 獎盃",
+        )
+        return AchievementCabinetSnapshot(
+            modes=(
+                AchievementModeSnapshot(
+                    world_mode="sandbox",
+                    mode_label="沙盒",
+                    tiers=(
+                        AchievementTierSnapshot("G1", (), 0, 0),
+                        AchievementTierSnapshot("G2", (), 0, 0),
+                        AchievementTierSnapshot("G3", (card,), 0, 1),
+                    ),
+                    unlocked_count=0,
+                    total_count=1,
+                ),
+            )
+        )
+
+    def runtime_world_mode(self):
+        return "sandbox"
+
+
 class InformationCenterWindowTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -167,9 +203,9 @@ class InformationCenterWindowTests(unittest.TestCase):
         self.window.deleteLater()
         self.app.processEvents()
 
-    def test_window_builds_four_navigation_pages(self):
-        self.assertEqual(len(self.window.navigation_buttons), 4)
-        self.assertEqual(len(self.window.pages), 4)
+    def test_window_builds_five_navigation_pages(self):
+        self.assertEqual(len(self.window.navigation_buttons), 5)
+        self.assertEqual(len(self.window.pages), 5)
         self.assertEqual(
             tuple(self.window.navigation_buttons),
             tuple(page.page_id for page in INFORMATION_CENTER_PAGE_SPECS),
@@ -277,6 +313,26 @@ class InformationCenterWindowTests(unittest.TestCase):
         self.assertEqual(self.window.current_page_id, PAGE_FAMILY_STATUS)
         self.assertTrue(self.window.navigation_buttons[PAGE_FAMILY_STATUS].isChecked())
 
+    def test_achievement_page_is_embedded_and_cannot_detach(self):
+        self.window.select_page(PAGE_ACHIEVEMENTS)
+
+        self.assertIsNotNone(self.window.achievement_cabinet_panel)
+        self.assertFalse(self.window.detach_button.isEnabled())
+        self.assertIsNone(self.window.detach_page(PAGE_ACHIEVEMENTS))
+        self.assertFalse(self.window.is_page_detached(PAGE_ACHIEVEMENTS))
+
+    def test_achievement_page_accepts_runtime_binding(self):
+        binding = FakeAchievementBinding()
+
+        self.window.set_achievement_binding(binding)
+        self.window.select_page(PAGE_ACHIEVEMENTS)
+
+        panel = self.window.achievement_cabinet_panel
+        self.assertIs(panel.binding, binding)
+        self.assertEqual(panel.current_world_mode, "sandbox")
+        self.assertEqual(panel.progress_label.text(), "已取得 0 / 1")
+        self.assertEqual(len(panel.card_widgets), 1)
+
     def test_status_settings_page_accepts_runtime_binding(self):
         binding = FakeStatusSettingsBinding()
 
@@ -362,11 +418,11 @@ class InformationCenterWindowTests(unittest.TestCase):
             "關閉並歸回資訊中心",
         )
         self.assertTrue(self.window.is_page_detached(PAGE_FAMILY_STATUS))
-        self.assertEqual(self.window.page_stack.count(), 4)
+        self.assertEqual(self.window.page_stack.count(), 5)
         self.assertEqual(self.window.page_indexes, original_indexes)
         self.assertEqual(
             self.window.current_page_id,
-            PAGE_STATUS_SETTINGS,
+            PAGE_ACHIEVEMENTS,
         )
         self.assertTrue(
             self.window.navigation_buttons[PAGE_FAMILY_STATUS].property(
@@ -441,7 +497,7 @@ class InformationCenterWindowTests(unittest.TestCase):
         )
         self.assertTrue(settings_window.isVisible())
 
-    def test_all_pages_may_detach_and_first_close_restores_content(self):
+    def test_all_detachable_pages_leave_achievement_page_docked(self):
         self.window.show()
         self.app.processEvents()
         for page_id in (
@@ -455,14 +511,15 @@ class InformationCenterWindowTests(unittest.TestCase):
 
         self.assertEqual(len(self.window.detached_page_windows), 4)
         self.assertFalse(self.window.detach_button.isEnabled())
+        self.assertEqual(self.window.current_page_id, PAGE_ACHIEVEMENTS)
         self.window.navigation_buttons[PAGE_RELATION_SUMMON].click()
         self.app.processEvents()
         self.assertEqual(
             self.window.current_page_id,
-            PAGE_RELATION_SUMMON,
+            PAGE_ACHIEVEMENTS,
         )
         self.assertTrue(
-            self.window.navigation_buttons[PAGE_RELATION_SUMMON].isChecked()
+            self.window.navigation_buttons[PAGE_ACHIEVEMENTS].isChecked()
         )
         event_window = self.window.detached_page_windows[PAGE_EVENT_LOG]
 

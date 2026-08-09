@@ -22,6 +22,12 @@ class StatusSettingsSnapshot:
         "normal",
         "occasional",
     )
+    chorus_frequency: str = "normal"
+    chorus_frequency_options: tuple[str, ...] = (
+        "frequent",
+        "normal",
+        "occasional",
+    )
     mood_climate: str = "cheerful"
     mood_climate_options: tuple[str, ...] = (
         "cheerful",
@@ -62,6 +68,17 @@ class DashboardStatusSettingsBinding:
                 str(value)
                 for value in self.dashboard.race_frequency_options
             ),
+            chorus_frequency=str(
+                getattr(state, "chorus_frequency", "normal")
+            ),
+            chorus_frequency_options=tuple(
+                str(value)
+                for value in getattr(
+                    self.dashboard,
+                    "chorus_frequency_options",
+                    ("frequent", "normal", "occasional"),
+                )
+            ),
             mood_climate=str(state.mood_climate),
             mood_climate_options=tuple(
                 str(value)
@@ -95,6 +112,9 @@ class DashboardStatusSettingsBinding:
     def set_race_frequency(self, value):
         self.dashboard.set_race_frequency(str(value))
 
+    def set_chorus_frequency(self, value):
+        self.dashboard.set_chorus_frequency(str(value))
+
     def set_mood_climate(self, value):
         self.dashboard.set_mood_climate(str(value))
 
@@ -115,6 +135,12 @@ class DashboardStatusSettingsBinding:
     def is_race_preview_active(self):
         return bool(self.dashboard.is_race_preview_active())
 
+    def preview_chorus(self):
+        return self.dashboard.preview_chorus()
+
+    def is_chorus_preview_active(self):
+        return bool(self.dashboard.is_chorus_preview_active())
+
     def toggle_transformation_preview(self, pet_name):
         return self.dashboard.toggle_transformation_preview(
             str(pet_name or "")
@@ -125,5 +151,14 @@ class DashboardStatusSettingsBinding:
             self.dashboard.get_transformation_preview_state(
                 str(pet_name or "")
             )
+            or {}
+        )
+
+    def toggle_sleep_control(self, pet_name):
+        return self.dashboard.toggle_sleep_control(str(pet_name or ""))
+
+    def get_sleep_control_state(self, pet_name):
+        return dict(
+            self.dashboard.get_sleep_control_state(str(pet_name or ""))
             or {}
         )

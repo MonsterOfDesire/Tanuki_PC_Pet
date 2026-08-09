@@ -20,6 +20,8 @@ PET_STATE_PROXY_FIELDS = {
         "current_purpose",
         "current_action_tag",
         "current_mood_tag",
+        "ambient_low_mood_tag",
+        "ambient_low_mood_streak",
         "behavior_layer_refresh_skip_counter",
         "behavior_layer_refresh_divisor",
         "high_level_ai_refresh_skip_counter",
@@ -164,6 +166,8 @@ class PetBehaviorState:
     current_purpose: str = ""
     current_action_tag: str = "stand"
     current_mood_tag: str = "happy"
+    ambient_low_mood_tag: str = ""
+    ambient_low_mood_streak: int = 0
     behavior_layer_refresh_skip_counter: float = 0.0
     behavior_layer_refresh_divisor: int = 1
     high_level_ai_refresh_skip_counter: float = 0.0

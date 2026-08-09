@@ -298,6 +298,7 @@ class BottleHoneySceneExecutor:
             target_name=child_pet.name,
             stage="approach",
             stage_initialized=False,
+            stage_started_at=now,
             stage_ends_at=approach_end,
             scene_ends_at=approach_end,
             source=source,

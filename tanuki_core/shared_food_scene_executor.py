@@ -441,6 +441,27 @@ class SharedFoodSceneExecutor:
                 f"{shared_state.holder_name} 把{item_label}讓給了"
                 f"{shared_state.partner_name}。"
             )
+        metadata_builder = getattr(
+            runtime,
+            "build_shared_food_achievement_metadata",
+            None,
+        )
+        metadata = (
+            metadata_builder(
+                profile,
+                shared_state,
+                source=source,
+                now=app_now() if now is None else float(now),
+            )
+            if callable(metadata_builder)
+            else {
+                "source": source,
+                "item_kind": profile.item_kind,
+                "scene_kind": "shared_food",
+                "profile_key": profile.profile_key,
+                "outcome": shared_state.outcome_key,
+            }
+        )
         runtime.record_household_event(
             occurred_at=app_now() if now is None else float(now),
             category="player_offer",
@@ -449,13 +470,7 @@ class SharedFoodSceneExecutor:
             actor_name=shared_state.holder_name,
             target_name=shared_state.partner_name,
             household_pressure_delta=-1.0,
-            metadata={
-                "source": source,
-                "item_kind": profile.item_kind,
-                "scene_kind": "shared_food",
-                "profile_key": profile.profile_key,
-                "outcome": shared_state.outcome_key,
-            },
+            metadata=metadata,
         )
 
     def apply_shared_food_outcome_effects(self, runtime, shared_state):
