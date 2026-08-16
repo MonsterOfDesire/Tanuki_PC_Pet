@@ -1,4 +1,4 @@
-from PyQt6.QtCore import QRect, QSize, Qt, pyqtSignal
+from PyQt6.QtCore import QRect, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import (
     QButtonGroup,
@@ -48,6 +48,8 @@ from .achievement_cabinet_ui import AchievementCabinetPanel
 
 
 COMPACT_NAVIGATION_WIDTH = 900
+MINIMUM_RECALL_VISIBLE_WIDTH = 96
+MINIMUM_RECALL_VISIBLE_HEIGHT = 64
 NAVIGATION_ICON_NAMES = {
     PAGE_RELATION_SUMMON: "social",
     PAGE_EVENT_LOG: "story",
@@ -59,7 +61,13 @@ NAVIGATION_ICON_NAMES = {
 
 class InformationCenterPage(SkinnedWindowFrame):
     def __init__(self, assets, page_spec, parent=None, theme=DEFAULT_UI_THEME):
-        super().__init__(assets, page_spec.skin_key, parent=parent, theme=theme)
+        super().__init__(
+            assets,
+            page_spec.skin_key,
+            parent=parent,
+            theme=theme,
+            defer_skin=True,
+        )
         self.page_spec = page_spec
 
         placeholder = QWidget()
@@ -75,6 +83,9 @@ class InformationCenterPage(SkinnedWindowFrame):
         description_label.setProperty("tanukiRole", "pagePlaceholder")
         description_label.setWordWrap(True)
         placeholder_layout.addWidget(description_label)
+        loading_label = QLabel("正在載入頁面…")
+        loading_label.setProperty("tanukiRole", "pageLoading")
+        placeholder_layout.addWidget(loading_label)
         placeholder_layout.addStretch(1)
         self.set_content_widget(placeholder)
 
@@ -122,6 +133,18 @@ class InformationCenterWindow(QWidget):
         self.relation_summon_panel = None
         self.achievement_cabinet_panel = None
         self._navigation_compact = None
+        self._page_bindings = {
+            PAGE_STATUS_SETTINGS: status_settings_binding,
+            PAGE_FAMILY_STATUS: family_summary_binding,
+            PAGE_EVENT_LOG: event_log_binding,
+            PAGE_RELATION_SUMMON: relation_summon_binding,
+            PAGE_ACHIEVEMENTS: achievement_binding,
+        }
+        self._pending_page_id = ""
+        self._page_load_timer = QTimer(self)
+        self._page_load_timer.setSingleShot(True)
+        self._page_load_timer.setInterval(16)
+        self._page_load_timer.timeout.connect(self._load_scheduled_page)
 
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
@@ -184,7 +207,10 @@ class InformationCenterWindow(QWidget):
             button.setIconSize(QSize(17, 17))
             button.setToolTip(page_spec.navigation_label)
             button.clicked.connect(
-                lambda checked=False, page_id=page_spec.page_id: self.select_page(page_id)
+                lambda checked=False, page_id=page_spec.page_id: self.select_page(
+                    page_id,
+                    defer_content=True,
+                )
             )
             self.navigation_group.addButton(button)
             self.navigation_buttons[page_spec.page_id] = button
@@ -210,31 +236,6 @@ class InformationCenterWindow(QWidget):
                     theme.spacing_sm,
                     theme.spacing_sm,
                 )
-                self.relation_summon_panel = RelationSummonPanel(
-                    self.assets,
-                    relation_summon_binding,
-                    theme=theme,
-                )
-                page.set_content_widget(self.relation_summon_panel)
-            elif page_spec.page_id == PAGE_STATUS_SETTINGS:
-                self.status_settings_panel = StatusSettingsPanel(
-                    status_settings_binding,
-                    theme=theme,
-                )
-                page.set_content_widget(self.status_settings_panel)
-            elif page_spec.page_id == PAGE_FAMILY_STATUS:
-                self.family_summary_panel = FamilySummaryPanel(
-                    family_summary_binding,
-                    theme=theme,
-                    assets=self.assets,
-                )
-                page.set_content_widget(self.family_summary_panel)
-            elif page_spec.page_id == PAGE_EVENT_LOG:
-                self.event_log_panel = EventLogPanel(
-                    event_log_binding,
-                    theme=theme,
-                )
-                page.set_content_widget(self.event_log_panel)
             elif page_spec.page_id == PAGE_ACHIEVEMENTS:
                 page.set_content_margins(
                     theme.spacing_sm,
@@ -242,12 +243,6 @@ class InformationCenterWindow(QWidget):
                     theme.spacing_sm,
                     theme.spacing_sm,
                 )
-                self.achievement_cabinet_panel = AchievementCabinetPanel(
-                    resource_resolver,
-                    binding=achievement_binding,
-                    theme=theme,
-                )
-                page.set_content_widget(self.achievement_cabinet_panel)
             self.pages[page_spec.page_id] = page
             page_host = QWidget()
             page_host_layout = QVBoxLayout(page_host)
@@ -290,7 +285,10 @@ class InformationCenterWindow(QWidget):
         )
         self.setMinimumSize(self._compact_minimum_size)
         self.setStyleSheet(build_ui_stylesheet(theme))
-        self.select_page(DEFAULT_INFORMATION_CENTER_PAGE)
+        self.select_page(
+            DEFAULT_INFORMATION_CENTER_PAGE,
+            defer_content=True,
+        )
         self._update_navigation_density()
         self.window_chrome.refresh_geometry()
 
@@ -298,7 +296,7 @@ class InformationCenterWindow(QWidget):
     def current_page_id(self):
         return self._current_page_id
 
-    def select_page(self, page_id):
+    def select_page(self, page_id, *, defer_content=False):
         page_spec = get_information_center_page_spec(page_id)
         if page_spec.page_id in self.detached_page_windows:
             self._activate_detached_page(page_spec.page_id)
@@ -316,8 +314,14 @@ class InformationCenterWindow(QWidget):
         self.navigation_buttons[page_spec.page_id].setChecked(True)
         self._current_page_id = page_spec.page_id
         self.setWindowTitle(f"狸貓資訊中心 — {page_spec.navigation_label}")
+        page_created = False
+        if defer_content:
+            self._schedule_page_load(page_spec.page_id)
+        else:
+            page_created = self._ensure_page_ready(page_spec.page_id)
         self.pages[page_spec.page_id].set_animation_active(self.isVisible())
-        self._refresh_page(page_spec.page_id)
+        if not defer_content and not page_created:
+            self._refresh_page(page_spec.page_id)
         self._update_detach_button()
         if page_spec.page_id != previous_page_id:
             self.page_changed.emit(page_spec.page_id)
@@ -329,11 +333,64 @@ class InformationCenterWindow(QWidget):
             or self.current_page_id
             or DEFAULT_INFORMATION_CENTER_PAGE
         )
-        self.show()
-        self.select_page(
-            target_page_id
-        )
+        self.select_page(target_page_id, defer_content=True)
+        if self.isMinimized():
+            self.showNormal()
+        else:
+            self.show()
+        self.ensure_reachable_on_screen()
+        self._schedule_page_load(target_page_id)
         if target_page_id in self.detached_page_windows:
+            return
+        self._activate_visible_window()
+        QTimer.singleShot(0, self._activate_visible_window)
+
+    def ensure_reachable_on_screen(self):
+        screens = tuple(QGuiApplication.screens())
+        if not screens:
+            return False
+        window_geometry = self.frameGeometry()
+        intersections = tuple(
+            (
+                screen.availableGeometry().intersected(window_geometry),
+                screen,
+            )
+            for screen in screens
+        )
+        if any(
+            intersection.width() >= MINIMUM_RECALL_VISIBLE_WIDTH
+            and intersection.height() >= MINIMUM_RECALL_VISIBLE_HEIGHT
+            for intersection, _screen in intersections
+        ):
+            return False
+
+        window_center = window_geometry.center()
+        _intersection, target_screen = min(
+            intersections,
+            key=lambda item: (
+                (item[1].availableGeometry().center().x() - window_center.x()) ** 2
+                + (item[1].availableGeometry().center().y() - window_center.y()) ** 2
+            ),
+        )
+        available = target_screen.availableGeometry()
+        maximum_x = available.right() - self.width() + 1
+        maximum_y = available.bottom() - self.height() + 1
+        target_x = (
+            available.left()
+            if maximum_x < available.left()
+            else max(available.left(), min(self.x(), maximum_x))
+        )
+        target_y = (
+            available.top()
+            if maximum_y < available.top()
+            else max(available.top(), min(self.y(), maximum_y))
+        )
+        self.move_near_anchor(target_x, target_y)
+        self._emit_state_changed()
+        return True
+
+    def _activate_visible_window(self):
+        if not self.isVisible() or self.isMinimized():
             return
         self.raise_()
         self.activateWindow()
@@ -351,6 +408,7 @@ class InformationCenterWindow(QWidget):
             self._activate_detached_page(page_id)
             return self.detached_page_windows[page_id]
 
+        self._ensure_page_ready(page_id)
         page = self.pages[page_id]
         page.set_animation_active(False)
         self.page_host_layouts[page_id].removeWidget(page)
@@ -517,6 +575,81 @@ class InformationCenterWindow(QWidget):
         button.style().unpolish(button)
         button.style().polish(button)
 
+    def _schedule_page_load(self, page_id):
+        page_id = get_information_center_page_spec(page_id).page_id
+        self._pending_page_id = page_id
+        self._page_load_timer.start()
+
+    def _load_scheduled_page(self):
+        page_id = self._pending_page_id
+        self._pending_page_id = ""
+        if not page_id:
+            return
+        detached_window = self.detached_page_windows.get(page_id)
+        page_is_requested = (
+            self.isVisible() and self.current_page_id == page_id
+        ) or (
+            detached_window is not None and detached_window.isVisible()
+        )
+        if not page_is_requested:
+            return
+        page_created = self._ensure_page_ready(page_id)
+        page = self.pages[page_id]
+        page.set_animation_active(self.is_page_visible(page_id))
+        if not page_created:
+            self._refresh_page(page_id)
+
+    def _ensure_page_ready(self, page_id):
+        page_id = get_information_center_page_spec(page_id).page_id
+        page = self.pages[page_id]
+        page.ensure_skin_loaded()
+        if self._page_panel(page_id) is not None:
+            return False
+
+        binding = self._page_bindings.get(page_id)
+        if page_id == PAGE_RELATION_SUMMON:
+            panel = RelationSummonPanel(
+                self.assets,
+                binding,
+                theme=self.theme,
+            )
+            self.relation_summon_panel = panel
+        elif page_id == PAGE_STATUS_SETTINGS:
+            panel = StatusSettingsPanel(binding, theme=self.theme)
+            self.status_settings_panel = panel
+        elif page_id == PAGE_FAMILY_STATUS:
+            panel = FamilySummaryPanel(
+                binding,
+                theme=self.theme,
+                assets=self.assets,
+            )
+            self.family_summary_panel = panel
+        elif page_id == PAGE_EVENT_LOG:
+            panel = EventLogPanel(binding, theme=self.theme)
+            self.event_log_panel = panel
+        elif page_id == PAGE_ACHIEVEMENTS:
+            panel = AchievementCabinetPanel(
+                self.assets.resource_resolver,
+                binding=binding,
+                theme=self.theme,
+            )
+            self.achievement_cabinet_panel = panel
+        else:
+            return False
+        page.set_content_widget(panel)
+        if page_id == PAGE_ACHIEVEMENTS:
+            panel.refresh_from_binding()
+        return True
+
+    def _page_panel(self, page_id):
+        return {
+            PAGE_RELATION_SUMMON: self.relation_summon_panel,
+            PAGE_STATUS_SETTINGS: self.status_settings_panel,
+            PAGE_FAMILY_STATUS: self.family_summary_panel,
+            PAGE_EVENT_LOG: self.event_log_panel,
+            PAGE_ACHIEVEMENTS: self.achievement_cabinet_panel,
+        }.get(page_id)
+
     def _refresh_page(self, page_id):
         if page_id == PAGE_RELATION_SUMMON:
             self.refresh_relation_summon()
@@ -581,7 +714,7 @@ class InformationCenterWindow(QWidget):
                 self.move(x, y)
             self.user_position_locked = state.has_saved_position
             self.last_size_preset_id = state.size_preset_id
-            self.select_page(state.page_id)
+            self.select_page(state.page_id, defer_content=True)
             self._update_navigation_density()
             self.window_chrome.refresh_geometry()
         finally:
@@ -640,36 +773,58 @@ class InformationCenterWindow(QWidget):
         )
 
     def set_status_settings_binding(self, binding):
-        self.status_settings_panel.set_binding(binding)
+        self._page_bindings[PAGE_STATUS_SETTINGS] = binding
+        if (
+            self.status_settings_panel is not None
+            and self.status_settings_panel.binding is not binding
+        ):
+            self.status_settings_panel.set_binding(binding)
 
     def refresh_status_settings(self):
         if self.status_settings_panel is not None:
             self.status_settings_panel.refresh_from_binding()
 
     def set_family_summary_binding(self, binding):
-        self.family_summary_panel.set_binding(binding)
+        self._page_bindings[PAGE_FAMILY_STATUS] = binding
+        if (
+            self.family_summary_panel is not None
+            and self.family_summary_panel.binding is not binding
+        ):
+            self.family_summary_panel.set_binding(binding)
 
     def refresh_family_summary(self):
         if self.family_summary_panel is not None:
             self.family_summary_panel.refresh_from_binding()
 
     def set_event_log_binding(self, binding):
-        self.event_log_panel.set_binding(binding)
+        self._page_bindings[PAGE_EVENT_LOG] = binding
+        if (
+            self.event_log_panel is not None
+            and self.event_log_panel.binding is not binding
+        ):
+            self.event_log_panel.set_binding(binding)
 
     def refresh_event_log(self):
         if self.event_log_panel is not None:
             self.event_log_panel.refresh_from_binding()
 
     def set_relation_summon_binding(self, binding):
-        self.relation_summon_panel.set_binding(binding)
+        self._page_bindings[PAGE_RELATION_SUMMON] = binding
+        if (
+            self.relation_summon_panel is not None
+            and self.relation_summon_panel.binding is not binding
+        ):
+            self.relation_summon_panel.set_binding(binding)
 
     def refresh_relation_summon(self):
         if self.relation_summon_panel is not None:
             self.relation_summon_panel.refresh_from_binding()
 
     def set_achievement_binding(self, binding):
+        self._page_bindings[PAGE_ACHIEVEMENTS] = binding
         if self.achievement_cabinet_panel is not None:
-            self.achievement_cabinet_panel.set_binding(binding)
+            if self.achievement_cabinet_panel.binding is not binding:
+                self.achievement_cabinet_panel.set_binding(binding)
 
     def refresh_achievement_cabinet(self, *, sync_world_mode=False):
         if self.achievement_cabinet_panel is not None:

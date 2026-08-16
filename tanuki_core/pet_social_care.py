@@ -19,6 +19,7 @@ from .pet_intent_rules import (
     INTENT_RANDOM_ROAM,
     pet_has_sleep_join_intent,
 )
+from .pet_logic import natural_mood_update_is_paused
 from .pet_ambient_mood_rules import (
     resolve_solitude_event,
 )
@@ -103,6 +104,52 @@ class PetSocialCareMixin:
         "glance",
     )
     RESCUE_MIN_SPEED_FLOOR = 5.0
+    VISUAL_BAND_PROBE_SCORES = {
+        "normal": 60.0,
+        "low": 30.0,
+        "severe": 0.0,
+    }
+
+    def start_visual_band_afterglow(
+        self,
+        band,
+        *,
+        duration,
+        now=None,
+    ):
+        band = str(band or "").strip()
+        if band not in PetSocialCareMixin.VISUAL_BAND_PROBE_SCORES:
+            return False
+        if now is None:
+            now = app_now()
+        self.visual_band_afterglow = band
+        self.visual_band_afterglow_until = max(
+            float(
+                getattr(self, "visual_band_afterglow_until", 0.0)
+                or 0.0
+            ),
+            float(now) + max(0.0, float(duration)),
+        )
+        return True
+
+    def get_visual_mood_score(self, now=None):
+        if now is None:
+            now = app_now()
+        band = str(
+            getattr(self, "visual_band_afterglow", "") or ""
+        )
+        until = float(
+            getattr(self, "visual_band_afterglow_until", 0.0) or 0.0
+        )
+        if (
+            band in PetSocialCareMixin.VISUAL_BAND_PROBE_SCORES
+            and until > float(now)
+        ):
+            return PetSocialCareMixin.VISUAL_BAND_PROBE_SCORES[band]
+        if band or until:
+            self.visual_band_afterglow = ""
+            self.visual_band_afterglow_until = 0.0
+        return float(getattr(self, "mood_score", 60.0))
 
     def has_transformed_rudolf_social_influence(self, target):
         return is_transformed_rudolf_social_pair(
@@ -291,7 +338,7 @@ class PetSocialCareMixin:
             result = self.asset_manager.get_frames_for_action_by_score(
                 purpose,
                 action_type,
-                self.mood_score,
+                PetSocialCareMixin.get_visual_mood_score(self),
                 is_adult=self.is_adult,
                 context=context,
             )
@@ -300,7 +347,11 @@ class PetSocialCareMixin:
         return False
 
     def change_state_candidates_with_preferences(self, candidates, preferred_moods, forbidden=None, context=None, ignore_mood_band=False):
-        mood_score = None if ignore_mood_band else self.mood_score
+        mood_score = (
+            None
+            if ignore_mood_band
+            else PetSocialCareMixin.get_visual_mood_score(self)
+        )
         for mood_tag in preferred_moods:
             for purpose, action_type in candidates:
                 frames = self.asset_manager.get_specific_frames(
@@ -388,7 +439,11 @@ class PetSocialCareMixin:
             context=context,
             preferred_moods=preferred_moods,
             forbidden=forbidden,
-            mood_score=None if ignore_mood_band else getattr(self, "mood_score", None),
+            mood_score=(
+                None
+                if ignore_mood_band
+                else PetSocialCareMixin.get_visual_mood_score(self)
+            ),
             ordered_preferences=True,
         )
         if not result:
@@ -425,7 +480,11 @@ class PetSocialCareMixin:
             context=context,
             preferred_moods=preferred_moods,
             forbidden=forbidden,
-            mood_score=None if ignore_mood_band else getattr(self, "mood_score", None),
+            mood_score=(
+                None
+                if ignore_mood_band
+                else PetSocialCareMixin.get_visual_mood_score(self)
+            ),
             ordered_preferences=True,
         )
         if not result:
@@ -466,7 +525,7 @@ class PetSocialCareMixin:
             mood_score=(
                 None
                 if ignore_mood_band
-                else getattr(self, "mood_score", None)
+                else PetSocialCareMixin.get_visual_mood_score(self)
             ),
             ordered_preferences=True,
         )
@@ -620,6 +679,18 @@ class PetSocialCareMixin:
         return True
 
     def update_ambient_mood_events(self, now):
+        activity_state = getattr(self, "activity_state", None)
+        if natural_mood_update_is_paused(
+            activity_kind=getattr(
+                activity_state,
+                "activity_kind",
+                "none",
+            ),
+            activity_active=bool(
+                getattr(activity_state, "active", False)
+            ),
+        ):
+            return False
         visible_pet_count = int(getattr(self, "perception_visible_adult_count", 0) or 0) + int(
             getattr(self, "perception_visible_child_count", 0) or 0
         )
@@ -1186,7 +1257,7 @@ class PetSocialCareMixin:
         seen = set(expanded)
         extra_actions = self.asset_manager.get_action_keys_for_context(
             purpose,
-            mood_score=self.mood_score,
+            mood_score=PetSocialCareMixin.get_visual_mood_score(self),
             context=context,
         )
         for action_type in extra_actions:
@@ -1213,7 +1284,11 @@ class PetSocialCareMixin:
             self.current_purpose,
             self.current_action_tag,
             self.current_mood_tag,
-            mood_score=None if ignore_mood_band else self.mood_score,
+            mood_score=(
+                None
+                if ignore_mood_band
+                else PetSocialCareMixin.get_visual_mood_score(self)
+            ),
             context=context,
         )
         if should_preserve_candidate_animation(
@@ -1232,7 +1307,11 @@ class PetSocialCareMixin:
             self.current_purpose,
             self.current_action_tag,
             self.current_mood_tag,
-            mood_score=None if ignore_mood_band else self.mood_score,
+            mood_score=(
+                None
+                if ignore_mood_band
+                else PetSocialCareMixin.get_visual_mood_score(self)
+            ),
             context=context,
         )
         if should_preserve_candidate_animation(

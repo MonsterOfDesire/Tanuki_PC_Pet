@@ -1,8 +1,14 @@
 import unittest
 from types import SimpleNamespace
 
+from tanuki_core.achievement_runtime_coordinator import (
+    AchievementRuntimeCoordinator,
+)
 from tanuki_core.achievement_state import AchievementState
 from tanuki_core.app_runtime import TanukiAppRuntime
+from tanuki_core.runtime_persistence_coordinator import (
+    RuntimePersistenceCoordinator,
+)
 
 
 class FakeHouseholdCoordinator:
@@ -26,10 +32,12 @@ class AchievementRuntimePersistenceTests(unittest.TestCase):
             "race.first_natural_finish",
         ).unlock(12.0)
         achievement_state.mark_event_processed("sandbox", "race-1")
+        persistence = _persistence_coordinator(
+            coordinator,
+            achievement_state,
+        )
         runtime = SimpleNamespace(
-            household_coordinator=coordinator,
-            achievement_state=achievement_state,
-            dashboard=object(),
+            runtime_persistence_coordinator=persistence,
         )
 
         payload = TanukiAppRuntime.capture_household_persistence_state(runtime)
@@ -45,10 +53,12 @@ class AchievementRuntimePersistenceTests(unittest.TestCase):
     def test_runtime_restores_achievement_state_without_affecting_household_apply(self):
         coordinator = FakeHouseholdCoordinator()
         achievement_state = AchievementState()
+        persistence = _persistence_coordinator(
+            coordinator,
+            achievement_state,
+        )
         runtime = SimpleNamespace(
-            household_coordinator=coordinator,
-            achievement_state=achievement_state,
-            dashboard=object(),
+            runtime_persistence_coordinator=persistence,
         )
         payload = {
             "living_fund": 700,
@@ -89,6 +99,22 @@ class AchievementRuntimePersistenceTests(unittest.TestCase):
         self.assertTrue(
             achievement_state.has_processed_event("sandbox", "race-1")
         )
+
+
+def _persistence_coordinator(household_coordinator, achievement_state):
+    achievement_coordinator = AchievementRuntimeCoordinator(
+        state=achievement_state,
+        eligibility_guard=SimpleNamespace(),
+        time_scale_provider=lambda: 1.0,
+        world_mode_provider=lambda: "sandbox",
+        service=SimpleNamespace(),
+        gameplay_bridge=SimpleNamespace(),
+    )
+    return RuntimePersistenceCoordinator(
+        household_coordinator=household_coordinator,
+        achievement_runtime_coordinator=achievement_coordinator,
+        dashboard=object(),
+    )
 
 
 if __name__ == "__main__":

@@ -14,6 +14,7 @@ from tanuki_core.activity_event_contract import (
     ACTIVITY_EVENT_RACE_COMPLETED,
     ACTIVITY_EVENT_SLEEP_GROUP_JOINED,
     ACTIVITY_EVENT_WORK_COMPLETED,
+    AMBIENT_EVENT_TSUYOSHI_SIDE_READY_FOLLOWUP,
     build_activity_event_metadata,
 )
 
@@ -221,6 +222,51 @@ class AchievementRuntimeServiceTests(unittest.TestCase):
         self.assertIn(
             "sleep.first_group_join",
             result.unlocked_achievement_ids,
+        )
+
+    def test_rare_tsuyoshi_stand_unlocks_g2_at_one_x(self):
+        result = self.service.consume_instantaneous_activity_metadata(
+            _metadata(
+                event_name=AMBIENT_EVENT_TSUYOSHI_SIDE_READY_FOLLOWUP,
+                event_id="ambient-stand-1",
+                activity_id="",
+                activity_kind="ambient_animation",
+                world_mode="sandbox",
+                started_at=20.0,
+                ended_at=20.0,
+                participants=(("Tsurumaru Tsuyoshi", "subject"),),
+                extra={"animation_context": "side_ready_followup"},
+            )
+        )
+
+        self.assertTrue(result.accepted)
+        self.assertIn(
+            "ambient.tsuyoshi_rare_stand",
+            result.unlocked_achievement_ids,
+        )
+
+    def test_rare_tsuyoshi_stand_does_not_unlock_at_eight_x(self):
+        self.speed = 8.0
+
+        result = self.service.consume_instantaneous_activity_metadata(
+            _metadata(
+                event_name=AMBIENT_EVENT_TSUYOSHI_SIDE_READY_FOLLOWUP,
+                event_id="ambient-stand-fast",
+                activity_id="",
+                activity_kind="ambient_animation",
+                world_mode="sandbox",
+                started_at=20.0,
+                ended_at=20.0,
+                participants=(("Tsurumaru Tsuyoshi", "subject"),),
+            )
+        )
+
+        self.assertFalse(result.accepted)
+        self.assertFalse(
+            self.state.is_unlocked(
+                "sandbox",
+                "ambient.tsuyoshi_rare_stand",
+            )
         )
 
     def test_five_sleepers_snapshot_unlocks_simultaneous_achievement(self):

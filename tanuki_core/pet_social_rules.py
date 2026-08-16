@@ -136,22 +136,46 @@ def decide_care_plan(name, has_interaction, roll):
     return CARE_PLAN_COMPANION
 
 
+def child_care_need_is_active(
+    *,
+    is_child,
+    is_visible,
+    care_enabled,
+    is_recovering,
+    is_distressed,
+    care_blocked=False,
+):
+    """Return whether a visible child currently qualifies for care."""
+    return bool(
+        is_child
+        and is_visible
+        and care_enabled
+        and not is_recovering
+        and not care_blocked
+        and is_distressed
+    )
+
+
 def choose_care_target(adult, adult_name, candidates):
     radius = None if adult_name == "Sirius Symboli" else 1000
     eligible = []
     for candidate in candidates:
-        if candidate.is_self or candidate.is_adult or not candidate.is_visible:
+        if candidate.is_self:
+            continue
+        if not child_care_need_is_active(
+            is_child=not candidate.is_adult,
+            is_visible=candidate.is_visible,
+            care_enabled=True,
+            is_recovering=candidate.is_recovering,
+            is_distressed=candidate.is_distressed,
+            care_blocked=candidate.care_blocked,
+        ):
             continue
         if candidate.preferred_adult_name not in (None, adult_name):
             continue
         if candidate.care_partner not in (None, adult):
             continue
-        if (
-            candidate.is_recovering
-            or candidate.care_blocked
-            or candidate.activity_busy
-            or not candidate.is_distressed
-        ):
+        if candidate.activity_busy:
             continue
         if radius is not None and candidate.distance > radius:
             continue

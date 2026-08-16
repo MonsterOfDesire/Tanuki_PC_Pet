@@ -88,6 +88,7 @@ class FakePet:
         self.care_cooldown_end = 0.0
         self.direction = 1
         self._x = 100.0
+        self.visual_afterglow_calls = []
 
     def isVisible(self):
         return self.visible
@@ -113,6 +114,10 @@ class FakePet:
 
     def refresh_movement_state(self):
         return None
+
+    def start_visual_band_afterglow(self, band, *, duration, now):
+        self.visual_afterglow_calls.append((band, duration, now))
+        return True
 
     def x(self):
         return self._x
@@ -191,6 +196,7 @@ class SleepExecutorTests(unittest.TestCase):
 
         finished = self.update(171.0)[0]
         self.assertTrue(finished.finished)
+        self.assertEqual(self.pet.mood_score, 63.0)
         self.assertFalse(self.pet.activity_state.active)
         self.assertEqual(
             self.executor.schedules[self.pet.name].next_proposal_at,
@@ -217,6 +223,35 @@ class SleepExecutorTests(unittest.TestCase):
             self.pet.apply_calls[-1][1][0],
             ["activity_sleep_waking-frame"],
         )
+
+    def test_chorus_noise_wakes_with_low_band_without_changing_mood(self):
+        self.update(0.0)
+        self.update(120.0)
+        self.update(123.0)
+        original_mood = self.pet.mood_score
+
+        result = self.executor.request_early_wake(
+            self.pet,
+            now=124.0,
+            reason="chorus_noise",
+            waking_band_override="low",
+            visual_afterglow_seconds=8.0,
+        )
+
+        self.assertTrue(result.phase_changed)
+        self.assertEqual(self.pet.mood_score, original_mood)
+        self.assertEqual(
+            self.pet.asset_manager.calls[-1],
+            ("activity_sleep_waking", 30.0),
+        )
+        self.assertEqual(
+            self.pet.visual_afterglow_calls,
+            [("low", 8.0, 124.0)],
+        )
+
+        finished = self.update(127.0)[0]
+        self.assertTrue(finished.finished)
+        self.assertEqual(self.pet.mood_score, original_mood)
 
     def test_sandbox_control_starts_sleep_and_reuses_waking_flow(self):
         started = self.executor.request_sandbox_toggle(

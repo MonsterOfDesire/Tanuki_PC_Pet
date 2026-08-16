@@ -19,10 +19,10 @@ class AchievementCatalogTests(unittest.TestCase):
     def test_project_catalog_has_isolated_mode_definitions(self):
         catalog = load_achievement_catalog(CATALOG_PATH)
 
-        self.assertEqual(len(catalog.definitions), 26)
+        self.assertEqual(len(catalog.definitions), 27)
         self.assertEqual(
             len(catalog.definitions_for_mode("sandbox")),
-            24,
+            25,
         )
         self.assertEqual(
             len(catalog.definitions_for_mode("golden_legend")),

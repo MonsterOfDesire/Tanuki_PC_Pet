@@ -96,7 +96,7 @@
   },
   "mode_catalogs": {
     "sandbox": {
-      "assigned_achievement_count": 24,
+      "assigned_achievement_count": 25,
       "notes": "Current non-economy gameplay achievement draft. Definitions and unlocks belong only to Sandbox."
     },
     "golden_legend": {
@@ -548,6 +548,26 @@
           "interaction.care.completed",
           "activity.transformation.completed"
         ]
+      },
+      "implementation_status": "ready_live_event"
+    },
+    {
+      "achievement_id": "ambient.tsuyoshi_rare_stand",
+      "title_zh_tw": "鶴寶站起來了！",
+      "description_zh_tw": "在 1x 沙盒中見證鶴寶從 side-ready 稀有地接續站立。",
+      "tier": "G2",
+      "trophy": {
+        "type": "race",
+        "id": "2041",
+        "image": "trophies/race/2041.png"
+      },
+      "world_modes": [
+        "sandbox"
+      ],
+      "rule": {
+        "type": "event_count",
+        "event_name": "ambient.tsuyoshi.side_ready_followup",
+        "target": 1
       },
       "implementation_status": "ready_live_event"
     },

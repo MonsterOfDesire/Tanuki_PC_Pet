@@ -49,8 +49,8 @@ RACE_MAX_DISTANCE = 1500.0
 RACE_ARRIVAL_DISTANCE = 6.0
 RACE_TO_START_SPEED_SCALE = 1.35
 RACE_RUNNING_SPEED_SCALE = 1.0
-RACE_FINISH_MAX_SEPARATION = 150.0
 RACE_FINISH_STANDOFF_DISTANCE = 120.0
+RACE_FINISH_STANDOFF_PADDING = 24.0
 RACE_CHALLENGE_MAX_DISTANCE = 420.0
 RACE_SPEED_VARIATION = 0.15
 RACE_SPEED_MOOD_REFERENCE = 50.0
@@ -391,10 +391,26 @@ def decide_race_performance(
     )
 
 
-def race_finish_is_ready(*, winner_arrived: bool, separation: float) -> bool:
+def get_race_finish_standoff_distance(
+    participant_radii: tuple[float, float],
+) -> float:
+    return max(
+        RACE_FINISH_STANDOFF_DISTANCE,
+        sum(max(0.0, float(radius)) for radius in participant_radii)
+        + RACE_FINISH_STANDOFF_PADDING,
+    )
+
+
+def race_finish_is_ready(
+    *,
+    winner_arrived: bool,
+    separation: float,
+    target_separation: float,
+) -> bool:
     return bool(
         winner_arrived
-        and float(separation) <= RACE_FINISH_MAX_SEPARATION
+        and abs(float(separation) - float(target_separation))
+        <= RACE_ARRIVAL_DISTANCE
     )
 
 

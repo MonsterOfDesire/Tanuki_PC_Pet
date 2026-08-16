@@ -103,7 +103,10 @@ class DetachedInformationPageWindow(QWidget):
         return page
 
     def show_page(self):
-        self.show()
+        if self.isMinimized():
+            self.showNormal()
+        else:
+            self.show()
         self.raise_()
         self.activateWindow()
         if self.page is not None:

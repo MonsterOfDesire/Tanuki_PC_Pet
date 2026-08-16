@@ -93,8 +93,8 @@
 - [x] `care_approach` — **情境**：成人發現 distressed 小孩並靠近；**對象**：照護成人 → 需要照護的小孩；**效果**：通用照護接近移動，角色專用 context 缺少時回退至此；**狀態**：Runtime 選圖。
 - [x] `care_approach_teio` — **情境**：成人專門靠近帝寶進行照護；**對象**：照護成人 → 帝寶；**效果**：優先選擇帝寶專用的接近動畫，再回退 `care_approach`；**狀態**：Runtime 選圖。
 - [x] `care_approach_tsuyoshi` — **情境**：成人專門靠近鶴寶進行照護；**對象**：照護成人 → 鶴寶；**效果**：優先選擇鶴寶專用的接近動畫，再回退 `care_approach`；**狀態**：Runtime 選圖。
-- [x] `care_child_comfort` — **情境**：小孩在一般陪伴照護中被安撫；**對象**：被照護的小孩 ↔ 陪伴成人；**效果**：標記適合小孩安撫階段的素材；現行流程主要以 child comfort action 候選選取並逐步回復心情；**狀態**：分類輔助。
-- [x] `care_child_recovery` — **情境**：照護成功後小孩進入短暫恢復；**對象**：剛完成照護的小孩自身；**效果**：預留恢復素材分類，現行 `start_recovery` 仍依角色 action 候選選圖；**狀態**：已註冊、未作嚴格 context 選圖。
+- [x] `care_child_comfort` — **情境**：小孩在一般陪伴照護中被安撫；**對象**：被照護的小孩 ↔ 陪伴成人；**效果**：標記適合小孩安撫階段的素材；現行流程主要以 child comfort action 候選選取並逐步回復心情，候選可刻意包含吃糖、喝飲料等「大人照顧時讓小孩吃東西」的畫面；**狀態**：分類輔助。
+- [x] `care_child_recovery` — **情境**：照護成功後小孩進入短暫恢復；**對象**：剛完成照護的小孩自身；**效果**：只保留可選的分類名稱；現行八秒 recovery 的用途是避免立刻重新觸發照護，畫面允許小孩自由選用既有恢復候選，因此不要求另外準備此 context 素材；**狀態**：已註冊、未作嚴格 context 選圖。
 - [x] `care_companion` — **情境**：成人不使用合體素材，坐在可見小孩旁陪伴；**對象**：照護成人 ↔ 可見的小孩；**效果**：標記成人一般陪伴姿勢，小孩維持獨立可見並逐步回復心情；**狀態**：分類輔助。
 - [x] `care_interaction` — **情境**：成人使用一張同時包含成人與小孩的 stationary 合體素材；**對象**：照護成人 ↔ 被隱藏的小孩；**效果**：通用合體照護篩選，小孩暫時隱藏並由成人的 `interaction` GIF 代表兩人；**狀態**：Runtime 選圖。
 - [x] `care_interaction_teio` — **情境**：成人與帝寶的 stationary 合體照護；**對象**：照護成人 ↔ 帝寶；**效果**：優先選擇帝寶專用合體素材，再回退 `care_interaction`；**狀態**：Runtime 選圖。
@@ -112,15 +112,15 @@
 - [x] `post_observe` — **情境**：一般觀察結束後，角色短暫面向對方並延續互動；**對象**：觀察者 ↔ 剛才的被觀察者；**效果**：在小聊／觀察後鎖定期間選擇 idle 或 move 動畫；**狀態**：Runtime 選圖。
 - [x] `relation_close` — **情境**：對焦角色具有較高熟悉與依附，或觀察後進入親近互動；**對象**：角色 → 關係親近的另一名角色；**效果**：選擇較溫暖的表情素材、面向目標並使用 close posture／overlay 語意；**狀態**：Runtime 選圖。
 - [x] `relation_watch` — **情境**：角色對附近已有一定熟悉度的角色感到好奇；**對象**：角色 → 被關注的另一名角色；**效果**：選擇觀看／思考類表情並面向目標；**狀態**：Runtime 選圖。
-- [x] `side_ready_followup` — **情境**：鶴寶從 `side_ready` 進入 `side_stand` 前的後續姿勢池；**對象**：鶴寶自身；**效果**：標記可接續 side-ready 的素材，現行安全閘主要由 action tag `side_ready`／`side_stand` 控制；**狀態**：分類輔助。
-- [x] `social_follow` — **情境**：帝寶或鶴寶跟在魯道夫身後；**對象**：社交小孩 → 魯道夫；**效果**：作為 intent／expression 狀態名稱；實際動畫目前使用一般 move candidates，未直接查詢此 context；**狀態**：狀態語意。
+- [x] `side_ready_followup` — **情境**：鶴寶已播放 `side_ready`，下一次真正需要重選 idle 動畫時的稀有後續姿勢池；**對象**：鶴寶自身；**效果**：每次 side-ready 機會只擲一次，10% 依目前 band 從此 context 選圖，90% 回到 `random`；選圖後至少保留 60 logic steps，且只有 `side_stand`／`side_stand_cheer` 的角色幀實際完成一次畫面繪製、繪製前未被其他動作覆蓋，才送出 1x 沙盒 G2 成就事件；不指定 GIF 或 follow-up action；**狀態**：Runtime 選圖與畫面確認。
+- [x] `social_follow` — **情境**：帝寶或鶴寶跟在魯道夫身後；**對象**：社交小孩 → 魯道夫；**效果**：作為 intent／expression 狀態名稱；跟隨者可用任意既有移動方式追上魯道夫，因此刻意使用一般 move candidates，不要求另外配置此 context；**狀態**：狀態語意。
 - [x] `social_mimic` — **情境**：帝寶或鶴寶模仿魯道夫正在播放的動作；**對象**：社交小孩 → 魯道夫；**效果**：作為 intent／expression 狀態名稱，實際畫面直接同步魯道夫相同 purpose/action/mood；**狀態**：狀態語意。
 
 ## 基本行為、拖曳與視窗
 
-- [x] `drag` — **情境**：使用者按住角色至少 0.05 秒且游標移動超過 3px 後進入拖曳；短點或靜止按住不使用此 context；**對象**：玩家游標 ↔ 被拖曳角色；**效果**：優先選擇 purpose=`drag`，缺少時依同一 context 跨 purpose 尋找素材，並在拖曳期間暫停一般 AI；**狀態**：Runtime 選圖。
+- [x] `drag` — **情境**：使用者按住角色至少 0.1 秒後進入拖曳，即使游標完全沒有移動也會套用；在 0.1 秒內放開仍視為短點，不使用此 context；**對象**：玩家游標 ↔ 被拖曳角色；**效果**：優先選擇 purpose=`drag`，缺少時依同一 context 跨 purpose 尋找素材，並在拖曳期間暫停一般 AI；**狀態**：Runtime 選圖。
 - [x] `hard_landing` — **情境**：角色從較高位置重摔到合法地面；**對象**：角色自身 ↔ 地面；**效果**：物理依跌落高度扣心情後，先依目前 band 選擇此 context；該 band 缺素材時只放寬 band、仍不離開此 context；**狀態**：Runtime 選圖。
-- [x] `random` — **情境**：沒有更高優先場景時的一般待機與漫遊；**對象**：角色自身／目前桌面；**效果**：提供 idle 與 move 的日常隨機素材池，會受 mood band、weight 與關係 expression context 共同篩選；**狀態**：Runtime 選圖。
+- [x] `random` — **情境**：沒有更高優先場景時的一般待機、漫遊、玩家短點反應，以及普通拖曳／合奏離場後回到日常；**對象**：角色自身／目前桌面／玩家短點；**效果**：提供 idle 與 move 的日常隨機素材池；一般環境行為會受 mood band、weight 與關係 expression context 共同篩選，短點與兩種離場恢復均嚴格限定此 context 的 idle 素材，不會取用合奏、工作、照護或供品等專用 context；短點另依序優先 `happy`、`smile`；**狀態**：Runtime 選圖。
 - [x] `window_flight` — **情境**：具飛行能力的角色離開地面、飛向視窗或工作列；**對象**：角色自身 → 目標視窗 surface；**效果**：嚴格選擇 purpose=`move` 的飛行素材；缺少此 context 時角色不具自由飛行能力；**狀態**：Runtime 選圖。
 - [x] `window_perch` — **情境**：角色停在視窗上緣；**對象**：角色自身 ↔ 被選中的視窗；**效果**：嚴格選擇 purpose=`idle` 的停棲素材；**狀態**：Runtime 選圖。
 - [x] `window_walk` — **情境**：角色沿視窗上緣水平移動；**對象**：角色自身 ↔ 目前停棲視窗；**效果**：嚴格選擇 purpose=`move` 的窗台行走素材；**狀態**：Runtime 選圖。

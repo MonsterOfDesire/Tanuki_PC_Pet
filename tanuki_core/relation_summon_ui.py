@@ -203,6 +203,7 @@ class RelationSummonPanel(QWidget):
         self.theme = theme
         self.selected_character_name = ""
         self._applying_presentation = False
+        self._last_presentation = None
         self.avatar_specs = {
             avatar_spec.character_name: avatar_spec
             for avatar_spec in assets.avatar_specs
@@ -332,12 +333,15 @@ class RelationSummonPanel(QWidget):
         self.set_binding(binding)
 
     def set_binding(self, binding):
+        if binding is not self.binding:
+            self._last_presentation = None
         self.binding = binding
         connected = binding is not None
         self.unavailable_label.setVisible(not connected)
         if connected:
             self.refresh_from_binding()
         else:
+            self._last_presentation = None
             self.relationship_list.clear()
             self.relationship_list.addItem("目前尚無角色關係資料。")
             self._set_controls_unavailable()
@@ -361,6 +365,8 @@ class RelationSummonPanel(QWidget):
         self.apply_presentation(presentation)
 
     def apply_presentation(self, presentation):
+        if presentation == self._last_presentation:
+            return False
         self._applying_presentation = True
         try:
             self.selected_character_name = presentation.selected_character_name
@@ -433,8 +439,10 @@ class RelationSummonPanel(QWidget):
                 self.relationship_list.addItem(
                     presentation.empty_text or "目前沒有可顯示的關係資料。"
                 )
+            self._last_presentation = presentation
         finally:
             self._applying_presentation = False
+        return True
 
     def _set_controls_unavailable(self):
         for character_name, avatar_button in self.avatar_buttons.items():

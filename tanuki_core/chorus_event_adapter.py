@@ -48,14 +48,16 @@ class ChorusEventAdapter:
         audience_names = tuple(event.audience_names)
         performer_text = "、".join(display(name) for name in performer_names)
         audience_text = "、".join(display(name) for name in audience_names)
+        performance_label = "獨奏" if len(performer_names) == 1 else "合奏"
         if completed:
-            summary = f"{performer_text}完成了一場合奏"
+            summary = f"{performer_text}完成了一場{performance_label}"
             if audience_text:
                 summary += f"，{audience_text}在旁欣賞"
             summary += f"，共持續{event.elapsed_seconds:.1f}秒。"
         else:
             summary = (
-                f"合奏因{self._reason_text(event.reason)}提前結束。"
+                f"{performance_label}因{self._reason_text(event.reason)}"
+                "提前結束。"
             )
         metadata = build_activity_event_metadata(
             event_name=event_name,
@@ -76,6 +78,9 @@ class ChorusEventAdapter:
                 "audience_names": list(audience_names),
                 "performer_count": len(performer_names),
                 "audience_count": len(audience_names),
+                "performance_kind": (
+                    "solo" if len(performer_names) == 1 else "ensemble"
+                ),
                 "settlement_applied": completed,
             },
         )
@@ -111,6 +116,6 @@ class ChorusEventAdapter:
     def _reason_text(reason: str) -> str:
         return {
             "tsuyoshi_honey_guard_needed": "鶴寶需要蜂蜜保護",
-            "tsuyoshi_care_needed": "鶴寶需要照護",
+            "child_care_needed": "有小孩需要照護",
             "no_performers_remaining": "表演者已全數離開",
         }.get(str(reason or ""), "現場狀況改變")

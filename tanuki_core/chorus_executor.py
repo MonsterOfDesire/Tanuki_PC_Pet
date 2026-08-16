@@ -45,6 +45,8 @@ from .chorus_state import (
     ChorusScheduleState,
     ChorusSessionState,
 )
+from .pet_random_rules import RANDOM_CONTEXT
+from .pet_social_rules import child_care_need_is_active
 from .transformation_profiles import (
     get_pet_form_key,
     pet_is_transforming,
@@ -412,7 +414,11 @@ class ChorusExecutor:
             self._start_participant(
                 pet,
                 reaction=reaction,
-                slot=self._allocate_next_slot(session, reaction),
+                slot=self._allocate_next_slot(
+                    session,
+                    reaction,
+                    preferred_side=self._preferred_slot_side(pet, session),
+                ),
                 begins_with_approach=True,
                 capabilities=capabilities,
                 now=now,
@@ -892,16 +898,26 @@ class ChorusExecutor:
 
     def _emergency_reason(self, pets: tuple[object, ...]) -> str:
         for pet in pets:
-            if self._pet_name(pet) != "Tsurumaru Tsuyoshi":
-                continue
-            if str(getattr(pet, "held_item_kind", "") or "") == "honey":
+            name = self._pet_name(pet)
+            if (
+                name == "Tsurumaru Tsuyoshi"
+                and str(getattr(pet, "held_item_kind", "") or "") == "honey"
+            ):
                 return "tsuyoshi_honey_guard_needed"
             care_enabled = getattr(pet, "is_care_feature_enabled", None)
-            if callable(care_enabled) and not bool(care_enabled()):
-                continue
             is_distressed = getattr(pet, "is_distressed", None)
-            if callable(is_distressed) and bool(is_distressed()):
-                return "tsuyoshi_care_needed"
+            if child_care_need_is_active(
+                is_child=not bool(getattr(pet, "is_adult", False)),
+                is_visible=self._pet_is_visible(pet),
+                care_enabled=(
+                    bool(care_enabled()) if callable(care_enabled) else True
+                ),
+                is_recovering=bool(getattr(pet, "is_recovering", False)),
+                is_distressed=(
+                    bool(is_distressed()) if callable(is_distressed) else False
+                ),
+            ):
+                return "child_care_needed"
         return ""
 
     def _build_event(
@@ -949,12 +965,69 @@ class ChorusExecutor:
             min(float(maximum), float(self.uniform(minimum, maximum))),
         )
 
-    @staticmethod
     def _allocate_next_slot(
+        self,
         session: ChorusSessionState,
         reaction: str = CHORUS_REACTION_PERFORM,
+        *,
+        preferred_side: int = 0,
     ) -> int:
         is_audience = reaction == CHORUS_REACTION_AUDIENCE
+        normalized_side = (
+            1 if preferred_side > 0 else
+            -1 if preferred_side < 0 else
+            0
+        )
+        if normalized_side:
+            used_slots = {
+                int(participant.slot)
+                for participant in session.participants.values()
+            }
+            if is_audience:
+                performer_distances = [
+                    abs(int(participant.slot))
+                    for participant in session.participants.values()
+                    if participant.is_performer
+                    and int(participant.slot) * normalized_side > 0
+                ]
+                distance = max(
+                    CHORUS_AUDIENCE_SLOT_BASE,
+                    max(performer_distances, default=0) + 1,
+                )
+            else:
+                distance = 1
+                performer_slots = {
+                    int(participant.slot)
+                    for participant in session.participants.values()
+                    if participant.is_performer
+                }
+                while normalized_side * distance in performer_slots:
+                    distance += 1
+                self._shift_audiences_outward(
+                    session,
+                    side=normalized_side,
+                    starting_distance=distance,
+                )
+                used_slots = {
+                    int(participant.slot)
+                    for participant in session.participants.values()
+                }
+            while normalized_side * distance in used_slots:
+                distance += 1
+            ordinal_field = (
+                "next_audience_slot_ordinal"
+                if is_audience else
+                "next_performer_slot_ordinal"
+            )
+            setattr(
+                session,
+                ordinal_field,
+                max(
+                    1,
+                    int(getattr(session, ordinal_field, 1)),
+                ) + 1,
+            )
+            return normalized_side * distance
         ordinal_field = (
             "next_audience_slot_ordinal"
             if is_audience else
@@ -966,6 +1039,41 @@ class ChorusExecutor:
         if is_audience:
             distance += CHORUS_AUDIENCE_SLOT_BASE - 1
         return distance if ordinal % 2 else -distance
+
+    @staticmethod
+    def _shift_audiences_outward(
+        session: ChorusSessionState,
+        *,
+        side: int,
+        starting_distance: int,
+    ) -> None:
+        audiences = sorted(
+            (
+                participant
+                for participant in session.participants.values()
+                if not participant.is_performer
+                and int(participant.slot) * int(side) > 0
+                and abs(int(participant.slot)) >= int(starting_distance)
+            ),
+            key=lambda participant: abs(int(participant.slot)),
+            reverse=True,
+        )
+        for participant in audiences:
+            participant.slot = int(participant.slot) + int(side)
+
+    def _preferred_slot_side(
+        self,
+        pet,
+        session: ChorusSessionState,
+    ) -> int:
+        if pet is None:
+            return 0
+        pet_center = self._pet_x(pet) + self._pet_width(pet) / 2.0
+        if pet_center < float(session.center_x):
+            return -1
+        if pet_center > float(session.center_x):
+            return 1
+        return 0
 
     def _slot_target_x(self, pet, slot: int, *, pets_by_name) -> float:
         session = self.session
@@ -1020,12 +1128,20 @@ class ChorusExecutor:
 
     @staticmethod
     def _restore_ambient(pet):
-        change_state = getattr(pet, "change_state", None)
-        if callable(change_state):
-            change_state("idle")
-        else:
-            pet.state = "idle"
-            pet.state_timer = 0
+        pet.state = "idle"
+        pet.state_timer = 0
+        changed = False
+        change_for_context = getattr(
+            pet,
+            "change_state_for_context_with_preferences",
+            None,
+        )
+        if callable(change_for_context):
+            changed = bool(change_for_context("idle", RANDOM_CONTEXT))
+        if not changed:
+            apply_random_idle = getattr(pet, "apply_random_idle_animation", None)
+            if callable(apply_random_idle):
+                apply_random_idle()
         refresh = getattr(pet, "refresh_movement_state", None)
         if callable(refresh):
             refresh()

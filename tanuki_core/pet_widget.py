@@ -18,18 +18,25 @@ from .pet_behavior_layers import PetBehaviorLayersMixin
 from .pet_collision_rules import CollisionSnapshot, compute_collision_resolution
 from .pet_logic import (
     LONG_HOLD_RELEASE,
+    MOOD_NEARBY_RADIUS_PX,
     compute_mood_update,
     decide_release_interaction,
     derive_mood_state,
+    natural_mood_update_is_paused,
 )
 from .pet_physics import compute_gravity_step
 from .pet_random_rules import (
     NORMAL_RANDOM_DIRECTION_FLIP_CHANCE,
+    RANDOM_CONTEXT,
     SEVERE_RANDOM_DIRECTION_FLIP_CHANCE,
+    SIDE_READY_FOLLOWUP_CONTEXT,
+    SIDE_READY_FOLLOWUP_MIN_HOLD_STEPS,
     build_random_state_transition,
+    choose_idle_animation_context,
     derive_random_visual_purpose,
     extend_random_state_timer,
     get_idle_action_override,
+    is_visible_side_ready_followup,
     resolve_random_stuck_behavior,
     should_refresh_severe_random_state,
 )
@@ -104,9 +111,8 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
     STAR_BASE_INTERVAL_MS = 30
     ANIMATION_BASE_INTERVAL_MS = 80
     ANIMATION_MIN_INTERVAL_MS = 17
-    DRAG_HOLD_THRESHOLD_MS = 50
+    DRAG_HOLD_THRESHOLD_MS = 100
     DRAG_HOLD_THRESHOLD_SECONDS = DRAG_HOLD_THRESHOLD_MS / 1000.0
-    DRAG_MOVE_THRESHOLD_PIXELS = 3
 
     def __init__(self, char_id, char_folder, scale=0.8, settings_provider=None, window_tracker=None):
         super().__init__()
@@ -294,6 +300,82 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
                 self.width(),
                 draw_y,
             )
+        self.schedule_pending_ambient_animation_confirmation()
+
+    def queue_ambient_animation_event_confirmation(self, context):
+        if not is_visible_side_ready_followup(
+            self.current_purpose,
+            self.current_action_tag,
+        ):
+            self.pending_ambient_animation_event = ()
+            return False
+        serial = int(self.ambient_animation_event_serial) + 1
+        self.ambient_animation_event_serial = serial
+        self.state = "idle"
+        self.state_timer = max(
+            int(self.state_timer),
+            SIDE_READY_FOLLOWUP_MIN_HOLD_STEPS,
+        )
+        self.pending_ambient_animation_event = (
+            serial,
+            str(context or ""),
+            str(self.current_purpose or ""),
+            str(self.current_action_tag or ""),
+            str(self.current_mood_tag or ""),
+            id(self.current_frames),
+        )
+        self.update()
+        return True
+
+    def schedule_pending_ambient_animation_confirmation(self):
+        pending = tuple(self.pending_ambient_animation_event or ())
+        if not pending:
+            return False
+        if not self.pending_ambient_animation_matches_current_visual():
+            self.pending_ambient_animation_event = ()
+            return False
+        serial = int(pending[0])
+        if self.ambient_animation_confirmation_scheduled_serial == serial:
+            return True
+        self.ambient_animation_confirmation_scheduled_serial = serial
+        QTimer.singleShot(
+            0,
+            lambda expected_serial=serial: (
+                self.confirm_pending_ambient_animation_event(expected_serial)
+            ),
+        )
+        return True
+
+    def pending_ambient_animation_matches_current_visual(self):
+        pending = tuple(self.pending_ambient_animation_event or ())
+        if len(pending) != 6:
+            return False
+        _, context, purpose, action_tag, mood_tag, frames_token = pending
+        return (
+            context == SIDE_READY_FOLLOWUP_CONTEXT
+            and str(self.name or "") == "Tsurumaru Tsuyoshi"
+            and purpose == str(self.current_purpose or "")
+            and action_tag == str(self.current_action_tag or "")
+            and mood_tag == str(self.current_mood_tag or "")
+            and int(frames_token) == id(self.current_frames)
+            and bool(self.current_frames)
+            and is_visible_side_ready_followup(purpose, action_tag)
+        )
+
+    def confirm_pending_ambient_animation_event(self, expected_serial):
+        pending = tuple(self.pending_ambient_animation_event or ())
+        if not pending or int(pending[0]) != int(expected_serial):
+            return False
+        if not self.pending_ambient_animation_matches_current_visual():
+            self.pending_ambient_animation_event = ()
+            return False
+        _, context, _, _, _, _ = pending
+        self.pending_ambient_animation_event = ()
+        provider = getattr(self, "ambient_animation_event_provider", None)
+        if not callable(provider):
+            return False
+        provider(self, context, now=app_now())
+        return True
 
     def next_frame(self, steps=1):
         if self.current_frames:
@@ -327,14 +409,37 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         self.update_star_animation()
 
     def update_mood(self, all_pets):
+        activity_state = getattr(self, "activity_state", None)
+        if natural_mood_update_is_paused(
+            activity_kind=getattr(
+                activity_state,
+                "activity_kind",
+                "none",
+            ),
+            activity_active=bool(
+                getattr(activity_state, "active", False)
+            ),
+        ):
+            return
         my_center = self.geometry().center()
         nearby_count = 0
         has_adult_nearby = False
+        nearest_adult_distance = None
         for other in all_pets:
             if other == self or not other.isVisible():
                 continue
             other_center = other.geometry().center()
-            if math.hypot(my_center.x() - other_center.x(), my_center.y() - other_center.y()) < 250:
+            distance = math.hypot(
+                my_center.x() - other_center.x(),
+                my_center.y() - other_center.y(),
+            )
+            if bool(getattr(other, "is_adult", False)):
+                nearest_adult_distance = (
+                    distance
+                    if nearest_adult_distance is None else
+                    min(nearest_adult_distance, distance)
+                )
+            if distance < MOOD_NEARBY_RADIUS_PX:
                 nearby_count += 1
                 has_adult_nearby = has_adult_nearby or other.is_adult
 
@@ -346,6 +451,10 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             nearby_count=nearby_count,
             has_adult_nearby=has_adult_nearby,
             noise=random.uniform(-1, 1),
+            change_roll=random.random(),
+            direction_roll=random.random(),
+            magnitude_roll=random.random(),
+            nearest_adult_distance=nearest_adult_distance,
             climate_key=getattr(
                 getattr(self, "settings_provider", None),
                 "mood_climate",
@@ -502,7 +611,7 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
 
     def update_random_behavior(self, allow_reselect=True):
         expression_context = self.get_random_animation_context()
-        random_context = "random"
+        random_context = RANDOM_CONTEXT
         reset_ambient_low_mood_tendency_if_inactive(self)
         if self.mood_score < 20 and self.current_purpose != "interaction":
             self.last_x = self.x()
@@ -530,15 +639,20 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             elif should_refresh_severe and not allow_reselect:
                 self.state_timer = extend_random_state_timer(self.state_timer, 30)
 
-            severe_candidates = self.get_random_manifest_candidates(
-                "move" if self.state == "move" else "idle",
-                context=random_context,
-            )
-            if self.current_purpose != ("move" if self.state == "move" else "idle"):
-                if self.change_state_candidates(
-                    self.get_randomized_candidates(severe_candidates),
-                    context=random_context,
-                ):
+            visual_purpose = "move" if self.state == "move" else "idle"
+            if self.current_purpose != visual_purpose:
+                if visual_purpose == "idle":
+                    changed = self.apply_random_idle_animation()
+                else:
+                    severe_candidates = self.get_random_manifest_candidates(
+                        visual_purpose,
+                        context=random_context,
+                    )
+                    changed = self.change_state_candidates(
+                        self.get_randomized_candidates(severe_candidates),
+                        context=random_context,
+                    )
+                if changed:
                     self.configure_stationary_move_mode("random", force=True)
 
             if self.state == "move":
@@ -557,12 +671,7 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             else:
                 self.reset_stationary_move_mode()
                 if self.current_purpose != "idle":
-                    if self.change_state_candidates(
-                        self.get_randomized_candidates(
-                            self.get_random_manifest_candidates("idle", context=random_context)
-                        ),
-                        context=random_context,
-                    ):
+                    if self.apply_random_idle_animation():
                         self.reset_stationary_move_mode()
             return
 
@@ -604,7 +713,11 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         base_speed = self.get_base_speed()
         visual_purpose = derive_random_visual_purpose(self.state, base_speed)
         expression_handled = False
-        if visual_purpose == "idle":
+        side_ready_followup_pending = bool(
+            visual_purpose == "idle"
+            and getattr(self, "idle_side_stand_armed", False)
+        )
+        if visual_purpose == "idle" and not side_ready_followup_pending:
             expression_handled = self.apply_expression_idle_behavior(expression_context)
         current_visual_frames = None
         preserve_visual_mood_score = self.mood_score
@@ -623,15 +736,19 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
                 context=preserve_context,
             )
         if self.current_purpose != visual_purpose or not current_visual_frames:
-            candidates = self.get_random_manifest_candidates(
-                visual_purpose,
-                context=random_context,
-            )
-            if apply_ambient_low_mood_tendency(
-                self,
-                self.get_randomized_candidates(candidates),
-                context=random_context,
-            ):
+            if visual_purpose == "idle":
+                changed = self.apply_random_idle_animation()
+            else:
+                candidates = self.get_random_manifest_candidates(
+                    visual_purpose,
+                    context=random_context,
+                )
+                changed = apply_ambient_low_mood_tendency(
+                    self,
+                    self.get_randomized_candidates(candidates),
+                    context=random_context,
+                )
+            if changed:
                 self.configure_stationary_move_mode("random", force=True)
 
         if self.state == "move":
@@ -649,14 +766,44 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         else:
             self.reset_stationary_move_mode()
             if self.current_purpose != "idle":
-                if apply_ambient_low_mood_tendency(
-                    self,
-                    self.get_randomized_candidates(
-                        self.get_random_manifest_candidates("idle", context=random_context)
-                    ),
-                    context=random_context,
-                ):
+                if self.apply_random_idle_animation():
                     self.reset_stationary_move_mode()
+
+    def apply_random_idle_animation(self):
+        followup_armed = bool(
+            getattr(self, "idle_side_stand_armed", False)
+        )
+        context = RANDOM_CONTEXT
+        if followup_armed:
+            context = choose_idle_animation_context(
+                side_ready_followup_armed=True,
+                roll=random.random(),
+            )
+        contexts = (
+            (SIDE_READY_FOLLOWUP_CONTEXT, RANDOM_CONTEXT)
+            if context == SIDE_READY_FOLLOWUP_CONTEXT
+            else (RANDOM_CONTEXT,)
+        )
+        for candidate_context in contexts:
+            if candidate_context == RANDOM_CONTEXT and followup_armed:
+                self.idle_side_stand_armed = False
+            candidates = self.get_random_manifest_candidates(
+                "idle",
+                context=candidate_context,
+            )
+            applied = apply_ambient_low_mood_tendency(
+                self,
+                self.get_randomized_candidates(candidates),
+                context=candidate_context,
+            )
+            if not applied:
+                continue
+            if candidate_context == SIDE_READY_FOLLOWUP_CONTEXT:
+                self.queue_ambient_animation_event_confirmation(
+                    candidate_context
+                )
+            return True
+        return False
 
     def update_ai_behavior(self, all_pets):
         profiler = getattr(self, "runtime_profiler", None)
@@ -845,7 +992,13 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
 
     def apply_reaction(self, preferred_moods, is_negative=False):
         forbidden = ["happy", "smile", "confidence", "cool", "glance"] if is_negative else []
-        result = self.asset_manager.get_safe_reaction_result("idle", preferred_moods, forbidden=forbidden)
+        result = self.asset_manager.get_contextual_result(
+            "idle",
+            context="random",
+            preferred_moods=preferred_moods,
+            forbidden=forbidden,
+            ordered_preferences=True,
+        )
         if self.apply_animation_result("idle", result):
             self.state = "idle"
             self.state_timer = 80
@@ -982,23 +1135,17 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         if self.is_angry_locked or self.care_mode != "none" or self.is_under_care(app_now()) or self.is_offer_locked(app_now()):
             return
         self.drag_press_pending = True
-        self.drag_motion_detected = False
         self.drag_start_time = time.time()
         global_point = event.globalPosition().toPoint()
-        self.drag_press_global_x = global_point.x()
-        self.drag_press_global_y = global_point.y()
         self.drag_pos = global_point - self.pos()
         self.drag_hold_timer.start(self.DRAG_HOLD_THRESHOLD_MS)
 
     def _cancel_pending_drag_press(self):
         self.drag_hold_timer.stop()
         self.drag_press_pending = False
-        self.drag_motion_detected = False
 
     def _begin_drag_after_hold(self):
         if not self.drag_press_pending:
-            return False
-        if not self.drag_motion_detected:
             return False
         elapsed = time.time() - self.drag_start_time
         if elapsed < self.DRAG_HOLD_THRESHOLD_SECONDS:
@@ -1078,16 +1225,7 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
 
     def mouseMoveEvent(self, event):
         if self.drag_press_pending:
-            global_point = event.globalPosition().toPoint()
-            delta_x = global_point.x() - self.drag_press_global_x
-            delta_y = global_point.y() - self.drag_press_global_y
-            threshold = self.DRAG_MOVE_THRESHOLD_PIXELS
-            if (
-                (delta_x * delta_x) + (delta_y * delta_y)
-                >= threshold * threshold
-            ):
-                self.drag_motion_detected = True
-                self._begin_drag_after_hold()
+            self._begin_drag_after_hold()
         if self.dragging:
             if self.perched_window_hwnd:
                 self.detach_from_window_surface()
@@ -1105,10 +1243,7 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             return
         duration = time.time() - self.drag_start_time
         if self.drag_press_pending:
-            if (
-                self.drag_motion_detected
-                and duration >= self.DRAG_HOLD_THRESHOLD_SECONDS
-            ):
+            if duration >= self.DRAG_HOLD_THRESHOLD_SECONDS:
                 self._begin_drag_after_hold()
             if not self.dragging:
                 self._cancel_pending_drag_press()
@@ -1137,7 +1272,12 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             self.mood_score = max(0, min(100, self.mood_score + decision.mood_delta))
             self.apply_reaction(["scold", "hard-cry", "exhausted"], is_negative=True)
         else:
-            self.change_state("idle")
+            self.state = "idle"
+            if not self.change_state_for_context_with_preferences(
+                "idle",
+                RANDOM_CONTEXT,
+            ):
+                self.apply_random_idle_animation()
         self.refresh_movement_state()
 
     def is_offer_locked(self, now=None):

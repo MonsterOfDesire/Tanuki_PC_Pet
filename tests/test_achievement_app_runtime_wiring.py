@@ -2,7 +2,11 @@ import unittest
 from types import SimpleNamespace
 
 from tanuki_core.app_runtime import TanukiAppRuntime
+from tanuki_core.activity_runtime_controller import ActivityRuntimeController
 from tanuki_core.achievement_gameplay_bridge import AchievementGameplayBridge
+from tanuki_core.achievement_runtime_coordinator import (
+    AchievementRuntimeCoordinator,
+)
 from tanuki_core.chorus_executor import ChorusRuntimeResult
 from tanuki_core.item_scene_coordinator import (
     ActiveItemScene,
@@ -54,9 +58,10 @@ class AchievementAppRuntimeWiringTests(unittest.TestCase):
     def test_state_change_saves_and_forwards_only_new_unlock_ids(self):
         runtime = object.__new__(TanukiAppRuntime)
         calls = []
-        runtime.dashboard = SimpleNamespace(
-            schedule_save=lambda: calls.append("save"),
-            handle_achievement_unlocks=(
+        runtime.achievement_runtime_coordinator = _achievement_coordinator(
+            "sandbox",
+            save_callback=lambda: calls.append("save"),
+            unlock_callback=(
                 lambda achievement_ids: calls.append(tuple(achievement_ids))
             ),
         )
@@ -71,12 +76,40 @@ class AchievementAppRuntimeWiringTests(unittest.TestCase):
             ["save", ("race.first_natural_finish",)],
         )
 
+    def test_tsuyoshi_side_ready_followup_emits_instantaneous_event(self):
+        service = FakeAchievementRuntimeService()
+        bridge = AchievementGameplayBridge(
+            service=service,
+            world_mode_provider=lambda: "sandbox",
+        )
+
+        result = bridge.handle_ambient_animation_context(
+            character_name="Tsurumaru Tsuyoshi",
+            context="side_ready_followup",
+            now=42.0,
+        )
+
+        self.assertTrue(result)
+        self.assertEqual(len(service.consumed), 1)
+        metadata = service.consumed[0]
+        self.assertEqual(
+            metadata["activity_event_name"],
+            "ambient.tsuyoshi.side_ready_followup",
+        )
+        self.assertEqual(metadata["activity_world_mode"], "sandbox")
+        self.assertEqual(metadata["activity_source"], "ambient_random")
+        self.assertEqual(
+            metadata["animation_context"],
+            "side_ready_followup",
+        )
+
     def test_progress_only_state_change_saves_without_refreshing_ui(self):
         runtime = object.__new__(TanukiAppRuntime)
         calls = []
-        runtime.dashboard = SimpleNamespace(
-            schedule_save=lambda: calls.append("save"),
-            handle_achievement_unlocks=(
+        runtime.achievement_runtime_coordinator = _achievement_coordinator(
+            "sandbox",
+            save_callback=lambda: calls.append("save"),
+            unlock_callback=(
                 lambda achievement_ids: calls.append(tuple(achievement_ids))
             ),
         )
@@ -95,14 +128,16 @@ class AchievementAppRuntimeWiringTests(unittest.TestCase):
                 activity if activity_id == "race-1" else None
             )
         )
-        runtime.race_executor = SimpleNamespace(
+        runtime.activity_runtime_controller.activity_coordinator = (
+            runtime.activity_coordinator
+        )
+        runtime.activity_runtime_controller.race_executor = SimpleNamespace(
             update=lambda **_kwargs: RaceRuntimeResult(
                 True,
                 activity_id="race-1",
                 started=True,
             )
         )
-        runtime.record_race_event = lambda _event: None
 
         result = runtime.update_race(now=10.0)
 
@@ -133,16 +168,16 @@ class AchievementAppRuntimeWiringTests(unittest.TestCase):
                 activity if activity_id == "work-1" else None
             )
         )
-        runtime.rudolf_work_executor = SimpleNamespace(
+        runtime.activity_runtime_controller.activity_coordinator = (
+            runtime.activity_coordinator
+        )
+        runtime.activity_runtime_controller.work_executor = SimpleNamespace(
             update=lambda **_kwargs: RudolfWorkRuntimeResult(
                 True,
                 activity_id="work-1",
                 started=True,
             )
         )
-        runtime.household = object()
-        runtime.household_event_schedule = object()
-        runtime._record_resolved_household_event = lambda _event: None
 
         result = runtime.update_rudolf_work(now=30.0)
 
@@ -158,7 +193,7 @@ class AchievementAppRuntimeWiringTests(unittest.TestCase):
 
     def test_chorus_session_id_is_the_achievement_session_id(self):
         runtime = _runtime_shell("sandbox")
-        runtime.chorus_executor = SimpleNamespace(
+        runtime.activity_runtime_controller.chorus_executor = SimpleNamespace(
             session=SimpleNamespace(
                 session_id="chorus-1",
                 world_mode="sandbox",
@@ -173,7 +208,6 @@ class AchievementAppRuntimeWiringTests(unittest.TestCase):
                 ),
             ),
         )
-        runtime.record_chorus_event = lambda _event: None
 
         results = runtime.update_chorus(now=40.0)
 
@@ -193,7 +227,7 @@ class AchievementAppRuntimeWiringTests(unittest.TestCase):
 
     def test_interrupted_race_releases_eligibility_session(self):
         runtime = _runtime_shell("sandbox")
-        runtime.race_executor = SimpleNamespace(
+        runtime.activity_runtime_controller.race_executor = SimpleNamespace(
             update=lambda **_kwargs: RaceRuntimeResult(
                 True,
                 reason="participant_hidden",
@@ -201,7 +235,6 @@ class AchievementAppRuntimeWiringTests(unittest.TestCase):
                 interrupted=True,
             )
         )
-        runtime.record_race_event = lambda _event: None
 
         runtime.update_race(now=50.0)
 
@@ -212,7 +245,7 @@ class AchievementAppRuntimeWiringTests(unittest.TestCase):
 
     def test_natural_sleep_starts_and_completes_one_session(self):
         runtime = _runtime_shell("sandbox")
-        runtime._handle_sleep_achievement_result(
+        runtime.achievement_runtime_coordinator.handle_sleep_result(
             SleepRuntimeResult(
                 True,
                 activity_id="sleep-1",
@@ -227,7 +260,7 @@ class AchievementAppRuntimeWiringTests(unittest.TestCase):
             ),
             now=10.0,
         )
-        runtime._handle_sleep_achievement_result(
+        runtime.achievement_runtime_coordinator.handle_sleep_result(
             SleepRuntimeResult(
                 True,
                 activity_id="sleep-1",
@@ -262,7 +295,7 @@ class AchievementAppRuntimeWiringTests(unittest.TestCase):
 
     def test_sandbox_sleep_control_never_starts_achievement_session(self):
         runtime = _runtime_shell("sandbox")
-        runtime._handle_sleep_achievement_result(
+        runtime.achievement_runtime_coordinator.handle_sleep_result(
             SleepRuntimeResult(
                 True,
                 activity_id="sleep-test",
@@ -298,8 +331,11 @@ class AchievementAppRuntimeWiringTests(unittest.TestCase):
             source="sandbox_autonomous_start",
         )
 
-        runtime._begin_transformation_achievement(started, started_at=20.0)
-        runtime._complete_transformation_achievement(
+        runtime.achievement_runtime_coordinator.begin_transformation(
+            started,
+            started_at=20.0,
+        )
+        runtime.achievement_runtime_coordinator.complete_transformation(
             completed,
             occurred_at=22.0,
         )
@@ -415,8 +451,72 @@ def _runtime_shell(world_mode):
         service=runtime.achievement_runtime_service,
         world_mode_provider=lambda: world_mode,
     )
+    runtime.achievement_runtime_coordinator = _achievement_coordinator(
+        world_mode,
+        service=runtime.achievement_runtime_service,
+        gameplay_bridge=runtime.achievement_gameplay_bridge,
+    )
     runtime.find_pet_by_name = lambda *_args, **_kwargs: None
+    runtime.activity_coordinator = SimpleNamespace(
+        get_activity=lambda _activity_id: None,
+        get_activity_for_participant=lambda _name: None,
+        get_active_activities=lambda: (),
+    )
+    runtime.household = SimpleNamespace(race_statistics=None)
+    runtime.household_event_schedule = object()
+    runtime.activity_runtime_controller = ActivityRuntimeController(
+        activity_coordinator=runtime.activity_coordinator,
+        work_settlement_adapter=object(),
+        work_executor=SimpleNamespace(),
+        sleep_executor=SimpleNamespace(),
+        race_executor=SimpleNamespace(),
+        race_event_adapter=SimpleNamespace(),
+        chorus_executor=SimpleNamespace(),
+        chorus_event_adapter=SimpleNamespace(),
+        achievement_runtime_coordinator=(
+            runtime.achievement_runtime_coordinator
+        ),
+        transformation_runtime_controller=None,
+        pets=runtime.pets_list,
+        pet_registry=SimpleNamespace(
+            find_by_name=lambda *_args, **_kwargs: None
+        ),
+        household=runtime.household,
+        household_event_schedule=runtime.household_event_schedule,
+        world_mode_provider=lambda: world_mode,
+        record_household_event=lambda **_kwargs: None,
+        record_resolved_household_event=lambda _event: None,
+        apply_race_mood_reward=lambda *_args: None,
+        apply_reverse_race_relationship_reward=lambda *_args: None,
+        apply_chorus_mood_reward=lambda *_args: None,
+        apply_chorus_relationship_reward=lambda *_args: None,
+    )
     return runtime
+
+
+def _achievement_coordinator(
+    world_mode,
+    *,
+    service=None,
+    gameplay_bridge=None,
+    save_callback=None,
+    unlock_callback=None,
+):
+    service = service or FakeAchievementRuntimeService()
+    gameplay_bridge = gameplay_bridge or AchievementGameplayBridge(
+        service=service,
+        world_mode_provider=lambda: world_mode,
+    )
+    return AchievementRuntimeCoordinator(
+        state=None,
+        eligibility_guard=SimpleNamespace(),
+        time_scale_provider=lambda: 1.0,
+        world_mode_provider=lambda: world_mode,
+        service=service,
+        gameplay_bridge=gameplay_bridge,
+        save_callback=save_callback,
+        unlock_callback=unlock_callback,
+    )
 
 
 def _activity(

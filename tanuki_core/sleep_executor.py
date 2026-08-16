@@ -43,6 +43,7 @@ from .sleep_rules import (
     SLEEP_JOIN_ARRIVAL_DISTANCE,
     SLEEP_JOIN_MOVE_SPEED_SCALE,
     SLEEP_MAX_CONCURRENT,
+    SLEEP_NATURAL_COMPLETION_MOOD_REWARD,
     SLEEP_OBSERVE_MAX_SECONDS,
     SLEEP_OBSERVE_MIN_SECONDS,
     SLEEP_RETRY_MAX_SECONDS,
@@ -428,6 +429,8 @@ class SleepExecutor:
         now: float,
         reason: str,
         care_target_name: str = "",
+        waking_band_override: str = "",
+        visual_afterglow_seconds: float = 0.0,
     ) -> SleepRuntimeResult:
         now = float(now)
         participant_name = self._pet_name(pet)
@@ -453,6 +456,9 @@ class SleepExecutor:
         activity.metadata["care_wake_target_name"] = str(
             care_target_name or ""
         )
+        activity.metadata["waking_band_override"] = str(
+            waking_band_override or ""
+        )
         transition = self.coordinator.transition_to_phase(
             activity.activity_id,
             phase_name=SLEEP_WAKING_PHASE,
@@ -473,6 +479,7 @@ class SleepExecutor:
         animation = self.runtime_adapter.apply_phase_animation(
             pet,
             self.profile.waking_animation,
+            band_override=str(waking_band_override or ""),
         )
         if not animation.applied:
             return self._interrupt(
@@ -481,6 +488,19 @@ class SleepExecutor:
                 now=now,
                 reason="early_wake_animation_failed",
             )
+
+        if float(visual_afterglow_seconds) > 0.0:
+            start_afterglow = getattr(
+                pet,
+                "start_visual_band_afterglow",
+                None,
+            )
+            if callable(start_afterglow):
+                start_afterglow(
+                    str(waking_band_override or "low"),
+                    duration=float(visual_afterglow_seconds),
+                    now=now,
+                )
 
         if group_id:
             activity.metadata["sleep_group_id"] = ""
@@ -945,6 +965,20 @@ class SleepExecutor:
                 expected_activity_id=activity_id,
             )
         if transition.finished:
+            early_wake_reason = str(
+                active.metadata.get("early_wake_reason", "") or ""
+            )
+            trigger_kind = str(
+                active.metadata.get("sleep_trigger", "") or ""
+            )
+            if (
+                not early_wake_reason
+                and trigger_kind != SLEEP_TRIGGER_SANDBOX_CONTROL
+            ):
+                self.runtime_adapter.apply_mood_delta(
+                    pet,
+                    SLEEP_NATURAL_COMPLETION_MOOD_REWARD,
+                )
             self._schedule_after_wake(participant_name, now=now)
             if group_id:
                 self._reanchor_sleep_group(group_id)

@@ -742,6 +742,39 @@ class FakeCareApproachPet(PetSocialCareMixin):
 
 
 class PetSocialCareMixinTests(unittest.TestCase):
+    def test_sleep_and_chorus_pause_ambient_mood_events(self):
+        for activity_kind in ("sleep", "chorus"):
+            with self.subTest(activity_kind=activity_kind):
+                pet = types.SimpleNamespace(
+                    activity_state=types.SimpleNamespace(
+                        active=True,
+                        activity_kind=activity_kind,
+                    )
+                )
+
+                self.assertFalse(
+                    PetSocialCareMixin.update_ambient_mood_events(
+                        pet,
+                        10.0,
+                    )
+                )
+
+    def test_visual_band_afterglow_uses_band_probe_without_changing_mood(self):
+        pet = FakeExpressionPet()
+        original_mood = pet.mood_score
+
+        started = pet.start_visual_band_afterglow(
+            "low",
+            duration=8.0,
+            now=10.0,
+        )
+
+        self.assertTrue(started)
+        self.assertEqual(pet.mood_score, original_mood)
+        self.assertEqual(pet.get_visual_mood_score(now=12.0), 30.0)
+        self.assertEqual(pet.get_visual_mood_score(now=18.0), original_mood)
+        self.assertEqual(pet.visual_band_afterglow, "")
+
     def test_care_lock_mood_recovery_uses_fractional_logic_step_scale(self):
         normal_pet = FakeCareLockPet(logic_step_scale=1.0)
         scaled_pet = FakeCareLockPet(logic_step_scale=4.25)

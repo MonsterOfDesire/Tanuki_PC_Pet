@@ -134,6 +134,52 @@ class BottleHoneySceneExecutorTests(unittest.TestCase):
         runtime.ensure_pet_held_item.assert_called_once_with(child_pet, "honey", source="ground")
         runtime.apply_held_item_behavior.assert_called_once_with(child_pet, 30.0)
 
+    def test_honey_start_releases_sleep_activity_before_scene_lock(self):
+        sleep_state = SimpleNamespace(active=True, activity_kind="sleep")
+
+        def interrupt_sleep(_pet, *, reason):
+            self.assertEqual(reason, "honey_guard")
+            sleep_state.active = False
+            sleep_state.activity_kind = "none"
+            return True
+
+        guardian_pet = SimpleNamespace(
+            name="Sirius Symboli",
+            activity_state=sleep_state,
+            activity_user_interrupt_provider=Mock(side_effect=interrupt_sleep),
+        )
+        child_pet = SimpleNamespace(name="Tsurumaru Tsuyoshi")
+        coordinator = Mock()
+        coordinator.start_scene.return_value = SimpleNamespace(started=True)
+        runtime = SimpleNamespace(
+            ensure_pet_held_item=Mock(),
+            choose_honey_guardian_for_child=Mock(
+                return_value=guardian_pet.name
+            ),
+            find_pet_by_name=Mock(return_value=guardian_pet),
+            pet_is_window_transitioning_for_offer=Mock(return_value=False),
+            prepare_pet_window_state_for_offer=Mock(return_value=False),
+            interrupt_pet_window_motion_for_offer=Mock(),
+            item_scene_coordinator=coordinator,
+            apply_held_item_behavior=Mock(return_value=True),
+            refresh_offer_scene_locks=Mock(),
+        )
+
+        result = self.executor.start_honey_guard_scene(
+            runtime,
+            child_pet,
+            source="offer_tray",
+            now=40.0,
+        )
+
+        self.assertTrue(result)
+        self.assertFalse(sleep_state.active)
+        guardian_pet.activity_user_interrupt_provider.assert_called_once_with(
+            guardian_pet,
+            reason="honey_guard",
+        )
+        coordinator.start_scene.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -19,6 +19,7 @@ from tanuki_core.race_rules import (
     evaluate_race_eligibility,
     evaluate_race_emergency_interrupt,
     get_race_expected_speed,
+    get_race_finish_standoff_distance,
     get_feasible_race_courses,
     get_race_schedule_policy,
     race_finish_is_ready,
@@ -247,14 +248,24 @@ class RaceRulesTests(unittest.TestCase):
         self.assertEqual(lane.distance, 1100.0)
         self.assertLess(lane.finish_x, lane.challenger_start_x)
 
-    def test_challenge_distance_and_finish_regroup_thresholds_are_explicit(self):
+    def test_challenge_distance_and_finish_regroup_spacing_are_explicit(self):
         self.assertTrue(race_pair_is_close(420.0))
         self.assertFalse(race_pair_is_close(420.1))
+        target = get_race_finish_standoff_distance((80.0, 80.0))
+        self.assertEqual(target, 184.0)
         self.assertFalse(
-            race_finish_is_ready(winner_arrived=True, separation=150.1)
+            race_finish_is_ready(
+                winner_arrived=True,
+                separation=177.9,
+                target_separation=target,
+            )
         )
         self.assertTrue(
-            race_finish_is_ready(winner_arrived=True, separation=150.0)
+            race_finish_is_ready(
+                winner_arrived=True,
+                separation=178.0,
+                target_separation=target,
+            )
         )
 
     def test_challenge_spacing_distinguishes_overlap_from_remote_distance(self):

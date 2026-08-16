@@ -18,9 +18,7 @@ from .race_rules import (
     RACE_ACTIVITY_KIND,
     RACE_ARRIVAL_DISTANCE,
     RACE_CHALLENGE_PHASE,
-    RACE_FINISH_MAX_SEPARATION,
     RACE_FINISH_PHASE,
-    RACE_FINISH_STANDOFF_DISTANCE,
     RACE_OPPONENT_ROLE,
     RACE_POST_INTERACTION_SECONDS,
     RACE_READY_PHASE,
@@ -40,6 +38,7 @@ from .race_rules import (
     evaluate_race_eligibility,
     evaluate_race_emergency_interrupt,
     get_race_expected_speed,
+    get_race_finish_standoff_distance,
     get_feasible_race_courses,
     get_race_course,
     get_race_schedule_policy,
@@ -65,6 +64,8 @@ from .transformation_profiles import (
 
 
 class RaceExecutor:
+    GROUND_Y_TOLERANCE = 2.0
+
     def __init__(
         self,
         *,
@@ -897,31 +898,38 @@ class RaceExecutor:
 
         winner = pets_by_name.get(winner_name)
         loser = pets_by_name.get(loser_name)
-        separation = abs(self._pet_x(winner) - self._pet_x(loser))
-        if separation > RACE_FINISH_MAX_SEPARATION:
-            direction = int(activity.metadata.get("race_direction", 1) or 1)
-            loser_target_x = self._pet_x(winner) - (
-                direction * RACE_FINISH_STANDOFF_DISTANCE
-            )
-            loser_role = (
-                "challenger" if loser_name == challenger_name else "opponent"
-            )
-            self._move_pet_precise(
-                activity,
-                loser,
-                loser_target_x,
-                speed=float(
-                    activity.metadata.get(f"{loser_role}_speed", 1.0)
-                ),
-                remainder_key=f"{loser_role}_move_remainder",
-            )
-            self._face_each_other(winner, loser)
-
-        separation = abs(self._pet_x(winner) - self._pet_x(loser))
+        direction = int(activity.metadata.get("race_direction", 1) or 1)
+        desired_separation = get_race_finish_standoff_distance(
+            (self._pet_radius(winner), self._pet_radius(loser))
+        )
+        winner_center = self._pet_x(winner) + self._pet_width(winner) / 2.0
+        loser_target_center = winner_center - direction * desired_separation
+        loser_target_x = self._clamp_target_for_pet(
+            loser,
+            loser_target_center - self._pet_width(loser) / 2.0,
+        )
+        effective_target_separation = abs(
+            winner_center
+            - (loser_target_x + self._pet_width(loser) / 2.0)
+        )
+        loser_role = (
+            "challenger" if loser_name == challenger_name else "opponent"
+        )
+        self._move_pet_precise(
+            activity,
+            loser,
+            loser_target_x,
+            speed=float(
+                activity.metadata.get(f"{loser_role}_speed", 1.0)
+            ),
+            remainder_key=f"{loser_role}_move_remainder",
+        )
+        separation = self._pet_center_distance(winner, loser)
         self._face_each_other(winner, loser)
         return race_finish_is_ready(
             winner_arrived=True,
             separation=separation,
+            target_separation=effective_target_separation,
         ), ""
 
     def _complete_declined(
@@ -1146,17 +1154,31 @@ class RaceExecutor:
                 mood_score=float(getattr(pet, "mood_score", 60.0)),
                 visible=snapshot.visible,
                 enabled=snapshot.enabled,
-                grounded=(
-                    float(getattr(pet, "vy", 0.0) or 0.0) == 0.0
-                    and str(getattr(pet, "flight_mode", "none") or "none")
-                    == "none"
-                    and not bool(getattr(pet, "perched_window_hwnd", 0))
-                ),
+                grounded=self._pet_is_on_race_floor(pet),
                 busy=bool(snapshot.active_activity_id or snapshot.busy_reasons),
                 capability_ready=bool(profile_ready and form_ready),
             ),
             preview=preview,
         )
+
+    def _pet_is_on_race_floor(self, pet) -> bool:
+        if bool(
+            float(getattr(pet, "vy", 0.0) or 0.0) != 0.0
+            or str(getattr(pet, "flight_mode", "none") or "none")
+            != "none"
+            or getattr(pet, "perched_window_hwnd", 0)
+        ):
+            return False
+        surface_getter = getattr(pet, "get_surface_snapshot", None)
+        y_getter = getattr(pet, "y", None)
+        if not callable(surface_getter) or not callable(y_getter):
+            return True
+        try:
+            floor_y = float(surface_getter().floor_top_y)
+            current_y = float(y_getter())
+        except (AttributeError, TypeError, ValueError):
+            return False
+        return abs(current_y - floor_y) <= self.GROUND_Y_TOLERANCE
 
     def _emergency_decision(self, pets):
         distressed_child_names = []

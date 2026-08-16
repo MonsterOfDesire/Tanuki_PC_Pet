@@ -32,7 +32,7 @@ class AchievementPresenterTests(unittest.TestCase):
         golden = snapshot.mode_snapshot("golden_legend")
         locked = snapshot.card_snapshot("race.first_natural_finish")
 
-        self.assertEqual((sandbox.total_count, golden.total_count), (24, 2))
+        self.assertEqual((sandbox.total_count, golden.total_count), (25, 2))
         self.assertEqual((sandbox.unlocked_count, golden.unlocked_count), (0, 0))
         self.assertFalse(locked.unlocked)
         self.assertEqual(locked.title, "")

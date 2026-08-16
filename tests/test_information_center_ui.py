@@ -4,6 +4,7 @@ import unittest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PyQt6.QtCore import Qt
+from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QApplication
 
 from tanuki_core.asset_manager import AssetManager
@@ -220,6 +221,43 @@ class InformationCenterWindowTests(unittest.TestCase):
                 for page_spec in INFORMATION_CENTER_PAGE_SPECS
             },
         )
+
+    def test_heavy_page_panels_are_created_only_when_first_requested(self):
+        self.assertIsNone(self.window.relation_summon_panel)
+        self.assertIsNone(self.window.event_log_panel)
+        self.assertIsNone(self.window.family_summary_panel)
+        self.assertIsNone(self.window.achievement_cabinet_panel)
+        self.assertIsNone(self.window.status_settings_panel)
+
+        self.window.select_page(PAGE_RELATION_SUMMON)
+
+        self.assertIsNotNone(self.window.relation_summon_panel)
+        self.assertIsNone(self.window.achievement_cabinet_panel)
+
+    def test_navigation_click_paints_loading_shell_before_deferred_page_build(self):
+        self.window.show()
+        self.app.processEvents()
+
+        self.window.navigation_buttons[PAGE_RELATION_SUMMON].click()
+
+        self.assertEqual(self.window.current_page_id, PAGE_RELATION_SUMMON)
+        self.assertIsNone(self.window.relation_summon_panel)
+        QTest.qWait(25)
+        self.app.processEvents()
+        self.assertIsNotNone(self.window.relation_summon_panel)
+
+    def test_rapid_navigation_builds_only_the_last_requested_page(self):
+        self.window.show()
+        self.app.processEvents()
+
+        self.window.navigation_buttons[PAGE_RELATION_SUMMON].click()
+        self.window.navigation_buttons[PAGE_EVENT_LOG].click()
+        QTest.qWait(25)
+        self.app.processEvents()
+
+        self.assertEqual(self.window.current_page_id, PAGE_EVENT_LOG)
+        self.assertIsNone(self.window.relation_summon_panel)
+        self.assertIsNotNone(self.window.event_log_panel)
 
     def test_navigation_bar_replaces_native_title_bar(self):
         self.assertTrue(
@@ -448,6 +486,20 @@ class InformationCenterWindowTests(unittest.TestCase):
             self.window.navigation_buttons[current_page_id].isChecked()
         )
 
+    def test_detached_navigation_button_restores_minimized_window(self):
+        self.window.show()
+        self.app.processEvents()
+        detached_window = self.window.detach_page(PAGE_FAMILY_STATUS)
+        self.app.processEvents()
+        detached_window.showMinimized()
+        self.app.processEvents()
+
+        self.window.navigation_buttons[PAGE_FAMILY_STATUS].click()
+        self.app.processEvents()
+
+        self.assertTrue(detached_window.isVisible())
+        self.assertFalse(detached_window.isMinimized())
+
     def test_closing_detached_window_docks_and_activates_page(self):
         self.window.show()
         self.app.processEvents()
@@ -618,6 +670,36 @@ class InformationCenterWindowTests(unittest.TestCase):
             self.window.current_page_id,
             PAGE_STATUS_SETTINGS,
         )
+
+    def test_open_page_restores_minimized_information_center(self):
+        self.window.show()
+        self.app.processEvents()
+        self.window.showMinimized()
+        self.app.processEvents()
+
+        self.window.open_page(PAGE_RELATION_SUMMON)
+        self.app.processEvents()
+
+        self.assertTrue(self.window.isVisible())
+        self.assertFalse(self.window.isMinimized())
+        self.assertEqual(self.window.current_page_id, PAGE_RELATION_SUMMON)
+
+    def test_open_page_recovers_information_center_moved_offscreen(self):
+        self.window.show()
+        self.app.processEvents()
+        available = self.window.screen().availableGeometry()
+        self.window.move_near_anchor(
+            available.right() + 5000,
+            available.bottom() + 5000,
+        )
+        self.app.processEvents()
+
+        self.window.open_page(PAGE_RELATION_SUMMON)
+        self.app.processEvents()
+
+        visible_region = available.intersected(self.window.frameGeometry())
+        self.assertGreaterEqual(visible_region.width(), 96)
+        self.assertGreaterEqual(visible_region.height(), 64)
 
 
 if __name__ == "__main__":

@@ -12,7 +12,10 @@ from tanuki_core.status_settings_binding import (
     DashboardStatusSettingsBinding,
     StatusSettingsSnapshot,
 )
-from tanuki_core.status_settings_ui import StatusSettingsPanel
+from tanuki_core.status_settings_ui import (
+    MOOD_CLIMATE_TOOLTIPS,
+    StatusSettingsPanel,
+)
 from tanuki_core.ui_controls import ToggleSwitch
 
 
@@ -360,6 +363,25 @@ class StatusSettingsPanelTests(unittest.TestCase):
         self.assertTrue(self.panel.display_scale_buttons[1].isChecked())
         self.assertTrue(self.panel.teio_duration_buttons[2].isChecked())
         self.assertTrue(self.panel.tsuyoshi_duration_buttons[3].isChecked())
+
+    def test_mood_climate_tooltips_describe_dynamics_not_targets(self):
+        tooltips = [
+            button.toolTip()
+            for button in self.panel.mood_climate_buttons
+        ]
+
+        self.assertEqual(
+            tooltips,
+            [
+                MOOD_CLIMATE_TOOLTIPS["cheerful"],
+                MOOD_CLIMATE_TOOLTIPS["balanced"],
+                MOOD_CLIMATE_TOOLTIPS["expressive"],
+            ],
+        )
+        self.assertTrue(all("目標" not in text for text in tooltips))
+        self.assertIn("50%", tooltips[0])
+        self.assertIn("70%", tooltips[1])
+        self.assertIn("90%", tooltips[2])
 
     def test_social_cooldown_uses_localized_full_character_names(self):
         visible_labels = {

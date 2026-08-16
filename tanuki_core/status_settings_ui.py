@@ -52,9 +52,19 @@ CHORUS_FREQUENCY_TOOLTIPS = {
     "occasional": "自主合奏等待、重試與冷卻約為普通的兩倍。",
 }
 MOOD_CLIMATE_TOOLTIPS = {
-    "cheerful": "長期心情傾向約 85，較常維持笑臉。",
-    "balanced": "長期心情傾向約 65，保留較多自然波動。",
-    "expressive": "長期心情傾向約 50，較容易看見低落表情。",
+    "cheerful": (
+        "每個自然心情 tick 有 50% 會變動；幅度小且明顯偏正向，"
+        "低落後較容易重新露出笑容。"
+    ),
+    "balanced": (
+        "每個自然心情 tick 有 70% 會變動；正負較接近、幅度居中，"
+        "兼顧恢復與低落情境。"
+    ),
+    "expressive": (
+        "每個自然心情 tick 有 90% 會變動；負向較頻繁且幅度最大，"
+        "小孩遠離大人時更容易進入 severe；大人負向幅度較低，"
+        "並會在 low／severe 自我調節。"
+    ),
 }
 RUDOLF_WORK_PREVIEW_IDLE_TEXT = (
     "只播放工作與休息動畫，不套用金錢、家庭壓力或心情結算。"
@@ -226,7 +236,8 @@ class StatusSettingsPanel(QWidget):
         self.rhythm_layout.addLayout(self.chorus_frequency_row, 1, 1)
         mood_climate_label = self._create_label("情緒氣候")
         mood_climate_label.setToolTip(
-            "調整角色長期心情的回歸目標；事件造成的即時心情變化仍會保留。"
+            "自然心情會隨模擬倍速更新；三種氣候只調整發生率、正負傾向與幅度，"
+            "不設定目標心情。"
         )
         self.rhythm_layout.addWidget(mood_climate_label, 2, 0)
         self.mood_climate_row = QHBoxLayout()

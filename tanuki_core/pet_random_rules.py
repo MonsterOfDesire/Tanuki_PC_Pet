@@ -5,6 +5,14 @@ SEVERE_RANDOM_DIRECTION_FLIP_CHANCE = 0.25
 NORMAL_RANDOM_DIRECTION_FLIP_CHANCE = 0.3
 RANDOM_STUCK_REVERSE_THRESHOLD = 60
 RANDOM_MOVE_PURPOSE_SPEED_THRESHOLD = 0.8
+RANDOM_CONTEXT = "random"
+SIDE_READY_FOLLOWUP_CONTEXT = "side_ready_followup"
+SIDE_READY_FOLLOWUP_CHANCE = 0.10
+SIDE_READY_FOLLOWUP_MIN_HOLD_STEPS = 60
+SIDE_READY_FOLLOWUP_ACTIONS = frozenset({
+    "side_stand",
+    "side_stand_cheer",
+})
 
 
 @dataclass(frozen=True)
@@ -62,6 +70,29 @@ def derive_random_visual_purpose(state, base_speed):
 
 def extend_random_state_timer(state_timer, hold_timer):
     return max(int(state_timer), int(hold_timer))
+
+
+def choose_idle_animation_context(
+    *,
+    side_ready_followup_armed,
+    roll,
+    followup_chance=SIDE_READY_FOLLOWUP_CHANCE,
+):
+    """Choose the next manifest context after a side-ready idle pose."""
+    if not bool(side_ready_followup_armed):
+        return RANDOM_CONTEXT
+    chance = max(0.0, min(1.0, float(followup_chance)))
+    if float(roll) < chance:
+        return SIDE_READY_FOLLOWUP_CONTEXT
+    return RANDOM_CONTEXT
+
+
+def is_visible_side_ready_followup(purpose, action_tag):
+    """Return whether the applied visual is a standing follow-up pose."""
+    return (
+        str(purpose or "") == "idle"
+        and str(action_tag or "") in SIDE_READY_FOLLOWUP_ACTIONS
+    )
 
 
 def get_idle_action_override(name, *, current_purpose, current_action_tag, next_purpose, next_action_tag):

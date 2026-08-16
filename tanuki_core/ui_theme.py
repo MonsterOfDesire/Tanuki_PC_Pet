@@ -277,6 +277,15 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
     QLabel[tanukiRole="pagePlaceholder"] {{
         font-size: 14px;
     }}
+    QLabel[tanukiRole="pageLoading"] {{
+        max-width: 150px;
+        padding: 7px 10px;
+        color: {tokens.text_primary};
+        background: rgba(255, 250, 239, 215);
+        border: 1px solid rgba(111, 88, 67, 105);
+        border-radius: {tokens.radius_small}px;
+        font-weight: 700;
+    }}
     QLabel[tanukiRole="settingsNotice"],
     QLabel[tanukiRole="settingsLabel"] {{
         color: {tokens.text_inverse};

@@ -4,10 +4,12 @@ from tanuki_core.activity_coordinator import ActivityCoordinator
 from tanuki_core.activity_runtime_adapter import ActivityRuntimeAdapter
 from tanuki_core.activity_state import PetActivityState
 from tanuki_core.chorus_executor import ChorusExecutor
+from tanuki_core.chorus_rules import CHORUS_APPROACH_PHASE
 from tanuki_core.chorus_state import (
     CHORUS_REACTION_AUDIENCE,
     CHORUS_REACTION_PERFORM,
     ChorusScheduleState,
+    ChorusParticipantState,
     ChorusSessionState,
 )
 from tanuki_core.transformation_state import PetTransformationState
@@ -38,7 +40,7 @@ class FakePet:
     def __init__(self, name, *, x=100.0, mood_score=60.0):
         self.name = name
         self.mood_score = mood_score
-        self.is_adult = name != "Tsurumaru Tsuyoshi"
+        self.is_adult = name not in {"Tokai Teio", "Tsurumaru Tsuyoshi"}
         self.asset_manager = FakeAssetManager()
         self.activity_state = PetActivityState()
         self.transformation_state = PetTransformationState()
@@ -65,6 +67,7 @@ class FakePet:
         self.apply_calls = []
         self.distressed = False
         self.change_state_calls = []
+        self.context_state_calls = []
         self.move_calls = []
         self.widget_width = 100
 
@@ -93,6 +96,11 @@ class FakePet:
     def change_state(self, state):
         self.change_state_calls.append(state)
         self.state = state
+
+    def change_state_for_context_with_preferences(self, purpose, context):
+        self.context_state_calls.append((purpose, context))
+        self.state = purpose
+        return True
 
     def x(self):
         return self._x
@@ -183,6 +191,11 @@ class ChorusExecutorTests(unittest.TestCase):
         self.assertIn("Air Groove", self.executor.session.participants)
         self.assertFalse(self.tsuyoshi.activity_state.active)
         self.assertTrue(self.air_groove.activity_state.active)
+        self.assertEqual(
+            self.tsuyoshi.context_state_calls,
+            [("idle", "random")],
+        )
+        self.assertEqual(self.tsuyoshi.change_state_calls, [])
 
     def test_removed_character_is_not_reconsidered_in_same_session(self):
         self.update(10.0)
@@ -207,11 +220,38 @@ class ChorusExecutorTests(unittest.TestCase):
         result = self.update(11.0)[0]
 
         self.assertTrue(result.interrupted)
-        self.assertEqual(result.reason, "tsuyoshi_care_needed")
+        self.assertEqual(result.reason, "child_care_needed")
         self.assertIsNone(self.executor.session)
         self.assertFalse(self.tsuyoshi.activity_state.active)
         self.assertFalse(self.air_groove.activity_state.active)
         self.assertEqual(self.events[-1].event_type, "chorus_interrupted")
+
+    def test_teio_distress_releases_whole_session_for_care(self):
+        self.update(10.0)
+        self.update(10.1)
+        teio = FakePet("Tokai Teio", x=520.0)
+        teio.distressed = True
+
+        result = self.update(11.0, pets=(*self.pets, teio))[0]
+
+        self.assertTrue(result.interrupted)
+        self.assertEqual(result.reason, "child_care_needed")
+        self.assertIsNone(self.executor.session)
+        self.assertFalse(self.tsuyoshi.activity_state.active)
+        self.assertFalse(self.air_groove.activity_state.active)
+        self.assertEqual(self.events[-1].reason, "child_care_needed")
+
+    def test_recovering_distressed_child_does_not_interrupt_chorus(self):
+        self.update(10.0)
+        self.update(10.1)
+        teio = FakePet("Tokai Teio", x=520.0)
+        teio.distressed = True
+        teio.is_recovering = True
+
+        results = self.update(11.0, pets=(*self.pets, teio))
+
+        self.assertFalse(any(result.interrupted for result in results))
+        self.assertIsNotNone(self.executor.session)
 
     def test_busy_character_does_not_enter_notice_reaction(self):
         self.air_groove.care_mode = "approach"
@@ -290,14 +330,14 @@ class ChorusExecutorTests(unittest.TestCase):
 
         self.assertEqual(self.executor.session.ends_at, 130.0)
 
-    def test_approach_uses_tsuyoshi_max_mood_walking_speed_floor(self):
+    def test_approach_uses_four_pixel_speed_floor(self):
         self.update(10.0)
         self.update(10.1)
 
         self.assertTrue(self.air_groove.move_calls)
         _target_x, speed_scale, min_speed = self.air_groove.move_calls[-1]
         self.assertEqual(speed_scale, 1.0)
-        self.assertEqual(min_speed, 3.0)
+        self.assertEqual(min_speed, 4.0)
 
     def test_stage_spacing_uses_character_footprint_not_transparent_window(self):
         pet = FakePet("Air Groove")
@@ -354,6 +394,147 @@ class ChorusExecutorTests(unittest.TestCase):
 
         self.assertEqual(performer_slots, (1, -1, 2, -2))
         self.assertEqual((first_audience, second_audience), (3, -3))
+
+    def test_audience_prefers_nearest_outer_slot_on_its_starting_side(self):
+        session = ChorusSessionState(
+            session_id="audience-side",
+            source="autonomous",
+            world_mode="sandbox",
+            started_at=0.0,
+            ends_at=60.0,
+            center_x=500.0,
+        )
+        left_audience = FakePet("Air Groove", x=100.0)
+        right_audience = FakePet("Symboli Rudolf", x=900.0)
+
+        left_slot = self.executor._allocate_next_slot(
+            session,
+            CHORUS_REACTION_AUDIENCE,
+            preferred_side=self.executor._preferred_slot_side(
+                left_audience,
+                session,
+            ),
+        )
+        session.participants[left_audience.name] = ChorusParticipantState(
+            name=left_audience.name,
+            reaction=CHORUS_REACTION_AUDIENCE,
+            activity_id="left",
+            phase=CHORUS_APPROACH_PHASE,
+            slot=left_slot,
+            joined_at=0.0,
+        )
+        second_left_slot = self.executor._allocate_next_slot(
+            session,
+            CHORUS_REACTION_AUDIENCE,
+            preferred_side=-1,
+        )
+        right_slot = self.executor._allocate_next_slot(
+            session,
+            CHORUS_REACTION_AUDIENCE,
+            preferred_side=self.executor._preferred_slot_side(
+                right_audience,
+                session,
+            ),
+        )
+
+        self.assertEqual((left_slot, second_left_slot, right_slot), (-3, -4, 3))
+
+    def test_performer_prefers_nearest_inner_slot_on_its_starting_side(self):
+        session = ChorusSessionState(
+            session_id="performer-side",
+            source="autonomous",
+            world_mode="sandbox",
+            started_at=0.0,
+            ends_at=60.0,
+            center_x=500.0,
+        )
+        left_performer = FakePet("Air Groove", x=100.0)
+        right_performer = FakePet("Symboli Rudolf", x=900.0)
+
+        first_left_slot = self.executor._allocate_next_slot(
+            session,
+            CHORUS_REACTION_PERFORM,
+            preferred_side=self.executor._preferred_slot_side(
+                left_performer,
+                session,
+            ),
+        )
+        session.participants[left_performer.name] = ChorusParticipantState(
+            name=left_performer.name,
+            reaction=CHORUS_REACTION_PERFORM,
+            activity_id="left",
+            phase=CHORUS_APPROACH_PHASE,
+            slot=first_left_slot,
+            joined_at=0.0,
+        )
+        second_left_slot = self.executor._allocate_next_slot(
+            session,
+            CHORUS_REACTION_PERFORM,
+            preferred_side=-1,
+        )
+        right_slot = self.executor._allocate_next_slot(
+            session,
+            CHORUS_REACTION_PERFORM,
+            preferred_side=self.executor._preferred_slot_side(
+                right_performer,
+                session,
+            ),
+        )
+
+        self.assertEqual(
+            (first_left_slot, second_left_slot, right_slot),
+            (-1, -2, 1),
+        )
+
+    def test_late_performer_keeps_audiences_outside_without_slot_collision(self):
+        session = ChorusSessionState(
+            session_id="performer-after-audience",
+            source="autonomous",
+            world_mode="sandbox",
+            started_at=0.0,
+            ends_at=60.0,
+            center_x=500.0,
+        )
+        session.participants["audience-one"] = ChorusParticipantState(
+            name="audience-one",
+            reaction=CHORUS_REACTION_AUDIENCE,
+            activity_id="audience-one",
+            phase=CHORUS_APPROACH_PHASE,
+            slot=3,
+            joined_at=0.0,
+        )
+        session.participants["audience-two"] = ChorusParticipantState(
+            name="audience-two",
+            reaction=CHORUS_REACTION_AUDIENCE,
+            activity_id="audience-two",
+            phase=CHORUS_APPROACH_PHASE,
+            slot=4,
+            joined_at=0.0,
+        )
+        for slot in (1, 2):
+            session.participants[f"performer-{slot}"] = ChorusParticipantState(
+                name=f"performer-{slot}",
+                reaction=CHORUS_REACTION_PERFORM,
+                activity_id=f"performer-{slot}",
+                phase=CHORUS_APPROACH_PHASE,
+                slot=slot,
+                joined_at=0.0,
+            )
+
+        performer_slot = self.executor._allocate_next_slot(
+            session,
+            CHORUS_REACTION_PERFORM,
+            preferred_side=1,
+        )
+
+        audience_slots = tuple(
+            participant.slot
+            for participant in session.participants.values()
+            if not participant.is_performer
+        )
+        self.assertEqual(performer_slot, 3)
+        self.assertEqual(audience_slots, (4, 5))
+        self.assertNotIn(performer_slot, audience_slots)
 
     def test_frequency_change_restarts_wait_with_new_policy(self):
         selected = ["frequent"]

@@ -4,6 +4,7 @@ from collections.abc import Callable, Iterable, Mapping
 from uuid import uuid4
 
 from .activity_event_contract import (
+    AMBIENT_EVENT_TSUYOSHI_SIDE_READY_FOLLOWUP,
     ACTIVITY_EVENT_SLEEP_COMPLETED,
     ACTIVITY_EVENT_SLEEP_GROUP_JOINED,
     ACTIVITY_EVENT_TRANSFORMATION_COMPLETED,
@@ -13,6 +14,7 @@ from .activity_event_contract import (
     build_activity_event_metadata,
 )
 from .achievement_runtime_service import AchievementRuntimeService
+from .pet_random_rules import SIDE_READY_FOLLOWUP_CONTEXT
 from .sleep_rules import (
     SLEEP_ACTIVITY_KIND,
     SLEEP_TRIGGER_SANDBOX_CONTROL,
@@ -306,6 +308,43 @@ class AchievementGameplayBridge:
             },
         )
         return self.service.consume_activity_metadata(metadata)
+
+    def handle_ambient_animation_context(
+        self,
+        *,
+        character_name: str,
+        context: str,
+        now: float,
+    ):
+        character_name = str(character_name or "")
+        context = str(context or "")
+        if (
+            character_name != "Tsurumaru Tsuyoshi"
+            or context != SIDE_READY_FOLLOWUP_CONTEXT
+        ):
+            return None
+        event_id = f"ambient_tsuyoshi_stand:{uuid4().hex}"
+        metadata = build_activity_event_metadata(
+            event_name=AMBIENT_EVENT_TSUYOSHI_SIDE_READY_FOLLOWUP,
+            event_id=event_id,
+            activity_id="",
+            activity_kind="ambient_animation",
+            participants=((character_name, "subject"),),
+            source="ambient_random",
+            execution_mode="autonomous",
+            world_mode=self._world_mode(),
+            phase=context,
+            started_at=float(now),
+            ended_at=float(now),
+            outcome="observed",
+            extra={
+                "character_name": character_name,
+                "animation_context": context,
+            },
+        )
+        return self.service.consume_instantaneous_activity_metadata(
+            metadata
+        )
 
     def cancel_orphaned_transformations(
         self,
