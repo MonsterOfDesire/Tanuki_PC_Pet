@@ -1,0 +1,362 @@
+{
+  "meta": {"language_name": "简体中文"},
+  "app": {
+    "name": "狸猫桌宠",
+    "information_center": "狸猫信息中心"
+  },
+  "characters": {
+    "Air Groove": "气槽",
+    "Sirius Symboli": "天狼星叔叔",
+    "Symboli Rudolf": "鲁道夫象征",
+    "Tokai Teio": "帝宝",
+    "Tsurumaru Tsuyoshi": "鹤宝",
+    "Player": "玩家"
+  },
+  "settings": {
+    "language_and_updates": "语言与更新",
+    "interface_language": "界面语言"
+  },
+  "information_center": {
+    "title": "狸猫信息中心",
+    "window_title": "狸猫信息中心 — {page}",
+    "loading": "正在加载页面…",
+    "size": "窗口尺寸",
+    "size_tooltip": "应用建议比例；应用后仍可拖曳窗口边框自由调整。",
+    "detach": "分离页面",
+    "detach_tooltip": "将目前分页移到可独立操作的窗口",
+    "detached_title": "{page}（分离窗口）",
+    "detached_placeholder": "此页已分离。\n点击上方分页可唤回独立窗口。",
+    "detached_recall": "{page}（已分离，点击唤回）",
+    "dock_close": "关闭并归回信息中心",
+    "pages": {
+      "relation_summon": {"navigation": "角色关系＋召唤", "title": "角色关系＋召唤", "placeholder": "正在加载角色关系与召唤页面…"},
+      "event_log": {"navigation": "事件日志", "title": "事件日志", "placeholder": "正在加载事件日志…"},
+      "family_status": {"navigation": "家庭摘要", "title": "家庭状态摘要", "placeholder": "正在加载家庭摘要…"},
+      "achievements": {"navigation": "奖杯收集柜", "title": "奖杯收集柜", "placeholder": "正在加载奖杯收集柜…"},
+      "status_settings": {"navigation": "状态设置", "title": "状态设置", "placeholder": "正在加载状态设置…"}
+    },
+    "sizes": {
+      "recommended_16_9": "系统建议（16:9）",
+      "comfortable_16_10": "舒适阅读（16:10）",
+      "tall_4_3": "垂直内容（4:3）",
+      "compact_16_9": "白板优先（裁切边景）"
+    }
+  },
+  "launcher": {
+    "title": "狸猫控制中心", "subtitle": "桌面生活捷径",
+    "main_actions": "主要功能", "information_center": "信息中心",
+    "open_information_center": "打开信息中心", "offer_tray": "饮食餐盘",
+    "open_offer_tray": "打开饮食餐盘", "current_status": "目前状态",
+    "status_settings": "状态设置", "open_status_settings": "打开状态设置", "shutdown": "关闭系统",
+    "disconnected": "未连接", "care_on": "照护中", "care_off": "照护关闭",
+    "world_golden_legend": "黄金传说", "world_sandbox": "沙盒",
+    "pin_sidebar": "固定侧边栏", "collapse_sidebar": "收合侧边栏", "pinned_tooltip": "已固定；点击后允许自动收合", "unpinned_tooltip": "未固定；点击后保持展开"
+  },
+  "updates": {
+    "checking": "正在检查更新…",
+    "up_to_date": "目前已是最新版本。",
+    "available": "发现新版本 {version}。",
+    "failed": "无法检查更新：{reason}",
+    "current": "目前版本 {version}",
+    "check_now": "立即检查更新",
+    "view_release": "查看新版",
+    "download_updater": "下载更新器",
+    "updater_ready": "请到 Release 下载 TanukiUpdater.exe 后执行。",
+    "manual_only": "本版本尚未提供自动更新包，可先查看 Release。"
+  },
+  "common": {
+    "on": "打开", "off": "关闭", "no_data": "尚无数据", "not_recorded": "未记录",
+    "character": "角色", "name_separator": "、", "duration_minutes_seconds": "{minutes}分{seconds:02d}秒",
+    "duration_seconds": "{seconds}秒", "duration_seconds_decimal": "{seconds:.1f} 秒",
+    "currency_amount": "{amount:+,d} 元", "currency_amount_unsigned": "{amount:,} 元",
+    "people_count": "{count} 人", "event_count": "{count} 件"
+  },
+  "labels": {
+    "living_fund": "生活费", "household_pressure": "家庭压力", "mood": "心情",
+    "filters": {"all": "全部", "personal": "个人", "social": "社交", "economy": "经济", "item": "道具", "system": "系统"},
+    "channels": {"social": "社交", "economy": "经济", "item": "道具", "story": "故事", "system": "系统"},
+    "relationship_metrics": {"familiarity": "熟悉", "trust": "信任", "attachment": "依附", "tension": "紧张"},
+    "mood_states": {"normal": "平稳", "unhappy": "低落", "depressed": "非常低落"},
+    "forms": {"base": "普通形态", "transformed": "变身形态"}
+  },
+  "window_chrome": {"pin": "窗口置顶", "minimize": "最小化", "close": "关闭"},
+  "offer_tray": {
+    "title": "饮食托盘", "drag_item": "拖曳{item}给角色", "drag_to_character": "拖曳给角色",
+    "instruction_tooltip": "按住食物并拖曳到桌面角色身上", "window_drag": "拖曳饮食托盘窗口"
+  },
+  "items": {"ramen": "拉面", "honey": "蜂蜜", "tea": "茶", "bottle": "奶瓶", "lollipop": "棒棒糖"},
+  "dashboard": {"saving_settings": "正在储存设置...", "shutting_down": "正在关闭...", "validation_warning": "检查结果（有警告）", "validation_ok": "检查结果（正常）"},
+  "family_summary": {
+    "title": "家庭摘要", "status_title": "家庭状态", "not_initialized": "家庭数据尚未初始化。",
+    "no_key_events": "目前尚无家庭重点事件。", "fund_overview": "生活费: {amount} 元", "pressure_overview": "家庭压力: {amount}%",
+    "unavailable": "家庭数据尚未连接执行中的 Dashboard。", "race_rhythm_tooltip": "显示下一次自主竞赛提案的排程；实际开始仍需通过资格与距离判定。",
+    "chorus_rhythm_tooltip": "显示下一次自主合奏提案的排程；实际开始仍需通过资格与反应判定。",
+    "current_summons": "目前召唤", "members": "家庭成员", "recent_events": "近期事件", "recent_events_accessible": "家庭近期事件",
+    "no_runtime_members": "目前没有角色 runtime 数据。", "no_members": "尚无成员", "standby_count": "待命 {count} 人",
+    "mood_line": "心情：{mood}", "mood_score": "{mood}（{score:.0f}/100）", "form_line": "形态：{form}",
+    "form_base": "◇ 普通形态", "form_transformed": "✦ 变身形态", "summoned": "● 召唤中", "standby": "○ 待命",
+    "summoned_now": "目前已召唤", "standby_now": "目前待命", "donate_accessible": "捐生活费 100 元",
+    "donate_tooltip": "捐入 100 元生活费", "donate_golden_only": "只有黄金传说模式可以捐生活费",
+    "achievement_summary": "成就摘要", "open_trophy_cabinet": "打开奖杯收集柜", "no_achievement_data": "尚无成就数据",
+    "open_trophy_cabinet_status": "打开奖杯收集柜；{status}", "open_trophy_cabinet_mode_status": "打开奖杯收集柜；{mode}；{status}",
+    "pressure": {"high": "高度压力", "medium": "中度压力", "low": "低度压力"},
+    "stats": {"average_mood": "平均心情", "fund_delta": "近期收支", "pressure_delta": "压力变化", "event_count": "事件数"}
+  },
+  "rhythm": {
+    "race_active": "竞赛：进行中", "race_cooldown_duration": "竞赛：约 {duration} 后再提案", "race_cooldown": "竞赛：冷却中", "race_ready": "竞赛：等待合适参赛者", "race_unscheduled": "竞赛：排程尚未启动",
+    "chorus_active": "合奏：进行中", "chorus_cooldown_duration": "合奏：约 {duration} 后再提案", "chorus_cooldown": "合奏：冷却中", "chorus_ready": "合奏：等待合适表演者", "chorus_unscheduled": "合奏：排程尚未启动",
+    "sleep_settling": "准备入睡", "sleeping": "睡眠中", "sleep_waking": "正在醒来", "sleep_standby": "睡意：待命", "sleep_calculating": "睡意：计算中", "sleepiness": "睡意 {value}%",
+    "form_transition": "形态切换中", "form_transformed_remaining": "变身剩余约 {duration}", "form_transformed": "目前为变身形态", "form_cooldown_duration": "变身冷却约 {duration}", "form_cooldown": "变身冷却中", "form_ready": "变身：等待适合时机", "form_unavailable": "变身：目前不可用"
+  },
+  "event_log": {
+    "title": "事件日志", "title_filtered": "事件日志 - {filter}", "title_personal": "{title}: {character}", "unavailable": "事件日志尚未连接执行中的 Dashboard。",
+    "personal_filter_character": "个人筛选角色", "personal_filter": "个人筛选", "personal_filter_tooltip": "仅在「个人」筛选时使用", "event_list": "事件列表",
+    "no_matching_records": "目前没有符合条件的记录。", "no_event_data": "目前尚无事件数据。", "select_event": "选取左侧事件以查看详情。", "details": "事件详情",
+    "family_system": "家庭／系统", "family_system_event": "家庭／系统事件", "sequence": "时序 #{sequence:03d}", "no_tags": "没有标签", "tags": "标签　{tags}", "general_event": "一般事件", "no_effects": "本事件没有数值变化",
+    "importance": {"low": "一般", "normal": "一般", "major": "重要", "high": "重要", "critical": "关键"},
+    "categories": {
+      "social": "社交", "care": "照护", "relationship": "关系", "economy": "经济",
+      "player_help": "玩家协助", "player_offer": "玩家提供", "item": "道具",
+      "system": "系统", "debug": "调试", "household": "家庭"
+    }
+  },
+  "events": {
+    "unnamed": "未命名事件",
+    "types": {
+      "opening_note": "家庭生活开始", "fund_snapshot": "生活费快照", "pressure_snapshot": "家庭压力快照",
+      "player_donate_fund": "生活费捐助", "teio_drink_expense": "饮料支出", "rudolf_collectible_expense": "收藏品支出",
+      "rudolf_work_completed": "工作完成", "transformation_started": "变身开始", "transformation_ended": "解除变身",
+      "race_completed": "竞赛完成", "race_declined": "竞赛婉拒", "chorus_completed": "演出完成",
+      "chorus_interrupted": "演出中断", "offer_honey_guarded": "蜂蜜保护", "offer_honey_denied": "阻止拿取蜂蜜",
+      "offer_hover_timeout": "道具互动超时", "shared_ramen": "分享拉面", "shared_tea_chat": "分享茶饮", "shared_honey": "分享蜂蜜"
+    },
+    "deltas": {
+      "living_fund": "生活费 {amount:+,d}", "pressure": "家庭压力 {amount:+.1f}",
+      "mood": "心情 {amount:+.1f}", "relationship": "关系 {details}"
+    },
+    "directions": {"clockwise_left": "顺时针（向左）", "counterclockwise_right": "逆时针（向右）"},
+    "performance": {"solo": "独奏", "ensemble": "合奏"},
+    "chorus_reasons": {"default": "现场情况发生变化"},
+    "summaries": {
+      "opening_note": "{rudolf}一家开始了今天的桌面生活。",
+      "fund_snapshot": "目前生活费为 {amount} 元。",
+      "pressure_snapshot": "家庭压力目前为 {amount}%。",
+      "player_donate_fund": "{player}捐助了 {amount} 元生活费。",
+      "teio_drink_expense": "{teio}又偷偷买了饮料。",
+      "rudolf_collectible_expense": "{rudolf}忍不住又添购了一件收藏品。",
+      "rudolf_work_completed": "{rudolf}完成工作，为家里赚取了一笔生活费。",
+      "transformation_started": "{character}完成了变身。",
+      "transformation_ended": "{character}恢复为普通形态。",
+      "observe_social_log": "{actor}观察了{target}一会儿。",
+      "post_observe_social_log": "{actor}和{target}相处了一会儿。",
+      "race_completed": "{winner}在 {distance}px、{direction}的比赛中，以 {elapsed:.1f} 秒战胜{loser}。",
+      "race_declined": "{opponent}婉拒了{challenger}的竞赛挑战。",
+      "chorus_completed": "{performers}完成了一场持续 {elapsed:.1f} 秒的{performance}。",
+      "chorus_completed_with_audience": "{performers}完成了一场持续 {elapsed:.1f} 秒的{performance}，{audiences}担任观众。",
+      "chorus_interrupted": "{performance}因{reason}提前结束。",
+      "offer_bottle_success": "{actor}为{target}拿起了奶瓶。",
+      "ground_bottle_pickup": "{actor}拿起了奶瓶。",
+      "offer_bottle_feed": "{actor}用奶瓶喂食{target}。",
+      "ground_bottle_feed": "{actor}用奶瓶喂食{target}。",
+      "offer_honey_success": "{target}收到了蜂蜜。",
+      "ground_honey_pickup": "{actor}拿起了蜂蜜。",
+      "offer_honey_guarded": "{actor}保护蜂蜜，没有让{target}拿走。",
+      "offer_honey_denied": "{actor}阻止了{target}拿走蜂蜜。",
+      "offer_hover_timeout": "一直没有找到可互动对象，{actor}把道具放了回去。",
+      "shared_ramen": "{holder}和{partner}一起分享了{item}。",
+      "shared_tea_chat": "{holder}和{partner}一起享用了{item}。",
+      "shared_honey": "{holder}和{partner}一起分享了{item}。",
+      "ground_item_pickup": "{target}拿起并享用了{item}。",
+      "offer_item_success": "{target}享用了{item}。",
+      "generic_care": "{actor}照护了{target}。",
+      "generic_social": "{actor}和{target}进行了一次互动。",
+      "generic_item": "{actor}和{target}完成了一次道具互动。",
+      "generic_economy": "家庭记录了一笔收支事件。",
+      "generic_system": "系统记录了一项事件。",
+      "generic_family": "家庭记录了一项生活事件。"
+    }
+  },
+  "race": {"challenger": "挑战者", "opponent": "对手", "winner": "赢家", "distance": "比赛距离", "direction": "方向", "elapsed": "比赛用时"},
+  "relationship": {
+    "title": "关系表", "unavailable": "角色数据尚未连接执行中的 Dashboard。", "not_enough_characters": "目前没有足够角色可显示关系。", "no_data": "目前尚无角色关系数据。", "no_visible_data": "目前没有可显示的关系数据。",
+    "affinity": "好感度", "event_count": "事件次数", "formula": "好感度为暂定加权分数：熟悉 45% + 信任 30% + 依附 35% - 紧张 20%", "formula_multiline": "好感度＝熟悉×45%＋信任×30%\n　　　　　＋依附×35%－紧张×20%",
+    "summon": "召唤", "hide": "隐藏", "summon_character": "召唤 {character}", "not_loaded": "{character} 尚未加载", "race_summary": "🏁 竞赛 {races} 场　{wins} 胜 {losses} 败　胜率 {win_rate}",
+    "row_tooltip": "好感 {affinity:.2f}｜事件 {event_count}", "mood_no_data": "心情：尚无数据", "mood_score": "心情：{mood}（{score:.0f}/100）", "view_relationships_tooltip": "查看 {character} 对其他角色的关系\n{mood}",
+    "row": "  -> {target}: 好感度 {affinity:5.2f} | 熟悉 {familiarity:5.2f} / 信任 {trust:5.2f} / 依附 {attachment:5.2f} / 紧张 {tension:5.2f} | 事件 {event_count}"
+  },
+  "achievements": {
+    "modes": {"sandbox": "沙盒", "golden_legend": "黄金传说"}, "mode_tabs": {"sandbox": "沙盒成就", "golden_legend": "黄金传说成就"},
+    "progress": "已取得 {unlocked} / {total}", "summary_recent": "{progress}｜最近：{title}", "summary_empty": "{progress}｜尚无完成成就",
+    "acquisition_record": "取得记录", "hover_unlocked": "将鼠标指针移到已取得的奖杯上，即可查看取得方式。", "unlocked_at": "取得时间：{time}",
+    "locked_accessible": "未取得的 {tier} 奖杯", "unlocked_accessible": "已取得 {tier} 成就：{title}",
+    "notification": {"single": "获得新成就", "multiple": "一次获得 {count} 项成就", "more": " 等 {count} 项"},
+    "definitions": {
+      "race.first_natural_finish": {
+        "title": "初次奔驰",
+        "description": "在全程 1x 下，见证第一场非测试竞赛自然完成。"
+      },
+      "chorus.first_natural_finish": {
+        "title": "初次合奏",
+        "description": "在全程 1x 下，见证第一场合奏自然完成。"
+      },
+      "sleep.first_natural_finish": {
+        "title": "好梦初醒",
+        "description": "见证第一名角色自主睡眠并自然醒来。"
+      },
+      "sleep.first_group_join": {
+        "title": "靠在一起",
+        "description": "见证一名角色注意到睡眠者后，自主加入睡眠群。"
+      },
+      "transformation.teio_first_autonomous": {
+        "title": "帝宝的新姿态",
+        "description": "在全程 1x 下，第一次看见帝宝自主完成变身。"
+      },
+      "transformation.rudolf_first_autonomous": {
+        "title": "白色皇帝",
+        "description": "在全程 1x 下，第一次看见鲁道夫自主完成变身。"
+      },
+      "care.first_complete": {
+        "title": "第一次照护",
+        "description": "见证第一场非测试照护自然完成。"
+      },
+      "honey.first_guard": {
+        "title": "蜂蜜守护",
+        "description": "第一次成功阻止鹤宝拿走蜂蜜。"
+      },
+      "food.first_shared_finish": {
+        "title": "一起吃更好吃",
+        "description": "第一次见证角色自然完成分享食物。"
+      },
+      "work.rudolf_first_complete": {
+        "title": "今天也辛苦了",
+        "description": "在黄金传说中，第一次见证鲁道夫自然完成工作。"
+      },
+      "race.ten_natural_finishes": {
+        "title": "赛道常客",
+        "description": "累积见证十场非测试竞赛自然完成。"
+      },
+      "race.all_course_lengths": {
+        "title": "长短皆宜",
+        "description": "在 500、720、1100、1500px 四种场地各完成一场竞赛。"
+      },
+      "race.both_directions": {
+        "title": "左右皆宜",
+        "description": "分别完成一场顺时钟朝左与逆时钟朝右的竞赛。"
+      },
+      "chorus.three_performers": {
+        "title": "三重奏",
+        "description": "自然完成一场至少三名表演者同台的合奏。"
+      },
+      "sleep.every_character_natural_finish": {
+        "title": "全家的好眠",
+        "description": "分别见证五名角色各自完成一次自主睡眠。"
+      },
+      "transformation.both_characters_autonomous": {
+        "title": "双重奇蹟",
+        "description": "分别见证帝宝与鲁道夫各自自主完成一次变身。"
+      },
+      "care.three_distinct_guardians": {
+        "title": "照护接力",
+        "description": "见证三名不同的照护者各自完成一次照护。"
+      },
+      "chorus.every_character_performed": {
+        "title": "轮流登台",
+        "description": "让五名角色都曾在自然完成的合奏中担任表演者。"
+      },
+      "activity.variety_sampler": {
+        "title": "生活观察家",
+        "description": "分别见证竞赛、合奏、睡眠、照护与自主变身各自然完成一次。"
+      },
+      "ambient.tsuyoshi_rare_stand": {
+        "title": "鹤宝站起来了！",
+        "description": "在 1x 沙盒中见证鹤宝从 side-ready 稀有地接续站立。"
+      },
+      "work.rudolf_ten_completions": {
+        "title": "家庭支柱",
+        "description": "在黄金传说中，累积见证鲁道夫自然完成十次工作。"
+      },
+      "chorus.five_performers_same_session": {
+        "title": "五人同台",
+        "description": "自然完成一场五名角色全都担任表演者的合奏。"
+      },
+      "race.all_course_direction_pairs": {
+        "title": "八方奔驰",
+        "description": "在四种竞赛距离中，分别完成朝左与朝右的全部八种组合。"
+      },
+      "race.every_competitor_form_wins": {
+        "title": "各展所长",
+        "description": "分别见证普通帝宝、天狼星、普通鲁道夫与变身鲁道夫取得胜利。"
+      },
+      "sleep.five_simultaneous": {
+        "title": "全家安眠",
+        "description": "在全程 1x 下，让五名角色同时处於自然睡眠状态。"
+      },
+      "care.sirius_shallow_sleep_rescue": {
+        "title": "浅眠的守护者",
+        "description": "见证睡眠中的天狼星自主醒来并完成对鹤宝的照护。"
+      },
+      "activity.family_mastery": {
+        "title": "狸猫家族大事记",
+        "description": "完成指定的竞赛、合奏、睡眠、变身与照护高阶收集成就。"
+      }
+    }
+  },
+  "settings": {
+    "language_and_updates": "语言与更新", "interface_language": "界面语言", "unavailable": "状态设置尚未连接执行中的 Dashboard。",
+    "groups": {"runtime": "执行模式", "timing": "时间与画面", "social_cooldown": "社交冷却", "life_rhythm": "生活节奏", "developer": "开发工具"},
+    "world_mode": "世界模式", "time_scale": "时间流速", "display_scale": "显示比例", "enable_care": "启用角色照护功能", "enable_care_tooltip": "允许低心情照护与相关家庭互动。",
+    "race_frequency": "竞赛频率", "race_frequency_tooltip": "调整自主竞赛的等待与冷却时间；不跳过资格、距离或接受判定。", "chorus_frequency": "合奏频率", "chorus_frequency_tooltip": "调整自主合奏的等待、重试与冷却时间；不跳过资格、距离或反应判定。",
+    "mood_climate": "情绪气候", "mood_climate_tooltip": "自然心情会随模拟倍速更新；三种气候只调整发生率、正负倾向与幅度，不设置目标心情。",
+    "show_debug": "显示角色 Debug 信息", "show_debug_tooltip": "显示完整角色与效能调试信息。", "show_social_status": "显示角色社交状态标签", "show_social_status_tooltip": "在角色头上显示 random、relation_watch 等行为测试标签。",
+    "preview_work": "预览鲁道夫工作", "preview_race": "预览鲁道夫 vs 帝宝竞赛", "preview_chorus": "立即预览合奏", "transformation_control": "沙盒形态控制", "sleep_control": "沙盒睡眠控制", "validate_config_manifest": "检查 Config / Manifest",
+    "preview_work_idle": "只播放工作与休息动画，不应用金钱、家庭压力或心情结算。", "preview_race_idle": "播放鲁道夫与帝宝的完整竞赛；不写入事件，也不应用数值变动。", "preview_chorus_idle": "立即开始一场沙盒合奏；沿用自主反应，不写事件或应用收益。", "preview_work_active": "鲁道夫工作预览已开始；本次不会应用任何结算。", "preview_race_active": "鲁道夫 vs 帝宝竞赛预览已开始；本次不写入正式事件或数值。", "preview_chorus_active": "合奏预览已开始；本次不写入事件，也不应用心情或关系收益。", "sleep_control_idle": "指定角色睡觉或用既有 waking 流程唤醒；仅限沙盒。",
+    "preview_work_tooltip": "使用 manifest 的 activity_work_stationary 与 activity_work_rest 预览；不应用正式结算。", "preview_work_sandbox_only": "只可在沙盒模式使用工作预览。", "preview_race_tooltip": "使用竞赛 manifest contexts 播放完整流程；不写入正式事件或数值。", "preview_race_sandbox_only": "只可在沙盒模式使用竞赛预览。", "preview_chorus_tooltip": "立即开始合奏并沿用自主加入／观看反应；不写入事件或应用收益。", "preview_chorus_sandbox_only": "只可在沙盒模式使用合奏预览。",
+    "world_modes": {"golden_legend": "黄金传说", "sandbox": "沙盒"},
+    "frequencies": {"frequent": "经常", "normal": "普通", "occasional": "偶尔"},
+    "race_frequency_tooltips": {
+      "frequent": "缩短自主竞赛的等待与冷却时间；仍需通过资格、距离与接受判定。",
+      "normal": "使用标准的自主竞赛等待与冷却时间。",
+      "occasional": "延长自主竞赛的等待与冷却时间；适合希望减少竞赛的情况。"
+    },
+    "chorus_frequency_tooltips": {
+      "frequent": "缩短自主合奏的等待、重试与冷却时间；仍需通过资格与反应判定。",
+      "normal": "使用标准的自主合奏等待、重试与冷却时间。",
+      "occasional": "延长自主合奏的等待、重试与冷却时间；适合希望减少演出的情况。"
+    },
+    "mood_climates": {"cheerful": "明朗", "balanced": "均衡", "expressive": "多彩"},
+    "mood_climate_tooltips": {
+      "cheerful": "心情变化较常向上且负面波动较小，角色大多保持开心。",
+      "balanced": "正负心情变化较均衡，偶尔会出现需要照护的情况。",
+      "expressive": "心情下降较快、变化幅度较大，更容易看到低落与照护情境。"
+    }
+  },
+  "transformation": {
+    "action_revert_label": "解除变身", "action_transform_label": "变身",
+    "completed_base": "{character}已解除变身，目前为普通形态。",
+    "completed_transformed": "{character}已完成变身。",
+    "button_waiting": "等待解除{character}变身", "button_reverting": "{character}解除变身中",
+    "button_transforming": "{character}变身中", "button_revert": "解除{character}变身", "button_transform": "让{character}变身",
+    "tooltip_waiting": "解除请求已排队；角色回到地面且空闲后会安全解除。",
+    "tooltip_reverting": "角色正在播放解除变身过场。", "tooltip_transforming": "角色正在播放变身过场。",
+    "tooltip_revert": "使用沙盒控制提前解除变身；完成后会重新安排自主变身冷却。",
+    "tooltip_transform": "使用沙盒控制开始变身；仍会沿用随机维持时间与安全解除规则。",
+    "tooltip_sandbox_only": "形态控制仅可在沙盒模式使用。",
+    "tooltip_unavailable": "角色目前无法进行形态切换。",
+    "status_sandbox_only": "形态控制仅可在沙盒模式使用。",
+    "status_unavailable": "目前无法取得角色形态状态。",
+    "status_waiting": "{character}正在等待安全解除变身。",
+    "status_active": "{character}目前为{source}变身形态；预计约 {duration} 后解除。",
+    "status_transformed": "{character}目前为{source}变身形态。",
+    "status_base": "{character}目前为普通形态；沙盒仍可能自主变身。",
+    "action_revert": "解除", "action_transform": "变身",
+    "source_autonomous": "自主", "source_manual": "手动"
+  },
+  "preview_messages": {
+    "runtime_or_sandbox": "无法预览：请先切换至沙盒模式，或 Runtime 尚未连接。", "runtime_unavailable": "无法预览：执行中的 Runtime 尚未连接。", "transformation_started": "{character}{action}过场已开始。", "transformation_queued": "{character}解除变身已排入等待；回到地面且空闲后会自动安全解除。", "unknown": "无法预览。", "unknown_with_reason": "无法预览：{reason}", "work_not_started": "无法预览：Runtime 未启动工作 Activity。",
+    "transformation_failures": {"preview_requires_sandbox": "无法预览：请先切换至沙盒模式。", "transition_active": "无法预览：角色正在切换形态。", "participant_unavailable": "无法预览：找不到指定角色。", "participant_disabled": "无法预览：角色目前已停用。", "participant_hidden": "无法预览：角色目前未显示。", "participant_owned": "无法预览：角色正在执行 Activity。", "participant_dragging": "无法预览：角色正在被拖曳。", "participant_offer_busy": "无法预览：角色正在进行道具互动。", "participant_care_busy": "无法预览：角色正在照护或被照护。", "participant_social_busy": "无法预览：角色正在进行社交互动。", "participant_recovering": "无法预览：角色正在恢复或锁定状态。", "airborne": "无法预览：角色必须先回到地面。", "asset_directory_missing": "无法预览：找不到变身素材文件夹。", "capability_unavailable_random": "无法预览：manifest 缺少可用的 random 素材。", "asset_load_failed": "无法预览：变身素材加载失败。"},
+    "work_failures": {"preview_requires_sandbox": "无法预览：请先切换至沙盒模式。", "severe_mood": "无法预览：{character}心情为 severe，没有符合 band 的工作素材。", "rudolf_unavailable": "无法预览：找不到{character}角色。", "participant_owned": "无法预览：{character}正在执行其他 Activity。", "participant_hidden": "无法预览：{character}目前未显示。", "participant_disabled": "无法预览：{character}目前已停用。", "settlement_pending": "无法预览：正式工作的结算仍在等待完成。", "participant_busy": "无法预览：{character}目前正在进行其他互动。", "capability_unavailable": "无法预览：manifest 中没有符合目前状态的工作素材。"},
+    "race_failures": {"preview_requires_sandbox": "无法预览：请先切换至沙盒模式。", "participant_unavailable": "无法预览：找不到{rudolf}或{teio}。", "participant_hidden": "无法预览：{character}目前未显示。", "participant_disabled": "无法预览：{character}目前已停用。", "participant_busy": "无法预览：{character}正在进行其他互动。", "participant_airborne": "无法预览：{character}必须先回到地面。", "form_blocks_race": "无法预览：{character}目前形态不能参赛。", "severe_mood": "无法预览：{character}心情为 severe。", "race_already_active": "无法预览：目前已有竞赛正在进行。", "participants_too_far": "无法预览：{rudolf}与{teio}距离太远，请先将两人移近。", "participants_too_close": "无法预览：{rudolf}与{teio}距离太近，请稍候两人自然分开。", "race_course_unavailable": "无法预览：目前桌面宽度不足以容纳最短 500px 跑道。", "participant_owned": "无法预览：参赛者正在执行其他 Activity。", "participant_busy_generic": "无法预览：参赛者正在进行其他互动。", "capability_unavailable": "无法预览：manifest 缺少符合目前形态与 band 的竞赛素材。"},
+    "chorus_failures": {"preview_requires_sandbox": "无法预览：请先切换至沙盒模式。", "chorus_already_active": "无法预览：目前已有合奏正在进行。", "no_eligible_performer": "无法预览：没有可发起合奏的空闲角色或相符素材。", "empty_session_id": "无法预览：无法建立合奏识别码。", "perform_animation_unavailable": "无法预览：manifest 缺少符合目前形态与 band 的演奏素材。"}
+  },
+  "sleep_control": {"started": "{character}已开始进入睡眠。", "waking": "{character}已进入唤醒过场。", "button_waking": "{character}唤醒中", "button_wake": "唤醒{character}", "button_blocked": "{character}无法睡眠", "button_sleep": "让{character}睡觉", "tooltip_waking": "角色正在播放既有 waking 过场。", "tooltip_wake": "使用既有 waking 流程提早唤醒。", "tooltip_blocked": "角色目前形态不允许睡眠。", "tooltip_sleep": "指定角色立即进入既有睡眠流程。", "tooltip_sandbox_only": "仅可在沙盒中对已召唤角色使用。", "failures": {"sandbox_required": "睡眠控制仅可在沙盒模式使用。", "participant_unavailable": "找不到指定角色。", "participant_hidden": "角色目前未召唤，无法指定睡眠。", "participant_owned": "角色正在进行其他活动，暂时无法睡觉。", "form_blocks_sleep": "角色目前形态不允许睡眠。", "already_waking": "角色已在唤醒过场中。", "sleep_capacity_reached": "目前没有可用的睡眠名额。", "unknown": "无法切换睡眠。", "unknown_with_reason": "无法切换睡眠：{reason}"}}
+}

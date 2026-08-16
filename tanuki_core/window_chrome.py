@@ -2,6 +2,8 @@ from PyQt6.QtCore import QEvent, QObject, QPoint, QRect, Qt
 from PyQt6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPen, QPixmap
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QToolButton, QWidget
 
+from .ui_localization import translate_ui
+
 
 CHROME_PIN = "pin"
 CHROME_MINIMIZE = "minimize"
@@ -75,7 +77,27 @@ class WindowChromeControls(QFrame):
         self.pin_button.toggled.connect(self._set_pinned)
         self.minimize_button.clicked.connect(target_window.showMinimized)
         self.close_button.clicked.connect(target_window.close)
+        self.retranslate_ui()
         self.adjustSize()
+
+    def retranslate_ui(self):
+        labels = {
+            self.pin_button: translate_ui(
+                "window_chrome.pin",
+                default="視窗置頂",
+            ),
+            self.minimize_button: translate_ui(
+                "window_chrome.minimize",
+                default="最小化",
+            ),
+            self.close_button: translate_ui(
+                "window_chrome.close",
+                default="關閉",
+            ),
+        }
+        for button, label in labels.items():
+            button.setToolTip(label)
+            button.setAccessibleName(label)
 
     def _create_button(self, action, tooltip, icon_color, checkable=False):
         button = QToolButton(self)
@@ -200,6 +222,9 @@ class SkinnedToolWindowChrome(QObject):
 
     def add_drag_widget(self, widget):
         self.drag_filter.add_widget(widget)
+
+    def retranslate_ui(self):
+        self.controls.retranslate_ui()
 
     def refresh_geometry(self):
         width = self.target_window.width()

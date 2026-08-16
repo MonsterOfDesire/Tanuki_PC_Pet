@@ -39,6 +39,7 @@ from .information_center_detached_ui import DetachedInformationPageWindow
 from .ui_skin_assets import UiSkinAssets
 from .ui_icons import create_ui_icon
 from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
+from .ui_localization import translate_ui
 from .window_chrome import SkinnedToolWindowChrome
 from .status_settings_ui import StatusSettingsPanel
 from .family_summary_ui import FamilySummaryPanel
@@ -59,6 +60,17 @@ NAVIGATION_ICON_NAMES = {
 }
 
 
+def localized_page_text(page_spec, field):
+    attribute_name = (
+        "navigation_label" if field == "navigation" else field
+    )
+    default = getattr(page_spec, attribute_name)
+    return translate_ui(
+        f"information_center.pages.{page_spec.page_id}.{field}",
+        default=default,
+    )
+
+
 class InformationCenterPage(SkinnedWindowFrame):
     def __init__(self, assets, page_spec, parent=None, theme=DEFAULT_UI_THEME):
         super().__init__(
@@ -69,25 +81,47 @@ class InformationCenterPage(SkinnedWindowFrame):
             defer_skin=True,
         )
         self.page_spec = page_spec
+        self._placeholder_active = True
 
-        placeholder = QWidget()
-        placeholder_layout = QVBoxLayout(placeholder)
+        self.placeholder = QWidget()
+        placeholder_layout = QVBoxLayout(self.placeholder)
         placeholder_layout.setContentsMargins(0, 0, 0, 0)
         placeholder_layout.setSpacing(theme.spacing_sm)
 
-        title_label = QLabel(page_spec.title)
-        title_label.setProperty("tanukiRole", "pageHeading")
-        placeholder_layout.addWidget(title_label)
+        self.title_label = QLabel(page_spec.title)
+        self.title_label.setProperty("tanukiRole", "pageHeading")
+        placeholder_layout.addWidget(self.title_label)
 
-        description_label = QLabel(page_spec.placeholder_text)
-        description_label.setProperty("tanukiRole", "pagePlaceholder")
-        description_label.setWordWrap(True)
-        placeholder_layout.addWidget(description_label)
-        loading_label = QLabel("正在載入頁面…")
-        loading_label.setProperty("tanukiRole", "pageLoading")
-        placeholder_layout.addWidget(loading_label)
+        self.description_label = QLabel(page_spec.placeholder_text)
+        self.description_label.setProperty("tanukiRole", "pagePlaceholder")
+        self.description_label.setWordWrap(True)
+        placeholder_layout.addWidget(self.description_label)
+        self.loading_label = QLabel("正在載入頁面…")
+        self.loading_label.setProperty("tanukiRole", "pageLoading")
+        placeholder_layout.addWidget(self.loading_label)
         placeholder_layout.addStretch(1)
-        self.set_content_widget(placeholder)
+        self.set_content_widget(self.placeholder)
+        self.retranslate_ui()
+
+    def retranslate_ui(self):
+        if not self._placeholder_active:
+            return
+        self.title_label.setText(localized_page_text(self.page_spec, "title"))
+        self.description_label.setText(translate_ui(
+            f"information_center.pages.{self.page_spec.page_id}.placeholder",
+            default=self.page_spec.placeholder_text,
+        ))
+        self.loading_label.setText(
+            translate_ui(
+                "information_center.loading",
+                default="正在載入頁面…",
+            )
+        )
+
+    def set_content_widget(self, widget):
+        if hasattr(self, "placeholder") and widget is not self.placeholder:
+            self._placeholder_active = False
+        super().set_content_widget(widget)
 
 
 class InformationCenterWindow(QWidget):
@@ -291,6 +325,7 @@ class InformationCenterWindow(QWidget):
         )
         self._update_navigation_density()
         self.window_chrome.refresh_geometry()
+        self.retranslate_ui()
 
     @property
     def current_page_id(self):
@@ -313,7 +348,13 @@ class InformationCenterWindow(QWidget):
         self.page_stack.setCurrentIndex(self.page_indexes[page_spec.page_id])
         self.navigation_buttons[page_spec.page_id].setChecked(True)
         self._current_page_id = page_spec.page_id
-        self.setWindowTitle(f"狸貓資訊中心 — {page_spec.navigation_label}")
+        self.setWindowTitle(
+            translate_ui(
+                "information_center.window_title",
+                default="狸貓資訊中心 — {page}",
+                page=localized_page_text(page_spec, "navigation"),
+            )
+        )
         page_created = False
         if defer_content:
             self._schedule_page_load(page_spec.page_id)
@@ -326,6 +367,99 @@ class InformationCenterWindow(QWidget):
         if page_spec.page_id != previous_page_id:
             self.page_changed.emit(page_spec.page_id)
             self._emit_state_changed()
+
+    def retranslate_ui(self):
+        self.window_chrome.retranslate_ui()
+        self.navigation_title.setText(
+            translate_ui(
+                "information_center.title",
+                default="狸貓資訊中心",
+            )
+        )
+        self.size_button.setText(
+            translate_ui("information_center.size", default="視窗尺寸")
+        )
+        self.size_button.setToolTip(
+            translate_ui(
+                "information_center.size_tooltip",
+                default="套用建議比例；套用後仍可拖曳視窗邊框自由調整。",
+            )
+        )
+        self.detach_button.setText(
+            translate_ui("information_center.detach", default="分離頁面")
+        )
+        detach_text = translate_ui(
+            "information_center.detach_tooltip",
+            default="將目前分頁移到可獨立操作的視窗",
+        )
+        self.detach_button.setToolTip(detach_text)
+        self.detach_button.setAccessibleName(detach_text)
+        for page_spec in INFORMATION_CENTER_PAGE_SPECS:
+            navigation_text = localized_page_text(
+                page_spec,
+                "navigation",
+            )
+            button = self.navigation_buttons[page_spec.page_id]
+            button.setText(navigation_text)
+            self._set_navigation_detached(
+                page_spec.page_id,
+                page_spec.page_id in self.detached_page_windows,
+            )
+            page = self.pages.get(page_spec.page_id)
+            if page is not None and hasattr(page, "retranslate_ui"):
+                page.retranslate_ui()
+            placeholder = self.page_host_placeholders.get(
+                page_spec.page_id
+            )
+            if placeholder is not None:
+                placeholder.setText(
+                    translate_ui(
+                        "information_center.detached_placeholder",
+                        default=(
+                            "此頁已分離。\n"
+                            "點擊上方分頁可喚回獨立視窗。"
+                        ),
+                    )
+                )
+            detached = self.detached_page_windows.get(
+                page_spec.page_id
+            )
+            if detached is not None and hasattr(detached, "retranslate_ui"):
+                detached.retranslate_ui()
+        for preset in INFORMATION_CENTER_SIZE_PRESETS:
+            action = self.size_actions.get(preset.preset_id)
+            if action is not None:
+                action.setText(
+                    translate_ui(
+                        f"information_center.sizes.{preset.preset_id}",
+                        default=preset.label,
+                    )
+                )
+        for page_id in (
+            PAGE_RELATION_SUMMON,
+            PAGE_EVENT_LOG,
+            PAGE_FAMILY_STATUS,
+            PAGE_ACHIEVEMENTS,
+            PAGE_STATUS_SETTINGS,
+        ):
+            panel = self._page_panel(page_id)
+            if panel is None:
+                continue
+            if hasattr(panel, "retranslate_ui"):
+                panel.retranslate_ui()
+            self._refresh_page(page_id)
+        if self._current_page_id:
+            page_spec = get_information_center_page_spec(
+                self._current_page_id
+            )
+            self.setWindowTitle(
+                translate_ui(
+                    "information_center.window_title",
+                    default="狸貓資訊中心 — {page}",
+                    page=localized_page_text(page_spec, "navigation"),
+                )
+            )
+        self._update_navigation_density()
 
     def open_page(self, page_id=None):
         target_page_id = (
@@ -495,9 +629,11 @@ class InformationCenterWindow(QWidget):
             self.page_stack.setCurrentIndex(self.page_indexes[page_id])
             self.navigation_buttons[page_id].setChecked(True)
             self._current_page_id = page_id
-            self.setWindowTitle(
-                f"狸貓資訊中心 — {page_spec.navigation_label}"
-            )
+            self.setWindowTitle(translate_ui(
+                "information_center.window_title_page",
+                default="狸貓資訊中心 — {page}",
+                page=localized_page_text(page_spec, "navigation"),
+            ))
             self._update_detach_button()
             if page_id != previous_page_id:
                 self.page_changed.emit(page_id)
@@ -568,9 +704,13 @@ class InformationCenterWindow(QWidget):
         button.setProperty("detached", bool(detached))
         page_spec = get_information_center_page_spec(page_id)
         button.setToolTip(
-            f"{page_spec.navigation_label}（已分離，點擊喚回）"
+            translate_ui(
+                "information_center.detached_recall",
+                default="{page}（已分離，點擊喚回）",
+                page=localized_page_text(page_spec, "navigation"),
+            )
             if detached
-            else page_spec.navigation_label
+            else localized_page_text(page_spec, "navigation")
         )
         button.style().unpolish(button)
         button.style().polish(button)
@@ -886,10 +1026,21 @@ class InformationCenterWindow(QWidget):
         )
         for page_spec in INFORMATION_CENTER_PAGE_SPECS:
             button = self.navigation_buttons[page_spec.page_id]
-            button.setText("" if compact else page_spec.navigation_label)
+            button.setText(
+                ""
+                if compact
+                else localized_page_text(page_spec, "navigation")
+            )
             button.setMinimumWidth(44 if compact else 0)
             button.setMaximumWidth(48 if compact else 16777215)
-        self.size_button.setText("" if compact else "視窗尺寸")
+        self.size_button.setText(
+            ""
+            if compact
+            else translate_ui(
+                "information_center.size",
+                default="視窗尺寸",
+            )
+        )
         self.size_button.setMinimumWidth(44 if compact else 0)
         self.size_button.setMaximumWidth(48 if compact else 16777215)
         self._update_detach_button(compact)
@@ -910,7 +1061,14 @@ class InformationCenterWindow(QWidget):
             and not current_is_detached
             and self.current_page_id != PAGE_ACHIEVEMENTS
         )
-        self.detach_button.setText("" if compact else "分離頁面")
+        self.detach_button.setText(
+            ""
+            if compact
+            else translate_ui(
+                "information_center.detach",
+                default="分離頁面",
+            )
+        )
         self.detach_button.setMinimumWidth(44 if compact else 0)
         self.detach_button.setMaximumWidth(
             48 if compact else 16777215

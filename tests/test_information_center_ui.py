@@ -39,6 +39,7 @@ from tanuki_core.achievement_presenter import (
     AchievementModeSnapshot,
     AchievementTierSnapshot,
 )
+from tanuki_core.ui_localization import set_ui_locale
 
 
 class FakeStatusSettingsBinding:
@@ -211,6 +212,22 @@ class InformationCenterWindowTests(unittest.TestCase):
             tuple(self.window.navigation_buttons),
             tuple(page.page_id for page in INFORMATION_CENTER_PAGE_SPECS),
         )
+
+    def test_information_center_chrome_retranslates_without_rebuild(self):
+        set_ui_locale("en_US")
+        try:
+            self.window.retranslate_ui()
+            self.assertEqual(
+                self.window.navigation_title.text(),
+                "Tanuki Information Center",
+            )
+            self.assertEqual(
+                self.window.navigation_buttons[PAGE_EVENT_LOG].toolTip(),
+                "Event Log",
+            )
+        finally:
+            set_ui_locale("zh_TW")
+            self.window.retranslate_ui()
         self.assertEqual(
             {
                 page_id: button.property("pageAccent")
@@ -381,6 +398,21 @@ class InformationCenterWindowTests(unittest.TestCase):
         self.assertTrue(self.window.status_settings_panel.settings_grid.isEnabled())
         self.assertEqual(len(self.window.status_settings_panel.time_scale_buttons), 4)
 
+    def test_retranslate_after_placeholder_is_replaced_is_safe(self):
+        self.window.select_page(PAGE_STATUS_SETTINGS)
+        page = self.window.pages[PAGE_STATUS_SETTINGS]
+        self.assertFalse(page._placeholder_active)
+
+        set_ui_locale("ja_JP")
+        try:
+            self.window.retranslate_ui()
+            self.assertEqual(
+                self.window.navigation_buttons[PAGE_STATUS_SETTINGS].text(),
+                "状態設定",
+            )
+        finally:
+            set_ui_locale("zh_TW")
+
     def test_family_summary_page_accepts_presenter_binding(self):
         binding = FakeFamilySummaryBinding()
 
@@ -467,6 +499,19 @@ class InformationCenterWindowTests(unittest.TestCase):
                 "detached"
             )
         )
+
+        set_ui_locale("en_US")
+        try:
+            self.window.retranslate_ui()
+            self.assertEqual(
+                self.window.navigation_buttons[
+                    PAGE_FAMILY_STATUS
+                ].toolTip(),
+                "Family Summary (detached; select to recall)",
+            )
+        finally:
+            set_ui_locale("zh_TW")
+            self.window.retranslate_ui()
 
     def test_detached_navigation_button_recalls_window_without_switching_stack(self):
         self.window.show()

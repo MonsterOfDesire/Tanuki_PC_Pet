@@ -27,7 +27,7 @@
 - household persistence 新增 `race_statistics`；舊資料沒有此欄位時會以空戰績載入。
 - 新增 Activity／sleep／transformation／race runtime state 不要求手動修改既有存檔。
 - manifest schema 維持 1；新增 contexts 由 converter 的 `KNOWN_CONTEXTS` 驗證。
-- 普通與變身形態、關係、事件及戰績仍使用英文 canonical character key；繁體中文名稱只屬 UI 顯示層。
+- 普通與變身形態、關係、事件及戰績仍使用英文 canonical character key；各語系角色名稱只屬 UI 顯示層。
 
 ## 使用者設定與版本庫設定
 

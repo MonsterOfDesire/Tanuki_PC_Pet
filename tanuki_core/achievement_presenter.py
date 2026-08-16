@@ -9,6 +9,7 @@ from .achievement_catalog import (
     AchievementCatalog,
 )
 from .achievement_state import AchievementState
+from .ui_localization import translate_ui
 
 
 ACHIEVEMENT_TIER_ORDER = ("G1", "G2", "G3")
@@ -20,6 +21,24 @@ ACHIEVEMENT_MODE_LABELS = {
     ACHIEVEMENT_WORLD_SANDBOX: "沙盒",
     ACHIEVEMENT_WORLD_GOLDEN_LEGEND: "黃金傳說",
 }
+
+
+def _mode_label(world_mode):
+    return translate_ui(
+        f"achievements.modes.{world_mode}",
+        default=ACHIEVEMENT_MODE_LABELS.get(world_mode, world_mode),
+    )
+
+
+def _definition_text(definition, field):
+    fallback = (
+        definition.title_zh_tw if field == "title" else
+        definition.description_zh_tw
+    )
+    return translate_ui(
+        f"achievements.definitions.{definition.achievement_id}.{field}",
+        default=fallback,
+    )
 
 
 @dataclass(frozen=True)
@@ -60,10 +79,24 @@ class AchievementModeSnapshot:
 
     @property
     def summary_text(self) -> str:
-        progress = f"已取得 {self.unlocked_count} / {self.total_count}"
+        progress = translate_ui(
+            "achievements.progress",
+            default="已取得 {unlocked} / {total}",
+            unlocked=self.unlocked_count,
+            total=self.total_count,
+        )
         if self.recent_title:
-            return f"{progress}｜最近：{self.recent_title}"
-        return f"{progress}｜尚無完成成就"
+            return translate_ui(
+                "achievements.summary_recent",
+                default="{progress}｜最近：{title}",
+                progress=progress,
+                title=self.recent_title,
+            )
+        return translate_ui(
+            "achievements.summary_empty",
+            default="{progress}｜尚無完成成就",
+            progress=progress,
+        )
 
 
 @dataclass(frozen=True)
@@ -129,7 +162,7 @@ def build_achievement_cabinet_snapshot(
             if unlocked:
                 unlocked_total += 1
                 if recent is None or unlocked_at > recent[0]:
-                    recent = (unlocked_at, definition.title_zh_tw)
+                    recent = (unlocked_at, _definition_text(definition, "title"))
             cards_by_tier[definition.tier].append(
                 _build_card_snapshot(
                     definition,
@@ -152,7 +185,7 @@ def build_achievement_cabinet_snapshot(
         modes.append(
             AchievementModeSnapshot(
                 world_mode=world_mode,
-                mode_label=ACHIEVEMENT_MODE_LABELS[world_mode],
+                mode_label=_mode_label(world_mode),
                 tiers=tiers,
                 unlocked_count=unlocked_total,
                 total_count=len(definitions),
@@ -190,13 +223,25 @@ def build_achievement_unlock_notification(
         return None
     titles = tuple(card.title for card in cards if card.title)
     if len(titles) == 1:
-        heading = "獲得新成就"
+        heading = translate_ui(
+            "achievements.notification.single",
+            default="獲得新成就",
+        )
         message = titles[0]
     else:
-        heading = f"一次獲得 {len(titles)} 項成就"
-        message = "、".join(titles[:3])
+        heading = translate_ui(
+            "achievements.notification.multiple",
+            default="一次獲得 {count} 項成就",
+            count=len(titles),
+        )
+        separator = translate_ui("common.name_separator", default="、")
+        message = separator.join(titles[:3])
         if len(titles) > 3:
-            message += f" 等 {len(titles)} 項"
+            message += translate_ui(
+                "achievements.notification.more",
+                default=" 等 {count} 項",
+                count=len(titles),
+            )
     return AchievementUnlockNotificationSnapshot(
         achievement_ids=tuple(card.slot_key for card in cards),
         titles=titles,
@@ -219,18 +264,27 @@ def _build_card_snapshot(
             tier=definition.tier,
             unlocked=False,
             image_relative_path=image_relative_path,
-            accessible_name=f"未取得的 {definition.tier} 獎盃",
+            accessible_name=translate_ui(
+                "achievements.locked_accessible",
+                default="未取得的 {tier} 獎盃",
+                tier=definition.tier,
+            ),
         )
     return AchievementCardSnapshot(
         slot_key=definition.achievement_id,
         tier=definition.tier,
         unlocked=True,
         image_relative_path=image_relative_path,
-        title=definition.title_zh_tw,
-        acquisition_method=definition.description_zh_tw,
+        title=_definition_text(definition, "title"),
+        acquisition_method=_definition_text(definition, "description"),
         unlocked_at_text=_format_unlocked_at(unlocked_at),
         accessible_name=(
-            f"已取得 {definition.tier} 成就：{definition.title_zh_tw}"
+            translate_ui(
+                "achievements.unlocked_accessible",
+                default="已取得 {tier} 成就：{title}",
+                tier=definition.tier,
+                title=_definition_text(definition, "title"),
+            )
         ),
     )
 

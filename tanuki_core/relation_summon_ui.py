@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (
 
 from .ui_theme import DEFAULT_UI_THEME
 from .ui_icons import METRIC_COLORS, create_metric_icon
-from .ui_localization import character_display_name
+from .ui_localization import character_display_name, translate_ui
 from .ui_controls import ToggleSwitch
 
 
@@ -108,12 +108,16 @@ class RelationMetricBar(QWidget):
 
     @staticmethod
     def metric_label(metric_kind):
-        return {
+        defaults = {
             "familiarity": "熟悉",
             "trust": "信任",
             "attachment": "依附",
             "tension": "緊張",
-        }[metric_kind]
+        }
+        return translate_ui(
+            f"labels.relationship_metrics.{metric_kind}",
+            default=defaults[metric_kind],
+        )
 
 
 class SummonSwitch(ToggleSwitch):
@@ -162,21 +166,30 @@ class RelationshipRowCard(QFrame):
         affinity_icon_label.setPixmap(
             create_relation_stat_icon("affinity").pixmap(13, 13)
         )
-        affinity_icon_label.setToolTip("好感度")
+        affinity_label = translate_ui("relationship.affinity", default="好感度")
+        affinity_icon_label.setToolTip(affinity_label)
         pair_stats_layout.addWidget(affinity_icon_label)
         self.affinity_value_label = QLabel(f"{row.affinity:.1f}")
         self.affinity_value_label.setProperty("tanukiRole", "relationAffinityValue")
-        self.affinity_value_label.setToolTip(f"好感度 {row.affinity:.2f}")
+        self.affinity_value_label.setToolTip(
+            f"{affinity_label} {row.affinity:.2f}"
+        )
         pair_stats_layout.addWidget(self.affinity_value_label)
         event_icon_label = QLabel()
         event_icon_label.setPixmap(
             create_relation_stat_icon("events").pixmap(13, 13)
         )
-        event_icon_label.setToolTip("事件次數")
+        event_count_label = translate_ui(
+            "relationship.event_count",
+            default="事件次數",
+        )
+        event_icon_label.setToolTip(event_count_label)
         pair_stats_layout.addWidget(event_icon_label)
         self.event_count_label = QLabel(str(row.event_count))
         self.event_count_label.setProperty("tanukiRole", "relationEventCount")
-        self.event_count_label.setToolTip(f"事件次數 {row.event_count}")
+        self.event_count_label.setToolTip(
+            f"{event_count_label} {row.event_count}"
+        )
         pair_stats_layout.addWidget(self.event_count_label)
         pair_stats_layout.addStretch(1)
         pair_column.addLayout(pair_stats_layout)
@@ -331,6 +344,35 @@ class RelationSummonPanel(QWidget):
         root_layout.addLayout(relationship_column, stretch=1)
 
         self.set_binding(binding)
+        self.retranslate_ui()
+
+    def retranslate_ui(self):
+        self.unavailable_label.setText(translate_ui(
+            "relationship.unavailable",
+            default="角色資料尚未連接執行中的 Dashboard。",
+        ))
+        for metric_kind, label in self.metric_legend_labels.items():
+            label.setText(RelationMetricBar.metric_label(metric_kind))
+        self.affinity_formula_label.setText(translate_ui(
+            "relationship.formula_multiline",
+            default=(
+                "好感度＝熟悉×45%＋信任×30%\n"
+                "　　　　　＋依附×35%－緊張×20%"
+            ),
+        ))
+        for character_name, avatar_button in self.avatar_buttons.items():
+            display_name = character_display_name(character_name)
+            avatar_button.setAccessibleName(display_name)
+            self.summon_buttons[character_name].setAccessibleName(
+                translate_ui(
+                    "relationship.summon_character",
+                    default="召喚 {character}",
+                    character=display_name,
+                )
+            )
+        self._last_presentation = None
+        if self.binding is not None:
+            self.refresh_from_binding()
 
     def set_binding(self, binding):
         if binding is not self.binding:
@@ -343,7 +385,10 @@ class RelationSummonPanel(QWidget):
         else:
             self._last_presentation = None
             self.relationship_list.clear()
-            self.relationship_list.addItem("目前尚無角色關係資料。")
+            self.relationship_list.addItem(translate_ui(
+                "relationship.no_data",
+                default="目前尚無角色關係資料。",
+            ))
             self._set_controls_unavailable()
 
     def set_summoned(self, character_name, summoned):
@@ -393,11 +438,17 @@ class RelationSummonPanel(QWidget):
                 summon_button.setText("")
                 summon_button.setToolTip(
                     (
-                        "隱藏" if member is not None and member.summoned else "召喚"
+                        translate_ui("relationship.hide", default="隱藏")
+                        if member is not None and member.summoned else
+                        translate_ui("relationship.summon", default="召喚")
                     )
                     + f" {display_name}"
                     if member is not None and member.available
-                    else f"{display_name} 尚未載入"
+                    else translate_ui(
+                        "relationship.not_loaded",
+                        default="{character} 尚未載入",
+                        character=display_name,
+                    )
                 )
                 del summon_blocker
                 del avatar_blocker
@@ -409,9 +460,17 @@ class RelationSummonPanel(QWidget):
                 else "—"
             )
             self.race_summary_label.setText(
-                f"🏁 競賽 {race_summary.completed_races} 場　"
-                f"{race_summary.wins} 勝 {race_summary.losses} 敗　"
-                f"勝率 {win_rate_text}"
+                translate_ui(
+                    "relationship.race_summary",
+                    default=(
+                        "🏁 競賽 {races} 場　{wins} 勝 {losses} 敗　"
+                        "勝率 {win_rate}"
+                    ),
+                    races=race_summary.completed_races,
+                    wins=race_summary.wins,
+                    losses=race_summary.losses,
+                    win_rate=win_rate_text,
+                )
             )
             if presentation.relationship_rows:
                 for row in presentation.relationship_rows:
@@ -424,7 +483,12 @@ class RelationSummonPanel(QWidget):
                     item.setToolTip(
                         f"{character_display_name(row.actor_name)} → "
                         f"{character_display_name(row.target_name)}｜"
-                        f"好感 {row.affinity:.2f}｜事件 {row.event_count}"
+                        + translate_ui(
+                            "relationship.row_tooltip",
+                            default="好感 {affinity:.2f}｜事件 {event_count}",
+                            affinity=row.affinity,
+                            event_count=row.event_count,
+                        )
                     )
                     self.relationship_list.addItem(item)
                     self.relationship_list.setItemWidget(
@@ -437,7 +501,10 @@ class RelationSummonPanel(QWidget):
                     )
             else:
                 self.relationship_list.addItem(
-                    presentation.empty_text or "目前沒有可顯示的關係資料。"
+                    presentation.empty_text or translate_ui(
+                        "relationship.no_visible_data",
+                        default="目前沒有可顯示的關係資料。",
+                    )
                 )
             self._last_presentation = presentation
         finally:
@@ -451,13 +518,21 @@ class RelationSummonPanel(QWidget):
             summon_button.setEnabled(False)
             summon_button.setText("")
             summon_button.setToolTip(
-                f"{character_display_name(character_name)} 尚未載入"
+                translate_ui(
+                    "relationship.not_loaded",
+                    default="{character} 尚未載入",
+                    character=character_display_name(character_name),
+                )
             )
 
     @staticmethod
     def _build_avatar_tooltip(character_name, member):
         if member is None or not member.available:
-            return f"{character_display_name(character_name)} 尚未載入"
+            return translate_ui(
+                "relationship.not_loaded",
+                default="{character} 尚未載入",
+                character=character_display_name(character_name),
+            )
         return RelationSummonPanel._format_avatar_tooltip(
             character_name,
             member.mood_score,
@@ -467,18 +542,28 @@ class RelationSummonPanel(QWidget):
     @staticmethod
     def _format_avatar_tooltip(character_name, mood_score, mood_state):
         mood_labels = {
-            "normal": "平穩",
-            "unhappy": "低落",
-            "depressed": "非常低落",
+            "normal": translate_ui("labels.mood_states.normal", default="平穩"),
+            "unhappy": translate_ui("labels.mood_states.unhappy", default="低落"),
+            "depressed": translate_ui("labels.mood_states.depressed", default="非常低落"),
         }
         if mood_score is None:
-            mood_text = "心情：尚無資料"
+            mood_text = translate_ui(
+                "relationship.mood_no_data",
+                default="心情：尚無資料",
+            )
         else:
             mood_label = mood_labels.get(mood_state, "平穩")
-            mood_text = f"心情：{mood_label}（{mood_score:.0f}/100）"
-        return (
-            f"查看 {character_display_name(character_name)} 對其他角色的關係\n"
-            f"{mood_text}"
+            mood_text = translate_ui(
+                "relationship.mood_score",
+                default="心情：{mood}（{score:.0f}/100）",
+                mood=mood_label,
+                score=mood_score,
+            )
+        return translate_ui(
+            "relationship.view_relationships_tooltip",
+            default="查看 {character} 對其他角色的關係\n{mood}",
+            character=character_display_name(character_name),
+            mood=mood_text,
         )
 
     def eventFilter(self, watched, event):

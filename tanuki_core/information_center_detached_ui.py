@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
 
 from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
 from .window_chrome import SkinnedToolWindowChrome
+from .ui_localization import translate_ui
 
 
 class DetachedInformationPageWindow(QWidget):
@@ -92,6 +93,34 @@ class DetachedInformationPageWindow(QWidget):
             self.resize(QSize(initial_size))
         self.setStyleSheet(build_ui_stylesheet(theme))
         self.window_chrome.refresh_geometry()
+        self.retranslate_ui()
+
+    def retranslate_ui(self):
+        self.window_chrome.retranslate_ui()
+        page_label = translate_ui(
+            f"information_center.pages.{self.page_spec.page_id}.navigation",
+            default=self.page_spec.navigation_label,
+        )
+        self.setWindowTitle(
+            translate_ui(
+                "information_center.window_title",
+                default="狸貓資訊中心 — {page}",
+                page=page_label,
+            )
+        )
+        self.title_label.setText(
+            translate_ui(
+                "information_center.detached_title",
+                default="{page}（分離視窗）",
+                page=page_label,
+            )
+        )
+        tooltip = translate_ui(
+            "information_center.dock_close",
+            default="關閉並歸回資訊中心",
+        )
+        self.window_chrome.controls.close_button.setToolTip(tooltip)
+        self.window_chrome.controls.close_button.setAccessibleName(tooltip)
 
     def release_page(self):
         page = self.page

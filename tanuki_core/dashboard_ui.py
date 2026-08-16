@@ -1,4 +1,5 @@
-from PyQt6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, QSignalBlocker, QTimer, Qt
+from PyQt6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, QSignalBlocker, QTimer, Qt, QUrl
+from PyQt6.QtGui import QDesktopServices
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -52,7 +53,10 @@ from .status_settings_binding import DashboardStatusSettingsBinding
 from .ui_localization import (
     character_display_name,
     localize_character_names_in_text,
+    set_ui_locale,
 )
+from .update_runtime_controller import UpdateCheckCoordinator
+from .app_version import GITHUB_RELEASES_URL
 
 
 class HouseholdSummaryWindow(QWidget):
@@ -387,6 +391,15 @@ class Dashboard(QWidget):
         self.mood_climate = str(
             getattr(self.settings_provider, "mood_climate", "cheerful")
         )
+        self.ui_locale_options = list(RuntimeSettings.UI_LOCALE_OPTIONS)
+        self.ui_locale = str(
+            getattr(self.settings_provider, "ui_locale", "zh_TW")
+        )
+        set_ui_locale(self.ui_locale)
+        self.update_check_coordinator = UpdateCheckCoordinator(parent=self)
+        self.update_check_coordinator.status_changed.connect(
+            lambda _status: self.refresh_information_center_settings()
+        )
         self.teio_duration_buttons = []
         self.tsuyoshi_duration_buttons = []
         self.target_rect = target_rect
@@ -712,6 +725,7 @@ class Dashboard(QWidget):
             race_frequency=self.race_frequency,
             chorus_frequency=self.chorus_frequency,
             mood_climate=self.mood_climate,
+            ui_locale=self.ui_locale,
             information_center=(
                 self.information_center_window.capture_config_state()
                 if self.information_center_window is not None
@@ -739,6 +753,8 @@ class Dashboard(QWidget):
         self.race_frequency = str(state.race_frequency)
         self.chorus_frequency = str(state.chorus_frequency)
         self.mood_climate = str(state.mood_climate)
+        self.ui_locale = str(state.ui_locale)
+        set_ui_locale(self.ui_locale)
         self.information_center_config_state = state.information_center
         if self.information_center_window is not None:
             self.information_center_window.restore_config_state(
@@ -755,6 +771,7 @@ class Dashboard(QWidget):
         self.update_time_scale_buttons()
         self.update_display_scale_buttons()
         self.update_household_control_states()
+        self.retranslate_ui()
 
     def refresh_mood_bars(self):
         for info in self.pets_dict.values():
@@ -937,6 +954,31 @@ class Dashboard(QWidget):
 
     def set_mood_climate(self, value, save=True):
         self.controller.set_mood_climate(self, value, save=save)
+
+    def set_ui_locale(self, value, save=True):
+        self.controller.set_ui_locale(self, value, save=save)
+
+    def get_update_status_snapshot(self):
+        return self.update_check_coordinator.snapshot()
+
+    def check_for_updates(self):
+        return self.update_check_coordinator.start_check()
+
+    def open_update_page(self):
+        status = self.get_update_status_snapshot()
+        url = status.release_page_url or GITHUB_RELEASES_URL
+        return QDesktopServices.openUrl(QUrl(url))
+
+    def retranslate_ui(self):
+        if self.information_center_window is not None:
+            self.information_center_window.retranslate_ui()
+        if self.offer_tray_window is not None:
+            self.offer_tray_window.retranslate_ui()
+        launcher = getattr(self, "launcher_panel", None)
+        if launcher is not None and hasattr(launcher, "retranslate_ui"):
+            launcher.retranslate_ui()
+        self.refresh_information_center_settings()
+        self.refresh_launcher_panel()
 
     def apply_display_scale(self, save=True):
         self.controller.apply_display_scale(self, save=save)

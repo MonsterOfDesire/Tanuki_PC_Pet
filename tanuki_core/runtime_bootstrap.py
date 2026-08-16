@@ -5,7 +5,7 @@ from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QApplication
 
 from .app_runtime import TanukiAppRuntime
-from .asset_manager import AssetManager
+from .asset_manager import AssetManager, is_frozen_runtime
 from .config_save_scheduler import ConfigSaveScheduler
 from .config_store import ConfigStore
 from .dashboard_shell import GlobalMouseListener, SensorZone
@@ -13,6 +13,10 @@ from .dashboard_shell_lifecycle import DashboardShellLifecycle
 from .dashboard_ui import Dashboard
 from .geometry import DesktopGeometry
 from .household_state import seed_default_household_events
+from .installation_registry import (
+    mark_current_installation_stopped,
+    record_current_installation,
+)
 from .pet_registry import DEFAULT_PET_SPECS
 from .pet_widget import TanukiPet
 from .runtime import app_now
@@ -145,8 +149,14 @@ def create_runtime(app=None):
     runtime.household_coordinator.reset_event_schedule(app_now())
     bind_runtime_providers(runtime)
     config_store.bind(dashboard, pets_dict)
+    if is_frozen_runtime():
+        record_current_installation(dashboard.ui_locale)
     runtime.timers = start_runtime_timers(runtime)
     runtime.app.aboutToQuit.connect(runtime.shutdown)
+    if is_frozen_runtime():
+        runtime.app.aboutToQuit.connect(
+            mark_current_installation_stopped
+        )
     return runtime
 
 

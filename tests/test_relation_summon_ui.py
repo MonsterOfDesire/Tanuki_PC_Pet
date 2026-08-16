@@ -125,7 +125,7 @@ class RelationSummonPanelTests(unittest.TestCase):
             ("Air Groove", "Tokai Teio"),
         )
         self.assertIn(
-            "氣槽 → 東海帝皇",
+            "氣槽 → 帝寶",
             self.panel.relationship_list.item(0).toolTip(),
         )
         row_card = self.panel.relationship_list.itemWidget(

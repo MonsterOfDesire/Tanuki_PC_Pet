@@ -23,6 +23,7 @@ from .achievement_presenter import (
     AchievementUnlockNotificationSnapshot,
 )
 from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
+from .ui_localization import translate_ui
 
 
 MODE_BUTTON_LABELS = {
@@ -182,9 +183,9 @@ class AchievementCabinetPanel(QWidget):
             theme.spacing_sm,
         )
         detail_layout.setSpacing(theme.spacing_xs)
-        detail_heading = QLabel("取得紀錄")
-        detail_heading.setProperty("tanukiRole", "achievementDetailHeading")
-        detail_layout.addWidget(detail_heading)
+        self.detail_heading = QLabel("取得紀錄")
+        self.detail_heading.setProperty("tanukiRole", "achievementDetailHeading")
+        detail_layout.addWidget(self.detail_heading)
         self.detail_title_label = QLabel("")
         self.detail_title_label.setWordWrap(True)
         self.detail_title_label.setProperty("tanukiRole", "achievementDetailTitle")
@@ -202,6 +203,22 @@ class AchievementCabinetPanel(QWidget):
         detail_layout.addStretch(1)
         body_row.addWidget(self.detail_frame)
         root_layout.addLayout(body_row, stretch=1)
+        self.retranslate_ui()
+
+    def retranslate_ui(self):
+        for world_mode, button in self.mode_buttons.items():
+            button.setText(translate_ui(
+                f"achievements.mode_tabs.{world_mode}",
+                default=MODE_BUTTON_LABELS[world_mode],
+            ))
+        self.detail_heading.setText(translate_ui(
+            "achievements.acquisition_record",
+            default="取得紀錄",
+        ))
+        if self.binding is not None:
+            self.refresh_from_binding()
+        else:
+            self._rebuild_cards()
 
     def set_binding(self, binding):
         self.binding = binding
@@ -258,7 +275,10 @@ class AchievementCabinetPanel(QWidget):
     def clear_detail(self):
         self.detail_title_label.setText("")
         self.detail_method_label.setText(
-            "將游標移到已取得的獎盃上，即可查看取得方式。"
+            translate_ui(
+                "achievements.hover_unlocked",
+                default="將游標移到已取得的獎盃上，即可查看取得方式。",
+            )
         )
         self.detail_time_label.setText("")
 
@@ -269,7 +289,11 @@ class AchievementCabinetPanel(QWidget):
         self.detail_title_label.setText(card.title)
         self.detail_method_label.setText(card.acquisition_method)
         self.detail_time_label.setText(
-            f"取得時間：{card.unlocked_at_text}"
+            translate_ui(
+                "achievements.unlocked_at",
+                default="取得時間：{time}",
+                time=card.unlocked_at_text,
+            )
             if card.unlocked_at_text else
             ""
         )
@@ -296,9 +320,19 @@ class AchievementCabinetPanel(QWidget):
         mode = self.snapshot.mode_snapshot(self.current_world_mode)
         tier = mode.tier_snapshot(self.current_tier) if mode else None
         self.progress_label.setText(
-            f"已取得 {mode.unlocked_count} / {mode.total_count}"
+            translate_ui(
+                "achievements.progress",
+                default="已取得 {unlocked} / {total}",
+                unlocked=mode.unlocked_count,
+                total=mode.total_count,
+            )
             if mode else
-            "已取得 0 / 0"
+            translate_ui(
+                "achievements.progress",
+                default="已取得 {unlocked} / {total}",
+                unlocked=0,
+                total=0,
+            )
         )
         cards = tier.cards if tier else ()
         for card in cards:

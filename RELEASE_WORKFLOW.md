@@ -186,6 +186,14 @@ git tag -s v0.6.0-beta -m "Tanuki PC Pet v0.6.0-beta"
 3. 上傳到 GitHub Release
 4. 把對應版本的 release note 一起貼上
 
+若此版本提供獨立更新器，完成 onedir build 與簽章後，另依 [docs/UPDATE_PACKAGE_SPEC.md](docs/UPDATE_PACKAGE_SPEC.md) 產生：
+
+- `TanukiUpdater.exe`
+- `TanukiPet-<version>-windows-x64.zip`
+- `tanuki-update.json`
+
+ZIP 與 manifest 必須由同一次 `tools/build_update_package.py` 執行產生，並和 `build_lab_2.ps1` 產出的更新器一起上傳；ZIP 變動後不得沿用舊 manifest。GitHub Release tag、manifest `version` 與程式內 `tanuki_core/app_version.py` 必須一致。beta 版本應標記為 prerelease，讓 beta 更新器納入 prerelease、穩定版更新器忽略 prerelease。主程式只保留使用者主動按下的手動查詢，不在啟動時連線 GitHub。
+
 ## 四、我會建議的日常習慣
 
 ### 1. 每次做大功能時，順手記一行

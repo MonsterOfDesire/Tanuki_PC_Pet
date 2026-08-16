@@ -7,6 +7,7 @@ from tanuki_core.achievement_presenter import (
     build_achievement_unlock_notification,
 )
 from tanuki_core.achievement_state import AchievementState
+from tanuki_core.ui_localization import set_ui_locale
 
 
 CATALOG_PATH = (
@@ -21,6 +22,9 @@ class AchievementPresenterTests(unittest.TestCase):
     def setUp(self):
         self.catalog = load_achievement_catalog(CATALOG_PATH)
         self.state = AchievementState()
+
+    def tearDown(self):
+        set_ui_locale("zh_TW")
 
     def test_snapshot_separates_modes_and_strips_locked_information(self):
         snapshot = build_achievement_cabinet_snapshot(
@@ -83,6 +87,26 @@ class AchievementPresenterTests(unittest.TestCase):
         self.assertEqual(notification.heading, "一次獲得 2 項成就")
         self.assertIn("初次奔馳", notification.message)
         self.assertIn("初次合奏", notification.message)
+
+    def test_unlocked_card_uses_selected_locale_for_hover_details(self):
+        set_ui_locale("en_US")
+        self.state.progress_for(
+            "sandbox",
+            "race.first_natural_finish",
+        ).unlock(1_700_000_000.0)
+
+        snapshot = build_achievement_cabinet_snapshot(
+            self.catalog,
+            self.state,
+        )
+        card = snapshot.card_snapshot("race.first_natural_finish")
+
+        self.assertEqual(card.title, "First Run")
+        self.assertIn("non-test race", card.acquisition_method)
+        self.assertEqual(
+            snapshot.mode_snapshot("sandbox").mode_label,
+            "Sandbox",
+        )
 
 
 if __name__ == "__main__":

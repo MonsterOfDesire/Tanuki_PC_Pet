@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from .ui_localization import translate_ui
+
 
 @dataclass(frozen=True)
 class CharacterRhythmSnapshot:
@@ -34,5 +36,14 @@ def format_compact_duration(seconds) -> str:
         return ""
     minutes, remaining = divmod(value, 60)
     if minutes:
-        return f"{minutes}分{remaining:02d}秒"
-    return f"{remaining}秒"
+        return translate_ui(
+            "common.duration_minutes_seconds",
+            default="{minutes}分{seconds:02d}秒",
+            minutes=minutes,
+            seconds=remaining,
+        )
+    return translate_ui(
+        "common.duration_seconds",
+        default="{seconds}秒",
+        seconds=remaining,
+    )

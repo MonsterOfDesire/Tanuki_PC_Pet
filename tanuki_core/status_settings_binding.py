@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from .update_runtime_controller import UpdateStatusSnapshot
+
 
 @dataclass(frozen=True)
 class StatusSettingsSnapshot:
@@ -34,6 +36,19 @@ class StatusSettingsSnapshot:
         "balanced",
         "expressive",
     )
+    ui_locale: str = "zh_TW"
+    ui_locale_options: tuple[str, ...] = (
+        "zh_TW",
+        "zh_CN",
+        "ja_JP",
+        "en_US",
+    )
+    update_status: str = "idle"
+    update_current_version: str = ""
+    update_available_version: str = ""
+    update_page_url: str = ""
+    update_error_message: str = ""
+    update_package_ready: bool = False
 
 
 class DashboardStatusSettingsBinding:
@@ -44,6 +59,16 @@ class DashboardStatusSettingsBinding:
 
     def snapshot(self):
         state = self.dashboard.capture_config_state()
+        update_status_provider = getattr(
+            self.dashboard,
+            "get_update_status_snapshot",
+            None,
+        )
+        update_status = (
+            update_status_provider()
+            if callable(update_status_provider)
+            else UpdateStatusSnapshot()
+        )
         return StatusSettingsSnapshot(
             world_mode=str(state.world_mode),
             world_mode_options=tuple(
@@ -84,6 +109,23 @@ class DashboardStatusSettingsBinding:
                 str(value)
                 for value in self.dashboard.mood_climate_options
             ),
+            ui_locale=str(getattr(state, "ui_locale", "zh_TW")),
+            ui_locale_options=tuple(
+                str(value)
+                for value in getattr(
+                    self.dashboard,
+                    "ui_locale_options",
+                    ("zh_TW", "zh_CN", "ja_JP", "en_US"),
+                )
+            ),
+            update_status=str(update_status.state),
+            update_current_version=str(update_status.current_version),
+            update_available_version=str(update_status.available_version),
+            update_page_url=str(update_status.release_page_url),
+            update_error_message=str(update_status.error_message),
+            update_package_ready=bool(
+                update_status.package_manifest_available
+            ),
         )
 
     def set_debug_enabled(self, enabled):
@@ -117,6 +159,15 @@ class DashboardStatusSettingsBinding:
 
     def set_mood_climate(self, value):
         self.dashboard.set_mood_climate(str(value))
+
+    def set_ui_locale(self, value):
+        self.dashboard.set_ui_locale(str(value))
+
+    def check_for_updates(self):
+        return self.dashboard.check_for_updates()
+
+    def open_update_page(self):
+        return self.dashboard.open_update_page()
 
     def run_validation_checks(self):
         self.dashboard.run_validation_checks()

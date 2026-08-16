@@ -9,9 +9,13 @@ from tanuki_core.activity_rhythm import (
 from tanuki_core.dashboard_presenter import DashboardPresenter
 from tanuki_core.dashboard_tools_actions import ValidationCheckResult
 from tanuki_core.household_state import HouseholdState
+from tanuki_core.ui_localization import set_ui_locale
 
 
 class DashboardPresenterTests(unittest.TestCase):
+    def tearDown(self):
+        set_ui_locale("zh_TW")
+
     def test_build_debug_button_formats_enabled_state(self):
         presenter = DashboardPresenter()
 
@@ -81,9 +85,37 @@ class DashboardPresenterTests(unittest.TestCase):
         self.assertIn("生活費: 650 元", presentation.overview_text)
         self.assertIn("家庭壓力: 18%", presentation.overview_text)
         self.assertIn("#001 12:34:56 帝寶偷喝飲料 (生活費 -35, 壓力 +8.5)", presentation.log_text)
-        self.assertIn("#002 12:34:56 魯道夫正在盤點家用。", presentation.log_text)
+        self.assertIn("#002 12:34:56 魯道夫象徵正在盤點家用。", presentation.log_text)
         self.assertEqual(presentation.living_fund, 650)
         self.assertEqual(presentation.household_pressure, 18.5)
+
+    def test_social_event_presentation_rebuilds_text_for_english(self):
+        set_ui_locale("en_US")
+        entry = SimpleNamespace(
+            sequence=1,
+            wall_clock_time=0.0,
+            channel="social",
+            category="social",
+            event_type="short_chat",
+            summary="魯道夫和帝寶聊了幾句。",
+            actor_name="Symboli Rudolf",
+            target_name="Tokai Teio",
+            living_fund_delta=0,
+            household_pressure_delta=0.0,
+            mood_delta=0.0,
+            relation_delta={},
+            metadata={},
+            tags=(),
+            importance="normal",
+        )
+
+        presentation = DashboardPresenter().build_social_log((entry,))
+
+        self.assertEqual(presentation.title, "Event Log - All")
+        self.assertIn(
+            "Symboli Rudolf and Tokai Teio shared a social moment.",
+            presentation.entries[0].summary,
+        )
 
     def test_build_household_summary_includes_runtime_members_and_recent_stats(self):
         presenter = DashboardPresenter()
@@ -191,6 +223,16 @@ class DashboardPresenterTests(unittest.TestCase):
         self.assertEqual(
             rhythm_only.members[0].sleep_rhythm_text,
             "睡意 62%",
+        )
+
+        set_ui_locale("en_US")
+        localized = presenter.build_household_rhythm(
+            rhythm,
+            pet_states=(("Tokai Teio", True, 70.0, "normal"),),
+        )
+        self.assertEqual(
+            localized.members[0].transformation_rhythm_text,
+            "Transform: next attempt in about 1m 15s",
         )
 
     def test_build_household_summary_filters_out_social_noise(self):
@@ -350,10 +392,10 @@ class DashboardPresenterTests(unittest.TestCase):
         all_events = presenter.build_social_log(entries, filter_mode="all")
         personal = presenter.build_social_log(entries, filter_mode="personal", participant_name="Tokai Teio")
 
-        self.assertIn("[社交] Symboli Rudolf -> Tokai Teio:", social.log_text)
-        self.assertIn("關係 familiarity +0.25", social.log_text)
+        self.assertIn("[社交] 魯道夫象徵 -> 帝寶:", social.log_text)
+        self.assertIn("關係 熟悉 +0.25", social.log_text)
         self.assertEqual(social.entries[0].channel_label, "社交")
-        self.assertEqual(social.entries[0].participant_text, "Symboli Rudolf → Tokai Teio")
+        self.assertEqual(social.entries[0].participant_text, "魯道夫象徵 → 帝寶")
         self.assertEqual(
             social.entries[0].effects[0].key,
             "relationship_familiarity",
@@ -395,7 +437,7 @@ class DashboardPresenterTests(unittest.TestCase):
         presentation = presenter.build_social_log(entries, filter_mode="personal")
 
         self.assertEqual(presentation.participant_name, "Air Groove")
-        self.assertIn("氣槽和魯道夫", presentation.log_text)
+        self.assertIn("氣槽和魯道夫象徵", presentation.log_text)
 
     def test_build_social_log_exposes_structured_race_details(self):
         presenter = DashboardPresenter()
@@ -429,12 +471,62 @@ class DashboardPresenterTests(unittest.TestCase):
         self.assertEqual(
             tuple((detail.label, detail.value_text) for detail in presentation.entries[0].details),
             (
-                ("挑戰者", "Symboli Rudolf"),
-                ("對手", "Tokai Teio"),
-                ("贏家", "Tokai Teio"),
+                ("挑戰者", "魯道夫象徵"),
+                ("對手", "帝寶"),
+                ("贏家", "帝寶"),
                 ("比賽距離", "842 px"),
                 ("方向", "逆時鐘（朝右）"),
                 ("比賽用時", "12.4 秒"),
+            ),
+        )
+
+    def test_simplified_chinese_social_log_rebuilds_event_summary(self):
+        set_ui_locale("zh_CN")
+        presenter = DashboardPresenter()
+        entry = SimpleNamespace(
+            sequence=8,
+            wall_clock_time=0.0,
+            channel="social",
+            category="social",
+            event_type="race_completed",
+            importance="normal",
+            actor_name="Tokai Teio",
+            target_name="Symboli Rudolf",
+            summary="帝寶在賽跑中勝過魯道夫。",
+            living_fund_delta=0,
+            household_pressure_delta=0.0,
+            mood_delta=0.0,
+            relation_delta={},
+            tags=("race", "completed"),
+            metadata={
+                "challenger_name": "Symboli Rudolf",
+                "opponent_name": "Tokai Teio",
+                "winner_name": "Tokai Teio",
+                "loser_name": "Symboli Rudolf",
+                "race_distance_px": 720.0,
+                "direction_key": "clockwise_left",
+                "race_elapsed_seconds": 12.4,
+            },
+        )
+
+        presentation = presenter.build_social_log((entry,), filter_mode="social")
+
+        self.assertEqual(
+            presentation.entries[0].summary,
+            "帝宝在 720px、顺时针（向左）的比赛中，以 12.4 秒战胜鲁道夫象征。",
+        )
+        self.assertEqual(
+            tuple(
+                (detail.label, detail.value_text)
+                for detail in presentation.entries[0].details
+            ),
+            (
+                ("挑战者", "鲁道夫象征"),
+                ("对手", "帝宝"),
+                ("赢家", "帝宝"),
+                ("比赛距离", "720 px"),
+                ("方向", "顺时针（向左）"),
+                ("比赛用时", "12.4 秒"),
             ),
         )
 
@@ -459,12 +551,12 @@ class DashboardPresenterTests(unittest.TestCase):
         )
 
         self.assertEqual(presentation.title, "關係表")
-        self.assertIn("[Symboli Rudolf]", presentation.table_text)
-        self.assertIn("-> Tokai Teio: 好感度  6.50", presentation.table_text)
+        self.assertIn("[魯道夫象徵]", presentation.table_text)
+        self.assertIn("-> 帝寶: 好感度  6.50", presentation.table_text)
         self.assertIn("熟悉 10.00 / 信任  5.00 / 依附  2.00 / 緊張  1.00", presentation.table_text)
         self.assertIn("事件 1", presentation.table_text)
-        self.assertIn("-> Air Groove: 好感度  0.00", presentation.table_text)
-        self.assertIn("[Air Groove]", presentation.table_text)
+        self.assertIn("-> 氣槽: 好感度  0.00", presentation.table_text)
+        self.assertIn("[氣槽]", presentation.table_text)
         self.assertEqual(
             presentation.actor_names,
             ("Air Groove", "Symboli Rudolf", "Tokai Teio"),

@@ -16,6 +16,7 @@ from .ui_icons import create_ui_icon
 from .ui_skin_assets import UiSkinAssets
 from .ui_skin_spec import ASSET_DASHBOARD_SIDE_ICON
 from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
+from .ui_localization import translate_ui
 
 
 EXPANDED_LAUNCHER_WIDTH = 310
@@ -69,6 +70,7 @@ class DashboardLauncherPanel(QWidget):
         self._apply_brand_pixmaps()
         self.set_expanded(True, emit_signal=False)
         self.set_pinned(False, emit_signal=False)
+        self.retranslate_ui()
         self.refresh_from_binding()
 
     @property
@@ -88,7 +90,12 @@ class DashboardLauncherPanel(QWidget):
         for button in self._action_buttons:
             button.setEnabled(connected)
         if not connected:
-            self.world_status_button.setText("● 未連接")
+            self.world_status_button.setText(
+                "● " + translate_ui(
+                    "launcher.disconnected",
+                    default="未連接",
+                )
+            )
             self.time_status_button.setText("● --")
             self.care_status_button.setText("● --")
             self.notice_label.hide()
@@ -183,9 +190,15 @@ class DashboardLauncherPanel(QWidget):
         self.pin_button.style().unpolish(self.pin_button)
         self.pin_button.style().polish(self.pin_button)
         self.pin_button.setToolTip(
-            "已釘選；點擊後允許自動收合"
+            translate_ui(
+                "launcher.pinned_tooltip",
+                default="已釘選；點擊後允許自動收合",
+            )
             if pinned
-            else "未釘選；點擊後保持展開"
+            else translate_ui(
+                "launcher.unpinned_tooltip",
+                default="未釘選；點擊後保持展開",
+            )
         )
         if changed and emit_signal:
             self.pinned_changed.emit(pinned)
@@ -217,9 +230,9 @@ class DashboardLauncherPanel(QWidget):
         self.title_label = QLabel("狸貓控制中心")
         self.title_label.setProperty("tanukiRole", "launcherTitle")
         title_column.addWidget(self.title_label)
-        subtitle = QLabel("桌面生活捷徑")
-        subtitle.setProperty("tanukiRole", "launcherSubtitle")
-        title_column.addWidget(subtitle)
+        self.subtitle_label = QLabel("桌面生活捷徑")
+        self.subtitle_label.setProperty("tanukiRole", "launcherSubtitle")
+        title_column.addWidget(self.subtitle_label)
         header.addLayout(title_column, stretch=1)
         self.pin_button = QToolButton()
         self.pin_button.setCheckable(True)
@@ -241,9 +254,9 @@ class DashboardLauncherPanel(QWidget):
         header.addWidget(self.collapse_button)
         layout.addLayout(header)
 
-        section = QLabel("主要功能")
-        section.setProperty("tanukiRole", "launcherSection")
-        layout.addWidget(section)
+        self.main_actions_label = QLabel("主要功能")
+        self.main_actions_label.setProperty("tanukiRole", "launcherSection")
+        layout.addWidget(self.main_actions_label)
 
         tile_row = QHBoxLayout()
         tile_row.setSpacing(self.theme.spacing_sm)
@@ -266,9 +279,9 @@ class DashboardLauncherPanel(QWidget):
         tile_row.addWidget(self.offer_tray_button, stretch=1)
         layout.addLayout(tile_row)
 
-        status_caption = QLabel("目前狀態")
-        status_caption.setProperty("tanukiRole", "launcherSection")
-        layout.addWidget(status_caption)
+        self.status_caption = QLabel("目前狀態")
+        self.status_caption.setProperty("tanukiRole", "launcherSection")
+        layout.addWidget(self.status_caption)
         status_frame = QFrame()
         status_frame.setProperty("tanukiRole", "launcherStatusPanel")
         status_layout = QHBoxLayout(status_frame)
@@ -496,4 +509,76 @@ class DashboardLauncherPanel(QWidget):
         if self.binding is None:
             return
         getattr(self.binding, method_name)()
+        self.refresh_from_binding()
+
+    def retranslate_ui(self):
+        self.title_label.setText(
+            translate_ui("launcher.title", default="狸貓控制中心")
+        )
+        self.subtitle_label.setText(
+            translate_ui("launcher.subtitle", default="桌面生活捷徑")
+        )
+        self.main_actions_label.setText(
+            translate_ui("launcher.main_actions", default="主要功能")
+        )
+        self.information_center_button.setText(
+            translate_ui(
+                "launcher.information_center",
+                default="資訊中心",
+            )
+        )
+        self.offer_tray_button.setText(
+            translate_ui("launcher.offer_tray", default="飲食餐盤")
+        )
+        self.status_caption.setText(
+            translate_ui("launcher.current_status", default="目前狀態")
+        )
+        self.settings_button.setText(
+            translate_ui("launcher.status_settings", default="狀態設定")
+        )
+        self.shutdown_button.setText(
+            translate_ui("launcher.shutdown", default="關閉系統")
+        )
+        pin_accessible = translate_ui(
+            "launcher.pin_sidebar",
+            default="釘選側邊欄",
+        )
+        self.pin_button.setAccessibleName(pin_accessible)
+        collapse_accessible = translate_ui(
+            "launcher.collapse_sidebar",
+            default="收合側邊欄",
+        )
+        self.collapse_button.setAccessibleName(collapse_accessible)
+        self.collapse_button.setToolTip(collapse_accessible)
+        self.set_pinned(self._pinned, emit_signal=False)
+        tooltips = (
+            (
+                self.collapsed_information_button,
+                translate_ui(
+                    "launcher.open_information_center",
+                    default="開啟資訊中心",
+                ),
+            ),
+            (
+                self.collapsed_offer_button,
+                translate_ui(
+                    "launcher.open_offer_tray",
+                    default="開啟飲食餐盤",
+                ),
+            ),
+            (
+                self.collapsed_settings_button,
+                translate_ui(
+                    "launcher.open_status_settings",
+                    default="開啟狀態設定",
+                ),
+            ),
+            (
+                self.collapsed_shutdown_button,
+                translate_ui("launcher.shutdown", default="關閉系統"),
+            ),
+        )
+        for button, tooltip in tooltips:
+            button.setToolTip(tooltip)
+            button.setAccessibleName(tooltip)
         self.refresh_from_binding()

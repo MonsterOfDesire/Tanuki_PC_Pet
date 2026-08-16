@@ -7,7 +7,7 @@ from .information_center_state import (
 from .settings_provider import RuntimeSettings
 
 
-CONFIG_SCHEMA_VERSION = 7
+CONFIG_SCHEMA_VERSION = 8
 
 DEFAULT_INFORMATION_CENTER_STATE = information_center_config_state_to_payload(
     InformationCenterConfigState()
@@ -25,6 +25,7 @@ DEFAULT_DASHBOARD_STATE = {
     "race_frequency": "normal",
     "chorus_frequency": "normal",
     "mood_climate": "cheerful",
+    "ui_locale": RuntimeSettings.UI_LOCALE_OPTIONS[0],
     "information_center": DEFAULT_INFORMATION_CENTER_STATE,
 }
 
@@ -150,6 +151,17 @@ def migrate_config_state(raw):
             migrated["dashboard"] = dashboard
         schema_version = 7
 
+    if schema_version < 8:
+        dashboard = migrated.get("dashboard", {})
+        if isinstance(dashboard, dict):
+            dashboard = dict(dashboard)
+            dashboard.setdefault(
+                "ui_locale",
+                DEFAULT_DASHBOARD_STATE["ui_locale"],
+            )
+            migrated["dashboard"] = dashboard
+        schema_version = 8
+
     migrated["schema_version"] = CONFIG_SCHEMA_VERSION
     if original_schema_version != CONFIG_SCHEMA_VERSION:
         warnings.append(f"config schema {original_schema_version} 已升級到 {CONFIG_SCHEMA_VERSION}")
@@ -227,6 +239,15 @@ def normalize_config_state(raw):
                 if dashboard.get("mood_climate")
                 in RuntimeSettings.MOOD_CLIMATE_OPTIONS
                 else DEFAULT_DASHBOARD_STATE["mood_climate"]
+            ),
+            "ui_locale": (
+                dashboard.get(
+                    "ui_locale",
+                    DEFAULT_DASHBOARD_STATE["ui_locale"],
+                )
+                if dashboard.get("ui_locale")
+                in RuntimeSettings.UI_LOCALE_OPTIONS
+                else DEFAULT_DASHBOARD_STATE["ui_locale"]
             ),
             "information_center": normalized_information_center,
         },

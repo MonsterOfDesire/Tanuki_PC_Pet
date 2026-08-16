@@ -3,6 +3,8 @@ from .dashboard_presenter import DashboardPresenter
 from .dashboard_tools_actions import DashboardToolsActions
 from .runtime import SIM_CLOCK, app_now
 from .shutdown_controller import DashboardShutdownController
+from .ui_localization import set_ui_locale
+from .installation_registry import record_current_installation
 
 
 class DashboardController:
@@ -142,6 +144,18 @@ class DashboardController:
         dashboard.sync_settings_provider()
         dashboard.refresh_information_center_settings()
         dashboard.refresh_household_summary_if_open()
+        if save:
+            dashboard.schedule_save()
+
+    def set_ui_locale(self, dashboard, value, save=True):
+        options = tuple(getattr(dashboard, "ui_locale_options", ()))
+        dashboard.ui_locale = (
+            str(value) if value in options else options[0]
+        )
+        set_ui_locale(dashboard.ui_locale)
+        record_current_installation(dashboard.ui_locale)
+        dashboard.sync_settings_provider()
+        dashboard.retranslate_ui()
         if save:
             dashboard.schedule_save()
 

@@ -18,6 +18,7 @@ from tanuki_core.event_log_binding import DashboardEventLogBinding
 from tanuki_core.event_log_ui import EventLogPanel
 from tanuki_core.information_center_spec import PAGE_EVENT_LOG
 from tanuki_core.ui_icons import METRIC_COLORS, create_metric_icon
+from tanuki_core.ui_localization import set_ui_locale
 
 
 def _pixmap_contains_color(pixmap, expected_color):
@@ -132,6 +133,7 @@ class EventLogPanelTests(unittest.TestCase):
     def tearDown(self):
         self.panel.close()
         self.panel.deleteLater()
+        set_ui_locale("zh_TW")
         self.app.processEvents()
 
     def test_panel_starts_with_all_filter_and_disabled_character_picker(self):
@@ -161,11 +163,36 @@ class EventLogPanelTests(unittest.TestCase):
         self.assertEqual(self.panel.filter_mode, "personal")
         self.assertTrue(self.panel.participant_combo.isEnabled())
         self.assertTrue(self.panel.participant_combo.property("personalActive"))
-        self.assertEqual(self.panel.participant_combo.currentText(), "東海帝皇")
+        self.assertEqual(self.panel.participant_combo.currentText(), "帝寶")
         self.assertEqual(self.panel.participant_combo.currentData(), "Tokai Teio")
         self.assertIn(("personal", ""), self.binding.calls)
         self.assertEqual(self.binding.calls[-1], ("personal", "Tokai Teio"))
-        self.assertIn("東海帝皇", self.panel.detail_summary_label.text())
+        self.assertIn("帝寶", self.panel.detail_summary_label.text())
+
+    def test_language_change_rebuilds_personal_filter_labels(self):
+        self.panel.filter_buttons["personal"].click()
+        self.panel.participant_combo.setCurrentIndex(
+            self.panel.participant_combo.findData("Tokai Teio")
+        )
+
+        set_ui_locale("en_US")
+        self.panel.retranslate_ui()
+
+        self.assertEqual(
+            self.panel.participant_combo.currentText(),
+            "Tokai Teio",
+        )
+        self.assertEqual(
+            self.panel.participant_combo.currentData(),
+            "Tokai Teio",
+        )
+        self.assertIn(
+            "Symboli Rudolf",
+            tuple(
+                self.panel.participant_combo.itemText(index)
+                for index in range(self.panel.participant_combo.count())
+            ),
+        )
 
     def test_non_personal_filter_hides_selected_character_name(self):
         self.panel.filter_buttons["personal"].click()
@@ -190,7 +217,7 @@ class EventLogPanelTests(unittest.TestCase):
             self.panel.PARTICIPANT_COLUMN,
         )
 
-        self.assertEqual(participant_item.text(), "魯道夫象徵 → 東海帝皇")
+        self.assertEqual(participant_item.text(), "魯道夫象徵 → 帝寶")
         self.assertEqual(self.panel.entries[0].actor_name, "Symboli Rudolf")
         self.assertEqual(self.panel.entries[0].target_name, "Tokai Teio")
 
@@ -229,7 +256,7 @@ class EventLogPanelTests(unittest.TestCase):
         )
         self.assertEqual(
             self.panel.detail_value_labels["贏家"].text(),
-            "東海帝皇",
+            "帝寶",
         )
 
     def test_relationship_effects_use_canonical_relation_icons_and_colors(self):

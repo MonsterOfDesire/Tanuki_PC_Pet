@@ -23,6 +23,7 @@ class DashboardConfigState:
     race_frequency: str = "normal"
     chorus_frequency: str = "normal"
     mood_climate: str = "cheerful"
+    ui_locale: str = "zh_TW"
     information_center: InformationCenterConfigState = field(
         default_factory=InformationCenterConfigState
     )
@@ -81,6 +82,7 @@ def build_dashboard_config_state(
     race_frequency="normal",
     chorus_frequency="normal",
     mood_climate="cheerful",
+    ui_locale="zh_TW",
     information_center=None,
 ):
     return DashboardConfigState(
@@ -106,6 +108,11 @@ def build_dashboard_config_state(
             mood_climate,
             RuntimeSettings.MOOD_CLIMATE_OPTIONS[0],
             RuntimeSettings.MOOD_CLIMATE_OPTIONS,
+        ),
+        ui_locale=safe_option(
+            ui_locale,
+            RuntimeSettings.UI_LOCALE_OPTIONS[0],
+            RuntimeSettings.UI_LOCALE_OPTIONS,
         ),
         information_center=(
             information_center
@@ -175,6 +182,14 @@ def normalize_dashboard_config_state(raw_state, defaults, option_bounds):
             getattr(defaults, "mood_climate", "cheerful"),
             RuntimeSettings.MOOD_CLIMATE_OPTIONS,
         ),
+        ui_locale=safe_option(
+            raw_state.get(
+                "ui_locale",
+                getattr(defaults, "ui_locale", "zh_TW"),
+            ),
+            getattr(defaults, "ui_locale", "zh_TW"),
+            RuntimeSettings.UI_LOCALE_OPTIONS,
+        ),
         information_center=normalize_information_center_config_state(
             raw_state.get("information_center", {}),
             defaults=default_information_center,
@@ -201,6 +216,7 @@ def dashboard_config_state_to_payload(state):
         "mood_climate": str(
             getattr(state, "mood_climate", "cheerful")
         ),
+        "ui_locale": str(getattr(state, "ui_locale", "zh_TW")),
         "information_center": information_center_config_state_to_payload(
             getattr(
                 state,
@@ -236,6 +252,11 @@ def apply_dashboard_config_to_settings(settings_provider, state):
         getattr(state, "mood_climate", "cheerful"),
         "cheerful",
         RuntimeSettings.MOOD_CLIMATE_OPTIONS,
+    )
+    settings_provider.ui_locale = safe_option(
+        getattr(state, "ui_locale", "zh_TW"),
+        "zh_TW",
+        RuntimeSettings.UI_LOCALE_OPTIONS,
     )
 
 

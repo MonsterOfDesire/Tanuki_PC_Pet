@@ -132,7 +132,7 @@ class FamilySummaryPanelTests(unittest.TestCase):
         )
         self.assertEqual(
             self.panel.member_cards["Tokai Teio"].name_label.text(),
-            "東海帝皇",
+            "帝寶",
         )
         self.assertEqual(
             self.panel.member_cards["Tokai Teio"].mood_bar.value(),

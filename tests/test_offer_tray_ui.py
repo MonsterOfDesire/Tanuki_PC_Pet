@@ -11,6 +11,7 @@ from tanuki_core.asset_manager import AssetManager
 from tanuki_core.offer_tray_ui import OfferTrayWindow
 from tanuki_core.ui_skin_assets import UiSkinAssets
 from tanuki_core.ui_skin_spec import SKIN_DIET
+from tanuki_core.ui_localization import set_ui_locale
 
 
 class OfferTrayWindowTests(unittest.TestCase):
@@ -25,6 +26,7 @@ class OfferTrayWindowTests(unittest.TestCase):
         self.app.processEvents()
 
     def tearDown(self):
+        set_ui_locale("zh_TW")
         self.window.close()
         self.window.deleteLater()
         self.app.processEvents()
@@ -72,6 +74,15 @@ class OfferTrayWindowTests(unittest.TestCase):
         self.assertLessEqual(self.window.geometry().right(), available.right())
         self.assertLessEqual(self.window.geometry().bottom(), available.bottom())
         self.assertFalse(self.window.user_position_locked)
+
+    def test_tray_labels_and_tooltips_retranslate_without_rebuild(self):
+        set_ui_locale("en_US")
+        self.window.retranslate_ui()
+
+        self.assertEqual(self.window.windowTitle(), "Food Tray")
+        self.assertEqual(self.window.instruction_label.text(), "Drag to a character")
+        self.assertEqual(self.window.item_badges[0].title_label.text(), "ramen")
+        self.assertIn("Drag ramen", self.window.item_badges[0].toolTip())
 
 
 if __name__ == "__main__":

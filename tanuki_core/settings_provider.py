@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from .ui_localization import DEFAULT_UI_LOCALE, SUPPORTED_UI_LOCALES
+
 
 @dataclass
 class RuntimeSettings:
@@ -14,6 +16,7 @@ class RuntimeSettings:
     race_frequency: str = "normal"
     chorus_frequency: str = "normal"
     mood_climate: str = "cheerful"
+    ui_locale: str = DEFAULT_UI_LOCALE
 
     WORLD_MODE_OPTIONS = ("golden_legend", "sandbox")
     TIME_SCALE_OPTIONS = (1, 2, 4, 8)
@@ -23,6 +26,7 @@ class RuntimeSettings:
     RACE_FREQUENCY_OPTIONS = ("frequent", "normal", "occasional")
     CHORUS_FREQUENCY_OPTIONS = ("frequent", "normal", "occasional")
     MOOD_CLIMATE_OPTIONS = ("cheerful", "balanced", "expressive")
+    UI_LOCALE_OPTIONS = SUPPORTED_UI_LOCALES
 
     def get_time_scale(self):
         return float(self.TIME_SCALE_OPTIONS[int(self.time_scale_idx)])

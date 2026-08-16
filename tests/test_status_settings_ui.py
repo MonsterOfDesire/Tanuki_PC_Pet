@@ -17,6 +17,7 @@ from tanuki_core.status_settings_ui import (
     StatusSettingsPanel,
 )
 from tanuki_core.ui_controls import ToggleSwitch
+from tanuki_core.ui_localization import set_ui_locale
 
 
 class FakeStatusSettingsBinding:
@@ -153,6 +154,19 @@ class FakeStatusSettingsBinding:
     def set_mood_climate(self, value):
         self.calls.append(("mood_climate", value))
         self.state = replace(self.state, mood_climate=value)
+
+    def set_ui_locale(self, value):
+        self.calls.append(("ui_locale", value))
+        self.state = replace(self.state, ui_locale=value)
+
+    def check_for_updates(self):
+        self.calls.append(("check_updates",))
+        self.state = replace(self.state, update_status="checking")
+        return True
+
+    def open_update_page(self):
+        self.calls.append(("open_update_page",))
+        return True
 
     def run_validation_checks(self):
         self.calls.append(("validate",))
@@ -346,6 +360,7 @@ class StatusSettingsPanelTests(unittest.TestCase):
     def tearDown(self):
         self.panel.close()
         self.panel.deleteLater()
+        set_ui_locale("zh_TW")
         self.app.processEvents()
 
     def test_panel_reflects_snapshot_selection(self):
@@ -363,6 +378,47 @@ class StatusSettingsPanelTests(unittest.TestCase):
         self.assertTrue(self.panel.display_scale_buttons[1].isChecked())
         self.assertTrue(self.panel.teio_duration_buttons[2].isChecked())
         self.assertTrue(self.panel.tsuyoshi_duration_buttons[3].isChecked())
+
+    def test_language_selector_updates_resource_backed_controls(self):
+        self.panel.ui_locale_buttons[3].click()
+        self.app.processEvents()
+
+        self.assertEqual(self.binding.state.ui_locale, "en_US")
+        self.assertEqual(
+            self.panel.locale_update_group.title(),
+            "Language and updates",
+        )
+        self.assertEqual(self.panel.update_check_button.text(), "Check now")
+
+        self.binding.state = replace(
+            self.binding.state,
+            world_mode="sandbox",
+        )
+        self.binding.preview_result = SimpleNamespace(
+            started=False,
+            reason="severe_mood",
+        )
+        self.panel.refresh_from_binding()
+        self.panel.rudolf_work_preview_button.click()
+
+        self.assertIn(
+            "Symboli Rudolf is in severe mood",
+            self.panel.rudolf_work_preview_status.text(),
+        )
+
+    def test_simplified_chinese_selector_updates_resource_backed_controls(self):
+        self.panel.ui_locale_buttons[1].click()
+        self.app.processEvents()
+
+        self.assertEqual(self.binding.state.ui_locale, "zh_CN")
+        self.assertEqual(self.panel.locale_update_group.title(), "语言与更新")
+        self.assertEqual(self.panel.update_check_button.text(), "立即检查更新")
+
+    def test_update_controls_delegate_without_blocking_panel(self):
+        self.panel.update_check_button.click()
+
+        self.assertIn(("check_updates",), self.binding.calls)
+        self.assertFalse(self.panel.update_check_button.isEnabled())
 
     def test_mood_climate_tooltips_describe_dynamics_not_targets(self):
         tooltips = [
@@ -383,14 +439,14 @@ class StatusSettingsPanelTests(unittest.TestCase):
         self.assertIn("70%", tooltips[1])
         self.assertIn("90%", tooltips[2])
 
-    def test_social_cooldown_uses_localized_full_character_names(self):
+    def test_social_cooldown_uses_localized_character_names(self):
         visible_labels = {
             label.text()
             for label in self.panel.findChildren(QLabel)
         }
 
-        self.assertIn("東海帝皇", visible_labels)
-        self.assertIn("鶴丸強志", visible_labels)
+        self.assertIn("帝寶", visible_labels)
+        self.assertIn("鶴寶", visible_labels)
 
     def test_compact_width_reduces_spacing_without_overlapping_options(self):
         host = QWidget()
@@ -488,7 +544,8 @@ class StatusSettingsPanelTests(unittest.TestCase):
             wide_panel.timing_group: (1, 0, 1, 1),
             wide_panel.social_group: (2, 0, 1, 1),
             wide_panel.rhythm_group: (3, 0, 1, 1),
-            wide_panel.developer_group: (0, 1, 4, 1),
+            wide_panel.locale_update_group: (4, 0, 1, 1),
+            wide_panel.developer_group: (0, 1, 5, 1),
         }
         actual_positions = {}
         for index in range(wide_panel.grid_layout.count()):
@@ -510,6 +567,61 @@ class StatusSettingsPanelTests(unittest.TestCase):
         )
         host.close()
         wide_panel.deleteLater()
+        host.deleteLater()
+
+    def test_long_text_locales_use_single_column_before_text_can_clip(self):
+        for locale in ("ja_JP", "en_US"):
+            with self.subTest(locale=locale):
+                binding = FakeStatusSettingsBinding()
+                binding.state = replace(binding.state, ui_locale=locale)
+                host = QWidget()
+                host.setFixedSize(988, 383)
+                panel = StatusSettingsPanel(binding, parent=host)
+                panel.setGeometry(host.rect())
+                host.show()
+                self.app.processEvents()
+
+                self.assertTrue(panel._single_column_layout)
+                self.assertEqual(
+                    panel.settings_scroll.horizontalScrollBar().maximum(),
+                    0,
+                )
+                for button in (
+                    tuple(panel.transformation_preview_buttons.values())
+                    + tuple(panel.sleep_control_buttons.values())
+                ):
+                    top_left = button.mapTo(
+                        panel.developer_group,
+                        QPoint(0, 0),
+                    )
+                    self.assertGreaterEqual(top_left.x(), 0)
+                    self.assertLessEqual(
+                        top_left.x() + button.width(),
+                        panel.developer_group.width() + 1,
+                    )
+
+                host.close()
+                panel.deleteLater()
+                host.deleteLater()
+
+    def test_simplified_chinese_keeps_regular_two_column_layout(self):
+        binding = FakeStatusSettingsBinding()
+        binding.state = replace(binding.state, ui_locale="zh_CN")
+        host = QWidget()
+        host.setFixedSize(988, 383)
+        panel = StatusSettingsPanel(binding, parent=host)
+        panel.setGeometry(host.rect())
+        host.show()
+        self.app.processEvents()
+
+        self.assertFalse(panel._single_column_layout)
+        self.assertEqual(
+            panel.settings_scroll.horizontalScrollBar().maximum(),
+            0,
+        )
+
+        host.close()
+        panel.deleteLater()
         host.deleteLater()
 
     def test_wide_width_restores_regular_option_spacing(self):
@@ -855,9 +967,9 @@ class StatusSettingsPanelTests(unittest.TestCase):
         rudolf_button = self.panel.transformation_preview_buttons[
             "Symboli Rudolf"
         ]
-        self.assertEqual(rudolf_button.text(), "解除魯道夫變身")
+        self.assertEqual(rudolf_button.text(), "解除魯道夫象徵變身")
         self.assertIn(
-            "魯道夫目前為自主變身形態",
+            "魯道夫象徵目前為自主變身形態",
             self.panel.transformation_preview_status.text(),
         )
         self.assertEqual(
