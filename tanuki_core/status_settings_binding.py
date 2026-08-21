@@ -50,6 +50,7 @@ class StatusSettingsSnapshot:
     update_updater_url: str = ""
     update_error_message: str = ""
     update_package_ready: bool = False
+    update_method: str = "standalone_updater"
 
 
 class DashboardStatusSettingsBinding:
@@ -127,6 +128,13 @@ class DashboardStatusSettingsBinding:
             update_error_message=str(update_status.error_message),
             update_package_ready=bool(
                 update_status.update_bundle_available
+            ),
+            update_method=str(
+                getattr(
+                    update_status,
+                    "update_method",
+                    "standalone_updater",
+                )
             ),
         )
 

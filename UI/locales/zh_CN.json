@@ -62,6 +62,7 @@
     "view_release": "查看新版",
     "download_updater": "下载更新器",
     "updater_ready": "请到 Release 下载 TanukiUpdater.exe 后执行。",
+    "manual_platform": "此平台目前使用手动更新，请查看 Release 下载对应版本。",
     "manual_only": "本版本尚未提供自动更新包，可先查看 Release。"
   },
   "common": {

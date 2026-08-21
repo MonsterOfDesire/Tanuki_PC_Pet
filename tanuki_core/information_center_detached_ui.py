@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import (
 from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
 from .window_chrome import SkinnedToolWindowChrome
 from .ui_localization import translate_ui
+from .overlay_window import apply_platform_tool_window_attributes
 
 
 class DetachedInformationPageWindow(QWidget):
@@ -25,6 +26,7 @@ class DetachedInformationPageWindow(QWidget):
         theme=DEFAULT_UI_THEME,
     ):
         super().__init__(None, Qt.WindowType.Tool)
+        apply_platform_tool_window_attributes(self)
         self.setAttribute(Qt.WidgetAttribute.WA_QuitOnClose, False)
         self.setObjectName("tanukiDetachedInformationPage")
         self.setWindowTitle(

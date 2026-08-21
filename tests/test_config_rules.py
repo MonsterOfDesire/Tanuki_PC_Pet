@@ -102,7 +102,7 @@ class ConfigRuleTests(unittest.TestCase):
 
         self.assertEqual(original_version, 1)
         self.assertIn("dashboard", migrated)
-        self.assertEqual(migrated["dashboard"]["world_mode"], "golden_legend")
+        self.assertEqual(migrated["dashboard"]["world_mode"], "sandbox")
         self.assertFalse(migrated["dashboard"]["care_feature_enabled"])
         self.assertEqual(migrated["dashboard"]["time_scale_idx"], 2)
         self.assertEqual(migrated["household"], {})
@@ -273,6 +273,33 @@ class ConfigRuleTests(unittest.TestCase):
         )
 
         self.assertEqual(normalized["dashboard"]["ui_locale"], "zh_TW")
+
+    def test_missing_or_invalid_world_mode_defaults_to_sandbox(self):
+        missing, _warnings = normalize_config_state(
+            {"schema_version": CONFIG_SCHEMA_VERSION, "dashboard": {}}
+        )
+        invalid, _warnings = normalize_config_state(
+            {
+                "schema_version": CONFIG_SCHEMA_VERSION,
+                "dashboard": {"world_mode": "unknown"},
+            }
+        )
+
+        self.assertEqual(missing["dashboard"]["world_mode"], "sandbox")
+        self.assertEqual(invalid["dashboard"]["world_mode"], "sandbox")
+
+    def test_explicit_existing_golden_legend_mode_is_preserved(self):
+        normalized, _warnings = normalize_config_state(
+            {
+                "schema_version": CONFIG_SCHEMA_VERSION,
+                "dashboard": {"world_mode": "golden_legend"},
+            }
+        )
+
+        self.assertEqual(
+            normalized["dashboard"]["world_mode"],
+            "golden_legend",
+        )
 
     def test_simplified_chinese_locale_is_preserved(self):
         normalized, _warnings = normalize_config_state(

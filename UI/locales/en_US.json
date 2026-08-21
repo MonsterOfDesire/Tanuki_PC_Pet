@@ -62,6 +62,7 @@
     "view_release": "View release",
     "download_updater": "Download updater",
     "updater_ready": "Download and run TanukiUpdater.exe from the Release page.",
+    "manual_platform": "This platform currently uses manual updates. Download the matching package from the Release page.",
     "manual_only": "This release does not include an automatic update package. You can view the Release instead."
   },
   "common": {

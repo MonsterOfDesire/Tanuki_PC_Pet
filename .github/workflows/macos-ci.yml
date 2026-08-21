@@ -1,0 +1,89 @@
+name: macOS Limited CI
+
+on:
+  push:
+    branches:
+      - main
+      - "chore/**"
+      - "feature/**"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.architecture }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            architecture: arm64
+          - runner: macos-15-intel
+            architecture: x64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYTHONUTF8: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-macos-build.txt
+
+      - name: Install macOS build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-macos-build.txt
+
+      - name: Run full test suite
+        run: python -m unittest discover -s tests
+
+      - name: Validate all character manifests
+        run: |
+          python tools/manifest_xlsx_to_json.py --assets-dir assets_cropped
+          python tools/manifest_xlsx_to_json.py --assets-dir "assets_cropped/Symboli Rudolf" --character transformed
+          python tools/manifest_xlsx_to_json.py --assets-dir "assets_cropped/Tokai Teio" --character transformed
+
+      - name: Build signed ad-hoc application bundle
+        run: bash ./build_macos.sh "$RUNNER_TEMP/tanuki-build"
+
+      - name: Smoke test packaged application
+        env:
+          TANUKI_SMOKE_TEST_SECONDS: "3"
+          TANUKI_USER_DATA_DIR: ${{ runner.temp }}/tanuki-smoke-data
+        run: |
+          app_path="$RUNNER_TEMP/tanuki-build/dist/TanukiPet.app"
+          "$app_path/Contents/MacOS/TanukiPet"
+
+      - name: Verify package architecture and signature
+        run: |
+          app_path="$RUNNER_TEMP/tanuki-build/dist/TanukiPet.app"
+          file "$app_path/Contents/MacOS/TanukiPet"
+          codesign --verify --deep --strict --verbose=2 "$app_path"
+          spctl --assess --type execute --verbose=2 "$app_path" || true
+
+      - name: Upload macOS package
+        uses: actions/upload-artifact@v6
+        with:
+          name: TanukiPet-macos-${{ matrix.architecture }}
+          path: ${{ runner.temp }}/tanuki-build/dist/TanukiPet-*-macos-${{ matrix.architecture }}.zip
+          if-no-files-found: error
+          retention-days: 14

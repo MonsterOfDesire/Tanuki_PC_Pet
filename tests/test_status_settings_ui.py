@@ -420,21 +420,32 @@ class StatusSettingsPanelTests(unittest.TestCase):
         self.assertIn(("check_updates",), self.binding.calls)
         self.assertFalse(self.panel.update_check_button.isEnabled())
 
-    def test_updater_download_only_appears_for_complete_release_bundle(self):
+    def test_available_release_respects_platform_update_method(self):
         self.binding.state = replace(
             self.binding.state,
             update_status="available",
             update_page_url="https://example.test/release",
             update_updater_url="",
             update_package_ready=False,
+            update_method="standalone_updater",
         )
         self.panel.refresh_from_binding()
         self.assertFalse(self.panel.update_open_button.isVisible())
 
         self.binding.state = replace(
             self.binding.state,
+            update_method="manual_release",
+        )
+        self.panel.refresh_from_binding()
+        self.assertTrue(self.panel.update_open_button.isVisible())
+        self.assertEqual(self.panel.update_open_button.text(), "查看新版")
+        self.assertIn("手動更新", self.panel.update_status_label.text())
+
+        self.binding.state = replace(
+            self.binding.state,
             update_updater_url="https://example.test/TanukiUpdater.exe",
             update_package_ready=True,
+            update_method="standalone_updater",
         )
         self.panel.refresh_from_binding()
         self.assertTrue(self.panel.update_open_button.isVisible())

@@ -1,5 +1,4 @@
 import math
-import os
 import random
 import time
 
@@ -52,6 +51,10 @@ from .pet_intent_rules import (
     pet_has_sleep_join_intent,
 )
 from .pet_windowing import PetWindowingMixin
+from .overlay_window import (
+    apply_platform_tool_window_attributes,
+    build_overlay_window_flags,
+)
 from .runtime import SIM_CLOCK, app_now, get_pet_logic_step_count
 from .transformation_profiles import (
     apply_pet_form_mood_floor,
@@ -59,16 +62,6 @@ from .transformation_profiles import (
     pet_is_transforming,
 )
 from .transformation_state import FORM_TRANSFORMED
-
-
-SAFE_WINDOW_MODE = os.environ.get("TANUKI_SAFE_WINDOW_MODE", "0") == "1"
-
-
-def build_overlay_window_flags():
-    flags = Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint
-    if not SAFE_WINDOW_MODE:
-        flags |= Qt.WindowType.Tool
-    return flags
 
 
 def forwarded_state_property(state_attr, field_name):
@@ -204,6 +197,7 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         self.radius = 100 * self.get_effective_scale()
         self.mass = 2 if self.is_adult else 0.8
         self.setWindowFlags(build_overlay_window_flags())
+        apply_platform_tool_window_attributes(self)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setMouseTracking(True)
         self.anim_timer = QTimer(self)

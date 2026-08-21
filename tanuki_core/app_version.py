@@ -6,7 +6,7 @@ import re
 
 
 APP_NAME = "Tanuki PC Pet"
-APP_VERSION = "0.8.0-beta"
+APP_VERSION = "0.9.0-beta"
 GITHUB_REPOSITORY = "MonsterOfDesire/Tanuki_PC_Pet"
 GITHUB_RELEASES_URL = (
     f"https://github.com/{GITHUB_REPOSITORY}/releases"

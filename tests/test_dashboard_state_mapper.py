@@ -21,6 +21,9 @@ from tanuki_core.information_center_state import (
 
 
 class DashboardStateMapperTests(unittest.TestCase):
+    def test_runtime_settings_default_to_sandbox(self):
+        self.assertEqual(RuntimeSettings().world_mode, "sandbox")
+
     def test_safe_index_clamps_and_falls_back(self):
         self.assertEqual(safe_index("2", 0, 5), 2)
         self.assertEqual(safe_index("99", 1, 5), 4)

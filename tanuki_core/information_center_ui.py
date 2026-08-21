@@ -35,6 +35,7 @@ from .information_center_state import (
     clamp_information_center_geometry,
     normalize_information_center_config_state,
 )
+from .overlay_window import apply_platform_tool_window_attributes
 from .information_center_detached_ui import DetachedInformationPageWindow
 from .ui_skin_assets import UiSkinAssets
 from .ui_icons import create_ui_icon
@@ -142,6 +143,7 @@ class InformationCenterWindow(QWidget):
         achievement_binding=None,
     ):
         super().__init__(parent, Qt.WindowType.Tool)
+        apply_platform_tool_window_attributes(self)
         self.setAttribute(Qt.WidgetAttribute.WA_QuitOnClose, False)
         self.setObjectName("tanukiInformationCenter")
         self.setWindowTitle("狸貓資訊中心")

@@ -50,7 +50,10 @@ jobs:
 
       - name: Validate all character manifests
         shell: pwsh
-        run: python .\tools\manifest_xlsx_to_json.py --assets-dir .\assets_cropped
+        run: |
+          python .\tools\manifest_xlsx_to_json.py --assets-dir .\assets_cropped
+          python .\tools\manifest_xlsx_to_json.py --assets-dir ".\assets_cropped\Symboli Rudolf" --character transformed
+          python .\tools\manifest_xlsx_to_json.py --assets-dir ".\assets_cropped\Tokai Teio" --character transformed
 
       - name: Validate portable build inputs
         shell: pwsh

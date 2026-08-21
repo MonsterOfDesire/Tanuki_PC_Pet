@@ -62,6 +62,7 @@
     "view_release": "新しいリリースを見る",
     "download_updater": "アップデーターをダウンロード",
     "updater_ready": "Release から TanukiUpdater.exe をダウンロードして実行してください。",
+    "manual_platform": "このプラットフォームは現在手動更新です。Release から対応するパッケージをダウンロードしてください。",
     "manual_only": "このリリースには自動更新パッケージがありません。Release を確認してください。"
   },
   "common": {

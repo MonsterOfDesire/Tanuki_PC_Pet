@@ -5,7 +5,9 @@ from .ui_localization import DEFAULT_UI_LOCALE, SUPPORTED_UI_LOCALES
 
 @dataclass
 class RuntimeSettings:
-    world_mode: str = "golden_legend"
+    DEFAULT_WORLD_MODE = "sandbox"
+
+    world_mode: str = DEFAULT_WORLD_MODE
     care_feature_enabled: bool = True
     debug_enabled: bool = False
     social_status_enabled: bool = False

@@ -80,7 +80,7 @@ def register_runtime_timer(
 
 
 def start_runtime_timers(runtime):
-    return {
+    timers = {
         "mood": register_runtime_timer(
             runtime.app,
             3000,
@@ -121,14 +121,17 @@ def start_runtime_timers(runtime):
             ),
             pass_step_delta=True,
         ),
-        "windows": register_runtime_timer(
+    }
+    if getattr(runtime.window_tracker, "available", False):
+        timers["windows"] = register_runtime_timer(
             runtime.app,
             150,
             runtime.window_tracker.refresh,
             speed_scaled=False,
             profiler=runtime.profiler,
             timer_name="windows",
-        ),
+        )
+    timers.update({
         "offer": register_runtime_timer(
             runtime.app,
             30,
@@ -169,4 +172,5 @@ def start_runtime_timers(runtime):
             profiler=runtime.profiler,
             timer_name="household",
         ),
-    }
+    })
+    return timers

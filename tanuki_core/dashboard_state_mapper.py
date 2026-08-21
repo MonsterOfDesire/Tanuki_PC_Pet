@@ -9,6 +9,8 @@ from .settings_provider import RuntimeSettings
 
 
 WORLD_MODE_OPTIONS = RuntimeSettings.WORLD_MODE_OPTIONS
+DEFAULT_WORLD_MODE = RuntimeSettings.DEFAULT_WORLD_MODE
+
 
 @dataclass(frozen=True)
 class DashboardConfigState:
@@ -86,7 +88,7 @@ def build_dashboard_config_state(
     information_center=None,
 ):
     return DashboardConfigState(
-        world_mode=safe_world_mode(world_mode, WORLD_MODE_OPTIONS[0]),
+        world_mode=safe_world_mode(world_mode, DEFAULT_WORLD_MODE),
         care_feature_enabled=bool(care_feature_enabled),
         teio_dur_idx=int(teio_dur_idx),
         tsuyoshi_dur_idx=int(tsuyoshi_dur_idx),
@@ -228,7 +230,10 @@ def dashboard_config_state_to_payload(state):
 
 
 def apply_dashboard_config_to_settings(settings_provider, state):
-    settings_provider.world_mode = safe_world_mode(state.world_mode, WORLD_MODE_OPTIONS[0])
+    settings_provider.world_mode = safe_world_mode(
+        state.world_mode,
+        DEFAULT_WORLD_MODE,
+    )
     settings_provider.care_feature_enabled = bool(state.care_feature_enabled)
     settings_provider.debug_enabled = bool(state.debug_enabled)
     settings_provider.social_status_enabled = bool(

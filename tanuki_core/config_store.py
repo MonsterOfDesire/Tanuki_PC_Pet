@@ -92,6 +92,9 @@ class ConfigStore:
         if not force and payload == self.last_saved_payload:
             return
         try:
+            parent_dir = os.path.dirname(os.path.abspath(self.config_path))
+            if parent_dir:
+                os.makedirs(parent_dir, exist_ok=True)
             with open(self.config_path, "w", encoding="utf-8") as f:
                 f.write(payload)
             self.last_saved_payload = payload

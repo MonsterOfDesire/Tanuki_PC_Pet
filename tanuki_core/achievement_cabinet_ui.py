@@ -23,6 +23,7 @@ from .achievement_presenter import (
     AchievementUnlockNotificationSnapshot,
 )
 from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
+from .overlay_window import apply_platform_tool_window_attributes
 from .ui_localization import translate_ui
 
 
@@ -394,6 +395,7 @@ class AchievementUnlockToast(QWidget):
             | Qt.WindowType.FramelessWindowHint
             | Qt.WindowType.WindowStaysOnTopHint,
         )
+        apply_platform_tool_window_attributes(self)
         self.resource_resolver = resource_resolver
         self.setAttribute(Qt.WidgetAttribute.WA_QuitOnClose, False)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, True)

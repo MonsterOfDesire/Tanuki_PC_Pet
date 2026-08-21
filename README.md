@@ -1,14 +1,15 @@
 # Tanuki PC Pet
 
 [![Windows CI](https://github.com/MonsterOfDesire/Tanuki_PC_Pet/actions/workflows/windows-ci.yml/badge.svg)](https://github.com/MonsterOfDesire/Tanuki_PC_Pet/actions/workflows/windows-ci.yml)
+[![macOS Limited CI](https://github.com/MonsterOfDesire/Tanuki_PC_Pet/actions/workflows/macos-ci.yml/badge.svg)](https://github.com/MonsterOfDesire/Tanuki_PC_Pet/actions/workflows/macos-ci.yml)
 
-Tanuki PC Pet 是以 Python 3.10 與 PyQt6 開發的 Windows 桌面寵物。角色會在桌面與視窗邊緣移動，並依心情、關係、道具與家庭事件呈現不同互動。
+Tanuki PC Pet 是以 Python 3.10 與 PyQt6 開發的桌面寵物。Windows 版支援視窗停棲等完整功能；macOS 功能受限版保留角色與 Activity 核心玩法，但停用 Windows 專屬視窗偵測與獨立更新器。
 
 目前介面語系支援繁體中文、简体中文、日本語與 English；可在「狀態設定 → 語言與更新」切換。資訊中心、側邊啟動列、角色顯示名稱、事件、成就與更新狀態均已接入 resource catalog。
 
 ## 系統需求
 
-- Windows 10 或 Windows 11
+- Windows 10／11，或 macOS 13 以上（功能受限版）
 - Python 3.10
 
 ## 安裝與啟動
@@ -69,6 +70,7 @@ $env:QT_QPA_PLATFORM = "offscreen"
 完整提交、tag、敏感資料檢查與發布步驟請參閱 [RELEASE_WORKFLOW.md](RELEASE_WORKFLOW.md)。
 獨立更新器、更新包檔名、manifest、SHA-256 與 staging／rollback 安全規格請參閱 [docs/UPDATE_PACKAGE_SPEC.md](docs/UPDATE_PACKAGE_SPEC.md)。主程式啟動時不會自動連線檢查；需要更新時，從 GitHub Release 下載並執行 `TanukiUpdater.exe` 即可保留設定並替換為最新版。
 維護者的特殊巢狀工作區說明位於 [docs/LOCAL_WORKSPACE.md](docs/LOCAL_WORKSPACE.md)，一般 clone 不需要依賴該目錄結構。
+macOS 保留／停用能力、建置方式與人工測試清單請參閱 [docs/MACOS_LIMITED_VERSION.md](docs/MACOS_LIMITED_VERSION.md)。
 
 ## 授權與素材
 

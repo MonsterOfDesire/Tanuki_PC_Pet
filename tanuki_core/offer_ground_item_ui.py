@@ -5,6 +5,7 @@ from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QLabel
 
 from .asset_manager import AssetManager
+from .overlay_window import apply_platform_tool_window_attributes
 
 
 class GroundOfferItemWidget(QLabel):
@@ -24,6 +25,7 @@ class GroundOfferItemWidget(QLabel):
             None,
             Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint,
         )
+        apply_platform_tool_window_attributes(self)
         self.item_kind = item_kind
         self.draggable = bool(draggable)
         self.drop_handler = drop_handler

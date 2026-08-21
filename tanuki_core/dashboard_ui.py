@@ -23,7 +23,10 @@ from .dashboard_launcher_ui import (
     DashboardLauncherPanel,
 )
 from .dashboard_presenter import DashboardPresenter
-from .dashboard_shell import build_overlay_window_flags
+from .overlay_window import (
+    apply_platform_tool_window_attributes,
+    build_overlay_window_flags,
+)
 from .dashboard_state_mapper import (
     DashboardConfigState,
     DashboardOptionBounds,
@@ -62,6 +65,7 @@ from .app_version import GITHUB_RELEASES_URL
 class HouseholdSummaryWindow(QWidget):
     def __init__(self):
         super().__init__(None, Qt.WindowType.Tool)
+        apply_platform_tool_window_attributes(self)
         self.setAttribute(Qt.WidgetAttribute.WA_QuitOnClose, False)
         self.setWindowTitle("家庭摘要")
         self.resize(420, 520)
@@ -125,6 +129,7 @@ class SocialLogWindow(QWidget):
 
     def __init__(self, refresh_handler=None):
         super().__init__(None, Qt.WindowType.Tool)
+        apply_platform_tool_window_attributes(self)
         self.setAttribute(Qt.WidgetAttribute.WA_QuitOnClose, False)
         self.setWindowTitle("社交紀錄")
         self.resize(520, 560)
@@ -260,6 +265,7 @@ class SocialLogWindow(QWidget):
 class RelationshipTableWindow(QWidget):
     def __init__(self):
         super().__init__(None, Qt.WindowType.Tool)
+        apply_platform_tool_window_attributes(self)
         self.setAttribute(Qt.WidgetAttribute.WA_QuitOnClose, False)
         self.setWindowTitle("關係表")
         self.resize(560, 560)
@@ -445,6 +451,7 @@ class Dashboard(QWidget):
         self.event_log_binding = DashboardEventLogBinding(self)
         self.relation_summon_binding = DashboardRelationSummonBinding(self)
         self.setWindowFlags(build_overlay_window_flags())
+        apply_platform_tool_window_attributes(self)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.layout = QVBoxLayout()
         self.layout.setSpacing(10)

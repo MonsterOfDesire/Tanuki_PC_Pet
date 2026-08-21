@@ -1,4 +1,4 @@
-from .dashboard_state_mapper import WORLD_MODE_OPTIONS
+from .dashboard_state_mapper import DEFAULT_WORLD_MODE, WORLD_MODE_OPTIONS
 from .information_center_state import (
     InformationCenterConfigState,
     information_center_config_state_to_payload,
@@ -14,7 +14,7 @@ DEFAULT_INFORMATION_CENTER_STATE = information_center_config_state_to_payload(
 )
 
 DEFAULT_DASHBOARD_STATE = {
-    "world_mode": WORLD_MODE_OPTIONS[0],
+    "world_mode": DEFAULT_WORLD_MODE,
     "care_feature_enabled": True,
     "teio_dur_idx": 3,
     "tsuyoshi_dur_idx": 2,

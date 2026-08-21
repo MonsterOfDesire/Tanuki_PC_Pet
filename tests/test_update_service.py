@@ -179,7 +179,10 @@ class UpdateServiceTests(unittest.TestCase):
             )
         )
 
-        assets = get_release_update_bundle_assets(release)
+        assets = get_release_update_bundle_assets(
+            release,
+            platform="win32",
+        )
 
         self.assertIsNotNone(assets)
         self.assertEqual(assets[0].name, "TanukiUpdater.exe")
@@ -199,7 +202,38 @@ class UpdateServiceTests(unittest.TestCase):
                 ),
             )
         )
-        self.assertIsNone(get_release_update_bundle_assets(incomplete))
+        self.assertIsNone(
+            get_release_update_bundle_assets(
+                incomplete,
+                platform="win32",
+            )
+        )
+
+    def test_macos_release_never_claims_windows_updater_bundle(self):
+        release = ReleaseInfo.from_github_payload(
+            release_payload(
+                "v0.8.0-beta",
+                prerelease=True,
+                assets=(
+                    {
+                        "name": "TanukiUpdater.exe",
+                        "browser_download_url": "https://example.test/updater",
+                    },
+                    {
+                        "name": "tanuki-update.json",
+                        "browser_download_url": "https://example.test/manifest",
+                    },
+                    {
+                        "name": "TanukiPet-0.8.0-beta-windows-x64.zip",
+                        "browser_download_url": "https://example.test/package",
+                    },
+                ),
+            )
+        )
+
+        self.assertIsNone(
+            get_release_update_bundle_assets(release, platform="darwin")
+        )
 
 
 if __name__ == "__main__":

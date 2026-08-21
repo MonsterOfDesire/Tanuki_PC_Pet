@@ -13,11 +13,13 @@ from .ui_skin_spec import SKIN_DIET
 from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
 from .window_chrome import SkinnedToolWindowChrome
 from .ui_localization import translate_ui
+from .overlay_window import apply_platform_tool_window_attributes
 
 
 class OfferDragGhost(QFrame):
     def __init__(self, label, accent_color, icon_relative_path=""):
         super().__init__(None, Qt.WindowType.ToolTip | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
+        apply_platform_tool_window_attributes(self)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -162,6 +164,7 @@ class OfferTrayWindow(QWidget):
         theme=DEFAULT_UI_THEME,
     ):
         super().__init__(None, Qt.WindowType.Tool)
+        apply_platform_tool_window_attributes(self)
         self.setAttribute(Qt.WidgetAttribute.WA_QuitOnClose, False)
         self.setObjectName("tanukiOfferTray")
         self.resize(760, 570)

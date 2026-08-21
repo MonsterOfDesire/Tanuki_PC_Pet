@@ -5,6 +5,7 @@ from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QApplication
 
 from .app_runtime import TanukiAppRuntime
+from .app_paths import get_runtime_config_path
 from .asset_manager import AssetManager, is_frozen_runtime
 from .config_save_scheduler import ConfigSaveScheduler
 from .config_store import ConfigStore
@@ -19,6 +20,7 @@ from .installation_registry import (
 )
 from .pet_registry import DEFAULT_PET_SPECS
 from .pet_widget import TanukiPet
+from .platform_capabilities import get_platform_capabilities
 from .runtime import app_now
 from .runtime_bindings import bind_runtime_providers
 from .runtime_timer_registry import start_runtime_timers
@@ -91,15 +93,19 @@ def ensure_visible_pets(pets_list):
         pet.update()
 
 
-def create_runtime(app=None):
+def create_runtime(app=None, capabilities=None):
     app = app or QApplication(sys.argv)
+    capabilities = capabilities or get_platform_capabilities()
     settings_provider = RuntimeSettings()
     config_store = ConfigStore(
-        config_path=AssetManager.get_resource_path("config.json"),
+        config_path=get_runtime_config_path(
+            AssetManager.get_resource_path,
+            platform=capabilities.platform_key,
+        ),
         clamp_pet_position=DesktopGeometry.clamp_widget_position,
     )
     save_scheduler = ConfigSaveScheduler(lambda: config_store)
-    window_tracker = WindowTracker()
+    window_tracker = WindowTracker(platform=capabilities.platform_key)
 
     assets_dir = AssetManager.get_resource_path("assets_cropped")
     if not os.path.exists(assets_dir):
@@ -126,7 +132,11 @@ def create_runtime(app=None):
         300,
     )
     dashboard.set_sensor_zone(sensor)
-    monitor = GlobalMouseListener(dashboard)
+    monitor = (
+        GlobalMouseListener(dashboard)
+        if capabilities.global_mouse_listener
+        else None
+    )
 
     runtime = TanukiAppRuntime(
         app=app,
@@ -149,11 +159,11 @@ def create_runtime(app=None):
     runtime.household_coordinator.reset_event_schedule(app_now())
     bind_runtime_providers(runtime)
     config_store.bind(dashboard, pets_dict)
-    if is_frozen_runtime():
+    if is_frozen_runtime() and capabilities.standalone_updater:
         record_current_installation(dashboard.ui_locale)
     runtime.timers = start_runtime_timers(runtime)
     runtime.app.aboutToQuit.connect(runtime.shutdown)
-    if is_frozen_runtime():
+    if is_frozen_runtime() and capabilities.standalone_updater:
         runtime.app.aboutToQuit.connect(
             mark_current_installation_stopped
         )
@@ -166,4 +176,15 @@ def run_application():
     runtime.sensor.show()
     QTimer.singleShot(0, lambda: ensure_visible_pets(runtime.pets_list))
     QTimer.singleShot(300, lambda: ensure_visible_pets(runtime.pets_list))
+    try:
+        smoke_test_seconds = float(
+            os.environ.get("TANUKI_SMOKE_TEST_SECONDS", "0") or 0
+        )
+    except (TypeError, ValueError):
+        smoke_test_seconds = 0.0
+    if smoke_test_seconds > 0:
+        QTimer.singleShot(
+            max(1, int(round(smoke_test_seconds * 1000))),
+            runtime.app.quit,
+        )
     return runtime.app.exec()

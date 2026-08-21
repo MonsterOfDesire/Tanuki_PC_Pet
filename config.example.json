@@ -1,7 +1,7 @@
 {
   "schema_version": 8,
   "dashboard": {
-    "world_mode": "golden_legend",
+    "world_mode": "sandbox",
     "care_feature_enabled": true,
     "teio_dur_idx": 3,
     "tsuyoshi_dur_idx": 2,

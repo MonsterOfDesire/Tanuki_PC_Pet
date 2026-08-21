@@ -6,6 +6,8 @@ from dataclasses import dataclass
 
 from PyQt6.QtCore import QRect
 
+from .platform_capabilities import get_platform_capabilities
+
 
 @dataclass(frozen=True)
 class WindowSnapshot:
@@ -20,6 +22,17 @@ class WindowSnapshot:
     is_visible: bool
     is_iconic: bool
     is_cloaked: bool
+
+
+class UnavailableWindowTrackerBackend:
+    available = False
+
+    def __init__(self):
+        self.own_pid = os.getpid()
+
+    @staticmethod
+    def enumerate_window_snapshots():
+        return []
 
 
 class Win32WindowTrackerBackend:
@@ -131,3 +144,10 @@ class Win32WindowTrackerBackend:
             is_iconic=bool(self.user32.IsIconic(hwnd)),
             is_cloaked=self.is_window_cloaked(hwnd),
         )
+
+
+def create_window_tracker_backend(platform=None):
+    capabilities = get_platform_capabilities(platform)
+    if capabilities.window_tracking:
+        return Win32WindowTrackerBackend()
+    return UnavailableWindowTrackerBackend()

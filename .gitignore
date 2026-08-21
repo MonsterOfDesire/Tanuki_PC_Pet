@@ -8,6 +8,7 @@ build/
 dist/
 out/
 *.spec
+!TanukiPet-macOS.spec
 *.manifest
 *.egg-info/
 .eggs/

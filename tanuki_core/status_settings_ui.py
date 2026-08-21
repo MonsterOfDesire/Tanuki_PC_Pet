@@ -987,9 +987,27 @@ class StatusSettingsPanel(QWidget):
         self.update_check_button.setEnabled(state != "checking")
         self.update_open_button.setVisible(
             state == "available"
-            and snapshot.update_package_ready
-            and bool(snapshot.update_updater_url)
+            and (
+                (
+                    snapshot.update_package_ready
+                    and bool(snapshot.update_updater_url)
+                )
+                or (
+                    snapshot.update_method == "manual_release"
+                    and bool(snapshot.update_page_url)
+                )
+            )
         )
+        self.update_open_button.setText(translate_ui(
+            "updates.download_updater"
+            if snapshot.update_package_ready
+            else "updates.view_release",
+            default=(
+                "下載更新器"
+                if snapshot.update_package_ready
+                else "查看 Release"
+            ),
+        ))
         if state == "checking":
             text = translate_ui(
                 "updates.checking",
@@ -1011,6 +1029,14 @@ class StatusSettingsPanel(QWidget):
                     "updates.updater_ready",
                     default=(
                         "請到 Release 下載 TanukiUpdater.exe 後執行。"
+                    ),
+                )
+            elif snapshot.update_method == "manual_release":
+                text += " " + translate_ui(
+                    "updates.manual_platform",
+                    default=(
+                        "此平台目前採手動更新，"
+                        "請查看 Release 下載對應版本。"
                     ),
                 )
             else:

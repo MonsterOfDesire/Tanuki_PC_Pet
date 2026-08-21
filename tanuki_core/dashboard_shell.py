@@ -1,33 +1,33 @@
-import os
-
 from PyQt6.QtCore import QObject, QPoint, QVariantAnimation, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QPainter
 from PyQt6.QtWidgets import QWidget
-from pynput import mouse
 
 from .dashboard_shell_lifecycle import shutdown_listener
 from .dashboard_shell_rules import should_request_slide_out
+from .overlay_window import (
+    apply_platform_tool_window_attributes,
+    build_overlay_window_flags,
+)
 
-SAFE_WINDOW_MODE = os.environ.get("TANUKI_SAFE_WINDOW_MODE", "0") == "1"
 
-
-def build_overlay_window_flags():
-    flags = Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint
-    if not SAFE_WINDOW_MODE:
-        flags |= Qt.WindowType.Tool
-    return flags
 class GlobalMouseListener(QObject):
     request_slide_out = pyqtSignal()
 
     def __init__(self, dashboard, listener_factory=None):
         super().__init__()
         self.dashboard = dashboard
-        self._listener_factory = listener_factory or (lambda on_click: mouse.Listener(on_click=on_click))
+        self._listener_factory = listener_factory or self._default_listener
         self.listener = None
         self._shutdown = False
         self.request_slide_out.connect(self.dashboard.slide_out, Qt.ConnectionType.QueuedConnection)
         self.dashboard.destroyed.connect(lambda *_: self.shutdown())
         self.start()
+
+    @staticmethod
+    def _default_listener(on_click):
+        from pynput import mouse
+
+        return mouse.Listener(on_click=on_click)
 
     def start(self):
         if self._shutdown or self.listener is not None:
@@ -64,6 +64,7 @@ class SensorZone(QWidget):
         self.dashboard = dashboard
         self._shutdown = False
         self.setWindowFlags(build_overlay_window_flags())
+        apply_platform_tool_window_attributes(self)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.progress = 0.0
         self.glow_anim = QVariantAnimation(self)

@@ -5,6 +5,7 @@ from .runtime import SIM_CLOCK, app_now
 from .shutdown_controller import DashboardShutdownController
 from .ui_localization import set_ui_locale
 from .installation_registry import record_current_installation
+from .settings_provider import RuntimeSettings
 
 
 class DashboardController:
@@ -61,7 +62,7 @@ class DashboardController:
     def set_world_mode(self, dashboard, world_mode, save=True):
         previous_mode = getattr(dashboard, "world_mode", "")
         if world_mode not in getattr(dashboard, "world_mode_options", ()):
-            world_mode = dashboard.world_mode_options[0]
+            world_mode = RuntimeSettings.DEFAULT_WORLD_MODE
         dashboard.world_mode = str(world_mode)
         dashboard.sync_settings_provider()
         dashboard.update_world_mode_buttons()
