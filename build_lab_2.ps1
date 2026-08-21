@@ -108,10 +108,19 @@ foreach ($required in $requiredPaths) {
     }
 }
 
-$sitePackageCandidates = @(
-    (Join-Path $repoRoot ".venv\Lib\site-packages"),
-    (Join-Path $workspaceRoot ".venv\Lib\site-packages")
-) | Select-Object -Unique
+$selectedPythonPath = [IO.Path]::GetFullPath($PythonExe)
+$selectedPythonRoot = Split-Path -Parent (Split-Path -Parent $selectedPythonPath)
+$selectedPythonIsVenv = Test-Path -LiteralPath (
+    Join-Path $selectedPythonRoot "pyvenv.cfg"
+)
+$sitePackageCandidates = if ($selectedPythonIsVenv) {
+    @()
+} else {
+    @(
+        (Join-Path $repoRoot ".venv\Lib\site-packages"),
+        (Join-Path $workspaceRoot ".venv\Lib\site-packages")
+    ) | Select-Object -Unique
+}
 $pythonPathEntries = @($repoRoot)
 $pythonPathEntries += $sitePackageCandidates | Where-Object { Test-Path -LiteralPath $_ }
 if (-not [string]::IsNullOrWhiteSpace($env:PYTHONPATH)) {
@@ -138,6 +147,7 @@ if ($CheckOnly) {
 
 & $PythonExe -m PyInstaller `
   --noconfirm `
+  --noupx `
   --onedir `
   --windowed `
   --name $buildName `
@@ -174,6 +184,7 @@ if ($LASTEXITCODE -ne 0) {
 
 & $PythonExe -m PyInstaller `
   --noconfirm `
+  --noupx `
   --onefile `
   --windowed `
   --name $updaterBuildName `
