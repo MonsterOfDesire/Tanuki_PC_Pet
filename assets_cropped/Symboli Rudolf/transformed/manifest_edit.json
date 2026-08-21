@@ -45,7 +45,7 @@
         "normal"
       ],
       "contexts": [
-        "future_work"
+        "activity_chorus_perform"
       ],
       "weight": 1.0
     },
@@ -54,7 +54,7 @@
         "normal"
       ],
       "contexts": [
-        "future_work"
+        "activity_chorus_perform"
       ],
       "weight": 1.0
     },
@@ -63,7 +63,7 @@
         "normal"
       ],
       "contexts": [
-        "future_work"
+        "activity_chorus_perform"
       ],
       "weight": 1.0
     },
@@ -72,7 +72,7 @@
         "normal"
       ],
       "contexts": [
-        "future_work"
+        "activity_chorus_perform"
       ],
       "weight": 1.0
     },
@@ -113,7 +113,8 @@
       "contexts": [
         "care_companion",
         "observe_hold",
-        "activity_race_consider"
+        "activity_race_consider",
+        "activity_chorus_finish"
       ],
       "weight": 1.0
     },
@@ -125,7 +126,8 @@
         "relation_watch",
         "random",
         "window_perch",
-        "activity_race_recovery"
+        "activity_race_recovery",
+        "activity_chorus_observe"
       ],
       "weight": 1.0
     },
@@ -254,7 +256,8 @@
       ],
       "contexts": [
         "random",
-        "window_walk"
+        "window_walk",
+        "activity_chorus_approach"
       ],
       "weight": 1.0
     },
@@ -265,7 +268,8 @@
       "contexts": [
         "random",
         "window_walk",
-        "activity_race_to_start"
+        "activity_race_to_start",
+        "activity_chorus_approach"
       ],
       "weight": 1.0
     },

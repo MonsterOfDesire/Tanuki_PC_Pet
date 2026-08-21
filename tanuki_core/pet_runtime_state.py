@@ -20,6 +20,13 @@ PET_STATE_PROXY_FIELDS = {
         "current_purpose",
         "current_action_tag",
         "current_mood_tag",
+        "ambient_low_mood_tag",
+        "ambient_low_mood_streak",
+        "visual_band_afterglow",
+        "visual_band_afterglow_until",
+        "pending_ambient_animation_event",
+        "ambient_animation_event_serial",
+        "ambient_animation_confirmation_scheduled_serial",
         "behavior_layer_refresh_skip_counter",
         "behavior_layer_refresh_divisor",
         "high_level_ai_refresh_skip_counter",
@@ -28,9 +35,6 @@ PET_STATE_PROXY_FIELDS = {
     "interaction_state": (
         "dragging",
         "drag_press_pending",
-        "drag_motion_detected",
-        "drag_press_global_x",
-        "drag_press_global_y",
         "drag_start_time",
         "click_count",
         "is_angry_locked",
@@ -164,6 +168,13 @@ class PetBehaviorState:
     current_purpose: str = ""
     current_action_tag: str = "stand"
     current_mood_tag: str = "happy"
+    ambient_low_mood_tag: str = ""
+    ambient_low_mood_streak: int = 0
+    visual_band_afterglow: str = ""
+    visual_band_afterglow_until: float = 0.0
+    pending_ambient_animation_event: tuple = ()
+    ambient_animation_event_serial: int = 0
+    ambient_animation_confirmation_scheduled_serial: int = 0
     behavior_layer_refresh_skip_counter: float = 0.0
     behavior_layer_refresh_divisor: int = 1
     high_level_ai_refresh_skip_counter: float = 0.0
@@ -174,9 +185,6 @@ class PetBehaviorState:
 class PetInteractionState:
     dragging: bool = False
     drag_press_pending: bool = False
-    drag_motion_detected: bool = False
-    drag_press_global_x: int = 0
-    drag_press_global_y: int = 0
     drag_start_time: float = 0.0
     click_count: int = 0
     is_angry_locked: bool = False

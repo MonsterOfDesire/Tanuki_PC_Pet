@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Callable
+from uuid import uuid4
 
 
 AnimationSignature = tuple[str, str, str]
@@ -58,6 +59,8 @@ class SharedFoodSceneState:
 
 @dataclass
 class ActiveItemScene:
+    scene_id: str = ""
+    started_at: float = 0.0
     item_kind: str = ""
     scene_kind: str = "none"
     actor_name: str = ""
@@ -106,9 +109,13 @@ class ItemSceneCoordinator:
         }
     )
 
+    def __init__(self, *, scene_id_factory: Callable[[], str] | None = None):
+        self._scene_id_factory = scene_id_factory or (lambda: uuid4().hex)
+
     def build_scene(
         self,
         *,
+        scene_id: str = "",
         scene_kind: str,
         item_kind: str,
         actor_name: str,
@@ -134,6 +141,8 @@ class ItemSceneCoordinator:
                 partner_name=target_name if scene_kind == "shared_food" else "",
             )
         return ActiveItemScene(
+            scene_id=str(scene_id or ""),
+            started_at=float(stage_started_at),
             item_kind=item_kind,
             scene_kind=scene_kind,
             actor_name=actor_name,
@@ -199,7 +208,13 @@ class ItemSceneCoordinator:
                 started=False,
                 reason="unsupported_scene_kind",
             )
-        scene = self.build_scene(**scene_kwargs)
+        scene_id = str(self._scene_id_factory() or "").strip()
+        if not scene_id:
+            return ItemSceneStartResult(
+                started=False,
+                reason="empty_scene_id",
+            )
+        scene = self.build_scene(scene_id=scene_id, **scene_kwargs)
         runtime.offer_scene = scene
         self.lock_scene_participants(runtime, participant_pets)
         return ItemSceneStartResult(
@@ -210,6 +225,8 @@ class ItemSceneCoordinator:
     def get_scene_id(self, scene: ActiveItemScene | None) -> str:
         if scene is None:
             return ""
+        if str(scene.scene_id or "").strip():
+            return str(scene.scene_id)
         actor = scene.actor_name or "none"
         target = scene.target_name or "none"
         item = scene.item_kind or "none"

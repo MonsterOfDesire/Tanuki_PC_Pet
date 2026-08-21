@@ -5,6 +5,7 @@ from .ui_skin_spec import (
     SKIN_FAMILY_STATUS,
     SKIN_RELATION_SUMMON,
     SKIN_STATUS_SETTINGS,
+    SKIN_ACHIEVEMENT_CABINET,
 )
 
 
@@ -12,6 +13,7 @@ PAGE_RELATION_SUMMON = "relation_summon"
 PAGE_EVENT_LOG = "event_log"
 PAGE_FAMILY_STATUS = "family_status"
 PAGE_STATUS_SETTINGS = "status_settings"
+PAGE_ACHIEVEMENTS = "achievements"
 DEFAULT_INFORMATION_CENTER_PAGE = PAGE_FAMILY_STATUS
 
 
@@ -45,6 +47,13 @@ INFORMATION_CENTER_PAGE_SPECS = (
         title="家庭狀態摘要",
         placeholder_text="生活費、家庭壓力、成員卡片與近期事件將在此頁接入。",
         skin_key=SKIN_FAMILY_STATUS,
+    ),
+    InformationCenterPageSpec(
+        page_id=PAGE_ACHIEVEMENTS,
+        navigation_label="獎盃蒐集櫃",
+        title="獎盃蒐集櫃",
+        placeholder_text="沙盒與黃金傳說的成就獎盃將在此頁顯示。",
+        skin_key=SKIN_ACHIEVEMENT_CABINET,
     ),
     InformationCenterPageSpec(
         page_id=PAGE_STATUS_SETTINGS,

@@ -11,6 +11,7 @@ from tanuki_core.pet_social_rules import (
     build_care_interaction_mood_candidates,
     build_distress_mood_candidates,
     can_mimic_socially,
+    child_care_need_is_active,
     is_distressed_state,
     choose_care_target,
     choose_preferred_care_adult_name,
@@ -158,6 +159,26 @@ class CarePlanRuleTests(unittest.TestCase):
 
 
 class CareTargetRuleTests(unittest.TestCase):
+    def test_child_care_need_is_shared_across_visible_distressed_children(self):
+        self.assertTrue(
+            child_care_need_is_active(
+                is_child=True,
+                is_visible=True,
+                care_enabled=True,
+                is_recovering=False,
+                is_distressed=True,
+            )
+        )
+        self.assertFalse(
+            child_care_need_is_active(
+                is_child=True,
+                is_visible=True,
+                care_enabled=True,
+                is_recovering=True,
+                is_distressed=True,
+            )
+        )
+
     def test_choose_care_target_selects_nearest_eligible_child(self):
         adult = object()
         child_far = object()

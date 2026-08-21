@@ -4,6 +4,7 @@ import unittest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PyQt6.QtCore import Qt
+from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QApplication
 
 from tanuki_core.asset_manager import AssetManager
@@ -13,6 +14,7 @@ from tanuki_core.information_center_spec import (
     PAGE_FAMILY_STATUS,
     PAGE_RELATION_SUMMON,
     PAGE_STATUS_SETTINGS,
+    PAGE_ACHIEVEMENTS,
 )
 from tanuki_core.information_center_ui import InformationCenterWindow
 from tanuki_core.information_center_size_rules import SIZE_16_10, SIZE_COMPACT
@@ -31,6 +33,13 @@ from tanuki_core.relation_summon_binding import (
     RelationSummonPresentation,
     SummonMemberPresentation,
 )
+from tanuki_core.achievement_presenter import (
+    AchievementCabinetSnapshot,
+    AchievementCardSnapshot,
+    AchievementModeSnapshot,
+    AchievementTierSnapshot,
+)
+from tanuki_core.ui_localization import set_ui_locale
 
 
 class FakeStatusSettingsBinding:
@@ -151,6 +160,35 @@ class FakeRelationSummonBinding:
         return True
 
 
+class FakeAchievementBinding:
+    def snapshot(self):
+        card = AchievementCardSnapshot(
+            slot_key="race.first_natural_finish",
+            tier="G3",
+            unlocked=False,
+            image_relative_path="UI/trophies/race/3008.png",
+            accessible_name="未取得的 G3 獎盃",
+        )
+        return AchievementCabinetSnapshot(
+            modes=(
+                AchievementModeSnapshot(
+                    world_mode="sandbox",
+                    mode_label="沙盒",
+                    tiers=(
+                        AchievementTierSnapshot("G1", (), 0, 0),
+                        AchievementTierSnapshot("G2", (), 0, 0),
+                        AchievementTierSnapshot("G3", (card,), 0, 1),
+                    ),
+                    unlocked_count=0,
+                    total_count=1,
+                ),
+            )
+        )
+
+    def runtime_world_mode(self):
+        return "sandbox"
+
+
 class InformationCenterWindowTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -167,13 +205,29 @@ class InformationCenterWindowTests(unittest.TestCase):
         self.window.deleteLater()
         self.app.processEvents()
 
-    def test_window_builds_four_navigation_pages(self):
-        self.assertEqual(len(self.window.navigation_buttons), 4)
-        self.assertEqual(len(self.window.pages), 4)
+    def test_window_builds_five_navigation_pages(self):
+        self.assertEqual(len(self.window.navigation_buttons), 5)
+        self.assertEqual(len(self.window.pages), 5)
         self.assertEqual(
             tuple(self.window.navigation_buttons),
             tuple(page.page_id for page in INFORMATION_CENTER_PAGE_SPECS),
         )
+
+    def test_information_center_chrome_retranslates_without_rebuild(self):
+        set_ui_locale("en_US")
+        try:
+            self.window.retranslate_ui()
+            self.assertEqual(
+                self.window.navigation_title.text(),
+                "Tanuki Information Center",
+            )
+            self.assertEqual(
+                self.window.navigation_buttons[PAGE_EVENT_LOG].toolTip(),
+                "Event Log",
+            )
+        finally:
+            set_ui_locale("zh_TW")
+            self.window.retranslate_ui()
         self.assertEqual(
             {
                 page_id: button.property("pageAccent")
@@ -184,6 +238,43 @@ class InformationCenterWindowTests(unittest.TestCase):
                 for page_spec in INFORMATION_CENTER_PAGE_SPECS
             },
         )
+
+    def test_heavy_page_panels_are_created_only_when_first_requested(self):
+        self.assertIsNone(self.window.relation_summon_panel)
+        self.assertIsNone(self.window.event_log_panel)
+        self.assertIsNone(self.window.family_summary_panel)
+        self.assertIsNone(self.window.achievement_cabinet_panel)
+        self.assertIsNone(self.window.status_settings_panel)
+
+        self.window.select_page(PAGE_RELATION_SUMMON)
+
+        self.assertIsNotNone(self.window.relation_summon_panel)
+        self.assertIsNone(self.window.achievement_cabinet_panel)
+
+    def test_navigation_click_paints_loading_shell_before_deferred_page_build(self):
+        self.window.show()
+        self.app.processEvents()
+
+        self.window.navigation_buttons[PAGE_RELATION_SUMMON].click()
+
+        self.assertEqual(self.window.current_page_id, PAGE_RELATION_SUMMON)
+        self.assertIsNone(self.window.relation_summon_panel)
+        QTest.qWait(25)
+        self.app.processEvents()
+        self.assertIsNotNone(self.window.relation_summon_panel)
+
+    def test_rapid_navigation_builds_only_the_last_requested_page(self):
+        self.window.show()
+        self.app.processEvents()
+
+        self.window.navigation_buttons[PAGE_RELATION_SUMMON].click()
+        self.window.navigation_buttons[PAGE_EVENT_LOG].click()
+        QTest.qWait(25)
+        self.app.processEvents()
+
+        self.assertEqual(self.window.current_page_id, PAGE_EVENT_LOG)
+        self.assertIsNone(self.window.relation_summon_panel)
+        self.assertIsNotNone(self.window.event_log_panel)
 
     def test_navigation_bar_replaces_native_title_bar(self):
         self.assertTrue(
@@ -277,6 +368,26 @@ class InformationCenterWindowTests(unittest.TestCase):
         self.assertEqual(self.window.current_page_id, PAGE_FAMILY_STATUS)
         self.assertTrue(self.window.navigation_buttons[PAGE_FAMILY_STATUS].isChecked())
 
+    def test_achievement_page_is_embedded_and_cannot_detach(self):
+        self.window.select_page(PAGE_ACHIEVEMENTS)
+
+        self.assertIsNotNone(self.window.achievement_cabinet_panel)
+        self.assertFalse(self.window.detach_button.isEnabled())
+        self.assertIsNone(self.window.detach_page(PAGE_ACHIEVEMENTS))
+        self.assertFalse(self.window.is_page_detached(PAGE_ACHIEVEMENTS))
+
+    def test_achievement_page_accepts_runtime_binding(self):
+        binding = FakeAchievementBinding()
+
+        self.window.set_achievement_binding(binding)
+        self.window.select_page(PAGE_ACHIEVEMENTS)
+
+        panel = self.window.achievement_cabinet_panel
+        self.assertIs(panel.binding, binding)
+        self.assertEqual(panel.current_world_mode, "sandbox")
+        self.assertEqual(panel.progress_label.text(), "已取得 0 / 1")
+        self.assertEqual(len(panel.card_widgets), 1)
+
     def test_status_settings_page_accepts_runtime_binding(self):
         binding = FakeStatusSettingsBinding()
 
@@ -286,6 +397,21 @@ class InformationCenterWindowTests(unittest.TestCase):
         self.assertIs(self.window.status_settings_panel.binding, binding)
         self.assertTrue(self.window.status_settings_panel.settings_grid.isEnabled())
         self.assertEqual(len(self.window.status_settings_panel.time_scale_buttons), 4)
+
+    def test_retranslate_after_placeholder_is_replaced_is_safe(self):
+        self.window.select_page(PAGE_STATUS_SETTINGS)
+        page = self.window.pages[PAGE_STATUS_SETTINGS]
+        self.assertFalse(page._placeholder_active)
+
+        set_ui_locale("ja_JP")
+        try:
+            self.window.retranslate_ui()
+            self.assertEqual(
+                self.window.navigation_buttons[PAGE_STATUS_SETTINGS].text(),
+                "状態設定",
+            )
+        finally:
+            set_ui_locale("zh_TW")
 
     def test_family_summary_page_accepts_presenter_binding(self):
         binding = FakeFamilySummaryBinding()
@@ -362,17 +488,30 @@ class InformationCenterWindowTests(unittest.TestCase):
             "關閉並歸回資訊中心",
         )
         self.assertTrue(self.window.is_page_detached(PAGE_FAMILY_STATUS))
-        self.assertEqual(self.window.page_stack.count(), 4)
+        self.assertEqual(self.window.page_stack.count(), 5)
         self.assertEqual(self.window.page_indexes, original_indexes)
         self.assertEqual(
             self.window.current_page_id,
-            PAGE_STATUS_SETTINGS,
+            PAGE_ACHIEVEMENTS,
         )
         self.assertTrue(
             self.window.navigation_buttons[PAGE_FAMILY_STATUS].property(
                 "detached"
             )
         )
+
+        set_ui_locale("en_US")
+        try:
+            self.window.retranslate_ui()
+            self.assertEqual(
+                self.window.navigation_buttons[
+                    PAGE_FAMILY_STATUS
+                ].toolTip(),
+                "Family Summary (detached; select to recall)",
+            )
+        finally:
+            set_ui_locale("zh_TW")
+            self.window.retranslate_ui()
 
     def test_detached_navigation_button_recalls_window_without_switching_stack(self):
         self.window.show()
@@ -391,6 +530,20 @@ class InformationCenterWindowTests(unittest.TestCase):
         self.assertTrue(
             self.window.navigation_buttons[current_page_id].isChecked()
         )
+
+    def test_detached_navigation_button_restores_minimized_window(self):
+        self.window.show()
+        self.app.processEvents()
+        detached_window = self.window.detach_page(PAGE_FAMILY_STATUS)
+        self.app.processEvents()
+        detached_window.showMinimized()
+        self.app.processEvents()
+
+        self.window.navigation_buttons[PAGE_FAMILY_STATUS].click()
+        self.app.processEvents()
+
+        self.assertTrue(detached_window.isVisible())
+        self.assertFalse(detached_window.isMinimized())
 
     def test_closing_detached_window_docks_and_activates_page(self):
         self.window.show()
@@ -441,7 +594,7 @@ class InformationCenterWindowTests(unittest.TestCase):
         )
         self.assertTrue(settings_window.isVisible())
 
-    def test_all_pages_may_detach_and_first_close_restores_content(self):
+    def test_all_detachable_pages_leave_achievement_page_docked(self):
         self.window.show()
         self.app.processEvents()
         for page_id in (
@@ -455,14 +608,15 @@ class InformationCenterWindowTests(unittest.TestCase):
 
         self.assertEqual(len(self.window.detached_page_windows), 4)
         self.assertFalse(self.window.detach_button.isEnabled())
+        self.assertEqual(self.window.current_page_id, PAGE_ACHIEVEMENTS)
         self.window.navigation_buttons[PAGE_RELATION_SUMMON].click()
         self.app.processEvents()
         self.assertEqual(
             self.window.current_page_id,
-            PAGE_RELATION_SUMMON,
+            PAGE_ACHIEVEMENTS,
         )
         self.assertTrue(
-            self.window.navigation_buttons[PAGE_RELATION_SUMMON].isChecked()
+            self.window.navigation_buttons[PAGE_ACHIEVEMENTS].isChecked()
         )
         event_window = self.window.detached_page_windows[PAGE_EVENT_LOG]
 
@@ -561,6 +715,36 @@ class InformationCenterWindowTests(unittest.TestCase):
             self.window.current_page_id,
             PAGE_STATUS_SETTINGS,
         )
+
+    def test_open_page_restores_minimized_information_center(self):
+        self.window.show()
+        self.app.processEvents()
+        self.window.showMinimized()
+        self.app.processEvents()
+
+        self.window.open_page(PAGE_RELATION_SUMMON)
+        self.app.processEvents()
+
+        self.assertTrue(self.window.isVisible())
+        self.assertFalse(self.window.isMinimized())
+        self.assertEqual(self.window.current_page_id, PAGE_RELATION_SUMMON)
+
+    def test_open_page_recovers_information_center_moved_offscreen(self):
+        self.window.show()
+        self.app.processEvents()
+        available = self.window.screen().availableGeometry()
+        self.window.move_near_anchor(
+            available.right() + 5000,
+            available.bottom() + 5000,
+        )
+        self.app.processEvents()
+
+        self.window.open_page(PAGE_RELATION_SUMMON)
+        self.app.processEvents()
+
+        visible_region = available.intersected(self.window.frameGeometry())
+        self.assertGreaterEqual(visible_region.width(), 96)
+        self.assertGreaterEqual(visible_region.height(), 64)
 
 
 if __name__ == "__main__":

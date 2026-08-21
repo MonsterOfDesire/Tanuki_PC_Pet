@@ -115,6 +115,8 @@ class FakeDashboard:
         self.social_status_enabled = False
         self.race_frequency_options = ["frequent", "normal", "occasional"]
         self.race_frequency = "normal"
+        self.chorus_frequency_options = ["frequent", "normal", "occasional"]
+        self.chorus_frequency = "normal"
         self.mood_climate_options = ["cheerful", "balanced", "expressive"]
         self.mood_climate = "cheerful"
         self.teio_dur_idx = 0
@@ -155,6 +157,7 @@ class FakeDashboard:
         self.information_center_page_ids = []
         self.synced_pet_toggle_calls = []
         self.rudolf_work_preview_calls = 0
+        self.chorus_preview_calls = 0
         self.transformation_preview_calls = []
 
     def sync_settings_provider(self):
@@ -263,6 +266,10 @@ class FakeDashboard:
     def apply_rudolf_work_preview(self):
         self.rudolf_work_preview_calls += 1
         return "preview-result"
+
+    def apply_chorus_preview(self):
+        self.chorus_preview_calls += 1
+        return "chorus-preview-result"
 
     def apply_transformation_preview(self, pet_name):
         self.transformation_preview_calls.append(pet_name)
@@ -397,17 +404,19 @@ class DashboardControllerTests(unittest.TestCase):
         dashboard = FakeDashboard()
 
         controller.set_race_frequency(dashboard, "frequent")
+        controller.set_chorus_frequency(dashboard, "occasional")
         controller.set_mood_climate(dashboard, "expressive")
 
         self.assertEqual(dashboard.race_frequency, "frequent")
+        self.assertEqual(dashboard.chorus_frequency, "occasional")
         self.assertEqual(dashboard.mood_climate, "expressive")
-        self.assertEqual(dashboard.sync_calls, 2)
+        self.assertEqual(dashboard.sync_calls, 3)
         self.assertEqual(
             dashboard.information_center_settings_refresh_calls,
-            2,
+            3,
         )
-        self.assertEqual(dashboard.household_summary_refresh_calls, 1)
-        self.assertEqual(dashboard.save_calls, 2)
+        self.assertEqual(dashboard.household_summary_refresh_calls, 2)
+        self.assertEqual(dashboard.save_calls, 3)
 
     def test_run_validation_checks_builds_and_shows_dialog(self):
         controller = self.build_controller()
@@ -427,6 +436,15 @@ class DashboardControllerTests(unittest.TestCase):
 
         self.assertEqual(result, "preview-result")
         self.assertEqual(dashboard.rudolf_work_preview_calls, 1)
+
+    def test_preview_chorus_uses_runtime_action_path(self):
+        controller = self.build_controller()
+        dashboard = FakeDashboard()
+
+        result = controller.preview_chorus(dashboard)
+
+        self.assertEqual(result, "chorus-preview-result")
+        self.assertEqual(dashboard.chorus_preview_calls, 1)
 
     def test_toggle_transformation_preview_uses_runtime_action_path(self):
         controller = self.build_controller()

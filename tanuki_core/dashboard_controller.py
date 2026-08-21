@@ -3,6 +3,8 @@ from .dashboard_presenter import DashboardPresenter
 from .dashboard_tools_actions import DashboardToolsActions
 from .runtime import SIM_CLOCK, app_now
 from .shutdown_controller import DashboardShutdownController
+from .ui_localization import set_ui_locale
+from .installation_registry import record_current_installation
 
 
 class DashboardController:
@@ -98,7 +100,10 @@ class DashboardController:
         dashboard.time_scale_idx = max(0, min(len(dashboard.time_scale_options) - 1, int(index)))
         dashboard.sync_settings_provider()
         dashboard.update_time_scale_buttons()
-        self.actions.apply_time_scale(dashboard.get_time_scale())
+        time_scale = dashboard.get_time_scale()
+        self.actions.apply_time_scale(time_scale)
+        if hasattr(dashboard, "apply_achievement_time_scale_transition"):
+            dashboard.apply_achievement_time_scale_transition(time_scale)
         if save:
             dashboard.schedule_save()
 
@@ -131,6 +136,29 @@ class DashboardController:
         if save:
             dashboard.schedule_save()
 
+    def set_chorus_frequency(self, dashboard, value, save=True):
+        options = tuple(getattr(dashboard, "chorus_frequency_options", ()))
+        dashboard.chorus_frequency = (
+            str(value) if value in options else "normal"
+        )
+        dashboard.sync_settings_provider()
+        dashboard.refresh_information_center_settings()
+        dashboard.refresh_household_summary_if_open()
+        if save:
+            dashboard.schedule_save()
+
+    def set_ui_locale(self, dashboard, value, save=True):
+        options = tuple(getattr(dashboard, "ui_locale_options", ()))
+        dashboard.ui_locale = (
+            str(value) if value in options else options[0]
+        )
+        set_ui_locale(dashboard.ui_locale)
+        record_current_installation(dashboard.ui_locale)
+        dashboard.sync_settings_provider()
+        dashboard.retranslate_ui()
+        if save:
+            dashboard.schedule_save()
+
     def apply_display_scale(self, dashboard, save=True):
         self.actions.apply_display_scale(dashboard.pets_dict, dashboard.get_display_scale_multiplier())
         if save:
@@ -149,8 +177,14 @@ class DashboardController:
     def preview_rudolf_teio_race(self, dashboard):
         return dashboard.apply_race_preview()
 
+    def preview_chorus(self, dashboard):
+        return dashboard.apply_chorus_preview()
+
     def toggle_transformation_preview(self, dashboard, pet_name):
         return dashboard.apply_transformation_preview(pet_name)
+
+    def toggle_sleep_control(self, dashboard, pet_name):
+        return dashboard.apply_sleep_control(pet_name)
 
     def build_household_summary_presentation(self, dashboard):
         return self.presenter.build_household_summary(

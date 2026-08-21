@@ -1,4 +1,5 @@
 import unittest
+from types import SimpleNamespace
 
 from tanuki_core.activity_coordinator import ActivityCoordinator
 from tanuki_core.activity_runtime_adapter import ActivityRuntimeAdapter
@@ -65,6 +66,8 @@ class FakePet:
         self.fall_origin_y = None
         self.direction = 1
         self._x = 100.0
+        self._y = 500.0
+        self.floor_top_y = 500.0
         self.move_step = None
         self.apply_calls = []
         self.distressed = False
@@ -94,6 +97,12 @@ class FakePet:
 
     def x(self):
         return self._x
+
+    def y(self):
+        return self._y
+
+    def get_surface_snapshot(self):
+        return SimpleNamespace(floor_top_y=self.floor_top_y)
 
     def width(self):
         return 100
@@ -190,6 +199,9 @@ class RaceExecutorTests(unittest.TestCase):
 
     def test_complete_race_uses_manifest_phases_and_records_one_event(self):
         self.advance_to_running()
+        active = self.coordinator.get_active_activities()[0]
+        self.assertEqual(active.metadata["race_course_key"], "practice_100m")
+        self.assertEqual(active.metadata["race_distance"], 500.0)
 
         self.update(16.2)
         self.assertEqual(self.rudolf.activity_state.phase, RACE_FINISH_PHASE)
@@ -203,6 +215,8 @@ class RaceExecutorTests(unittest.TestCase):
         self.assertEqual(len(self.events), 1)
         self.assertEqual(self.events[0].event_type, "race_completed")
         self.assertEqual(self.events[0].winner_name, "Tokai Teio")
+        self.assertEqual(self.events[0].race_course_key, "practice_100m")
+        self.assertEqual(self.events[0].race_nominal_meters, 100)
         self.assertIn(
             ("activity_race_finish_lose", 60.0),
             self.rudolf.asset_manager.calls,
@@ -234,6 +248,40 @@ class RaceExecutorTests(unittest.TestCase):
             ("activity_race_consider", 60.0),
             self.teio.asset_manager.calls,
         )
+
+    def test_flight_and_taskbar_bottom_position_block_race_invitation(self):
+        self.teio.flight_mode = "to_taskbar"
+        in_flight = self.executor._eligibility_decision(
+            self.teio,
+            now=10.0,
+            world_mode="sandbox",
+            preview=False,
+        )
+
+        self.assertFalse(in_flight.allowed)
+        self.assertEqual(in_flight.reason, "participant_airborne")
+
+        self.teio.flight_mode = "none"
+        self.teio._y = self.teio.floor_top_y + 48.0
+        below_work_area = self.executor._eligibility_decision(
+            self.teio,
+            now=10.1,
+            world_mode="sandbox",
+            preview=False,
+        )
+
+        self.assertFalse(below_work_area.allowed)
+        self.assertEqual(below_work_area.reason, "participant_airborne")
+
+        self.teio._y = self.teio.floor_top_y
+        on_floor = self.executor._eligibility_decision(
+            self.teio,
+            now=10.2,
+            world_mode="sandbox",
+            preview=False,
+        )
+
+        self.assertTrue(on_floor.allowed)
 
     def test_dragging_one_participant_releases_both_racers(self):
         started = self.update(10.0)
@@ -327,6 +375,22 @@ class RaceExecutorTests(unittest.TestCase):
         self.assertEqual(self.rudolf.activity_state.phase, RACE_TO_START_PHASE)
         activity = self.coordinator.get_active_activities()[0]
         self.assertEqual(activity.metadata["to_start_last_progress_at"], 50.0)
+        self.assertEqual(activity.metadata["race_course_key"], "practice_100m")
+        self.assertEqual(activity.metadata["race_distance"], 500.0)
+
+    def test_full_lane_uses_course_roll_and_keeps_discrete_1500px_distance(self):
+        self.executor, self.coordinator = build_executor(
+            (0.0, 0.0, 0.0, 0.0, 0.0, 0.85)
+        )
+        self.executor.bounds_provider = lambda pets: (0.0, 2400.0)
+
+        started = self.update(10.0)
+
+        self.assertTrue(started.started)
+        activity = self.coordinator.get_active_activities()[0]
+        self.assertEqual(activity.metadata["race_course_key"], "practice_800m")
+        self.assertEqual(activity.metadata["race_nominal_meters"], 800)
+        self.assertEqual(activity.metadata["race_distance"], 1500.0)
 
     def test_winner_waits_for_loser_to_regroup_before_finish_phase(self):
         self.advance_to_running()
@@ -358,6 +422,90 @@ class RaceExecutorTests(unittest.TestCase):
         self.assertEqual(self.rudolf.activity_state.phase, RACE_FINISH_PHASE)
         self.assertEqual(winner.direction, -direction)
         self.assertEqual(loser.direction, direction)
+
+    def test_adult_racers_reposition_to_collision_safe_finish_standoff(self):
+        self.rudolf.radius = 80.0
+        self.teio.radius = 80.0
+        self.advance_to_running()
+        activity = self.coordinator.get_active_activities()[0]
+        direction = int(activity.metadata["race_direction"])
+        winner = self.teio
+        loser = self.rudolf
+        winner._x = float(activity.metadata["opponent_finish_x"])
+        loser._x = winner._x - direction * 80.0
+        loser.move_step = 0.0
+
+        overlapping = self.update(16.2)
+
+        self.assertFalse(overlapping.phase_changed)
+        self.assertEqual(self.rudolf.activity_state.phase, RACE_RUNNING_PHASE)
+        loser.move_step = 500.0
+
+        separated = self.update(16.3)
+
+        self.assertTrue(separated.phase_changed)
+        self.assertEqual(self.rudolf.activity_state.phase, RACE_FINISH_PHASE)
+        center_distance = abs(
+            (winner._x + winner.width() / 2.0)
+            - (loser._x + loser.width() / 2.0)
+        )
+        self.assertEqual(center_distance, 204.0)
+        self.assertEqual(winner.direction, -direction)
+        self.assertEqual(loser.direction, direction)
+
+    def test_leftward_finish_preserves_the_starting_side_order(self):
+        self.rudolf._x = 550.0
+        self.teio._x = 800.0
+        self.advance_to_running()
+        activity = self.coordinator.get_active_activities()[0]
+        self.assertEqual(activity.metadata["race_direction"], -1)
+        self.assertGreater(
+            activity.metadata["challenger_start_x"],
+            activity.metadata["opponent_start_x"],
+        )
+
+        rudolf_finish = float(activity.metadata["challenger_finish_x"])
+        teio_finish = float(activity.metadata["opponent_finish_x"])
+        self.assertGreater(rudolf_finish, teio_finish)
+        self.assertEqual(
+            abs(rudolf_finish - activity.metadata["challenger_start_x"]),
+            activity.metadata["race_distance"],
+        )
+        self.assertEqual(
+            abs(teio_finish - activity.metadata["opponent_start_x"]),
+            activity.metadata["race_distance"],
+        )
+        self.assertEqual(
+            abs(rudolf_finish - teio_finish),
+            abs(
+                activity.metadata["challenger_start_x"]
+                - activity.metadata["opponent_start_x"]
+            ),
+        )
+        self.rudolf._x = rudolf_finish
+        self.teio._x = teio_finish + 100.0
+        self.rudolf.honor_min_speed = True
+        self.teio.honor_min_speed = True
+        activity.metadata["challenger_speed"] = 20.0
+        activity.metadata["opponent_speed"] = 10.0
+        teio_before = self.teio._x
+
+        winner_arrived = self.update(16.2)
+
+        self.assertFalse(winner_arrived.phase_changed)
+        self.assertEqual(activity.metadata["winner_name"], "Symboli Rudolf")
+        self.assertLess(self.teio._x, teio_before)
+        self.assertGreater(self.rudolf._x, self.teio._x)
+        self.assertEqual(self.teio.direction, -1)
+
+        self.teio._x = teio_finish
+        finished_running = self.update(16.3)
+
+        self.assertTrue(finished_running.phase_changed)
+        self.assertEqual(self.teio._x, teio_finish)
+        self.assertGreater(self.rudolf._x, self.teio._x)
+        self.assertEqual(self.rudolf.direction, -1)
+        self.assertEqual(self.teio.direction, 1)
 
     def test_child_distress_immediately_interrupts_race_for_care(self):
         self.advance_to_running()

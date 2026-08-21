@@ -29,7 +29,9 @@ from .ui_icons import (
 from .ui_localization import (
     character_display_name,
     localize_character_names_in_text,
+    translate_ui,
 )
+from .event_localization import localized_event_type_label
 
 
 EVENT_LOG_FILTER_OPTIONS = (
@@ -303,6 +305,55 @@ class EventLogPanel(QWidget):
         self.content_splitter.setSizes((430, 250))
 
         self.set_binding(binding)
+        self.retranslate_ui()
+
+    def retranslate_ui(self):
+        if self.binding is None:
+            self.title_label.setText(translate_ui(
+                "event_log.title",
+                default="事件日誌",
+            ))
+        self.unavailable_label.setText(translate_ui(
+            "event_log.unavailable",
+            default="事件日誌尚未連接執行中的 Dashboard。",
+        ))
+        for mode, button in self.filter_buttons.items():
+            button.setText(translate_ui(
+                f"labels.filters.{mode}",
+                default=dict(EVENT_LOG_FILTER_OPTIONS).get(mode, mode),
+            ))
+        participant_text = translate_ui(
+            "event_log.personal_filter_character",
+            default="個人篩選角色",
+        )
+        self.participant_label.setAccessibleName(participant_text)
+        self.participant_label.setToolTip(participant_text)
+        self.participant_combo.setPlaceholderText(translate_ui(
+            "event_log.personal_filter",
+            default="個人篩選",
+        ))
+        self.participant_combo.setToolTip(translate_ui(
+            "event_log.personal_filter_tooltip",
+            default="僅在「個人」篩選時使用",
+        ))
+        self.event_table.setAccessibleName(translate_ui(
+            "event_log.event_list",
+            default="事件列表",
+        ))
+        self.empty_list_label.setText(translate_ui(
+            "event_log.no_matching_records",
+            default="目前沒有符合條件的紀錄。",
+        ))
+        self.empty_detail_label.setText(translate_ui(
+            "event_log.select_event",
+            default="選取左側事件以查看詳情。",
+        ))
+        self.detail_heading_label.setText(translate_ui(
+            "event_log.details",
+            default="事件詳情",
+        ))
+        if self.binding is not None:
+            self.refresh_from_binding()
 
     @property
     def selected_entry(self):
@@ -320,10 +371,13 @@ class EventLogPanel(QWidget):
         if connected:
             self.refresh_from_binding()
         else:
-            self.title_label.setText("事件日誌")
+            self.title_label.setText(translate_ui("event_log.title", default="事件日誌"))
             self.entries = ()
             self.event_table.setRowCount(0)
-            self.empty_list_label.setText("目前尚無事件資料。")
+            self.empty_list_label.setText(translate_ui(
+                "event_log.no_event_data",
+                default="目前尚無事件資料。",
+            ))
             self.list_stack.setCurrentWidget(self.empty_list_label)
             self.detail_stack.setCurrentWidget(self.empty_detail_label)
             self._update_filter_controls()
@@ -381,11 +435,25 @@ class EventLogPanel(QWidget):
                 self.participant_combo.itemData(index, Qt.ItemDataRole.UserRole)
                 for index in range(self.participant_combo.count())
             )
-            if current_names != presentation.participant_names:
+            rendered_names = tuple(
+                character_display_name(character_name)
+                for character_name in presentation.participant_names
+            )
+            current_labels = tuple(
+                self.participant_combo.itemText(index)
+                for index in range(self.participant_combo.count())
+            )
+            if (
+                current_names != presentation.participant_names
+                or current_labels != rendered_names
+            ):
                 self.participant_combo.clear()
-                for character_name in presentation.participant_names:
+                for character_name, display_name in zip(
+                    presentation.participant_names,
+                    rendered_names,
+                ):
                     self.participant_combo.addItem(
-                        character_display_name(character_name),
+                        display_name,
                         character_name,
                     )
             target_index = (
@@ -408,7 +476,10 @@ class EventLogPanel(QWidget):
             del table_blocker
 
             if not self.entries:
-                self.empty_list_label.setText("目前沒有符合條件的紀錄。")
+                self.empty_list_label.setText(translate_ui(
+                    "event_log.no_matching_records",
+                    default="目前沒有符合條件的紀錄。",
+                ))
                 self.list_stack.setCurrentWidget(self.empty_list_label)
                 self.event_table.clearSelection()
                 self.detail_stack.setCurrentWidget(self.empty_detail_label)
@@ -437,7 +508,10 @@ class EventLogPanel(QWidget):
         elif actor_name or target_name:
             participant_text = actor_name or target_name
         else:
-            participant_text = "家庭／系統"
+            participant_text = translate_ui(
+                "event_log.family_system",
+                default="家庭／系統",
+            )
         values = (
             entry.timestamp_text,
             entry.channel_label,
@@ -469,7 +543,10 @@ class EventLogPanel(QWidget):
 
     def _show_entry_details(self, entry):
         self._selected_sequence = entry.sequence
-        self.detail_heading_label.setText("事件詳情")
+        self.detail_heading_label.setText(translate_ui(
+            "event_log.details",
+            default="事件詳情",
+        ))
         self.detail_channel_icon_label.setPixmap(
             create_ui_pixmap(
                 entry.channel if entry.channel in EVENT_CHANNEL_COLORS else "info",
@@ -493,22 +570,46 @@ class EventLogPanel(QWidget):
         elif actor_name or target_name:
             participant_text = actor_name or target_name
         else:
-            participant_text = "家庭／系統事件"
+            participant_text = translate_ui(
+                "event_log.family_system_event",
+                default="家庭／系統事件",
+            )
         self.detail_participant_label.setText(participant_text)
 
         self._replace_structured_detail_rows(entry.details)
         self._replace_effect_rows(entry.effects)
-        tags_text = " · ".join(f"#{tag}" for tag in entry.tags) if entry.tags else "沒有標籤"
-        self.detail_tags_label.setText(f"標籤　{tags_text}")
-        importance_label = EVENT_IMPORTANCE_LABELS.get(
-            entry.importance,
-            entry.importance or "一般",
+        tags_text = (
+            " · ".join(f"#{tag}" for tag in entry.tags)
+            if entry.tags else
+            translate_ui("event_log.no_tags", default="沒有標籤")
+        )
+        self.detail_tags_label.setText(translate_ui(
+            "event_log.tags",
+            default="標籤　{tags}",
+            tags=tags_text,
+        ))
+        importance_label = translate_ui(
+            f"event_log.importance.{entry.importance}",
+            default=EVENT_IMPORTANCE_LABELS.get(
+                entry.importance,
+                entry.importance or "一般",
+            ),
         )
         type_parts = [
-            part for part in (entry.category, entry.event_type)
+            part for part in (
+                translate_ui(
+                    f"event_log.categories.{entry.category}",
+                    default=entry.category,
+                ) if entry.category else "",
+                localized_event_type_label(entry.event_type)
+                if entry.event_type else "",
+            )
             if part
         ]
-        type_text = " / ".join(type_parts) if type_parts else "一般事件"
+        type_text = (
+            " / ".join(type_parts) if type_parts else
+            translate_ui("event_log.general_event", default="一般事件")
+        )
         self.detail_metadata_label.setText(
             f"#{entry.sequence:03d}　{importance_label}　{type_text}"
         )
@@ -551,7 +652,10 @@ class EventLogPanel(QWidget):
         self.effect_icon_labels = {}
 
         if not effects:
-            empty_label = QLabel("本事件沒有數值變化")
+            empty_label = QLabel(translate_ui(
+                "event_log.no_effects",
+                default="本事件沒有數值變化",
+            ))
             empty_label.setProperty("tanukiRole", "eventNoEffects")
             self.effects_layout.addWidget(empty_label)
             return

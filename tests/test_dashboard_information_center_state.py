@@ -5,6 +5,7 @@ from PyQt6.QtCore import QRect
 
 from tanuki_core.dashboard_ui import Dashboard
 from tanuki_core.information_center_spec import (
+    PAGE_ACHIEVEMENTS,
     PAGE_EVENT_LOG,
     PAGE_STATUS_SETTINGS,
 )
@@ -33,6 +34,7 @@ class FakeInformationCenterWindow:
         self.restore_calls = []
         self.move_calls = []
         self.open_calls = []
+        self.achievement_refresh_calls = []
 
     def restore_config_state(self, state):
         self.state = state
@@ -47,6 +49,10 @@ class FakeInformationCenterWindow:
 
     def open_page(self, page_id=None):
         self.open_calls.append(page_id)
+
+    def refresh_achievement_cabinet(self, *, sync_world_mode=False):
+        self.achievement_refresh_calls.append(bool(sync_world_mode))
+        return True
 
     def width(self):
         return self.state.width
@@ -64,6 +70,7 @@ class FakeDashboard:
         self.family_summary_binding = object()
         self.event_log_binding = object()
         self.relation_summon_binding = object()
+        self.achievement_binding = object()
         self.target_rect = QRect(0, 0, 1920, 1080)
         self.save_calls = 0
 
@@ -82,8 +89,25 @@ class FakeDashboard:
     def _handle_information_center_state_changed(self):
         Dashboard._handle_information_center_state_changed(self)
 
+    def show_information_center(self, page_id=None):
+        return Dashboard.show_information_center(self, page_id)
+
 
 class DashboardInformationCenterStateTests(unittest.TestCase):
+    def test_achievement_entry_opens_embedded_information_center_page(self):
+        dashboard = FakeDashboard(build_information_center_config_state())
+        window = FakeInformationCenterWindow()
+
+        with patch(
+            "tanuki_core.dashboard_ui.InformationCenterWindow",
+            return_value=window,
+        ):
+            result = Dashboard.show_achievement_cabinet(dashboard)
+
+        self.assertTrue(result)
+        self.assertEqual(window.open_calls, [PAGE_ACHIEVEMENTS])
+        self.assertEqual(window.achievement_refresh_calls, [True])
+
     def test_first_open_restores_saved_geometry_and_last_page(self):
         state = build_information_center_config_state(
             x=240,

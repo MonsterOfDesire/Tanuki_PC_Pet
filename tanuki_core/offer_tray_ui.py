@@ -6,11 +6,13 @@ from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from .asset_manager import AssetManager
 from .offer_interaction_rules import get_offer_item_definitions
+from .event_localization import localized_item_label
 from .skinned_window_frame import SkinnedWindowFrame
 from .ui_skin_assets import UiSkinAssets
 from .ui_skin_spec import SKIN_DIET
 from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
 from .window_chrome import SkinnedToolWindowChrome
+from .ui_localization import translate_ui
 
 
 class OfferDragGhost(QFrame):
@@ -69,8 +71,6 @@ class OfferItemBadge(QFrame):
         self.drag_ghost = None
         self.setCursor(Qt.CursorShape.OpenHandCursor)
         self.setProperty("tanukiRole", "offerItemBadge")
-        self.setAccessibleName(item_definition.label)
-        self.setToolTip(f"拖曳{item_definition.label}給角色")
         layout = QVBoxLayout()
         layout.setContentsMargins(4, 4, 4, 4)
         layout.setSpacing(2)
@@ -91,13 +91,24 @@ class OfferItemBadge(QFrame):
                     )
                 )
                 layout.addWidget(icon_label)
-        self.title_label = QLabel(item_definition.label)
+        self.title_label = QLabel()
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.title_label.setProperty("tanukiRole", "offerItemName")
         if not has_icon:
             layout.setContentsMargins(10, 8, 10, 8)
         layout.addWidget(self.title_label)
         self.setLayout(layout)
+        self.retranslate_ui()
+
+    def retranslate_ui(self):
+        label = localized_item_label(self.item_definition.kind)
+        self.title_label.setText(label)
+        self.setAccessibleName(label)
+        self.setToolTip(translate_ui(
+            "offer_tray.drag_item",
+            default="拖曳{item}給角色",
+            item=label,
+        ))
 
     def mousePressEvent(self, event):
         if event.button() != Qt.MouseButton.LeftButton:
@@ -114,7 +125,7 @@ class OfferItemBadge(QFrame):
         if not self.drag_started and (current_pos - self.drag_origin).manhattanLength() >= self.DRAG_THRESHOLD:
             self.drag_started = True
             self.drag_ghost = OfferDragGhost(
-                self.item_definition.label,
+                localized_item_label(self.item_definition.kind),
                 self.item_definition.accent_color,
                 self.item_definition.icon_relative_path,
             )
@@ -153,7 +164,6 @@ class OfferTrayWindow(QWidget):
         super().__init__(None, Qt.WindowType.Tool)
         self.setAttribute(Qt.WidgetAttribute.WA_QuitOnClose, False)
         self.setObjectName("tanukiOfferTray")
-        self.setWindowTitle("飲食托盤")
         self.resize(760, 570)
         self.user_position_locked = False
         self._moving_programmatically = False
@@ -219,7 +229,29 @@ class OfferTrayWindow(QWidget):
             drag_widgets=(self.chrome_drag_zone,),
             controls_variant="light",
         )
+        self.retranslate_ui()
         self._update_chrome_geometry()
+
+    def retranslate_ui(self):
+        self.setWindowTitle(translate_ui(
+            "offer_tray.title",
+            default="飲食托盤",
+        ))
+        for badge in self.item_badges:
+            badge.retranslate_ui()
+        self.instruction_label.setText(translate_ui(
+            "offer_tray.drag_to_character",
+            default="拖曳給角色",
+        ))
+        self.instruction_label.setToolTip(translate_ui(
+            "offer_tray.instruction_tooltip",
+            default="按住食物並拖曳到桌面角色身上",
+        ))
+        self.chrome_drag_zone.setAccessibleName(translate_ui(
+            "offer_tray.window_drag",
+            default="拖曳飲食托盤視窗",
+        ))
+        self.window_chrome.retranslate_ui()
 
     def move_near_anchor(self, x, y):
         anchor = QPoint(int(x), int(y))

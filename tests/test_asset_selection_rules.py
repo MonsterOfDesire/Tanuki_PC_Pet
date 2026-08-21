@@ -5,6 +5,7 @@ from tanuki_core.asset_selection_rules import (
     get_mood_rules,
     is_record_eligible,
     select_contextual_result,
+    select_contextual_result_for_candidates,
     select_contextual_result_for_purposes,
     select_result_by_score,
     select_result_for_preferences,
@@ -21,6 +22,16 @@ class FirstChoiceRng:
 
     def shuffle(self, population):
         return None
+
+
+class RecordingChoiceRng(FirstChoiceRng):
+    def __init__(self, choice_index):
+        self.choice_index = choice_index
+        self.weights = None
+
+    def choices(self, population, weights=None, k=1):
+        self.weights = list(weights or ())
+        return [population[self.choice_index]]
 
 
 def make_record(action_type, mood_tag, *, bands=None, contexts=None, weight=1.0):
@@ -283,6 +294,49 @@ class AssetSelectionRuleTests(unittest.TestCase):
         )
 
         self.assertEqual(result, (["walk_shake:sad"], "move", "walk_shake", "sad"))
+
+    def test_candidate_pool_weights_moods_instead_of_prioritizing_happy(self):
+        asset_records = {
+            "move": {
+                "fly": {
+                    "happy": make_record(
+                        "fly",
+                        "happy",
+                        bands=["normal"],
+                        contexts=["random"],
+                        weight=1.0,
+                    ),
+                    "smile": make_record(
+                        "fly",
+                        "smile",
+                        bands=["normal"],
+                        contexts=["random"],
+                        weight=3.0,
+                    ),
+                },
+                "activity_only": {
+                    "happy": make_record(
+                        "activity_only",
+                        "happy",
+                        bands=["normal"],
+                        contexts=["activity_chorus_approach"],
+                        weight=20.0,
+                    ),
+                },
+            },
+        }
+        rng = RecordingChoiceRng(choice_index=1)
+
+        result = select_contextual_result_for_candidates(
+            asset_records,
+            (("move", "fly"),),
+            context="random",
+            mood_score=80,
+            rng=rng,
+        )
+
+        self.assertEqual(result, (["fly:smile"], "move", "fly", "smile"))
+        self.assertEqual(rng.weights, [1.0, 3.0])
 
     def test_select_safe_result_prefers_requested_mood_then_safe_normal(self):
         available_types = {

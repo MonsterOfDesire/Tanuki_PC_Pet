@@ -5,6 +5,14 @@ SEVERE_RANDOM_DIRECTION_FLIP_CHANCE = 0.25
 NORMAL_RANDOM_DIRECTION_FLIP_CHANCE = 0.3
 RANDOM_STUCK_REVERSE_THRESHOLD = 60
 RANDOM_MOVE_PURPOSE_SPEED_THRESHOLD = 0.8
+RANDOM_CONTEXT = "random"
+SIDE_READY_FOLLOWUP_CONTEXT = "side_ready_followup"
+SIDE_READY_FOLLOWUP_CHANCE = 0.10
+SIDE_READY_FOLLOWUP_MIN_HOLD_STEPS = 60
+SIDE_READY_FOLLOWUP_ACTIONS = frozenset({
+    "side_stand",
+    "side_stand_cheer",
+})
 
 
 @dataclass(frozen=True)
@@ -64,10 +72,49 @@ def extend_random_state_timer(state_timer, hold_timer):
     return max(int(state_timer), int(hold_timer))
 
 
+def choose_idle_animation_context(
+    *,
+    side_ready_followup_armed,
+    roll,
+    followup_chance=SIDE_READY_FOLLOWUP_CHANCE,
+):
+    """Choose the next manifest context after a side-ready idle pose."""
+    if not bool(side_ready_followup_armed):
+        return RANDOM_CONTEXT
+    chance = max(0.0, min(1.0, float(followup_chance)))
+    if float(roll) < chance:
+        return SIDE_READY_FOLLOWUP_CONTEXT
+    return RANDOM_CONTEXT
+
+
+def is_visible_side_ready_followup(purpose, action_tag):
+    """Return whether the applied visual is a standing follow-up pose."""
+    return (
+        str(purpose or "") == "idle"
+        and str(action_tag or "") in SIDE_READY_FOLLOWUP_ACTIONS
+    )
+
+
+def is_side_ready_followup_eligible(
+    name,
+    *,
+    side_ready_followup_armed,
+    current_action_tag,
+    current_frames,
+):
+    """Return whether a side-ready pose may be consumed by its next resolver."""
+    return (
+        str(name or "") == "Tsurumaru Tsuyoshi"
+        and bool(side_ready_followup_armed)
+        and str(current_action_tag or "") == "side_ready"
+        and bool(current_frames)
+    )
+
+
 def get_idle_action_override(name, *, current_purpose, current_action_tag, next_purpose, next_action_tag):
     if name != "Tsurumaru Tsuyoshi":
         return ()
-    if next_purpose != "idle" or next_action_tag != "side_stand":
+    if next_purpose != "idle" or next_action_tag not in SIDE_READY_FOLLOWUP_ACTIONS:
         return ()
     if current_purpose == "idle" and current_action_tag == "side_ready":
         return ()

@@ -2,6 +2,7 @@ import unittest
 
 from tanuki_core.pet_social_log_rules import (
     SOCIAL_LOG_COOLDOWN_SECONDS,
+    find_social_log_template_index,
     get_social_log_template_count,
     resolve_social_log_event_plan,
 )
@@ -24,6 +25,7 @@ class PetSocialLogRulesTests(unittest.TestCase):
         self.assertIn("Tokai Teio", plan.summary)
         self.assertEqual(plan.relation_delta, {"familiarity": 0.12})
         self.assertEqual(plan.tags, ("observe", "ambient_social"))
+        self.assertEqual(plan.metadata["template_index"], 0)
         self.assertEqual(plan.cooldown_until, 10.0 + SOCIAL_LOG_COOLDOWN_SECONDS)
 
     def test_post_observe_social_log_plan_has_stronger_relation_delta(self):
@@ -40,6 +42,27 @@ class PetSocialLogRulesTests(unittest.TestCase):
         self.assertEqual(plan.event_type, "post_observe_social_log")
         self.assertEqual(plan.relation_delta, {"familiarity": 0.25, "attachment": 0.08})
         self.assertEqual(plan.tags, ("observe", "post_observe", "small_talk"))
+        self.assertEqual(plan.metadata["template_index"], 1)
+
+    def test_legacy_summary_can_recover_its_template_index(self):
+        plan = resolve_social_log_event_plan(
+            actor_name="Air Groove",
+            target_name="Sirius Symboli",
+            source_context="observe",
+            now=20.0,
+            roll=0.0,
+            template_index=17,
+        )
+
+        self.assertEqual(
+            find_social_log_template_index(
+                plan.summary,
+                actor_name="Air Groove",
+                target_name="Sirius Symboli",
+                source_context="observe",
+            ),
+            17,
+        )
 
     def test_awkward_social_log_plan_can_emit_negative_relationship_delta(self):
         plan = resolve_social_log_event_plan(

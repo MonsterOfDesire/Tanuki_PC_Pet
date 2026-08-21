@@ -194,9 +194,9 @@
         "severe"
       ],
       "contexts": [
-        "future_work"
+        "activity_chorus_perform"
       ],
-      "weight": 1.0
+      "weight": 5.0
     },
     "idle_music_drum-happy.gif": {
       "band": [
@@ -205,9 +205,9 @@
         "severe"
       ],
       "contexts": [
-        "future_work"
+        "activity_chorus_perform"
       ],
-      "weight": 1.0
+      "weight": 5.0
     },
     "idle_music_flute-happy.gif": {
       "band": [
@@ -216,7 +216,7 @@
         "severe"
       ],
       "contexts": [
-        "future_work"
+        "activity_chorus_perform"
       ],
       "weight": 1.0
     },
@@ -227,7 +227,7 @@
         "severe"
       ],
       "contexts": [
-        "future_work"
+        "activity_chorus_perform"
       ],
       "weight": 1.0
     },
@@ -570,7 +570,8 @@
         "bottle_feed_watch",
         "shared_food_react",
         "random",
-        "activity_race_recovery"
+        "activity_race_recovery",
+        "activity_chorus_observe"
       ],
       "weight": 1.0
     },
@@ -647,7 +648,8 @@
       "contexts": [
         "window_perch",
         "random",
-        "activity_race_finish_lose"
+        "activity_race_finish_lose",
+        "activity_chorus_finish"
       ],
       "weight": 1.0
     },
@@ -1019,7 +1021,8 @@
         "window_walk",
         "random",
         "shared_food_approach",
-        "activity_race_to_start"
+        "activity_race_to_start",
+        "activity_chorus_approach"
       ],
       "weight": 1.0
     },
@@ -1033,7 +1036,8 @@
         "offer_timeout_route_a_step3",
         "negative_reaction",
         "random",
-        "activity_race_to_start"
+        "activity_race_to_start",
+        "activity_chorus_approach"
       ],
       "weight": 1.0
     },

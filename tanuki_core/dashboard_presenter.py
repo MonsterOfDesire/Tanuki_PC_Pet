@@ -2,6 +2,8 @@ from datetime import datetime
 from dataclasses import dataclass
 
 from .activity_rhythm import format_compact_duration
+from .event_localization import localized_event_summary
+from .ui_localization import character_display_name, translate_ui
 
 
 @dataclass(frozen=True)
@@ -64,11 +66,13 @@ class HouseholdSummaryPresentation:
     recent_fund_delta: int = 0
     recent_pressure_delta: float = 0.0
     race_rhythm_text: str = ""
+    chorus_rhythm_text: str = ""
 
 
 @dataclass(frozen=True)
 class HouseholdRhythmPresentation:
     race_rhythm_text: str = ""
+    chorus_rhythm_text: str = ""
     members: tuple[HouseholdMemberPresentation, ...] = ()
 
 
@@ -177,20 +181,71 @@ class DashboardPresenter:
         "transformed": "變身形態",
     }
 
+    @staticmethod
+    def _label(group, key, defaults):
+        return translate_ui(
+            f"labels.{group}.{key}",
+            default=defaults.get(key, str(key)),
+        )
+
+    def _filter_label(self, key):
+        return self._label("filters", key, self.SOCIAL_LOG_FILTER_LABELS)
+
+    def _channel_label(self, key):
+        return self._label("channels", key, self.SOCIAL_LOG_CHANNEL_LABELS)
+
+    def _metric_label(self, key):
+        return self._label(
+            "relationship_metrics",
+            key,
+            self.RELATIONSHIP_METRIC_LABELS,
+        )
+
+    def _mood_label(self, key, default="平穩"):
+        return translate_ui(
+            f"labels.mood_states.{key}",
+            default=self.MOOD_STATE_LABELS.get(key, default),
+        )
+
+    def _form_label(self, key):
+        return translate_ui(
+            f"labels.forms.{key}",
+            default=self.FORM_LABELS.get(key, key),
+        )
+
     def build_shutdown_status(self):
         return DashboardStatusPresentation(
-            status_text="正在儲存設定...",
+            status_text=translate_ui(
+                "dashboard.saving_settings",
+                default="正在儲存設定...",
+            ),
             show_status=True,
             exit_enabled=False,
-            exit_text="正在關閉...",
+            exit_text=translate_ui(
+                "dashboard.shutting_down",
+                default="正在關閉...",
+            ),
             force_expanded=True,
         )
 
     def build_debug_button(self, enabled):
-        return DashboardButtonPresentation(text=f"Debug: {'開啟' if enabled else '關閉'}")
+        state = translate_ui(
+            "common.on" if enabled else "common.off",
+            default="開啟" if enabled else "關閉",
+        )
+        return DashboardButtonPresentation(text=f"Debug: {state}")
 
     def build_validation_dialog(self, result):
-        title = "檢查結果（有警告）" if result.has_warnings else "檢查結果（正常）"
+        title = translate_ui(
+            "dashboard.validation_warning"
+            if result.has_warnings else
+            "dashboard.validation_ok",
+            default=(
+                "檢查結果（有警告）"
+                if result.has_warnings else
+                "檢查結果（正常）"
+            ),
+        )
         return DashboardDialogPresentation(
             title=title,
             message=result.report,
@@ -252,26 +307,49 @@ class DashboardPresenter:
             "race_rhythm_text": self._build_race_rhythm_text(
                 rhythm_snapshot
             ),
+            "chorus_rhythm_text": self._build_chorus_rhythm_text(
+                rhythm_snapshot
+            ),
         }
         if household is None:
             return HouseholdSummaryPresentation(
-                title="家庭摘要",
-                overview_text="家庭資料尚未初始化。",
-                log_text="目前尚無家庭重點事件。",
+                title=translate_ui(
+                    "family_summary.title",
+                    default="家庭摘要",
+                ),
+                overview_text=translate_ui(
+                    "family_summary.not_initialized",
+                    default="家庭資料尚未初始化。",
+                ),
+                log_text=translate_ui(
+                    "family_summary.no_key_events",
+                    default="目前尚無家庭重點事件。",
+                ),
                 **summary_data,
             )
 
         overview_text = "\n".join(
             (
-                f"生活費: {household.living_fund} 元",
-                f"家庭壓力: {int(round(household.household_pressure))}%",
+                translate_ui(
+                    "family_summary.fund_overview",
+                    default="生活費: {amount} 元",
+                    amount=household.living_fund,
+                ),
+                translate_ui(
+                    "family_summary.pressure_overview",
+                    default="家庭壓力: {amount}%",
+                    amount=int(round(household.household_pressure)),
+                ),
             )
         )
         if not summary_entries:
             return HouseholdSummaryPresentation(
-                title="家庭摘要",
+                title=translate_ui("family_summary.title", default="家庭摘要"),
                 overview_text=overview_text,
-                log_text="目前尚無家庭重點事件。",
+                log_text=translate_ui(
+                    "family_summary.no_key_events",
+                    default="目前尚無家庭重點事件。",
+                ),
                 living_fund=int(household.living_fund),
                 household_pressure=float(household.household_pressure),
                 **summary_data,
@@ -279,7 +357,7 @@ class DashboardPresenter:
 
         log_lines = []
         for entry in summary_entries:
-            summary_text = entry.summary.strip() if getattr(entry, "summary", "") else "未命名事件"
+            summary_text = localized_event_summary(entry)
             wall_clock_time = float(getattr(entry, "wall_clock_time", 0.0) or 0.0)
             time_text = datetime.fromtimestamp(wall_clock_time).strftime("%H:%M:%S") if wall_clock_time > 0.0 else ""
             entry_parts = [f"#{entry.sequence:03d}"]
@@ -288,13 +366,25 @@ class DashboardPresenter:
             entry_parts.append(summary_text)
             delta_parts = []
             if entry.living_fund_delta:
-                delta_parts.append(f"生活費 {entry.living_fund_delta:+d}")
+                delta_parts.append(
+                    translate_ui(
+                        "events.deltas.living_fund",
+                        default="生活費 {amount:+d}",
+                        amount=entry.living_fund_delta,
+                    )
+                )
             if entry.household_pressure_delta:
-                delta_parts.append(f"壓力 {entry.household_pressure_delta:+.1f}")
+                delta_parts.append(
+                    translate_ui(
+                        "events.deltas.pressure",
+                        default="壓力 {amount:+.1f}",
+                        amount=entry.household_pressure_delta,
+                    )
+                )
             suffix = f" ({', '.join(delta_parts)})" if delta_parts else ""
             log_lines.append(" ".join(part for part in entry_parts if part).strip() + suffix)
         return HouseholdSummaryPresentation(
-            title="家庭摘要",
+            title=translate_ui("family_summary.title", default="家庭摘要"),
             overview_text=overview_text,
             log_text="\n".join(log_lines),
             living_fund=int(household.living_fund),
@@ -310,6 +400,9 @@ class DashboardPresenter:
     ):
         return HouseholdRhythmPresentation(
             race_rhythm_text=self._build_race_rhythm_text(
+                rhythm_snapshot
+            ),
+            chorus_rhythm_text=self._build_chorus_rhythm_text(
                 rhythm_snapshot
             ),
             members=self.build_household_member_presentations(
@@ -360,12 +453,16 @@ class DashboardPresenter:
                     summoned=summoned,
                     mood_score=mood_score,
                     mood_state=mood_state,
-                    mood_label=self.MOOD_STATE_LABELS.get(
-                        mood_state,
-                        "尚無資料" if mood_score is None else "平穩",
+                    mood_label=(
+                        translate_ui(
+                            "common.no_data",
+                            default="尚無資料",
+                        )
+                        if mood_score is None else
+                        self._mood_label(mood_state)
                     ),
                     form_key=form_key,
-                    form_label=self.FORM_LABELS[form_key],
+                    form_label=self._form_label(form_key),
                     sleep_rhythm_text=self._build_sleep_rhythm_text(
                         rhythm
                     ),
@@ -382,15 +479,68 @@ class DashboardPresenter:
             return ""
         status = str(getattr(snapshot, "race_status", "") or "")
         if status == "active":
-            return "競賽：進行中"
+            return translate_ui(
+                "rhythm.race_active",
+                default="競賽：進行中",
+            )
         if status == "cooldown":
             duration = format_compact_duration(
                 getattr(snapshot, "race_remaining_seconds", None)
             )
-            return f"競賽：約 {duration} 後再提案" if duration else "競賽：冷卻中"
+            return (
+                translate_ui(
+                    "rhythm.race_cooldown_duration",
+                    default="競賽：約 {duration} 後再提案",
+                    duration=duration,
+                )
+                if duration else
+                translate_ui("rhythm.race_cooldown", default="競賽：冷卻中")
+            )
         if status == "ready":
-            return "競賽：等待合適參賽者"
-        return "競賽：排程尚未啟動"
+            return translate_ui(
+                "rhythm.race_ready",
+                default="競賽：等待合適參賽者",
+            )
+        return translate_ui(
+            "rhythm.race_unscheduled",
+            default="競賽：排程尚未啟動",
+        )
+
+    @staticmethod
+    def _build_chorus_rhythm_text(snapshot):
+        if snapshot is None:
+            return ""
+        status = str(getattr(snapshot, "chorus_status", "") or "")
+        if status == "active":
+            return translate_ui(
+                "rhythm.chorus_active",
+                default="合奏：進行中",
+            )
+        if status == "cooldown":
+            duration = format_compact_duration(
+                getattr(snapshot, "chorus_remaining_seconds", None)
+            )
+            return (
+                translate_ui(
+                    "rhythm.chorus_cooldown_duration",
+                    default="合奏：約 {duration} 後再提案",
+                    duration=duration,
+                )
+                if duration else
+                translate_ui(
+                    "rhythm.chorus_cooldown",
+                    default="合奏：冷卻中",
+                )
+            )
+        if status == "ready":
+            return translate_ui(
+                "rhythm.chorus_ready",
+                default="合奏：等待合適表演者",
+            )
+        return translate_ui(
+            "rhythm.chorus_unscheduled",
+            default="合奏：排程尚未啟動",
+        )
 
     @staticmethod
     def _build_sleep_rhythm_text(rhythm):
@@ -398,17 +548,21 @@ class DashboardPresenter:
             return ""
         status = str(getattr(rhythm, "sleep_status", "") or "")
         labels = {
-            "settling": "準備入睡",
-            "sleeping": "睡眠中",
-            "waking": "正在醒來",
-            "standby": "睡意：待命",
+            "settling": translate_ui("rhythm.sleep_settling", default="準備入睡"),
+            "sleeping": translate_ui("rhythm.sleeping", default="睡眠中"),
+            "waking": translate_ui("rhythm.sleep_waking", default="正在醒來"),
+            "standby": translate_ui("rhythm.sleep_standby", default="睡意：待命"),
         }
         if status in labels:
             return labels[status]
         value = getattr(rhythm, "sleepiness_percent", None)
         if value is None:
-            return "睡意：計算中"
-        return f"睡意 {max(0, min(100, int(round(value))))}%"
+            return translate_ui("rhythm.sleep_calculating", default="睡意：計算中")
+        return translate_ui(
+            "rhythm.sleepiness",
+            default="睡意 {value}%",
+            value=max(0, min(100, int(round(value)))),
+        )
 
     @staticmethod
     def _build_transformation_rhythm_text(rhythm):
@@ -420,29 +574,47 @@ class DashboardPresenter:
         if status == "unavailable":
             return ""
         if status == "transition":
-            return "形態切換中"
+            return translate_ui("rhythm.form_transition", default="形態切換中")
         duration = format_compact_duration(
             getattr(rhythm, "transformation_remaining_seconds", None)
         )
         if status == "transformed":
             return (
-                f"變身剩餘約 {duration}"
+                translate_ui(
+                    "rhythm.form_transformed_remaining",
+                    default="變身剩餘約 {duration}",
+                    duration=duration,
+                )
                 if duration else
-                "目前為變身形態"
+                translate_ui(
+                    "rhythm.form_transformed",
+                    default="目前為變身形態",
+                )
             )
         if status == "cooldown":
             return (
-                f"變身冷卻約 {duration}"
+                translate_ui(
+                    "rhythm.form_cooldown_duration",
+                    default="變身冷卻約 {duration}",
+                    duration=duration,
+                )
                 if duration else
-                "變身冷卻中"
+                translate_ui(
+                    "rhythm.form_cooldown",
+                    default="變身冷卻中",
+                )
             )
         if status == "waiting":
             return (
-                f"變身重試約 {duration}"
+                translate_ui(
+                    "rhythm.transformation_retry_duration",
+                    default="變身重試約 {duration}",
+                    duration=duration,
+                )
                 if duration else
-                "等待安全變身"
+                translate_ui("rhythm.transformation_waiting", default="等待安全變身")
             )
-        return "變身：可排程"
+        return translate_ui("rhythm.transformation_ready", default="變身：可排程")
 
     def build_household_recent_event_presentation(self, entry):
         sequence = int(getattr(entry, "sequence", 0) or 0)
@@ -456,19 +628,24 @@ class DashboardPresenter:
         delta_parts = []
         living_fund_delta = int(getattr(entry, "living_fund_delta", 0) or 0)
         if living_fund_delta:
-            delta_parts.append(f"生活費 {living_fund_delta:+,d}")
+            delta_parts.append(translate_ui(
+                "events.deltas.living_fund",
+                default="生活費 {amount:+,d}",
+                amount=living_fund_delta,
+            ))
         pressure_delta = float(getattr(entry, "household_pressure_delta", 0.0) or 0.0)
         if pressure_delta:
-            delta_parts.append(f"壓力 {pressure_delta:+.1f}")
+            delta_parts.append(translate_ui(
+                "events.deltas.pressure",
+                default="壓力 {amount:+.1f}",
+                amount=pressure_delta,
+            ))
         return HouseholdRecentEventPresentation(
             sequence=sequence,
             timestamp_text=timestamp_text,
             channel=channel,
-            channel_label=self.SOCIAL_LOG_CHANNEL_LABELS.get(
-                channel,
-                channel or "事件",
-            ),
-            summary=str(getattr(entry, "summary", "") or "").strip() or "未命名事件",
+            channel_label=self._channel_label(channel),
+            summary=localized_event_summary(entry),
             delta_text=" · ".join(delta_parts),
         )
 
@@ -514,13 +691,26 @@ class DashboardPresenter:
                 participant_name=participant_name,
             )
         ]
-        title = f"事件日誌 - {self.SOCIAL_LOG_FILTER_LABELS[filter_mode]}"
+        filter_label = self._filter_label(filter_mode)
+        title = translate_ui(
+            "event_log.title_filtered",
+            default="事件日誌 - {filter}",
+            filter=filter_label,
+        )
         if filter_mode == "personal" and participant_name:
-            title = f"{title}: {participant_name}"
+            title = translate_ui(
+                "event_log.title_personal",
+                default="{title}: {character}",
+                title=title,
+                character=character_display_name(participant_name),
+            )
         log_text = (
             "\n".join(self.format_social_log_entry(entry) for entry in filtered_entries)
             if filtered_entries else
-            "目前沒有符合條件的紀錄。"
+            translate_ui(
+                "event_log.no_matching_records",
+                default="目前沒有符合條件的紀錄。",
+            )
         )
         structured_entries = tuple(
             self.build_social_log_entry_presentation(entry)
@@ -583,20 +773,30 @@ class DashboardPresenter:
         timestamp_text = (
             datetime.fromtimestamp(wall_clock_time).strftime("%m/%d %H:%M")
             if wall_clock_time > 0.0 else
-            f"時序 #{sequence:03d}"
+            translate_ui(
+                "event_log.sequence",
+                default="時序 #{sequence:03d}",
+                sequence=sequence,
+            )
         )
         channel = str(getattr(entry, "channel", "") or "")
-        channel_label = self.SOCIAL_LOG_CHANNEL_LABELS.get(channel, channel or "事件")
+        channel_label = self._channel_label(channel)
         actor_name = str(getattr(entry, "actor_name", "") or "").strip()
         target_name = str(getattr(entry, "target_name", "") or "").strip()
         if actor_name and target_name and actor_name != target_name:
-            participant_text = f"{actor_name} → {target_name}"
+            participant_text = (
+                f"{character_display_name(actor_name)} → "
+                f"{character_display_name(target_name)}"
+            )
         elif actor_name:
-            participant_text = actor_name
+            participant_text = character_display_name(actor_name)
         elif target_name:
-            participant_text = target_name
+            participant_text = character_display_name(target_name)
         else:
-            participant_text = "家庭／系統"
+            participant_text = translate_ui(
+                "event_log.family_system",
+                default="家庭／系統",
+            )
 
         effects = []
         living_fund_delta = int(getattr(entry, "living_fund_delta", 0) or 0)
@@ -604,9 +804,13 @@ class DashboardPresenter:
             effects.append(
                 SocialLogEffectPresentation(
                     key="living_fund",
-                    label="生活費",
+                    label=translate_ui("labels.living_fund", default="生活費"),
                     value=float(living_fund_delta),
-                    value_text=f"{living_fund_delta:+,d} 元",
+                    value_text=translate_ui(
+                        "common.currency_amount",
+                        default="{amount:+,d} 元",
+                        amount=living_fund_delta,
+                    ),
                 )
             )
         pressure_delta = float(getattr(entry, "household_pressure_delta", 0.0) or 0.0)
@@ -614,7 +818,7 @@ class DashboardPresenter:
             effects.append(
                 SocialLogEffectPresentation(
                     key="household_pressure",
-                    label="家庭壓力",
+                    label=translate_ui("labels.household_pressure", default="家庭壓力"),
                     value=pressure_delta,
                     value_text=f"{pressure_delta:+.1f}",
                 )
@@ -624,7 +828,7 @@ class DashboardPresenter:
             effects.append(
                 SocialLogEffectPresentation(
                     key="mood",
-                    label="心情",
+                    label=translate_ui("labels.mood", default="心情"),
                     value=mood_delta,
                     value_text=f"{mood_delta:+.1f}",
                 )
@@ -637,7 +841,7 @@ class DashboardPresenter:
             effects.append(
                 SocialLogEffectPresentation(
                     key=f"relationship_{metric_name}",
-                    label=self.RELATIONSHIP_METRIC_LABELS[metric_name],
+                    label=self._metric_label(metric_name),
                     value=value,
                     value_text=f"{value:+.2f}",
                 )
@@ -649,36 +853,54 @@ class DashboardPresenter:
         if event_type.startswith("race_"):
             direction_key = str(metadata.get("direction_key", "") or "")
             direction_label = {
-                "clockwise_left": "順時鐘（朝左）",
-                "counterclockwise_right": "逆時鐘（朝右）",
-            }.get(direction_key, "未記錄")
+                "clockwise_left": translate_ui(
+                    "events.directions.clockwise_left",
+                    default="順時鐘（朝左）",
+                ),
+                "counterclockwise_right": translate_ui(
+                    "events.directions.counterclockwise_right",
+                    default="逆時鐘（朝右）",
+                ),
+            }.get(direction_key, translate_ui("common.not_recorded", default="未記錄"))
+            not_recorded = translate_ui("common.not_recorded", default="未記錄")
             details.extend((
                 SocialLogDetailPresentation(
-                    "挑戰者",
-                    str(metadata.get("challenger_name", "") or "未記錄"),
+                    translate_ui("race.challenger", default="挑戰者"),
+                    character_display_name(
+                        str(metadata.get("challenger_name", "") or "")
+                    ) or not_recorded,
                 ),
                 SocialLogDetailPresentation(
-                    "對手",
-                    str(metadata.get("opponent_name", "") or "未記錄"),
+                    translate_ui("race.opponent", default="對手"),
+                    character_display_name(
+                        str(metadata.get("opponent_name", "") or "")
+                    ) or not_recorded,
                 ),
             ))
             completed_race = event_type == "race_completed"
             if completed_race and str(metadata.get("winner_name", "") or ""):
                 details.append(SocialLogDetailPresentation(
-                    "贏家",
-                    str(metadata.get("winner_name", "")),
+                    translate_ui("race.winner", default="贏家"),
+                    character_display_name(str(metadata.get("winner_name", ""))),
                 ))
             if completed_race and "race_distance_px" in metadata:
                 details.append(SocialLogDetailPresentation(
-                    "比賽距離",
+                    translate_ui("race.distance", default="比賽距離"),
                     f"{int(round(float(metadata.get('race_distance_px', 0.0) or 0.0)))} px",
                 ))
             if completed_race:
-                details.append(SocialLogDetailPresentation("方向", direction_label))
+                details.append(SocialLogDetailPresentation(
+                    translate_ui("race.direction", default="方向"),
+                    direction_label,
+                ))
             if completed_race and float(metadata.get("race_elapsed_seconds", 0.0) or 0.0) > 0.0:
                 details.append(SocialLogDetailPresentation(
-                    "比賽用時",
-                    f"{float(metadata.get('race_elapsed_seconds', 0.0)):.1f} 秒",
+                    translate_ui("race.elapsed", default="比賽用時"),
+                    translate_ui(
+                        "common.duration_seconds_decimal",
+                        default="{seconds:.1f} 秒",
+                        seconds=float(metadata.get("race_elapsed_seconds", 0.0)),
+                    ),
                 ))
 
         return SocialLogEntryPresentation(
@@ -689,7 +911,7 @@ class DashboardPresenter:
             category=str(getattr(entry, "category", "") or ""),
             event_type=str(getattr(entry, "event_type", "") or ""),
             importance=str(getattr(entry, "importance", "") or ""),
-            summary=str(getattr(entry, "summary", "") or "").strip() or "未命名事件",
+            summary=localized_event_summary(entry),
             actor_name=actor_name,
             target_name=target_name,
             participant_text=participant_text,
@@ -699,11 +921,11 @@ class DashboardPresenter:
         )
 
     def format_social_log_entry(self, entry):
-        summary_text = str(getattr(entry, "summary", "") or "").strip() or "未命名事件"
+        summary_text = localized_event_summary(entry)
         wall_clock_time = float(getattr(entry, "wall_clock_time", 0.0) or 0.0)
         time_text = datetime.fromtimestamp(wall_clock_time).strftime("%H:%M:%S") if wall_clock_time > 0.0 else ""
         channel = str(getattr(entry, "channel", "") or "")
-        channel_label = self.SOCIAL_LOG_CHANNEL_LABELS.get(channel, channel or "事件")
+        channel_label = self._channel_label(channel)
         parts = [f"#{int(getattr(entry, 'sequence', 0)):03d}"]
         if time_text:
             parts.append(time_text)
@@ -712,55 +934,83 @@ class DashboardPresenter:
         actor_name = str(getattr(entry, "actor_name", "") or "").strip()
         target_name = str(getattr(entry, "target_name", "") or "").strip()
         if actor_name and target_name and actor_name != target_name:
-            parts.append(f"{actor_name} -> {target_name}:")
+            parts.append(
+                f"{character_display_name(actor_name)} -> "
+                f"{character_display_name(target_name)}:"
+            )
         elif actor_name:
-            parts.append(f"{actor_name}:")
+            parts.append(f"{character_display_name(actor_name)}:")
         elif target_name:
-            parts.append(f"{target_name}:")
+            parts.append(f"{character_display_name(target_name)}:")
         parts.append(summary_text)
 
         delta_parts = []
         if getattr(entry, "living_fund_delta", 0):
-            delta_parts.append(f"生活費 {int(getattr(entry, 'living_fund_delta')):+d}")
+            delta_parts.append(translate_ui(
+                "events.deltas.living_fund",
+                default="生活費 {amount:+d}",
+                amount=int(getattr(entry, "living_fund_delta")),
+            ))
         pressure_delta = float(getattr(entry, "household_pressure_delta", 0.0) or 0.0)
         if pressure_delta:
-            delta_parts.append(f"壓力 {pressure_delta:+.1f}")
+            delta_parts.append(translate_ui(
+                "events.deltas.pressure",
+                default="壓力 {amount:+.1f}",
+                amount=pressure_delta,
+            ))
         mood_delta = float(getattr(entry, "mood_delta", 0.0) or 0.0)
         if mood_delta:
-            delta_parts.append(f"心情 {mood_delta:+.1f}")
+            delta_parts.append(translate_ui(
+                "events.deltas.mood",
+                default="心情 {amount:+.1f}",
+                amount=mood_delta,
+            ))
         relation_delta = dict(getattr(entry, "relation_delta", {}) or {})
         if relation_delta:
             relation_text = ", ".join(
-                f"{name} {float(value):+.2f}"
+                f"{self._metric_label(name)} {float(value):+.2f}"
                 for name, value in relation_delta.items()
                 if float(value) != 0.0
             )
             if relation_text:
-                delta_parts.append(f"關係 {relation_text}")
+                delta_parts.append(translate_ui(
+                    "events.deltas.relationship",
+                    default="關係 {details}",
+                    details=relation_text,
+                ))
         suffix = f" ({'; '.join(delta_parts)})" if delta_parts else ""
         return " ".join(part for part in parts if part).strip() + suffix
 
     def build_relationship_table(self, household, pet_names=()):
         if household is None:
             return RelationshipTablePresentation(
-                title="關係表",
-                table_text="家庭資料尚未初始化。",
+                title=translate_ui("relationship.title", default="關係表"),
+                table_text=translate_ui(
+                    "family_summary.not_initialized",
+                    default="家庭資料尚未初始化。",
+                ),
             )
 
         actor_names = self.collect_relationship_actor_names(household, pet_names=pet_names)
         if len(actor_names) < 2:
             return RelationshipTablePresentation(
-                title="關係表",
-                table_text="目前沒有足夠角色可顯示關係。",
+                title=translate_ui("relationship.title", default="關係表"),
+                table_text=translate_ui(
+                    "relationship.not_enough_characters",
+                    default="目前沒有足夠角色可顯示關係。",
+                ),
             )
 
         lines = [
-            "好感度為暫定加權分數：熟悉 45% + 信任 30% + 依附 35% - 緊張 20%",
+            translate_ui(
+                "relationship.formula",
+                default="好感度為暫定加權分數：熟悉 45% + 信任 30% + 依附 35% - 緊張 20%",
+            ),
             "",
         ]
         rows = []
         for actor_name in actor_names:
-            lines.append(f"[{actor_name}]")
+            lines.append(f"[{character_display_name(actor_name)}]")
             for target_name in actor_names:
                 if target_name == actor_name:
                     continue
@@ -771,7 +1021,7 @@ class DashboardPresenter:
             lines.append("")
 
         return RelationshipTablePresentation(
-            title="關係表",
+            title=translate_ui("relationship.title", default="關係表"),
             table_text="\n".join(lines).rstrip(),
             actor_names=actor_names,
             rows=tuple(rows),
@@ -817,14 +1067,21 @@ class DashboardPresenter:
         )
 
     def format_relationship_row_presentation(self, row):
-        return (
-            f"  -> {row.target_name}: "
-            f"好感度 {row.affinity:5.2f} | "
-            f"熟悉 {row.familiarity:5.2f} / "
-            f"信任 {row.trust:5.2f} / "
-            f"依附 {row.attachment:5.2f} / "
-            f"緊張 {row.tension:5.2f} | "
-            f"事件 {row.event_count}"
+        return translate_ui(
+            "relationship.row",
+            default=(
+                "  -> {target}: 好感度 {affinity:5.2f} | "
+                "熟悉 {familiarity:5.2f} / 信任 {trust:5.2f} / "
+                "依附 {attachment:5.2f} / 緊張 {tension:5.2f} | "
+                "事件 {event_count}"
+            ),
+            target=character_display_name(row.target_name),
+            affinity=row.affinity,
+            familiarity=row.familiarity,
+            trust=row.trust,
+            attachment=row.attachment,
+            tension=row.tension,
+            event_count=row.event_count,
         )
 
     def calculate_relationship_affinity(self, entry):

@@ -31,6 +31,7 @@ if ([string]::IsNullOrWhiteSpace($PythonExe)) {
 }
 
 $scriptPath = Join-Path $repoRoot "lab_2.py"
+$updaterScriptPath = Join-Path $repoRoot "tanuki_updater.py"
 $iconPath = Join-Path $repoRoot "luna.ico"
 $assetsDir = Join-Path $repoRoot "assets_cropped"
 $itemsDir = Join-Path $repoRoot "items"
@@ -46,13 +47,18 @@ $uiFamilyPath = Join-Path $uiDir "family_status_abstract.png"
 $uiFamilyCharacterPath = Join-Path $uiDir "family_status_abstract_char.gif"
 $uiSettingsPath = Join-Path $uiDir "status_setting.png"
 $uiSettingsCharacterPath = Join-Path $uiDir "status_setting_char.gif"
+$uiAchievementPath = Join-Path $uiDir "achievement.png"
+$uiAchievementCharacterPath = Join-Path $uiDir "achievement_char.gif"
+$uiTrophiesDir = Join-Path $uiDir "trophies"
+$uiLocalesDir = Join-Path $uiDir "locales"
+$uiAchievementCatalogPath = Join-Path $uiTrophiesDir "achievement_catalog_draft.json"
 $uiDashboardSideIconPath = Join-Path $uiDir "side.png"
-$heartPath = Join-Path $repoRoot "heart.png"
-$starPath = Join-Path $repoRoot "star.png"
-$thinkPath = Join-Path $repoRoot "think.png"
+$petOverlaysDir = Join-Path $uiDir "pet_overlays"
 $distDir = Join-Path $OutputRoot "dist"
 $workDir = Join-Path $OutputRoot "build\lab_2"
+$updaterWorkDir = Join-Path $OutputRoot "build\tanuki_updater"
 $buildName = "TanukiPet"
+$updaterBuildName = "TanukiUpdater"
 
 if ([string]::IsNullOrWhiteSpace($PythonExe) -or -not (Test-Path -LiteralPath $PythonExe)) {
     throw "Missing Python interpreter. Set -PythonExe or TANUKI_PYTHON."
@@ -60,6 +66,7 @@ if ([string]::IsNullOrWhiteSpace($PythonExe) -or -not (Test-Path -LiteralPath $P
 
 $requiredPaths = @(
     @{ Label = "script"; Path = $scriptPath },
+    @{ Label = "updater script"; Path = $updaterScriptPath },
     @{ Label = "icon"; Path = $iconPath },
     @{ Label = "assets directory"; Path = $assetsDir },
     @{ Label = "item icons directory"; Path = $itemsDir },
@@ -79,10 +86,21 @@ $requiredPaths = @(
     @{ Label = "family UI character"; Path = $uiFamilyCharacterPath },
     @{ Label = "settings UI background"; Path = $uiSettingsPath },
     @{ Label = "settings UI character"; Path = $uiSettingsCharacterPath },
+    @{ Label = "achievement UI background"; Path = $uiAchievementPath },
+    @{ Label = "achievement UI character"; Path = $uiAchievementCharacterPath },
+    @{ Label = "achievement trophy directory"; Path = $uiTrophiesDir },
+    @{ Label = "UI locale directory"; Path = $uiLocalesDir },
+    @{ Label = "Traditional Chinese locale"; Path = (Join-Path $uiLocalesDir "zh_TW.json") },
+    @{ Label = "Simplified Chinese locale"; Path = (Join-Path $uiLocalesDir "zh_CN.json") },
+    @{ Label = "Japanese locale"; Path = (Join-Path $uiLocalesDir "ja_JP.json") },
+    @{ Label = "English locale"; Path = (Join-Path $uiLocalesDir "en_US.json") },
+    @{ Label = "achievement definition catalog"; Path = $uiAchievementCatalogPath },
     @{ Label = "dashboard launcher side icon"; Path = $uiDashboardSideIconPath },
-    @{ Label = "heart image"; Path = $heartPath },
-    @{ Label = "star image"; Path = $starPath },
-    @{ Label = "thought icon"; Path = $thinkPath }
+    @{ Label = "heart image"; Path = (Join-Path $petOverlaysDir "heart.png") },
+    @{ Label = "star image"; Path = (Join-Path $petOverlaysDir "star.png") },
+    @{ Label = "thought icon"; Path = (Join-Path $petOverlaysDir "think.png") },
+    @{ Label = "chorus music icon"; Path = (Join-Path $petOverlaysDir "music.png") },
+    @{ Label = "chorus audience icon"; Path = (Join-Path $petOverlaysDir "audience.png") }
 )
 foreach ($required in $requiredPaths) {
     if (-not (Test-Path -LiteralPath $required.Path)) {
@@ -136,11 +154,13 @@ if ($CheckOnly) {
   --add-data "${uiFamilyCharacterPath};UI" `
   --add-data "${uiSettingsPath};UI" `
   --add-data "${uiSettingsCharacterPath};UI" `
+  --add-data "${uiAchievementPath};UI" `
+  --add-data "${uiAchievementCharacterPath};UI" `
+  --add-data "${uiTrophiesDir};UI/trophies" `
+  --add-data "${uiLocalesDir};UI/locales" `
   --add-data "${uiDashboardSideIconPath};UI" `
   --add-data "${uiFamilyIconsDir};UI/family_icon" `
-  --add-data "${heartPath};." `
-  --add-data "${starPath};." `
-  --add-data "${thinkPath};." `
+  --add-data "${petOverlaysDir};UI/pet_overlays" `
   --collect-all pynput `
   --clean `
   --specpath $workDir `
@@ -152,8 +172,26 @@ if ($LASTEXITCODE -ne 0) {
     throw "Build failed with code $LASTEXITCODE."
 }
 
+& $PythonExe -m PyInstaller `
+  --noconfirm `
+  --onefile `
+  --windowed `
+  --name $updaterBuildName `
+  --icon $iconPath `
+  --clean `
+  --specpath $updaterWorkDir `
+  --workpath $updaterWorkDir `
+  --distpath $distDir `
+  $updaterScriptPath
+
+if ($LASTEXITCODE -ne 0) {
+    throw "Updater build failed with code $LASTEXITCODE."
+}
+
 $buildDir = Join-Path $distDir $buildName
+$updaterPath = Join-Path $distDir "$updaterBuildName.exe"
 Write-Host ""
 Write-Host "Build complete."
 Write-Host "Output: $buildDir"
 Write-Host "Packaged name: $buildName"
+Write-Host "Updater: $updaterPath"

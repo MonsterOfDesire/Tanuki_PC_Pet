@@ -88,6 +88,7 @@ class FakePet:
         self.care_cooldown_end = 0.0
         self.direction = 1
         self._x = 100.0
+        self.visual_afterglow_calls = []
 
     def isVisible(self):
         return self.visible
@@ -113,6 +114,10 @@ class FakePet:
 
     def refresh_movement_state(self):
         return None
+
+    def start_visual_band_afterglow(self, band, *, duration, now):
+        self.visual_afterglow_calls.append((band, duration, now))
+        return True
 
     def x(self):
         return self._x
@@ -162,6 +167,7 @@ class SleepExecutorTests(unittest.TestCase):
         )
 
     def test_schedule_runs_all_three_manifest_context_phases(self):
+        self.pet.mood_score = 52.0
         self.assertEqual(self.update(0.0), ())
 
         started = self.update(120.0)[0]
@@ -191,11 +197,24 @@ class SleepExecutorTests(unittest.TestCase):
 
         finished = self.update(171.0)[0]
         self.assertTrue(finished.finished)
+        self.assertEqual(self.pet.mood_score, 55.0)
         self.assertFalse(self.pet.activity_state.active)
         self.assertEqual(
             self.executor.schedules[self.pet.name].next_proposal_at,
             351.0,
         )
+
+    def test_natural_sleep_does_not_raise_mood_above_maintenance_ceiling(self):
+        self.pet.mood_score = 60.0
+        self.update(0.0)
+        self.update(120.0)
+        self.update(123.0)
+        self.update(168.0)
+
+        finished = self.update(171.0)[0]
+
+        self.assertTrue(finished.finished)
+        self.assertEqual(self.pet.mood_score, 60.0)
 
     def test_user_click_enters_waking_phase_instead_of_force_interrupting(self):
         self.update(0.0)
@@ -217,6 +236,72 @@ class SleepExecutorTests(unittest.TestCase):
             self.pet.apply_calls[-1][1][0],
             ["activity_sleep_waking-frame"],
         )
+
+    def test_chorus_noise_wakes_with_low_band_without_changing_mood(self):
+        self.update(0.0)
+        self.update(120.0)
+        self.update(123.0)
+        original_mood = self.pet.mood_score
+
+        result = self.executor.request_early_wake(
+            self.pet,
+            now=124.0,
+            reason="chorus_noise",
+            waking_band_override="low",
+            visual_afterglow_seconds=8.0,
+        )
+
+        self.assertTrue(result.phase_changed)
+        self.assertEqual(self.pet.mood_score, original_mood)
+        self.assertEqual(
+            self.pet.asset_manager.calls[-1],
+            ("activity_sleep_waking", 30.0),
+        )
+        self.assertEqual(
+            self.pet.visual_afterglow_calls,
+            [("low", 8.0, 124.0)],
+        )
+
+        finished = self.update(127.0)[0]
+        self.assertTrue(finished.finished)
+        self.assertEqual(self.pet.mood_score, original_mood)
+
+    def test_sandbox_control_starts_sleep_and_reuses_waking_flow(self):
+        started = self.executor.request_sandbox_toggle(
+            self.pet,
+            now=10.0,
+            world_mode="sandbox",
+            pets=(self.pet,),
+        )
+
+        self.assertTrue(started.started)
+        activity = self.coordinator.get_activity(started.activity_id)
+        self.assertEqual(activity.source, "sleep_sandbox_control")
+        self.assertEqual(
+            activity.metadata["sleep_trigger"],
+            "sandbox_control",
+        )
+
+        waking = self.executor.request_sandbox_toggle(
+            self.pet,
+            now=11.0,
+            world_mode="sandbox",
+            pets=(self.pet,),
+        )
+
+        self.assertTrue(waking.phase_changed)
+        self.assertEqual(self.pet.activity_state.phase, SLEEP_WAKING_PHASE)
+
+    def test_sleep_control_is_sandbox_only(self):
+        result = self.executor.request_sandbox_toggle(
+            self.pet,
+            now=10.0,
+            world_mode="golden_legend",
+            pets=(self.pet,),
+        )
+
+        self.assertFalse(result.handled)
+        self.assertEqual(result.reason, "sandbox_required")
 
     def test_multiple_pets_can_auto_sleep_independently(self):
         second_pet = FakePet("Tokai Teio")

@@ -1,4 +1,4 @@
-from PyQt6.QtCore import QSize, Qt, QTimer
+from PyQt6.QtCore import QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QIcon
 from PyQt6.QtWidgets import (
     QAbstractItemView,
@@ -20,6 +20,7 @@ from .ui_icons import EVENT_CHANNEL_COLORS, create_ui_icon, create_ui_pixmap
 from .ui_localization import (
     character_display_name,
     localize_character_names_in_text,
+    translate_ui,
 )
 from .ui_theme import DEFAULT_UI_THEME
 
@@ -30,6 +31,31 @@ MOOD_BAND_COLORS = {
     "depressed": "#4f83b7",
     "unknown": "#8a938c",
 }
+
+
+class ClickableSummaryFrame(QFrame):
+    clicked = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton and self.rect().contains(
+            event.position().toPoint()
+        ):
+            self.clicked.emit()
+            event.accept()
+            return
+        super().mouseReleaseEvent(event)
+
+    def keyPressEvent(self, event):
+        if event.key() in {Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Space}:
+            self.clicked.emit()
+            event.accept()
+            return
+        super().keyPressEvent(event)
 
 
 class FamilyMemberCard(QFrame):
@@ -80,7 +106,7 @@ class FamilyMemberCard(QFrame):
             )
         )
         mood_icon.setFixedSize(17, 17)
-        mood_icon.setToolTip(f"心情：{member.mood_label}")
+        mood_icon.setToolTip(self._mood_heading(member.mood_label))
         self.mood_icon = mood_icon
         mood_row.addWidget(mood_icon)
         self.mood_bar = QProgressBar()
@@ -108,11 +134,7 @@ class FamilyMemberCard(QFrame):
         mood_row.addWidget(self.mood_value_label)
         layout.addLayout(mood_row)
 
-        self.form_status_label = QLabel(
-            "✦ 變身形態"
-            if member.form_key == "transformed"
-            else "◇ 普通形態"
-        )
+        self.form_status_label = QLabel(self._form_status_text(member.form_key))
         self.form_status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.form_status_label.setProperty(
             "tanukiRole",
@@ -149,9 +171,7 @@ class FamilyMemberCard(QFrame):
         )
         layout.addWidget(self.transformation_rhythm_label)
 
-        self.summon_status_label = QLabel(
-            "● 召喚中" if member.summoned else "○ 待命"
-        )
+        self.summon_status_label = QLabel(self._summon_status_text(member.summoned))
         self.summon_status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.summon_status_label.setProperty("tanukiRole", "familySummonStatus")
         self.summon_status_label.setProperty("summoned", bool(member.summoned))
@@ -183,7 +203,9 @@ class FamilyMemberCard(QFrame):
                     size=15,
                 )
             )
-        self.mood_icon.setToolTip(f"心情：{member.mood_label}")
+        self.name_label.setText(character_display_name(member.character_name))
+        self.name_label.setToolTip(character_display_name(member.character_name))
+        self.mood_icon.setToolTip(self._mood_heading(member.mood_label))
         mood_value = (
             0
             if member.mood_score is None else
@@ -206,7 +228,7 @@ class FamilyMemberCard(QFrame):
         transformed = member.form_key == "transformed"
         self._set_label_text(
             self.form_status_label,
-            "✦ 變身形態" if transformed else "◇ 普通形態",
+            self._form_status_text(member.form_key),
         )
         if bool(self.form_status_label.property("transformed")) != transformed:
             self.form_status_label.setProperty("transformed", transformed)
@@ -223,7 +245,7 @@ class FamilyMemberCard(QFrame):
 
         self._set_label_text(
             self.summon_status_label,
-            "● 召喚中" if summoned else "○ 待命",
+            self._summon_status_text(summoned),
         )
         if (
             bool(self.summon_status_label.property("summoned"))
@@ -236,25 +258,59 @@ class FamilyMemberCard(QFrame):
 
     def _apply_tooltip(self, member):
         display_name = character_display_name(member.character_name)
-        self.setToolTip(
-            f"{display_name}\n"
-            f"心情：{member.mood_label}"
-            + (
-                "" if member.mood_score is None else
-                f"（{member.mood_score:.0f}/100）"
+        mood = member.mood_label
+        if member.mood_score is not None:
+            mood = translate_ui(
+                "family_summary.mood_score",
+                default="{mood}（{score:.0f}/100）",
+                mood=mood,
+                score=member.mood_score,
             )
-            + f"\n形態：{member.form_label}"
-            + (
-                f"\n{member.sleep_rhythm_text}"
-                if member.sleep_rhythm_text else
-                ""
-            )
-            + (
-                f"\n{member.transformation_rhythm_text}"
-                if member.transformation_rhythm_text else
-                ""
-            )
-            + f"\n{'目前已召喚' if member.summoned else '目前待命'}"
+        lines = [
+            display_name,
+            translate_ui(
+                "family_summary.mood_line",
+                default="心情：{mood}",
+                mood=mood,
+            ),
+            translate_ui(
+                "family_summary.form_line",
+                default="形態：{form}",
+                form=member.form_label,
+            ),
+        ]
+        if member.sleep_rhythm_text:
+            lines.append(member.sleep_rhythm_text)
+        if member.transformation_rhythm_text:
+            lines.append(member.transformation_rhythm_text)
+        lines.append(translate_ui(
+            "family_summary.summoned_now" if member.summoned else
+            "family_summary.standby_now",
+            default="目前已召喚" if member.summoned else "目前待命",
+        ))
+        self.setToolTip("\n".join(lines))
+
+    @staticmethod
+    def _mood_heading(mood_label):
+        return translate_ui(
+            "family_summary.mood_line",
+            default="心情：{mood}",
+            mood=mood_label,
+        )
+
+    @staticmethod
+    def _form_status_text(form_key):
+        return translate_ui(
+            "family_summary.form_transformed" if form_key == "transformed"
+            else "family_summary.form_base",
+            default="✦ 變身形態" if form_key == "transformed" else "◇ 普通形態",
+        )
+
+    @staticmethod
+    def _summon_status_text(summoned):
+        return translate_ui(
+            "family_summary.summoned" if summoned else "family_summary.standby",
+            default="● 召喚中" if summoned else "○ 待命",
         )
 
     @staticmethod
@@ -291,6 +347,8 @@ class FamilySummaryPanel(QWidget):
         self.theme = theme
         self.assets = assets
         self.member_cards = {}
+        self.metric_caption_labels = {}
+        self.stat_caption_labels = {}
         self.avatar_pixmaps = self._load_avatar_pixmaps(assets)
         self.rhythm_refresh_timer = QTimer(self)
         self.rhythm_refresh_timer.setInterval(1000)
@@ -318,7 +376,20 @@ class FamilySummaryPanel(QWidget):
         self.race_rhythm_label.setToolTip(
             "顯示下一次自主競賽提案的排程；實際開始仍需通過資格與距離判定。"
         )
-        heading_row.addWidget(self.race_rhythm_label)
+        self.chorus_rhythm_label = QLabel("")
+        self.chorus_rhythm_label.setProperty(
+            "tanukiRole",
+            "familyRhythmStatus",
+        )
+        self.chorus_rhythm_label.setToolTip(
+            "顯示下一次自主合奏提案的排程；實際開始仍需通過資格與反應判定。"
+        )
+        rhythm_status_layout = QVBoxLayout()
+        rhythm_status_layout.setContentsMargins(0, 0, 0, 0)
+        rhythm_status_layout.setSpacing(0)
+        rhythm_status_layout.addWidget(self.race_rhythm_label)
+        rhythm_status_layout.addWidget(self.chorus_rhythm_label)
+        heading_row.addLayout(rhythm_status_layout)
         root_layout.addLayout(heading_row)
 
         self.unavailable_label = QLabel("家庭資料尚未連接執行中的 Dashboard。")
@@ -398,9 +469,9 @@ class FamilySummaryPanel(QWidget):
         members_icon = QLabel()
         members_icon.setPixmap(create_ui_pixmap("social", color="#2b8b4b", size=18))
         members_header.addWidget(members_icon)
-        members_label = QLabel("家庭成員")
-        members_label.setProperty("tanukiRole", "familySection")
-        members_header.addWidget(members_label)
+        self.members_section_label = QLabel("家庭成員")
+        self.members_section_label.setProperty("tanukiRole", "familySection")
+        members_header.addWidget(self.members_section_label)
         members_header.addStretch(1)
         self.member_count_label = QLabel("0 人")
         self.member_count_label.setProperty("tanukiRole", "familySectionCount")
@@ -447,9 +518,9 @@ class FamilySummaryPanel(QWidget):
         events_icon = QLabel()
         events_icon.setPixmap(create_ui_pixmap("story", color="#2b8b4b", size=18))
         events_header.addWidget(events_icon)
-        events_label = QLabel("近期事件")
-        events_label.setProperty("tanukiRole", "familySection")
-        events_header.addWidget(events_label)
+        self.events_section_label = QLabel("近期事件")
+        self.events_section_label.setProperty("tanukiRole", "familySection")
+        events_header.addWidget(self.events_section_label)
         events_header.addStretch(1)
         events_layout.addLayout(events_header)
 
@@ -522,15 +593,16 @@ class FamilySummaryPanel(QWidget):
             stat_layout.addLayout(text_column)
             stats_layout.addWidget(stat_widget, stretch=1)
             self.stat_value_labels[key] = value_label
+            self.stat_caption_labels[key] = caption
 
-        self.achievement_slot = QFrame()
+        self.achievement_slot = ClickableSummaryFrame()
         self.achievement_slot.setObjectName("tanukiAchievementSummarySlot")
         self.achievement_slot.setProperty("tanukiRole", "familyAchievementSlot")
-        self.achievement_slot.setAccessibleName("成就摘要；尚未啟用")
-        self.achievement_slot.setToolTip(
-            "成就規則與資料格式確定後，將由此區塊顯示正式摘要。"
+        self.achievement_slot.setAccessibleName("開啟獎盃蒐集櫃")
+        self.achievement_slot.setToolTip("開啟獎盃蒐集櫃")
+        self.achievement_slot.clicked.connect(
+            self._handle_open_achievement_cabinet
         )
-        self.achievement_slot.setEnabled(False)
         achievement_layout = QHBoxLayout(self.achievement_slot)
         achievement_layout.setContentsMargins(0, 0, 0, 0)
         achievement_layout.setSpacing(theme.spacing_xs)
@@ -542,10 +614,10 @@ class FamilySummaryPanel(QWidget):
         achievement_text_column = QVBoxLayout()
         achievement_text_column.setContentsMargins(0, 0, 0, 0)
         achievement_text_column.setSpacing(0)
-        achievement_caption = QLabel("成就摘要")
-        achievement_caption.setProperty("tanukiRole", "familyStatCaption")
-        achievement_text_column.addWidget(achievement_caption)
-        self.achievement_status_label = QLabel("尚未啟用")
+        self.achievement_caption = QLabel("成就摘要")
+        self.achievement_caption.setProperty("tanukiRole", "familyStatCaption")
+        achievement_text_column.addWidget(self.achievement_caption)
+        self.achievement_status_label = QLabel("尚無成就資料")
         self.achievement_status_label.setProperty(
             "tanukiRole",
             "familyAchievementStatus",
@@ -560,6 +632,81 @@ class FamilySummaryPanel(QWidget):
         root_layout.addWidget(self.stats_frame)
 
         self.set_binding(binding)
+        self.retranslate_ui()
+
+    def retranslate_ui(self):
+        if self.binding is None:
+            self.title_label.setText(translate_ui(
+                "family_summary.status_title",
+                default="家庭狀態",
+            ))
+        self.race_rhythm_label.setToolTip(translate_ui(
+            "family_summary.race_rhythm_tooltip",
+            default="顯示下一次自主競賽提案的排程；實際開始仍需通過資格與距離判定。",
+        ))
+        self.chorus_rhythm_label.setToolTip(translate_ui(
+            "family_summary.chorus_rhythm_tooltip",
+            default="顯示下一次自主合奏提案的排程；實際開始仍需通過資格與反應判定。",
+        ))
+        self.unavailable_label.setText(translate_ui(
+            "family_summary.unavailable",
+            default="家庭資料尚未連接執行中的 Dashboard。",
+        ))
+        captions = {
+            "economy": translate_ui("labels.living_fund", default="生活費"),
+            "household_pressure": translate_ui("labels.household_pressure", default="家庭壓力"),
+            "personal": translate_ui("family_summary.current_summons", default="目前召喚"),
+        }
+        for key, label in self.metric_caption_labels.items():
+            label.setText(captions.get(key, key))
+        self.donate_button.setAccessibleName(translate_ui(
+            "family_summary.donate_accessible",
+            default="捐生活費 100 元",
+        ))
+        self.members_section_label.setText(translate_ui(
+            "family_summary.members",
+            default="家庭成員",
+        ))
+        self.events_section_label.setText(translate_ui(
+            "family_summary.recent_events",
+            default="近期事件",
+        ))
+        self.recent_event_table.setAccessibleName(translate_ui(
+            "family_summary.recent_events_accessible",
+            default="家庭近期事件",
+        ))
+        self.members_empty_label.setText(translate_ui(
+            "family_summary.no_runtime_members",
+            default="目前沒有角色 runtime 資料。",
+        ))
+        self.events_empty_label.setText(translate_ui(
+            "family_summary.no_key_events",
+            default="目前尚無家庭重點事件。",
+        ))
+        stat_defaults = {
+            "average_mood": "平均心情",
+            "fund_delta": "近期收支",
+            "pressure_delta": "壓力變化",
+            "event_count": "事件數",
+        }
+        for key, label in self.stat_caption_labels.items():
+            label.setText(translate_ui(
+                f"family_summary.stats.{key}",
+                default=stat_defaults[key],
+            ))
+        self.achievement_caption.setText(translate_ui(
+            "family_summary.achievement_summary",
+            default="成就摘要",
+        ))
+        self.achievement_slot.setToolTip(translate_ui(
+            "family_summary.open_trophy_cabinet",
+            default="開啟獎盃蒐集櫃",
+        ))
+        for card in self.member_cards.values():
+            card.apply_live_member(card.member)
+        self._update_donation_state()
+        if self.binding is not None:
+            self.refresh_from_binding()
 
     def set_binding(self, binding):
         self.binding = binding
@@ -585,6 +732,50 @@ class FamilySummaryPanel(QWidget):
         if self.binding is None:
             return
         self.apply_presentation(self.binding.presentation())
+        self.refresh_achievement_summary_from_binding()
+
+    def refresh_achievement_summary_from_binding(self):
+        provider = getattr(self.binding, "achievement_summary", None)
+        presentation = provider() if callable(provider) else None
+        self.apply_achievement_summary(presentation)
+
+    def apply_achievement_summary(self, presentation):
+        if presentation is None:
+            no_data = translate_ui(
+                "family_summary.no_achievement_data",
+                default="尚無成就資料",
+            )
+            self.achievement_status_label.setText(no_data)
+            self.achievement_slot.setAccessibleName(
+                translate_ui(
+                    "family_summary.open_trophy_cabinet_status",
+                    default="開啟獎盃蒐集櫃；{status}",
+                    status=no_data,
+                )
+            )
+            self.achievement_icon_label.setPixmap(
+                create_ui_pixmap("achievement", color="#8d8a78", size=18)
+            )
+            return
+        status_text = str(
+            getattr(presentation, "summary_text", "") or ""
+        )
+        mode_label = str(
+            getattr(presentation, "mode_label", "") or ""
+        )
+        self.achievement_status_label.setText(status_text)
+        self.achievement_status_label.setToolTip(status_text)
+        self.achievement_slot.setAccessibleName(
+            translate_ui(
+                "family_summary.open_trophy_cabinet_mode_status",
+                default="開啟獎盃蒐集櫃；{mode}；{status}",
+                mode=mode_label,
+                status=status_text,
+            )
+        )
+        self.achievement_icon_label.setPixmap(
+            create_ui_pixmap("achievement", color="#8b672d", size=18)
+        )
 
     def refresh_rhythm_from_binding(self):
         if self.binding is None:
@@ -615,6 +806,11 @@ class FamilySummaryPanel(QWidget):
         )
         if self.race_rhythm_label.text() != race_text:
             self.race_rhythm_label.setText(race_text)
+        chorus_text = str(
+            getattr(presentation, "chorus_rhythm_text", "") or ""
+        )
+        if self.chorus_rhythm_label.text() != chorus_text:
+            self.chorus_rhythm_label.setText(chorus_text)
         for member in members:
             card = self.member_cards.get(member.character_name)
             if card is not None:
@@ -622,28 +818,45 @@ class FamilySummaryPanel(QWidget):
 
     def apply_presentation(self, presentation):
         if presentation is None:
-            self.title_label.setText("家庭狀態")
+            self.title_label.setText(translate_ui(
+                "family_summary.status_title",
+                default="家庭狀態",
+            ))
             self.race_rhythm_label.setText("")
+            self.chorus_rhythm_label.setText("")
             self.fund_value_label.setText("--")
             self.pressure_value_label.setText("--")
             self.pressure_level_label.setText("--")
             self.pressure_bar.setValue(0)
             self.summon_value_label.setText("0 / 0")
-            self.summon_hint_label.setText("尚無成員")
+            self.summon_hint_label.setText(translate_ui(
+                "family_summary.no_members",
+                default="尚無成員",
+            ))
             self._replace_member_cards(())
             self._populate_recent_events(())
             self._apply_stats(None)
             self._update_donation_state()
             return
 
-        self.title_label.setText(presentation.title or "家庭狀態")
+        self.title_label.setText(presentation.title or translate_ui(
+            "family_summary.status_title",
+            default="家庭狀態",
+        ))
         self.race_rhythm_label.setText(
             getattr(presentation, "race_rhythm_text", "") or ""
+        )
+        self.chorus_rhythm_label.setText(
+            getattr(presentation, "chorus_rhythm_text", "") or ""
         )
         living_fund = presentation.living_fund
         pressure = presentation.household_pressure
         self.fund_value_label.setText(
-            f"{living_fund:,} 元" if living_fund is not None else "--"
+            translate_ui(
+                "common.currency_amount_unsigned",
+                default="{amount:,} 元",
+                amount=living_fund,
+            ) if living_fund is not None else "--"
         )
         if pressure is None:
             self.pressure_value_label.setText("--")
@@ -663,11 +876,19 @@ class FamilySummaryPanel(QWidget):
             presentation.member_count - presentation.summoned_count,
         )
         self.summon_hint_label.setText(
-            f"待命 {standby_count} 人"
+            translate_ui(
+                "family_summary.standby_count",
+                default="待命 {count} 人",
+                count=standby_count,
+            )
             if presentation.member_count else
-            "尚無成員"
+            translate_ui("family_summary.no_members", default="尚無成員")
         )
-        self.member_count_label.setText(f"{presentation.member_count} 人")
+        self.member_count_label.setText(translate_ui(
+            "common.people_count",
+            default="{count} 人",
+            count=presentation.member_count,
+        ))
         self._sync_member_cards(presentation.members)
         self._populate_recent_events(presentation.recent_events)
         self._apply_stats(presentation)
@@ -682,6 +903,13 @@ class FamilySummaryPanel(QWidget):
         donate(100)
         self.refresh_from_binding()
 
+    def _handle_open_achievement_cabinet(self):
+        if self.binding is None:
+            return
+        opener = getattr(self.binding, "open_achievement_cabinet", None)
+        if callable(opener):
+            opener()
+
     def _update_donation_state(self):
         can_donate = False
         if self.binding is not None:
@@ -693,9 +921,15 @@ class FamilySummaryPanel(QWidget):
             can_donate = bool(capability()) if callable(capability) else False
         self.donate_button.setEnabled(can_donate)
         self.donate_button.setToolTip(
-            "捐入 100 元生活費"
+            translate_ui(
+                "family_summary.donate_tooltip",
+                default="捐入 100 元生活費",
+            )
             if can_donate
-            else "只有黃金傳說模式可以捐生活費"
+            else translate_ui(
+                "family_summary.donate_golden_only",
+                default="只有黃金傳說模式可以捐生活費",
+            )
         )
 
     def _replace_member_cards(self, members):
@@ -777,9 +1011,17 @@ class FamilySummaryPanel(QWidget):
                     "--" if presentation.average_mood is None else
                     f"{presentation.average_mood:.0f} / 100"
                 ),
-                "fund_delta": f"{presentation.recent_fund_delta:+,d} 元",
+                "fund_delta": translate_ui(
+                    "common.currency_amount",
+                    default="{amount:+,d} 元",
+                    amount=presentation.recent_fund_delta,
+                ),
                 "pressure_delta": f"{presentation.recent_pressure_delta:+.1f}",
-                "event_count": f"{presentation.recent_event_count} 件",
+                "event_count": translate_ui(
+                    "common.event_count",
+                    default="{count} 件",
+                    count=presentation.recent_event_count,
+                ),
             }
         for key, value in values.items():
             self.stat_value_labels[key].setText(value)
@@ -805,6 +1047,7 @@ class FamilySummaryPanel(QWidget):
         caption_row.addWidget(caption)
         caption_row.addStretch(1)
         layout.addLayout(caption_row)
+        self.metric_caption_labels[icon_name] = caption
         return card, layout
 
     def _load_avatar_pixmaps(self, assets):
@@ -823,7 +1066,7 @@ class FamilySummaryPanel(QWidget):
     @staticmethod
     def _pressure_label(value):
         if value >= 75:
-            return "高度壓力"
+            return translate_ui("family_summary.pressure.high", default="高度壓力")
         if value >= 40:
-            return "中度壓力"
-        return "低度壓力"
+            return translate_ui("family_summary.pressure.medium", default="中度壓力")
+        return translate_ui("family_summary.pressure.low", default="低度壓力")

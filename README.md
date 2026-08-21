@@ -4,6 +4,8 @@
 
 Tanuki PC Pet 是以 Python 3.10 與 PyQt6 開發的 Windows 桌面寵物。角色會在桌面與視窗邊緣移動，並依心情、關係、道具與家庭事件呈現不同互動。
 
+目前介面語系支援繁體中文、简体中文、日本語與 English；可在「狀態設定 → 語言與更新」切換。資訊中心、側邊啟動列、角色顯示名稱、事件、成就與更新狀態均已接入 resource catalog。
+
 ## 系統需求
 
 - Windows 10 或 Windows 11
@@ -53,7 +55,10 @@ $env:QT_QPA_PLATFORM = "offscreen"
 .\build_lab_2.ps1
 ```
 
-一般 clone 預設輸出到 repository 的 `build\` 與 `dist\`。
+一般 clone 預設輸出到 repository 的 `build\` 與 `dist\`：
+
+- `dist\TanukiPet\`：可攜主程式
+- `dist\TanukiUpdater.exe`：獨立更新器
 
 可用 `-PythonExe` 或 `TANUKI_PYTHON` 指定 Python；可用 `-OutputRoot` 或 `TANUKI_BUILD_ROOT` 指定輸出根目錄：
 
@@ -62,6 +67,7 @@ $env:QT_QPA_PLATFORM = "offscreen"
 ```
 
 完整提交、tag、敏感資料檢查與發布步驟請參閱 [RELEASE_WORKFLOW.md](RELEASE_WORKFLOW.md)。
+獨立更新器、更新包檔名、manifest、SHA-256 與 staging／rollback 安全規格請參閱 [docs/UPDATE_PACKAGE_SPEC.md](docs/UPDATE_PACKAGE_SPEC.md)。主程式啟動時不會自動連線檢查；需要更新時，從 GitHub Release 下載並執行 `TanukiUpdater.exe` 即可保留設定並替換為最新版。
 維護者的特殊巢狀工作區說明位於 [docs/LOCAL_WORKSPACE.md](docs/LOCAL_WORKSPACE.md)，一般 clone 不需要依賴該目錄結構。
 
 ## 授權與素材

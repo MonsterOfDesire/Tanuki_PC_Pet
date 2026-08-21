@@ -1,4 +1,5 @@
-from PyQt6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, QSignalBlocker, QTimer, Qt
+from PyQt6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, QSignalBlocker, QTimer, Qt, QUrl
+from PyQt6.QtGui import QDesktopServices
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -30,9 +31,17 @@ from .dashboard_state_mapper import (
     build_dashboard_config_state,
 )
 from .dashboard_tools_actions import DashboardToolsActions
+from .achievement_cabinet_ui import AchievementUnlockToast
+from .achievement_binding import DashboardAchievementBinding
+from .achievement_presenter import build_achievement_unlock_notification
 from .information_center_ui import InformationCenterWindow
 from .information_center_state import InformationCenterConfigState
-from .information_center_spec import PAGE_EVENT_LOG, PAGE_FAMILY_STATUS, PAGE_RELATION_SUMMON
+from .information_center_spec import (
+    PAGE_ACHIEVEMENTS,
+    PAGE_EVENT_LOG,
+    PAGE_FAMILY_STATUS,
+    PAGE_RELATION_SUMMON,
+)
 from .family_summary_binding import DashboardFamilySummaryBinding
 from .event_log_binding import DashboardEventLogBinding
 from .relation_summon_binding import DashboardRelationSummonBinding
@@ -44,7 +53,10 @@ from .status_settings_binding import DashboardStatusSettingsBinding
 from .ui_localization import (
     character_display_name,
     localize_character_names_in_text,
+    set_ui_locale,
 )
+from .update_runtime_controller import UpdateCheckCoordinator
+from .app_version import GITHUB_RELEASES_URL
 
 
 class HouseholdSummaryWindow(QWidget):
@@ -367,11 +379,26 @@ class Dashboard(QWidget):
         self.race_frequency = str(
             getattr(self.settings_provider, "race_frequency", "normal")
         )
+        self.chorus_frequency_options = list(
+            RuntimeSettings.CHORUS_FREQUENCY_OPTIONS
+        )
+        self.chorus_frequency = str(
+            getattr(self.settings_provider, "chorus_frequency", "normal")
+        )
         self.mood_climate_options = list(
             RuntimeSettings.MOOD_CLIMATE_OPTIONS
         )
         self.mood_climate = str(
             getattr(self.settings_provider, "mood_climate", "cheerful")
+        )
+        self.ui_locale_options = list(RuntimeSettings.UI_LOCALE_OPTIONS)
+        self.ui_locale = str(
+            getattr(self.settings_provider, "ui_locale", "zh_TW")
+        )
+        set_ui_locale(self.ui_locale)
+        self.update_check_coordinator = UpdateCheckCoordinator(parent=self)
+        self.update_check_coordinator.status_changed.connect(
+            lambda _status: self.refresh_information_center_settings()
         )
         self.teio_duration_buttons = []
         self.tsuyoshi_duration_buttons = []
@@ -386,11 +413,17 @@ class Dashboard(QWidget):
         self.rudolf_work_preview_active_provider = None
         self.race_preview_provider = None
         self.race_preview_active_provider = None
+        self.chorus_preview_provider = None
+        self.chorus_preview_active_provider = None
         self.transformation_toggle_provider = None
         self.transformation_state_provider = None
+        self.sleep_toggle_provider = None
+        self.sleep_state_provider = None
         self.household_capture_provider = None
         self.household_load_provider = None
         self.world_mode_change_provider = None
+        self.achievement_time_scale_provider = None
+        self.achievement_snapshot_provider = None
         self.offer_drop_provider = None
         self.offer_hover_provider = None
         self.offer_hover_clear_provider = None
@@ -400,6 +433,7 @@ class Dashboard(QWidget):
         self.relationship_table_window = None
         self.offer_tray_window = None
         self.information_center_window = None
+        self.achievement_unlock_toast = None
         self.launcher_shutdown_text = "關閉系統"
         self.launcher_shutdown_enabled = True
         self.launcher_status_text = ""
@@ -407,6 +441,7 @@ class Dashboard(QWidget):
         self.information_center_config_state = InformationCenterConfigState()
         self.status_settings_binding = DashboardStatusSettingsBinding(self)
         self.family_summary_binding = DashboardFamilySummaryBinding(self)
+        self.achievement_binding = DashboardAchievementBinding(self)
         self.event_log_binding = DashboardEventLogBinding(self)
         self.relation_summon_binding = DashboardRelationSummonBinding(self)
         self.setWindowFlags(build_overlay_window_flags())
@@ -688,7 +723,9 @@ class Dashboard(QWidget):
             debug_enabled=self.debug_enabled,
             social_status_enabled=self.social_status_enabled,
             race_frequency=self.race_frequency,
+            chorus_frequency=self.chorus_frequency,
             mood_climate=self.mood_climate,
+            ui_locale=self.ui_locale,
             information_center=(
                 self.information_center_window.capture_config_state()
                 if self.information_center_window is not None
@@ -714,7 +751,10 @@ class Dashboard(QWidget):
         self.time_scale_idx = int(state.time_scale_idx)
         self.display_scale_idx = int(state.display_scale_idx)
         self.race_frequency = str(state.race_frequency)
+        self.chorus_frequency = str(state.chorus_frequency)
         self.mood_climate = str(state.mood_climate)
+        self.ui_locale = str(state.ui_locale)
+        set_ui_locale(self.ui_locale)
         self.information_center_config_state = state.information_center
         if self.information_center_window is not None:
             self.information_center_window.restore_config_state(
@@ -731,6 +771,7 @@ class Dashboard(QWidget):
         self.update_time_scale_buttons()
         self.update_display_scale_buttons()
         self.update_household_control_states()
+        self.retranslate_ui()
 
     def refresh_mood_bars(self):
         for info in self.pets_dict.values():
@@ -908,8 +949,40 @@ class Dashboard(QWidget):
     def set_race_frequency(self, value, save=True):
         self.controller.set_race_frequency(self, value, save=save)
 
+    def set_chorus_frequency(self, value, save=True):
+        self.controller.set_chorus_frequency(self, value, save=save)
+
     def set_mood_climate(self, value, save=True):
         self.controller.set_mood_climate(self, value, save=save)
+
+    def set_ui_locale(self, value, save=True):
+        self.controller.set_ui_locale(self, value, save=save)
+
+    def get_update_status_snapshot(self):
+        return self.update_check_coordinator.snapshot()
+
+    def check_for_updates(self):
+        return self.update_check_coordinator.start_check()
+
+    def open_update_page(self):
+        status = self.get_update_status_snapshot()
+        url = (
+            status.updater_download_url
+            or status.release_page_url
+            or GITHUB_RELEASES_URL
+        )
+        return QDesktopServices.openUrl(QUrl(url))
+
+    def retranslate_ui(self):
+        if self.information_center_window is not None:
+            self.information_center_window.retranslate_ui()
+        if self.offer_tray_window is not None:
+            self.offer_tray_window.retranslate_ui()
+        launcher = getattr(self, "launcher_panel", None)
+        if launcher is not None and hasattr(launcher, "retranslate_ui"):
+            launcher.retranslate_ui()
+        self.refresh_information_center_settings()
+        self.refresh_launcher_panel()
 
     def apply_display_scale(self, save=True):
         self.controller.apply_display_scale(self, save=save)
@@ -923,8 +996,17 @@ class Dashboard(QWidget):
     def preview_rudolf_teio_race(self):
         return self.controller.preview_rudolf_teio_race(self)
 
+    def preview_chorus(self):
+        return self.controller.preview_chorus(self)
+
     def toggle_transformation_preview(self, pet_name):
         return self.controller.toggle_transformation_preview(
+            self,
+            pet_name,
+        )
+
+    def toggle_sleep_control(self, pet_name):
+        return self.controller.toggle_sleep_control(
             self,
             pet_name,
         )
@@ -939,6 +1021,17 @@ class Dashboard(QWidget):
         self.household_events_provider = household_events_provider
         self.activity_rhythm_provider = activity_rhythm_provider
 
+    def set_achievement_data_provider(
+        self,
+        achievement_snapshot_provider=None,
+    ):
+        self.achievement_snapshot_provider = achievement_snapshot_provider
+
+    def get_achievement_cabinet_snapshot(self):
+        if callable(self.achievement_snapshot_provider):
+            return self.achievement_snapshot_provider()
+        return None
+
     def set_household_action_providers(self, household_donate_provider=None):
         self.household_donate_provider = household_donate_provider
 
@@ -948,8 +1041,12 @@ class Dashboard(QWidget):
         rudolf_work_preview_active_provider=None,
         race_preview_provider=None,
         race_preview_active_provider=None,
+        chorus_preview_provider=None,
+        chorus_preview_active_provider=None,
         transformation_toggle_provider=None,
         transformation_state_provider=None,
+        sleep_toggle_provider=None,
+        sleep_state_provider=None,
     ):
         self.rudolf_work_preview_provider = (
             rudolf_work_preview_provider
@@ -959,22 +1056,32 @@ class Dashboard(QWidget):
         )
         self.race_preview_provider = race_preview_provider
         self.race_preview_active_provider = race_preview_active_provider
+        self.chorus_preview_provider = chorus_preview_provider
+        self.chorus_preview_active_provider = (
+            chorus_preview_active_provider
+        )
         self.transformation_toggle_provider = (
             transformation_toggle_provider
         )
         self.transformation_state_provider = (
             transformation_state_provider
         )
+        self.sleep_toggle_provider = sleep_toggle_provider
+        self.sleep_state_provider = sleep_state_provider
 
     def set_household_persistence_providers(
         self,
         household_capture_provider=None,
         household_load_provider=None,
         world_mode_change_provider=None,
+        achievement_time_scale_provider=None,
     ):
         self.household_capture_provider = household_capture_provider
         self.household_load_provider = household_load_provider
         self.world_mode_change_provider = world_mode_change_provider
+        self.achievement_time_scale_provider = (
+            achievement_time_scale_provider
+        )
 
     def set_offer_interaction_provider(self, offer_drop_provider=None, offer_hover_provider=None, offer_hover_clear_provider=None):
         self.offer_drop_provider = offer_drop_provider
@@ -1047,6 +1154,18 @@ class Dashboard(QWidget):
             return bool(self.race_preview_active_provider())
         return False
 
+    def apply_chorus_preview(self):
+        if self.world_mode != "sandbox":
+            return None
+        if callable(self.chorus_preview_provider):
+            return self.chorus_preview_provider()
+        return None
+
+    def is_chorus_preview_active(self):
+        if callable(self.chorus_preview_active_provider):
+            return bool(self.chorus_preview_active_provider())
+        return False
+
     def apply_transformation_preview(self, pet_name):
         if self.world_mode != "sandbox":
             return None
@@ -1066,6 +1185,20 @@ class Dashboard(QWidget):
             )
         return {}
 
+    def apply_sleep_control(self, pet_name):
+        if self.world_mode != "sandbox":
+            return None
+        if callable(self.sleep_toggle_provider):
+            return self.sleep_toggle_provider(str(pet_name or ""))
+        return None
+
+    def get_sleep_control_state(self, pet_name):
+        if callable(self.sleep_state_provider):
+            return dict(
+                self.sleep_state_provider(str(pet_name or "")) or {}
+            )
+        return {}
+
     def capture_household_config_state(self):
         if callable(self.household_capture_provider):
             return self.household_capture_provider()
@@ -1081,6 +1214,11 @@ class Dashboard(QWidget):
             return self.world_mode_change_provider(world_mode, previous_mode=previous_mode)
         return False
 
+    def apply_achievement_time_scale_transition(self, time_scale):
+        if callable(self.achievement_time_scale_provider):
+            return self.achievement_time_scale_provider(float(time_scale))
+        return ()
+
     def refresh_household_summary_if_open(self):
         if self.household_summary_window is not None and self.household_summary_window.isVisible():
             self.open_household_summary()
@@ -1091,6 +1229,37 @@ class Dashboard(QWidget):
             )
         ):
             self.information_center_window.refresh_family_summary()
+
+    def show_achievement_cabinet(self):
+        self.show_information_center(PAGE_ACHIEVEMENTS)
+        if self.information_center_window is not None:
+            self.information_center_window.refresh_achievement_cabinet(
+                sync_world_mode=True
+            )
+        return True
+
+    def handle_achievement_unlocks(self, achievement_ids):
+        achievement_ids = tuple(achievement_ids or ())
+        snapshot = self.get_achievement_cabinet_snapshot()
+        if snapshot is None:
+            return False
+        if self.information_center_window is not None:
+            self.information_center_window.refresh_family_summary()
+            self.information_center_window.refresh_achievement_cabinet()
+        notification = build_achievement_unlock_notification(
+            snapshot,
+            achievement_ids,
+        )
+        if notification is None:
+            return False
+        if self.achievement_unlock_toast is None:
+            self.achievement_unlock_toast = AchievementUnlockToast(
+                self.resource_resolver
+            )
+        return self.achievement_unlock_toast.show_notification(
+            notification,
+            anchor_rect=self.target_rect,
+        )
 
     def get_social_log_filter_mode(self):
         if self.social_log_window is not None:
@@ -1248,6 +1417,7 @@ class Dashboard(QWidget):
                 family_summary_binding=self.family_summary_binding,
                 event_log_binding=self.event_log_binding,
                 relation_summon_binding=self.relation_summon_binding,
+                achievement_binding=self.achievement_binding,
             )
             self.information_center_window.state_changed.connect(
                 self._handle_information_center_state_changed
@@ -1266,6 +1436,7 @@ class Dashboard(QWidget):
             self.information_center_window.set_family_summary_binding(self.family_summary_binding)
             self.information_center_window.set_event_log_binding(self.event_log_binding)
             self.information_center_window.set_relation_summon_binding(self.relation_summon_binding)
+            self.information_center_window.set_achievement_binding(self.achievement_binding)
         if not self.information_center_window.user_position_locked:
             target_x = self.x() + self.width() + 16
             target_y = max(self.target_rect.top(), self.y())

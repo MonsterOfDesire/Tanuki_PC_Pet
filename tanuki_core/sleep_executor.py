@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass
-from typing import Callable, Iterable
+from dataclasses import dataclass, field
+from typing import Callable, Iterable, Mapping
 
 from .activity_coordinator import ActivityCoordinator
 from .activity_runtime_adapter import ActivityRuntimeAdapter
@@ -43,6 +43,8 @@ from .sleep_rules import (
     SLEEP_JOIN_ARRIVAL_DISTANCE,
     SLEEP_JOIN_MOVE_SPEED_SCALE,
     SLEEP_MAX_CONCURRENT,
+    SLEEP_NATURAL_COMPLETION_MOOD_CEILING,
+    SLEEP_NATURAL_COMPLETION_MOOD_REWARD,
     SLEEP_OBSERVE_MAX_SECONDS,
     SLEEP_OBSERVE_MIN_SECONDS,
     SLEEP_RETRY_MAX_SECONDS,
@@ -53,6 +55,7 @@ from .sleep_rules import (
     SLEEP_SOCIAL_RETRY_MIN_SECONDS,
     SLEEP_TRIGGER_AUTONOMOUS,
     SLEEP_TRIGGER_OBSERVED_JOIN,
+    SLEEP_TRIGGER_SANDBOX_CONTROL,
     SLEEP_WAKING_PHASE,
     SLEEPING_PHASE,
     SleepEligibilitySnapshot,
@@ -80,6 +83,7 @@ class SleepRuntimeResult:
     phase_changed: bool = False
     finished: bool = False
     interrupted: bool = False
+    metadata: Mapping[str, object] = field(default_factory=dict)
 
 
 class SleepExecutor:
@@ -201,6 +205,53 @@ class SleepExecutor:
             sleep_capacity=sleep_capacity,
         )
         return tuple(results)
+
+    def request_sandbox_toggle(
+        self,
+        pet,
+        *,
+        now: float,
+        world_mode: str,
+        pets: Iterable[object],
+    ) -> SleepRuntimeResult:
+        now = float(now)
+        participant_name = self._pet_name(pet)
+        if str(world_mode or "") != "sandbox":
+            return SleepRuntimeResult(
+                False,
+                "sandbox_required",
+                participant_name=participant_name,
+            )
+        if pet is None or not participant_name:
+            return SleepRuntimeResult(
+                False,
+                "participant_unavailable",
+                participant_name=participant_name,
+            )
+        activity = self._sleep_activity_for_pet(pet)
+        if activity is not None:
+            return self.request_early_wake(
+                pet,
+                now=now,
+                reason=SLEEP_TRIGGER_SANDBOX_CONTROL,
+            )
+        pets = tuple(pets or ())
+        sleep_capacity = self._resolve_sleep_capacity(pets)
+        if (
+            sleep_capacity > 0
+            and self._active_sleep_count() >= sleep_capacity
+        ):
+            return SleepRuntimeResult(
+                False,
+                "sleep_capacity_reached",
+                participant_name=participant_name,
+            )
+        return self._start_sleep(
+            pet,
+            now=now,
+            world_mode=world_mode,
+            trigger_kind=SLEEP_TRIGGER_SANDBOX_CONTROL,
+        )
 
     def update_join_behavior(
         self,
@@ -379,6 +430,8 @@ class SleepExecutor:
         now: float,
         reason: str,
         care_target_name: str = "",
+        waking_band_override: str = "",
+        visual_afterglow_seconds: float = 0.0,
     ) -> SleepRuntimeResult:
         now = float(now)
         participant_name = self._pet_name(pet)
@@ -404,6 +457,9 @@ class SleepExecutor:
         activity.metadata["care_wake_target_name"] = str(
             care_target_name or ""
         )
+        activity.metadata["waking_band_override"] = str(
+            waking_band_override or ""
+        )
         transition = self.coordinator.transition_to_phase(
             activity.activity_id,
             phase_name=SLEEP_WAKING_PHASE,
@@ -424,6 +480,7 @@ class SleepExecutor:
         animation = self.runtime_adapter.apply_phase_animation(
             pet,
             self.profile.waking_animation,
+            band_override=str(waking_band_override or ""),
         )
         if not animation.applied:
             return self._interrupt(
@@ -432,6 +489,19 @@ class SleepExecutor:
                 now=now,
                 reason="early_wake_animation_failed",
             )
+
+        if float(visual_afterglow_seconds) > 0.0:
+            start_afterglow = getattr(
+                pet,
+                "start_visual_band_afterglow",
+                None,
+            )
+            if callable(start_afterglow):
+                start_afterglow(
+                    str(waking_band_override or "low"),
+                    duration=float(visual_afterglow_seconds),
+                    now=now,
+                )
 
         if group_id:
             activity.metadata["sleep_group_id"] = ""
@@ -444,6 +514,7 @@ class SleepExecutor:
             activity_id=activity.activity_id,
             participant_name=participant_name,
             phase_changed=True,
+            metadata=self._achievement_metadata(activity),
         )
 
     def _wake_sleeping_caregiver_for_distress(
@@ -759,9 +830,10 @@ class SleepExecutor:
             owner_name=participant_name,
             participant_snapshots=(snapshot,),
             now=now,
-            source=(
-                "sleep_observed_join" if is_joined else "sleep_schedule"
-            ),
+            source={
+                SLEEP_TRIGGER_OBSERVED_JOIN: "sleep_observed_join",
+                SLEEP_TRIGGER_SANDBOX_CONTROL: "sleep_sandbox_control",
+            }.get(trigger_kind, "sleep_schedule"),
             metadata={
                 "profile_key": self.profile.profile_key,
                 "start_world_mode": str(world_mode or ""),
@@ -826,6 +898,9 @@ class SleepExecutor:
             activity_id=start_result.activity_id,
             participant_name=participant_name,
             started=True,
+            metadata=self._achievement_metadata(
+                self.coordinator.get_activity(start_result.activity_id)
+            ),
         )
 
     def _update_active(
@@ -841,6 +916,7 @@ class SleepExecutor:
             return SleepRuntimeResult(False, "activity_not_found")
         participant_name = active.participants[0].name
         group_id = str(active.metadata.get("sleep_group_id", "") or "")
+        result_metadata = self._achievement_metadata(active)
         if pet is None:
             return self._interrupt(
                 activity_id,
@@ -890,6 +966,27 @@ class SleepExecutor:
                 expected_activity_id=activity_id,
             )
         if transition.finished:
+            early_wake_reason = str(
+                active.metadata.get("early_wake_reason", "") or ""
+            )
+            trigger_kind = str(
+                active.metadata.get("sleep_trigger", "") or ""
+            )
+            if (
+                not early_wake_reason
+                and trigger_kind != SLEEP_TRIGGER_SANDBOX_CONTROL
+            ):
+                current_mood = float(getattr(pet, "mood_score", 60.0))
+                mood_delta = min(
+                    SLEEP_NATURAL_COMPLETION_MOOD_REWARD,
+                    max(
+                        0.0,
+                        SLEEP_NATURAL_COMPLETION_MOOD_CEILING
+                        - current_mood,
+                    ),
+                )
+                if mood_delta > 0.0:
+                    self.runtime_adapter.apply_mood_delta(pet, mood_delta)
             self._schedule_after_wake(participant_name, now=now)
             if group_id:
                 self._reanchor_sleep_group(group_id)
@@ -898,6 +995,7 @@ class SleepExecutor:
                 activity_id=activity_id,
                 participant_name=participant_name,
                 finished=True,
+                metadata=result_metadata,
             )
 
         phase_changed = any(
@@ -936,6 +1034,7 @@ class SleepExecutor:
             activity_id=activity_id,
             participant_name=participant_name,
             phase_changed=phase_changed,
+            metadata=result_metadata,
         )
 
     def _interrupt(
@@ -957,6 +1056,7 @@ class SleepExecutor:
             if active is not None
             else ""
         )
+        result_metadata = self._achievement_metadata(active)
         transition = self.coordinator.interrupt(
             activity_id,
             now=now,
@@ -979,7 +1079,23 @@ class SleepExecutor:
             activity_id=activity_id,
             participant_name=participant_name,
             interrupted=transition.handled,
+            metadata=result_metadata,
         )
+
+    @staticmethod
+    def _achievement_metadata(activity) -> dict[str, object]:
+        if activity is None:
+            return {}
+        metadata = dict(getattr(activity, "metadata", {}) or {})
+        metadata.update(
+            {
+                "source": str(getattr(activity, "source", "") or ""),
+                "started_at": float(
+                    getattr(activity, "started_at", 0.0) or 0.0
+                ),
+            }
+        )
+        return metadata
 
     def _start_due_sleep_observations(
         self,

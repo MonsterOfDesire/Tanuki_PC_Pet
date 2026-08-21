@@ -4,6 +4,7 @@ from tanuki_core.transformation_control_presenter import (
     build_transformation_completion_text,
     build_transformation_control_presentation,
 )
+from tanuki_core.ui_localization import set_ui_locale
 
 
 def _states(**overrides):
@@ -33,6 +34,9 @@ def _states(**overrides):
 
 
 class TransformationControlPresenterTests(unittest.TestCase):
+    def tearDown(self):
+        set_ui_locale("zh_TW")
+
     def test_sandbox_base_forms_stay_polling_for_autonomous_changes(self):
         presentation = build_transformation_control_presentation(
             _states(),
@@ -41,7 +45,7 @@ class TransformationControlPresenterTests(unittest.TestCase):
 
         self.assertEqual(
             [button.text for button in presentation.buttons],
-            ["手動變身帝寶", "手動變身魯道夫"],
+            ["手動變身帝寶", "手動變身魯道夫象徵"],
         )
         self.assertTrue(all(button.enabled for button in presentation.buttons))
         self.assertEqual(presentation.poll_interval_ms, 400)
@@ -49,7 +53,7 @@ class TransformationControlPresenterTests(unittest.TestCase):
         self.assertFalse(presentation.has_active_operation)
         self.assertEqual(
             presentation.status_text,
-            "帝寶、魯道夫目前皆為普通形態；沙盒仍可能自主變身。",
+            "帝寶、魯道夫象徵目前皆為普通形態；沙盒仍可能自主變身。",
         )
 
     def test_autonomous_transformed_form_is_identified_from_runtime(self):
@@ -81,8 +85,8 @@ class TransformationControlPresenterTests(unittest.TestCase):
             world_mode="sandbox",
         )
 
-        self.assertEqual(presentation.buttons[1].text, "解除魯道夫變身")
-        self.assertIn("魯道夫目前為手動變身形態", presentation.status_text)
+        self.assertEqual(presentation.buttons[1].text, "解除魯道夫象徵變身")
+        self.assertIn("魯道夫象徵目前為手動變身形態", presentation.status_text)
 
     def test_active_transition_uses_fast_polling_and_target_form(self):
         start = build_transformation_control_presentation(
@@ -155,8 +159,41 @@ class TransformationControlPresenterTests(unittest.TestCase):
                 "Symboli Rudolf",
                 "transformed",
             ),
-            "魯道夫已完成變身，目前為變身形態。",
+            "魯道夫象徵已完成變身，目前為變身形態。",
         )
+
+    def test_simplified_chinese_status_formats_runtime_values(self):
+        set_ui_locale("zh_CN")
+        active = build_transformation_control_presentation(
+            _states(
+                **{
+                    "Symboli Rudolf": {
+                        "current_form": "transformed",
+                        "target_form": "base",
+                        "active": True,
+                    }
+                }
+            ),
+            world_mode="sandbox",
+        )
+        transformed = build_transformation_control_presentation(
+            _states(
+                **{
+                    "Symboli Rudolf": {
+                        "current_form": "transformed",
+                        "auto_session": True,
+                    }
+                }
+            ),
+            world_mode="sandbox",
+        )
+
+        self.assertEqual(active.status_text, "鲁道夫象征正在解除。")
+        self.assertIn(
+            "鲁道夫象征目前处于自主变身状态",
+            transformed.status_text,
+        )
+        self.assertNotIn("{", active.status_text + transformed.status_text)
 
 
 if __name__ == "__main__":

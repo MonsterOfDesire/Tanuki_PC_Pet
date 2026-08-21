@@ -21,7 +21,9 @@ from tanuki_core.shared_food_profiles import (
 class ItemSceneCoordinatorTests(unittest.TestCase):
     def test_start_scene_sets_runtime_offer_scene(self):
         runtime = SimpleNamespace(offer_scene=None)
-        coordinator = ItemSceneCoordinator()
+        coordinator = ItemSceneCoordinator(
+            scene_id_factory=lambda: "scene-1"
+        )
         pet = SimpleNamespace(
             name="Tsurumaru Tsuyoshi",
             offer_scene_kind="none",
@@ -41,6 +43,8 @@ class ItemSceneCoordinatorTests(unittest.TestCase):
         )
 
         self.assertTrue(result.started)
+        self.assertEqual(result.scene_id, "scene-1")
+        self.assertEqual(runtime.offer_scene.scene_id, "scene-1")
         self.assertEqual(runtime.offer_scene.scene_kind, "direct_accept")
         self.assertEqual(runtime.offer_scene.item_kind, "bottle")
         self.assertEqual(runtime.offer_scene.target_name, "Tsurumaru Tsuyoshi")

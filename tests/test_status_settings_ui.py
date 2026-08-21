@@ -12,8 +12,12 @@ from tanuki_core.status_settings_binding import (
     DashboardStatusSettingsBinding,
     StatusSettingsSnapshot,
 )
-from tanuki_core.status_settings_ui import StatusSettingsPanel
+from tanuki_core.status_settings_ui import (
+    MOOD_CLIMATE_TOOLTIPS,
+    StatusSettingsPanel,
+)
 from tanuki_core.ui_controls import ToggleSwitch
+from tanuki_core.ui_localization import set_ui_locale
 
 
 class FakeStatusSettingsBinding:
@@ -44,6 +48,11 @@ class FakeStatusSettingsBinding:
             reason="",
         )
         self.race_preview_active = False
+        self.chorus_preview_result = SimpleNamespace(
+            started=True,
+            reason="",
+        )
+        self.chorus_preview_active = False
         self.transformation_states = {
             "Tokai Teio": {
                 "available": True,
@@ -72,6 +81,28 @@ class FakeStatusSettingsBinding:
             character_name="Tokai Teio",
             target_form="transformed",
             queued=False,
+        )
+        self.sleep_states = {
+            name: {
+                "available": True,
+                "visible": True,
+                "active": False,
+                "phase": "",
+                "form_allows_sleep": True,
+                "world_mode": "sandbox",
+            }
+            for name in (
+                "Symboli Rudolf",
+                "Tokai Teio",
+                "Sirius Symboli",
+                "Tsurumaru Tsuyoshi",
+                "Air Groove",
+            )
+        }
+        self.sleep_result = SimpleNamespace(
+            started=True,
+            phase_changed=False,
+            reason="",
         )
 
     def snapshot(self):
@@ -116,9 +147,26 @@ class FakeStatusSettingsBinding:
         self.calls.append(("race_frequency", value))
         self.state = replace(self.state, race_frequency=value)
 
+    def set_chorus_frequency(self, value):
+        self.calls.append(("chorus_frequency", value))
+        self.state = replace(self.state, chorus_frequency=value)
+
     def set_mood_climate(self, value):
         self.calls.append(("mood_climate", value))
         self.state = replace(self.state, mood_climate=value)
+
+    def set_ui_locale(self, value):
+        self.calls.append(("ui_locale", value))
+        self.state = replace(self.state, ui_locale=value)
+
+    def check_for_updates(self):
+        self.calls.append(("check_updates",))
+        self.state = replace(self.state, update_status="checking")
+        return True
+
+    def open_update_page(self):
+        self.calls.append(("open_update_page",))
+        return True
 
     def run_validation_checks(self):
         self.calls.append(("validate",))
@@ -140,6 +188,17 @@ class FakeStatusSettingsBinding:
     def is_race_preview_active(self):
         self.calls.append(("race_preview_active",))
         return self.race_preview_active
+
+    def preview_chorus(self):
+        self.calls.append(("preview_chorus",))
+        self.chorus_preview_active = bool(
+            self.chorus_preview_result.started
+        )
+        return self.chorus_preview_result
+
+    def is_chorus_preview_active(self):
+        self.calls.append(("chorus_preview_active",))
+        return self.chorus_preview_active
 
     def toggle_transformation_preview(self, pet_name):
         self.calls.append(("transformation", pet_name))
@@ -164,6 +223,23 @@ class FakeStatusSettingsBinding:
     def get_transformation_preview_state(self, pet_name):
         return dict(self.transformation_states[pet_name])
 
+    def toggle_sleep_control(self, pet_name):
+        self.calls.append(("sleep_control", pet_name))
+        state = self.sleep_states[pet_name]
+        if state["active"]:
+            state["phase"] = "waking"
+            self.sleep_result.started = False
+            self.sleep_result.phase_changed = True
+        else:
+            state["active"] = True
+            state["phase"] = "settling"
+            self.sleep_result.started = True
+            self.sleep_result.phase_changed = False
+        return self.sleep_result
+
+    def get_sleep_control_state(self, pet_name):
+        return dict(self.sleep_states[pet_name])
+
 
 class FakeDashboardForBinding:
     def __init__(self):
@@ -173,6 +249,7 @@ class FakeDashboardForBinding:
         self.teio_dur_list = [2, 5, 10, 20, 30]
         self.tsuyoshi_dur_list = [2, 10, 20, 40, 60]
         self.race_frequency_options = ["frequent", "normal", "occasional"]
+        self.chorus_frequency_options = ["frequent", "normal", "occasional"]
         self.mood_climate_options = ["cheerful", "balanced", "expressive"]
         self.calls = []
 
@@ -187,6 +264,7 @@ class FakeDashboardForBinding:
             teio_dur_idx=3,
             tsuyoshi_dur_idx=4,
             race_frequency="normal",
+            chorus_frequency="normal",
             mood_climate="cheerful",
         )
 
@@ -214,6 +292,9 @@ class FakeDashboardForBinding:
     def set_race_frequency(self, value):
         self.calls.append(("race_frequency", value))
 
+    def set_chorus_frequency(self, value):
+        self.calls.append(("chorus_frequency", value))
+
     def set_mood_climate(self, value):
         self.calls.append(("mood_climate", value))
 
@@ -236,6 +317,14 @@ class FakeDashboardForBinding:
         self.calls.append(("race_preview_active",))
         return True
 
+    def preview_chorus(self):
+        self.calls.append(("preview_chorus",))
+        return "chorus-preview-result"
+
+    def is_chorus_preview_active(self):
+        self.calls.append(("chorus_preview_active",))
+        return True
+
     def toggle_transformation_preview(self, pet_name):
         self.calls.append(("transformation", pet_name))
         return f"transformation-result:{pet_name}"
@@ -247,6 +336,14 @@ class FakeDashboardForBinding:
             "current_form": "transformed",
             "active": False,
         }
+
+    def toggle_sleep_control(self, pet_name):
+        self.calls.append(("sleep_control", pet_name))
+        return f"sleep-result:{pet_name}"
+
+    def get_sleep_control_state(self, pet_name):
+        self.calls.append(("sleep_state", pet_name))
+        return {"active": False, "phase": ""}
 
 
 class StatusSettingsPanelTests(unittest.TestCase):
@@ -263,6 +360,7 @@ class StatusSettingsPanelTests(unittest.TestCase):
     def tearDown(self):
         self.panel.close()
         self.panel.deleteLater()
+        set_ui_locale("zh_TW")
         self.app.processEvents()
 
     def test_panel_reflects_snapshot_selection(self):
@@ -281,14 +379,95 @@ class StatusSettingsPanelTests(unittest.TestCase):
         self.assertTrue(self.panel.teio_duration_buttons[2].isChecked())
         self.assertTrue(self.panel.tsuyoshi_duration_buttons[3].isChecked())
 
-    def test_social_cooldown_uses_localized_full_character_names(self):
+    def test_language_selector_updates_resource_backed_controls(self):
+        self.panel.ui_locale_buttons[3].click()
+        self.app.processEvents()
+
+        self.assertEqual(self.binding.state.ui_locale, "en_US")
+        self.assertEqual(
+            self.panel.locale_update_group.title(),
+            "Language and updates",
+        )
+        self.assertEqual(self.panel.update_check_button.text(), "Check now")
+
+        self.binding.state = replace(
+            self.binding.state,
+            world_mode="sandbox",
+        )
+        self.binding.preview_result = SimpleNamespace(
+            started=False,
+            reason="severe_mood",
+        )
+        self.panel.refresh_from_binding()
+        self.panel.rudolf_work_preview_button.click()
+
+        self.assertIn(
+            "Symboli Rudolf is in severe mood",
+            self.panel.rudolf_work_preview_status.text(),
+        )
+
+    def test_simplified_chinese_selector_updates_resource_backed_controls(self):
+        self.panel.ui_locale_buttons[1].click()
+        self.app.processEvents()
+
+        self.assertEqual(self.binding.state.ui_locale, "zh_CN")
+        self.assertEqual(self.panel.locale_update_group.title(), "语言与更新")
+        self.assertEqual(self.panel.update_check_button.text(), "立即检查更新")
+
+    def test_update_controls_delegate_without_blocking_panel(self):
+        self.panel.update_check_button.click()
+
+        self.assertIn(("check_updates",), self.binding.calls)
+        self.assertFalse(self.panel.update_check_button.isEnabled())
+
+    def test_updater_download_only_appears_for_complete_release_bundle(self):
+        self.binding.state = replace(
+            self.binding.state,
+            update_status="available",
+            update_page_url="https://example.test/release",
+            update_updater_url="",
+            update_package_ready=False,
+        )
+        self.panel.refresh_from_binding()
+        self.assertFalse(self.panel.update_open_button.isVisible())
+
+        self.binding.state = replace(
+            self.binding.state,
+            update_updater_url="https://example.test/TanukiUpdater.exe",
+            update_package_ready=True,
+        )
+        self.panel.refresh_from_binding()
+        self.assertTrue(self.panel.update_open_button.isVisible())
+        self.panel.update_open_button.click()
+        self.assertIn(("open_update_page",), self.binding.calls)
+
+    def test_mood_climate_tooltips_describe_dynamics_not_targets(self):
+        tooltips = [
+            button.toolTip()
+            for button in self.panel.mood_climate_buttons
+        ]
+
+        self.assertEqual(
+            tooltips,
+            [
+                MOOD_CLIMATE_TOOLTIPS["cheerful"],
+                MOOD_CLIMATE_TOOLTIPS["balanced"],
+                MOOD_CLIMATE_TOOLTIPS["expressive"],
+            ],
+        )
+        self.assertTrue(all("目標" not in text for text in tooltips))
+        self.assertIn("50%", tooltips[0])
+        self.assertIn("60%", tooltips[1])
+        self.assertIn("90%", tooltips[2])
+
+    def test_social_cooldown_uses_localized_character_names(self):
         visible_labels = {
             label.text()
             for label in self.panel.findChildren(QLabel)
         }
 
-        self.assertIn("東海帝皇", visible_labels)
-        self.assertIn("鶴丸強志", visible_labels)
+        self.assertIn("帝寶", visible_labels)
+        self.assertIn("鶴寶", visible_labels)
 
     def test_compact_width_reduces_spacing_without_overlapping_options(self):
         host = QWidget()
@@ -318,6 +497,7 @@ class StatusSettingsPanelTests(unittest.TestCase):
                     + compact_panel.teio_duration_buttons
                     + compact_panel.tsuyoshi_duration_buttons
                     + compact_panel.race_frequency_buttons
+                    + compact_panel.chorus_frequency_buttons
                     + compact_panel.mood_climate_buttons
                 )
             )
@@ -345,6 +525,7 @@ class StatusSettingsPanelTests(unittest.TestCase):
                 compact_panel.rhythm_group,
                 (
                     compact_panel.race_frequency_buttons,
+                    compact_panel.chorus_frequency_buttons,
                     compact_panel.mood_climate_buttons,
                 ),
             ),
@@ -384,7 +565,8 @@ class StatusSettingsPanelTests(unittest.TestCase):
             wide_panel.timing_group: (1, 0, 1, 1),
             wide_panel.social_group: (2, 0, 1, 1),
             wide_panel.rhythm_group: (3, 0, 1, 1),
-            wide_panel.developer_group: (0, 1, 4, 1),
+            wide_panel.locale_update_group: (4, 0, 1, 1),
+            wide_panel.developer_group: (0, 1, 5, 1),
         }
         actual_positions = {}
         for index in range(wide_panel.grid_layout.count()):
@@ -406,6 +588,61 @@ class StatusSettingsPanelTests(unittest.TestCase):
         )
         host.close()
         wide_panel.deleteLater()
+        host.deleteLater()
+
+    def test_long_text_locales_use_single_column_before_text_can_clip(self):
+        for locale in ("ja_JP", "en_US"):
+            with self.subTest(locale=locale):
+                binding = FakeStatusSettingsBinding()
+                binding.state = replace(binding.state, ui_locale=locale)
+                host = QWidget()
+                host.setFixedSize(988, 383)
+                panel = StatusSettingsPanel(binding, parent=host)
+                panel.setGeometry(host.rect())
+                host.show()
+                self.app.processEvents()
+
+                self.assertTrue(panel._single_column_layout)
+                self.assertEqual(
+                    panel.settings_scroll.horizontalScrollBar().maximum(),
+                    0,
+                )
+                for button in (
+                    tuple(panel.transformation_preview_buttons.values())
+                    + tuple(panel.sleep_control_buttons.values())
+                ):
+                    top_left = button.mapTo(
+                        panel.developer_group,
+                        QPoint(0, 0),
+                    )
+                    self.assertGreaterEqual(top_left.x(), 0)
+                    self.assertLessEqual(
+                        top_left.x() + button.width(),
+                        panel.developer_group.width() + 1,
+                    )
+
+                host.close()
+                panel.deleteLater()
+                host.deleteLater()
+
+    def test_simplified_chinese_keeps_regular_two_column_layout(self):
+        binding = FakeStatusSettingsBinding()
+        binding.state = replace(binding.state, ui_locale="zh_CN")
+        host = QWidget()
+        host.setFixedSize(988, 383)
+        panel = StatusSettingsPanel(binding, parent=host)
+        panel.setGeometry(host.rect())
+        host.show()
+        self.app.processEvents()
+
+        self.assertFalse(panel._single_column_layout)
+        self.assertEqual(
+            panel.settings_scroll.horizontalScrollBar().maximum(),
+            0,
+        )
+
+        host.close()
+        panel.deleteLater()
         host.deleteLater()
 
     def test_wide_width_restores_regular_option_spacing(self):
@@ -430,6 +667,7 @@ class StatusSettingsPanelTests(unittest.TestCase):
         self.panel.debug_switch.click()
         self.panel.social_status_switch.click()
         self.panel.race_frequency_buttons[0].click()
+        self.panel.chorus_frequency_buttons[2].click()
         self.panel.mood_climate_buttons[2].click()
 
         self.assertEqual(
@@ -444,6 +682,7 @@ class StatusSettingsPanelTests(unittest.TestCase):
                 ("debug", True),
                 ("social_status", True),
                 ("race_frequency", "frequent"),
+                ("chorus_frequency", "occasional"),
                 ("mood_climate", "expressive"),
             ],
         )
@@ -545,6 +784,28 @@ class StatusSettingsPanelTests(unittest.TestCase):
 
         self.assertIn("帝寶目前形態不能參賽", self.panel.race_preview_status.text())
 
+    def test_chorus_preview_is_sandbox_only_and_resets_after_completion(self):
+        self.assertFalse(self.panel.chorus_preview_button.isEnabled())
+
+        self.panel.world_mode_buttons[1].click()
+        self.panel.chorus_preview_button.click()
+
+        self.assertEqual(
+            self.binding.calls,
+            [
+                ("world_mode", "sandbox"),
+                ("preview_chorus",),
+            ],
+        )
+        self.assertIn("合奏預覽已開始", self.panel.chorus_preview_status.text())
+        self.assertTrue(self.panel.chorus_preview_poll_timer.isActive())
+
+        self.binding.chorus_preview_active = False
+        self.panel._poll_chorus_preview_status()
+
+        self.assertIn("不寫事件", self.panel.chorus_preview_status.text())
+        self.assertFalse(self.panel.chorus_preview_poll_timer.isActive())
+
     def test_race_preview_explains_that_participants_must_be_nearby(self):
         self.binding.state = replace(
             self.binding.state,
@@ -615,6 +876,26 @@ class StatusSettingsPanelTests(unittest.TestCase):
         self.assertTrue(
             self.panel.transformation_preview_poll_timer.isActive()
         )
+
+    def test_sleep_control_is_sandbox_only_and_tracks_runtime_phase(self):
+        teio_button = self.panel.sleep_control_buttons["Tokai Teio"]
+        self.assertFalse(teio_button.isEnabled())
+
+        self.panel.world_mode_buttons[1].click()
+        teio_button.click()
+
+        self.assertIn(
+            ("sleep_control", "Tokai Teio"),
+            self.binding.calls,
+        )
+        self.assertEqual(teio_button.text(), "喚醒帝寶")
+        self.assertIn("進入睡眠", self.panel.sleep_control_status.text())
+
+        teio_button.click()
+
+        self.assertEqual(teio_button.text(), "帝寶喚醒中")
+        self.assertFalse(teio_button.isEnabled())
+        self.assertIn("喚醒過場", self.panel.sleep_control_status.text())
 
     def test_queued_transformation_end_waits_for_safe_runtime_state(self):
         self.panel.world_mode_buttons[1].click()
@@ -707,9 +988,9 @@ class StatusSettingsPanelTests(unittest.TestCase):
         rudolf_button = self.panel.transformation_preview_buttons[
             "Symboli Rudolf"
         ]
-        self.assertEqual(rudolf_button.text(), "解除魯道夫變身")
+        self.assertEqual(rudolf_button.text(), "解除魯道夫象徵變身")
         self.assertIn(
-            "魯道夫目前為自主變身形態",
+            "魯道夫象徵目前為自主變身形態",
             self.panel.transformation_preview_status.text(),
         )
         self.assertEqual(
@@ -765,6 +1046,7 @@ class DashboardStatusSettingsBindingTests(unittest.TestCase):
         self.assertEqual(snapshot.display_scale_options, (1.0, 1.5, 2.0, 3.0))
         self.assertEqual(snapshot.tsuyoshi_duration_index, 4)
         self.assertEqual(snapshot.race_frequency, "normal")
+        self.assertEqual(snapshot.chorus_frequency, "normal")
         self.assertEqual(snapshot.mood_climate, "cheerful")
 
     def test_actions_delegate_to_existing_dashboard_controller_entry_points(self):
@@ -779,23 +1061,30 @@ class DashboardStatusSettingsBindingTests(unittest.TestCase):
         binding.set_display_scale_index(3)
         binding.set_social_duration_index("teio", 2)
         binding.set_race_frequency("occasional")
+        binding.set_chorus_frequency("frequent")
         binding.set_mood_climate("balanced")
         binding.run_validation_checks()
         preview_result = binding.preview_rudolf_work()
         preview_active = binding.is_rudolf_work_preview_active()
         race_preview_result = binding.preview_rudolf_teio_race()
         race_preview_active = binding.is_race_preview_active()
+        chorus_preview_result = binding.preview_chorus()
+        chorus_preview_active = binding.is_chorus_preview_active()
         transformation_result = binding.toggle_transformation_preview(
             "Tokai Teio"
         )
         transformation_state = binding.get_transformation_preview_state(
             "Tokai Teio"
         )
+        sleep_result = binding.toggle_sleep_control("Tokai Teio")
+        sleep_state = binding.get_sleep_control_state("Tokai Teio")
 
         self.assertEqual(preview_result, "preview-result")
         self.assertTrue(preview_active)
         self.assertEqual(race_preview_result, "race-preview-result")
         self.assertTrue(race_preview_active)
+        self.assertEqual(chorus_preview_result, "chorus-preview-result")
+        self.assertTrue(chorus_preview_active)
         self.assertEqual(
             transformation_result,
             "transformation-result:Tokai Teio",
@@ -804,6 +1093,8 @@ class DashboardStatusSettingsBindingTests(unittest.TestCase):
             transformation_state["current_form"],
             "transformed",
         )
+        self.assertEqual(sleep_result, "sleep-result:Tokai Teio")
+        self.assertFalse(sleep_state["active"])
         self.assertEqual(
             dashboard.calls,
             [
@@ -815,14 +1106,19 @@ class DashboardStatusSettingsBindingTests(unittest.TestCase):
                 ("display", 3),
                 ("teio", 2),
                 ("race_frequency", "occasional"),
+                ("chorus_frequency", "frequent"),
                 ("mood_climate", "balanced"),
                 ("validate",),
                 ("preview_rudolf_work",),
                 ("preview_active",),
                 ("preview_race",),
                 ("race_preview_active",),
+                ("preview_chorus",),
+                ("chorus_preview_active",),
                 ("transformation", "Tokai Teio"),
                 ("transformation_state", "Tokai Teio"),
+                ("sleep_control", "Tokai Teio"),
+                ("sleep_state", "Tokai Teio"),
             ],
         )
 

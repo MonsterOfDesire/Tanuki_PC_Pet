@@ -1,5 +1,6 @@
 import os
 import unittest
+from types import SimpleNamespace
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -21,6 +22,11 @@ class FakeFamilySummaryBinding:
         self.rhythm_calls = 0
         self.donation_calls = []
         self.donation_enabled = True
+        self.achievement_open_calls = 0
+        self.achievement_value = SimpleNamespace(
+            mode_label="沙盒",
+            summary_text="已取得 3 / 24｜最近：初次奔馳",
+        )
         self.value = HouseholdSummaryPresentation(
             title="家庭摘要",
             overview_text="生活費: 1,250 元\n家庭壓力: 37%",
@@ -65,9 +71,11 @@ class FakeFamilySummaryBinding:
             recent_fund_delta=250,
             recent_pressure_delta=-3.0,
             race_rhythm_text="競賽：約 2分05秒 後再提案",
+            chorus_rhythm_text="合奏：約 1分10秒 後再提案",
         )
         self.rhythm_value = HouseholdRhythmPresentation(
             race_rhythm_text="競賽：約 2分04秒 後再提案",
+            chorus_rhythm_text="合奏：約 1分09秒 後再提案",
             members=self.value.members,
         )
 
@@ -84,6 +92,13 @@ class FakeFamilySummaryBinding:
 
     def donate_fund(self, amount=100):
         self.donation_calls.append(amount)
+
+    def achievement_summary(self):
+        return self.achievement_value
+
+    def open_achievement_cabinet(self):
+        self.achievement_open_calls += 1
+        return True
 
 
 class FamilySummaryPanelTests(unittest.TestCase):
@@ -117,7 +132,7 @@ class FamilySummaryPanelTests(unittest.TestCase):
         )
         self.assertEqual(
             self.panel.member_cards["Tokai Teio"].name_label.text(),
-            "東海帝皇",
+            "帝寶",
         )
         self.assertEqual(
             self.panel.member_cards["Tokai Teio"].mood_bar.value(),
@@ -148,6 +163,10 @@ class FamilySummaryPanelTests(unittest.TestCase):
         self.assertEqual(
             self.panel.race_rhythm_label.text(),
             "競賽：約 2分05秒 後再提案",
+        )
+        self.assertEqual(
+            self.panel.chorus_rhythm_label.text(),
+            "合奏：約 1分10秒 後再提案",
         )
         self.assertEqual(
             self.panel.member_cards["Air Groove"].sleep_rhythm_label.text(),
@@ -185,6 +204,7 @@ class FamilySummaryPanelTests(unittest.TestCase):
         )
         self.binding.rhythm_value = HouseholdRhythmPresentation(
             race_rhythm_text="競賽：約 2分03秒 後再提案",
+            chorus_rhythm_text="合奏：約 1分08秒 後再提案",
             members=tuple(members),
         )
         full_refresh_calls = self.binding.calls
@@ -213,6 +233,10 @@ class FamilySummaryPanelTests(unittest.TestCase):
             self.panel.race_rhythm_label.text(),
             "競賽：約 2分03秒 後再提案",
         )
+        self.assertEqual(
+            self.panel.chorus_rhythm_label.text(),
+            "合奏：約 1分08秒 後再提案",
+        )
 
     def test_donation_action_uses_family_binding_and_refreshes(self):
         initial_calls = self.binding.calls
@@ -230,21 +254,25 @@ class FamilySummaryPanelTests(unittest.TestCase):
         self.assertFalse(self.panel.donate_button.isEnabled())
         self.assertIn("黃金傳說", self.panel.donate_button.toolTip())
 
-    def test_achievement_summary_reserves_disabled_slot_without_fake_progress(self):
+    def test_achievement_summary_opens_cabinet_and_shows_real_progress(self):
         self.assertEqual(
             self.panel.achievement_slot.objectName(),
             "tanukiAchievementSummarySlot",
         )
-        self.assertFalse(self.panel.achievement_slot.isEnabled())
+        self.assertTrue(self.panel.achievement_slot.isEnabled())
         self.assertEqual(
             self.panel.achievement_status_label.text(),
-            "尚未啟用",
+            "已取得 3 / 24｜最近：初次奔馳",
         )
         self.assertFalse(self.panel.achievement_icon_label.pixmap().isNull())
         self.assertIn(
-            "尚未啟用",
+            "沙盒",
             self.panel.achievement_slot.accessibleName(),
         )
+
+        self.panel.achievement_slot.clicked.emit()
+
+        self.assertEqual(self.binding.achievement_open_calls, 1)
 
     def test_panel_handles_uninitialized_household_data(self):
         self.binding.value = HouseholdSummaryPresentation(
@@ -286,6 +314,14 @@ class DashboardFamilySummaryBindingTests(unittest.TestCase):
             def donate_household_fund(self, amount=100):
                 self.donation_calls.append(amount)
 
+            def get_achievement_cabinet_snapshot(self):
+                return SimpleNamespace(
+                    mode_snapshot=lambda _mode: "achievement-summary"
+                )
+
+            def show_achievement_cabinet(self):
+                return "opened"
+
         dashboard = Dashboard()
         binding = DashboardFamilySummaryBinding(dashboard)
 
@@ -302,6 +338,12 @@ class DashboardFamilySummaryBindingTests(unittest.TestCase):
             dashboard.controller.calls[-1],
             ("rhythm", dashboard),
         )
+
+        self.assertEqual(
+            binding.achievement_summary(),
+            "achievement-summary",
+        )
+        self.assertEqual(binding.open_achievement_cabinet(), "opened")
 
         binding.donate_fund(100)
 

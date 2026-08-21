@@ -63,7 +63,9 @@ class ConfigRuleTests(unittest.TestCase):
             normalized["dashboard"]["social_status_enabled"]
         )
         self.assertEqual(normalized["dashboard"]["race_frequency"], "normal")
+        self.assertEqual(normalized["dashboard"]["chorus_frequency"], "normal")
         self.assertEqual(normalized["dashboard"]["mood_climate"], "cheerful")
+        self.assertEqual(normalized["dashboard"]["ui_locale"], "zh_TW")
         self.assertEqual(normalized["pets"]["Tokai Teio"]["x"], 10)
         self.assertEqual(normalized["household"], {})
         self.assertTrue(any("config schema 1 已升級" in warning for warning in warnings))
@@ -224,13 +226,65 @@ class ConfigRuleTests(unittest.TestCase):
                 "schema_version": CONFIG_SCHEMA_VERSION,
                 "dashboard": {
                     "race_frequency": "always",
+                    "chorus_frequency": "constant",
                     "mood_climate": "chaos",
                 },
             }
         )
 
         self.assertEqual(normalized["dashboard"]["race_frequency"], "normal")
+        self.assertEqual(normalized["dashboard"]["chorus_frequency"], "normal")
         self.assertEqual(normalized["dashboard"]["mood_climate"], "cheerful")
+
+    def test_schema_six_config_receives_chorus_frequency_default(self):
+        normalized, warnings = normalize_config_state(
+            {
+                "schema_version": 6,
+                "dashboard": {"world_mode": "sandbox"},
+            }
+        )
+
+        self.assertEqual(normalized["dashboard"]["chorus_frequency"], "normal")
+        self.assertTrue(
+            any("config schema 6 已升級" in warning for warning in warnings)
+        )
+
+    def test_schema_seven_config_receives_localization_default(self):
+        normalized, warnings = normalize_config_state(
+            {
+                "schema_version": 7,
+                "dashboard": {"world_mode": "sandbox"},
+            }
+        )
+
+        self.assertEqual(normalized["dashboard"]["ui_locale"], "zh_TW")
+        self.assertTrue(
+            any("config schema 7 已升級" in warning for warning in warnings)
+        )
+
+    def test_invalid_locale_falls_back_to_traditional_chinese(self):
+        normalized, _warnings = normalize_config_state(
+            {
+                "schema_version": CONFIG_SCHEMA_VERSION,
+                "dashboard": {
+                    "ui_locale": "xx_XX",
+                },
+            }
+        )
+
+        self.assertEqual(normalized["dashboard"]["ui_locale"], "zh_TW")
+
+    def test_simplified_chinese_locale_is_preserved(self):
+        normalized, _warnings = normalize_config_state(
+            {
+                "schema_version": CONFIG_SCHEMA_VERSION,
+                "dashboard": {
+                    "ui_locale": "zh_CN",
+                },
+            }
+        )
+
+        self.assertEqual(normalized["dashboard"]["ui_locale"], "zh_CN")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,154 @@
+{
+  "meta": {"language_name": "繁體中文"},
+  "app": {
+    "name": "狸貓桌寵",
+    "information_center": "狸貓資訊中心"
+  },
+  "characters": {
+    "Air Groove": "氣槽",
+    "Sirius Symboli": "天狼星叔叔",
+    "Symboli Rudolf": "魯道夫象徵",
+    "Tokai Teio": "帝寶",
+    "Tsurumaru Tsuyoshi": "鶴寶",
+    "Player": "玩家"
+  },
+  "settings": {
+    "language_and_updates": "語言與更新",
+    "interface_language": "介面語言"
+  },
+  "information_center": {
+    "title": "狸貓資訊中心",
+    "window_title": "狸貓資訊中心 — {page}",
+    "loading": "正在載入頁面…",
+    "size": "視窗尺寸",
+    "size_tooltip": "套用建議比例；套用後仍可拖曳視窗邊框自由調整。",
+    "detach": "分離頁面",
+    "detach_tooltip": "將目前分頁移到可獨立操作的視窗",
+    "detached_title": "{page}（分離視窗）",
+    "detached_placeholder": "此頁已分離。\n點擊上方分頁可喚回獨立視窗。",
+    "detached_recall": "{page}（已分離，點擊喚回）",
+    "dock_close": "關閉並歸回資訊中心",
+    "pages": {
+      "relation_summon": {"navigation": "角色關係＋召喚", "title": "角色關係＋召喚"},
+      "event_log": {"navigation": "事件日誌", "title": "事件日誌"},
+      "family_status": {"navigation": "家庭摘要", "title": "家庭狀態摘要"},
+      "achievements": {"navigation": "獎盃蒐集櫃", "title": "獎盃蒐集櫃"},
+      "status_settings": {"navigation": "狀態設定", "title": "狀態設定"}
+    },
+    "sizes": {
+      "recommended_16_9": "系統建議（16:9）",
+      "comfortable_16_10": "舒適閱讀（16:10）",
+      "tall_4_3": "垂直內容（4:3）",
+      "compact_16_9": "白板優先（裁切邊景）"
+    }
+  },
+  "launcher": {
+    "title": "狸貓控制中心", "subtitle": "桌面生活捷徑",
+    "main_actions": "主要功能", "information_center": "資訊中心",
+    "open_information_center": "開啟資訊中心", "offer_tray": "飲食餐盤",
+    "open_offer_tray": "開啟飲食餐盤", "current_status": "目前狀態",
+    "status_settings": "狀態設定", "open_status_settings": "開啟狀態設定", "shutdown": "關閉系統",
+    "disconnected": "未連接", "care_on": "照護中", "care_off": "照護關閉",
+    "world_golden_legend": "黃金傳說", "world_sandbox": "沙盒",
+    "pin_sidebar": "釘選側邊欄", "collapse_sidebar": "收合側邊欄", "pinned_tooltip": "已釘選；點擊後允許自動收合", "unpinned_tooltip": "未釘選；點擊後保持展開"
+  },
+  "updates": {
+    "checking": "正在檢查更新…",
+    "up_to_date": "目前已是最新版本。",
+    "available": "發現新版本 {version}。",
+    "failed": "無法檢查更新：{reason}",
+    "current": "目前版本 {version}",
+    "check_now": "立即檢查更新",
+    "view_release": "查看新版",
+    "download_updater": "下載更新器",
+    "updater_ready": "請到 Release 下載 TanukiUpdater.exe 後執行。",
+    "manual_only": "本版本尚未提供自動更新包，可先查看 Release。"
+  },
+  "common": {
+    "on": "開啟", "off": "關閉", "no_data": "尚無資料", "not_recorded": "未記錄",
+    "character": "角色", "name_separator": "、", "duration_minutes_seconds": "{minutes}分{seconds:02d}秒",
+    "duration_seconds": "{seconds}秒", "duration_seconds_decimal": "{seconds:.1f} 秒",
+    "currency_amount": "{amount:+,d} 元", "currency_amount_unsigned": "{amount:,} 元",
+    "people_count": "{count} 人", "event_count": "{count} 件"
+  },
+  "labels": {
+    "living_fund": "生活費", "household_pressure": "家庭壓力", "mood": "心情",
+    "filters": {"all": "全部", "personal": "個人", "social": "社交", "economy": "經濟", "item": "道具", "system": "系統"},
+    "channels": {"social": "社交", "economy": "經濟", "item": "道具", "story": "故事", "system": "系統"},
+    "relationship_metrics": {"familiarity": "熟悉", "trust": "信任", "attachment": "依附", "tension": "緊張"},
+    "mood_states": {"normal": "平穩", "unhappy": "低落", "depressed": "非常低落"},
+    "forms": {"base": "普通形態", "transformed": "變身形態"}
+  },
+  "window_chrome": {"pin": "視窗置頂", "minimize": "最小化", "close": "關閉"},
+  "offer_tray": {
+    "title": "飲食托盤", "drag_item": "拖曳{item}給角色", "drag_to_character": "拖曳給角色",
+    "instruction_tooltip": "按住食物並拖曳到桌面角色身上", "window_drag": "拖曳飲食托盤視窗"
+  },
+  "items": {"ramen": "拉麵", "honey": "蜂蜜", "tea": "茶", "bottle": "奶瓶", "lollipop": "棒棒糖"},
+  "dashboard": {"saving_settings": "正在儲存設定...", "shutting_down": "正在關閉...", "validation_warning": "檢查結果（有警告）", "validation_ok": "檢查結果（正常）"},
+  "family_summary": {
+    "title": "家庭摘要", "status_title": "家庭狀態", "not_initialized": "家庭資料尚未初始化。",
+    "no_key_events": "目前尚無家庭重點事件。", "fund_overview": "生活費: {amount} 元", "pressure_overview": "家庭壓力: {amount}%",
+    "unavailable": "家庭資料尚未連接執行中的 Dashboard。", "race_rhythm_tooltip": "顯示下一次自主競賽提案的排程；實際開始仍需通過資格與距離判定。",
+    "chorus_rhythm_tooltip": "顯示下一次自主合奏提案的排程；實際開始仍需通過資格與反應判定。",
+    "current_summons": "目前召喚", "members": "家庭成員", "recent_events": "近期事件", "recent_events_accessible": "家庭近期事件",
+    "no_runtime_members": "目前沒有角色 runtime 資料。", "no_members": "尚無成員", "standby_count": "待命 {count} 人",
+    "mood_line": "心情：{mood}", "mood_score": "{mood}（{score:.0f}/100）", "form_line": "形態：{form}",
+    "form_base": "◇ 普通形態", "form_transformed": "✦ 變身形態", "summoned": "● 召喚中", "standby": "○ 待命",
+    "summoned_now": "目前已召喚", "standby_now": "目前待命", "donate_accessible": "捐生活費 100 元",
+    "donate_tooltip": "捐入 100 元生活費", "donate_golden_only": "只有黃金傳說模式可以捐生活費",
+    "achievement_summary": "成就摘要", "open_trophy_cabinet": "開啟獎盃蒐集櫃", "no_achievement_data": "尚無成就資料",
+    "open_trophy_cabinet_status": "開啟獎盃蒐集櫃；{status}", "open_trophy_cabinet_mode_status": "開啟獎盃蒐集櫃；{mode}；{status}",
+    "pressure": {"high": "高度壓力", "medium": "中度壓力", "low": "低度壓力"},
+    "stats": {"average_mood": "平均心情", "fund_delta": "近期收支", "pressure_delta": "壓力變化", "event_count": "事件數"}
+  },
+  "rhythm": {
+    "race_active": "競賽：進行中", "race_cooldown_duration": "競賽：約 {duration} 後再提案", "race_cooldown": "競賽：冷卻中", "race_ready": "競賽：等待合適參賽者", "race_unscheduled": "競賽：排程尚未啟動",
+    "chorus_active": "合奏：進行中", "chorus_cooldown_duration": "合奏：約 {duration} 後再提案", "chorus_cooldown": "合奏：冷卻中", "chorus_ready": "合奏：等待合適表演者", "chorus_unscheduled": "合奏：排程尚未啟動",
+    "sleep_settling": "準備入睡", "sleeping": "睡眠中", "sleep_waking": "正在醒來", "sleep_standby": "睡意：待命", "sleep_calculating": "睡意：計算中", "sleepiness": "睡意 {value}%",
+    "form_transition": "形態切換中", "form_transformed_remaining": "變身剩餘約 {duration}", "form_transformed": "目前為變身形態", "form_cooldown_duration": "變身冷卻約 {duration}", "form_cooldown": "變身冷卻中", "form_ready": "變身：等待適合時機", "form_unavailable": "變身：目前不可用"
+  },
+  "event_log": {
+    "title": "事件日誌", "title_filtered": "事件日誌 - {filter}", "title_personal": "{title}: {character}", "unavailable": "事件日誌尚未連接執行中的 Dashboard。",
+    "personal_filter_character": "個人篩選角色", "personal_filter": "個人篩選", "personal_filter_tooltip": "僅在「個人」篩選時使用", "event_list": "事件列表",
+    "no_matching_records": "目前沒有符合條件的紀錄。", "no_event_data": "目前尚無事件資料。", "select_event": "選取左側事件以查看詳情。", "details": "事件詳情",
+    "family_system": "家庭／系統", "family_system_event": "家庭／系統事件", "sequence": "時序 #{sequence:03d}", "no_tags": "沒有標籤", "tags": "標籤　{tags}", "general_event": "一般事件", "no_effects": "本事件沒有數值變化",
+    "importance": {"low": "一般", "normal": "一般", "major": "重要", "high": "重要", "critical": "關鍵"}
+  },
+  "race": {"challenger": "挑戰者", "opponent": "對手", "winner": "贏家", "distance": "比賽距離", "direction": "方向", "elapsed": "比賽用時"},
+  "relationship": {
+    "title": "關係表", "unavailable": "角色資料尚未連接執行中的 Dashboard。", "not_enough_characters": "目前沒有足夠角色可顯示關係。", "no_data": "目前尚無角色關係資料。", "no_visible_data": "目前沒有可顯示的關係資料。",
+    "affinity": "好感度", "event_count": "事件次數", "formula": "好感度為暫定加權分數：熟悉 45% + 信任 30% + 依附 35% - 緊張 20%", "formula_multiline": "好感度＝熟悉×45%＋信任×30%\n　　　　　＋依附×35%－緊張×20%",
+    "summon": "召喚", "hide": "隱藏", "summon_character": "召喚 {character}", "not_loaded": "{character} 尚未載入", "race_summary": "🏁 競賽 {races} 場　{wins} 勝 {losses} 敗　勝率 {win_rate}",
+    "row_tooltip": "好感 {affinity:.2f}｜事件 {event_count}", "mood_no_data": "心情：尚無資料", "mood_score": "心情：{mood}（{score:.0f}/100）", "view_relationships_tooltip": "查看 {character} 對其他角色的關係\n{mood}",
+    "row": "  -> {target}: 好感度 {affinity:5.2f} | 熟悉 {familiarity:5.2f} / 信任 {trust:5.2f} / 依附 {attachment:5.2f} / 緊張 {tension:5.2f} | 事件 {event_count}"
+  },
+  "achievements": {
+    "modes": {"sandbox": "沙盒", "golden_legend": "黃金傳說"}, "mode_tabs": {"sandbox": "沙盒成就", "golden_legend": "黃金傳說成就"},
+    "progress": "已取得 {unlocked} / {total}", "summary_recent": "{progress}｜最近：{title}", "summary_empty": "{progress}｜尚無完成成就",
+    "acquisition_record": "取得紀錄", "hover_unlocked": "將游標移到已取得的獎盃上，即可查看取得方式。", "unlocked_at": "取得時間：{time}",
+    "locked_accessible": "未取得的 {tier} 獎盃", "unlocked_accessible": "已取得 {tier} 成就：{title}",
+    "notification": {"single": "獲得新成就", "multiple": "一次獲得 {count} 項成就", "more": " 等 {count} 項"}
+  },
+  "settings": {
+    "language_and_updates": "語言與更新", "interface_language": "介面語言", "unavailable": "狀態設定尚未連接執行中的 Dashboard。",
+    "groups": {"runtime": "執行模式", "timing": "時間與畫面", "social_cooldown": "社交冷卻", "life_rhythm": "生活節奏", "developer": "開發工具"},
+    "world_mode": "世界模式", "time_scale": "時間流速", "display_scale": "顯示比例", "enable_care": "啟用角色照護功能", "enable_care_tooltip": "允許低心情照護與相關家庭互動。",
+    "race_frequency": "競賽頻率", "race_frequency_tooltip": "調整自主競賽的等待與冷卻時間；不略過資格、距離或接受判定。", "chorus_frequency": "合奏頻率", "chorus_frequency_tooltip": "調整自主合奏的等待、重試與冷卻時間；不略過資格、距離或反應判定。",
+    "mood_climate": "情緒氣候", "mood_climate_tooltip": "自然心情會隨模擬倍速更新；三種氣候只調整發生率、正負傾向與幅度，不設定目標心情。",
+    "show_debug": "顯示角色 Debug 資訊", "show_debug_tooltip": "顯示完整角色與效能偵錯資訊。", "show_social_status": "顯示角色社交狀態標籤", "show_social_status_tooltip": "在角色頭上顯示 random、relation_watch 等行為測試標籤。",
+    "preview_work": "預覽魯道夫工作", "preview_race": "預覽魯道夫 vs 帝寶競賽", "preview_chorus": "立即預覽合奏", "transformation_control": "沙盒形態控制", "sleep_control": "沙盒睡眠控制", "validate_config_manifest": "檢查 Config / Manifest",
+    "preview_work_idle": "只播放工作與休息動畫，不套用金錢、家庭壓力或心情結算。", "preview_race_idle": "播放魯道夫與帝寶的完整競賽；不寫入事件，也不套用數值變動。", "preview_chorus_idle": "立即開始一場沙盒合奏；沿用自主反應，不寫事件或套用收益。", "preview_work_active": "魯道夫工作預覽已開始；本次不會套用任何結算。", "preview_race_active": "魯道夫 vs 帝寶競賽預覽已開始；本次不寫入正式事件或數值。", "preview_chorus_active": "合奏預覽已開始；本次不寫入事件，也不套用心情或關係收益。", "sleep_control_idle": "指定角色睡覺或用既有 waking 流程喚醒；僅限沙盒。",
+    "preview_work_tooltip": "使用 manifest 的 activity_work_stationary 與 activity_work_rest 預覽；不套用正式結算。", "preview_work_sandbox_only": "只可在沙盒模式使用工作預覽。", "preview_race_tooltip": "使用競賽 manifest contexts 播放完整流程；不寫入正式事件或數值。", "preview_race_sandbox_only": "只可在沙盒模式使用競賽預覽。", "preview_chorus_tooltip": "立即開始合奏並沿用自主加入／觀看反應；不寫入事件或套用收益。", "preview_chorus_sandbox_only": "只可在沙盒模式使用合奏預覽。",
+    "world_modes": {"golden_legend": "黃金傳說", "sandbox": "沙盒"}, "frequencies": {"frequent": "經常", "normal": "普通", "occasional": "偶爾"}, "mood_climates": {"cheerful": "明朗", "balanced": "均衡", "expressive": "多彩"}
+  },
+  "transformation": {"action_revert_label": "解除變身", "action_transform_label": "變身"},
+  "preview_messages": {
+    "runtime_or_sandbox": "無法預覽：請先切換至沙盒模式，或 Runtime 尚未連接。", "runtime_unavailable": "無法預覽：執行中的 Runtime 尚未連接。", "transformation_started": "{character}{action}過場已開始。", "transformation_queued": "{character}解除變身已排入等待；回到地面且空閒後會自動安全解除。", "unknown": "無法預覽。", "unknown_with_reason": "無法預覽：{reason}", "work_not_started": "無法預覽：Runtime 未啟動工作 Activity。",
+    "transformation_failures": {"preview_requires_sandbox": "無法預覽：請先切換至沙盒模式。", "transition_active": "無法預覽：角色正在切換形態。", "participant_unavailable": "無法預覽：找不到指定角色。", "participant_disabled": "無法預覽：角色目前已停用。", "participant_hidden": "無法預覽：角色目前未顯示。", "participant_owned": "無法預覽：角色正在執行 Activity。", "participant_dragging": "無法預覽：角色正在被拖曳。", "participant_offer_busy": "無法預覽：角色正在進行道具互動。", "participant_care_busy": "無法預覽：角色正在照護或被照護。", "participant_social_busy": "無法預覽：角色正在進行社交互動。", "participant_recovering": "無法預覽：角色正在恢復或鎖定狀態。", "airborne": "無法預覽：角色必須先回到地面。", "asset_directory_missing": "無法預覽：找不到變身素材資料夾。", "capability_unavailable_random": "無法預覽：manifest 缺少可用的 random 素材。", "asset_load_failed": "無法預覽：變身素材載入失敗。"},
+    "work_failures": {"preview_requires_sandbox": "無法預覽：請先切換至沙盒模式。", "severe_mood": "無法預覽：{character}心情為 severe，沒有符合 band 的工作素材。", "rudolf_unavailable": "無法預覽：找不到{character}角色。", "participant_owned": "無法預覽：{character}正在執行其他 Activity。", "participant_hidden": "無法預覽：{character}目前未顯示。", "participant_disabled": "無法預覽：{character}目前已停用。", "settlement_pending": "無法預覽：正式工作的結算仍在等待完成。", "participant_busy": "無法預覽：{character}目前正在進行其他互動。", "capability_unavailable": "無法預覽：manifest 中沒有符合目前狀態的工作素材。"},
+    "race_failures": {"preview_requires_sandbox": "無法預覽：請先切換至沙盒模式。", "participant_unavailable": "無法預覽：找不到{rudolf}或{teio}。", "participant_hidden": "無法預覽：{character}目前未顯示。", "participant_disabled": "無法預覽：{character}目前已停用。", "participant_busy": "無法預覽：{character}正在進行其他互動。", "participant_airborne": "無法預覽：{character}必須先回到地面。", "form_blocks_race": "無法預覽：{character}目前形態不能參賽。", "severe_mood": "無法預覽：{character}心情為 severe。", "race_already_active": "無法預覽：目前已有競賽正在進行。", "participants_too_far": "無法預覽：{rudolf}與{teio}距離太遠，請先將兩人移近。", "participants_too_close": "無法預覽：{rudolf}與{teio}距離太近，請稍候兩人自然分開。", "race_course_unavailable": "無法預覽：目前桌面寬度不足以容納最短 500px 跑道。", "participant_owned": "無法預覽：參賽者正在執行其他 Activity。", "participant_busy_generic": "無法預覽：參賽者正在進行其他互動。", "capability_unavailable": "無法預覽：manifest 缺少符合目前形態與 band 的競賽素材。"},
+    "chorus_failures": {"preview_requires_sandbox": "無法預覽：請先切換至沙盒模式。", "chorus_already_active": "無法預覽：目前已有合奏正在進行。", "no_eligible_performer": "無法預覽：沒有可發起合奏的空閒角色或相符素材。", "empty_session_id": "無法預覽：無法建立合奏識別碼。", "perform_animation_unavailable": "無法預覽：manifest 缺少符合目前形態與 band 的演奏素材。"}
+  },
+  "sleep_control": {"started": "{character}已開始進入睡眠。", "waking": "{character}已進入喚醒過場。", "button_waking": "{character}喚醒中", "button_wake": "喚醒{character}", "button_blocked": "{character}無法睡眠", "button_sleep": "讓{character}睡覺", "tooltip_waking": "角色正在播放既有 waking 過場。", "tooltip_wake": "使用既有 waking 流程提早喚醒。", "tooltip_blocked": "角色目前形態不允許睡眠。", "tooltip_sleep": "指定角色立即進入既有睡眠流程。", "tooltip_sandbox_only": "僅可在沙盒中對已召喚角色使用。", "failures": {"sandbox_required": "睡眠控制僅可在沙盒模式使用。", "participant_unavailable": "找不到指定角色。", "participant_hidden": "角色目前未召喚，無法指定睡眠。", "participant_owned": "角色正在進行其他活動，暫時無法睡覺。", "form_blocks_sleep": "角色目前形態不允許睡眠。", "already_waking": "角色已在喚醒過場中。", "sleep_capacity_reached": "目前沒有可用的睡眠名額。", "unknown": "無法切換睡眠。", "unknown_with_reason": "無法切換睡眠：{reason}"}}
+}

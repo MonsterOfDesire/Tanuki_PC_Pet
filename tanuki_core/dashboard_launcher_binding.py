@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from .information_center_spec import PAGE_STATUS_SETTINGS
+from .ui_localization import translate_ui
 
 
 @dataclass(frozen=True)
@@ -19,11 +20,6 @@ class DashboardLauncherSnapshot:
 class DashboardLauncherBinding:
     """Narrow launcher adapter that reuses existing Dashboard entry points."""
 
-    WORLD_MODE_LABELS = {
-        "golden_legend": "黃金傳說",
-        "sandbox": "沙盒",
-    }
-
     def __init__(self, dashboard):
         self.dashboard = dashboard
 
@@ -35,19 +31,26 @@ class DashboardLauncherBinding:
         )
         return DashboardLauncherSnapshot(
             world_mode_key=world_mode,
-            world_mode_label=self.WORLD_MODE_LABELS.get(
-                world_mode,
-                world_mode or "未設定",
+            world_mode_label=translate_ui(
+                f"launcher.world_{world_mode}",
+                default=world_mode or "未設定",
             ),
             time_scale_label=f"{time_scale:g}x",
             care_enabled=care_enabled,
-            care_label="照護中" if care_enabled else "照護關閉",
-            shutdown_text=str(
-                getattr(
-                    self.dashboard,
-                    "launcher_shutdown_text",
-                    "關閉系統",
-                )
+            care_label=translate_ui(
+                "launcher.care_on" if care_enabled else "launcher.care_off",
+                default="照護中" if care_enabled else "照護關閉",
+            ),
+            shutdown_text=(
+                translate_ui("launcher.shutdown", default="關閉系統")
+                if str(
+                    getattr(
+                        self.dashboard,
+                        "launcher_shutdown_text",
+                        "關閉系統",
+                    )
+                ) == "關閉系統"
+                else str(self.dashboard.launcher_shutdown_text)
             ),
             shutdown_enabled=bool(
                 getattr(

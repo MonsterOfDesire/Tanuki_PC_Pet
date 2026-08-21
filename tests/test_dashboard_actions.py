@@ -20,6 +20,11 @@ class FakePet:
         self.social_cooldown_duration = None
         self.show_calls = 0
         self.hide_calls = 0
+        self.activity_locked = False
+        self.activity_interrupt_calls = []
+        self.activity_user_interrupt_provider = (
+            lambda pet, reason: self.activity_interrupt_calls.append(reason)
+        )
 
     def apply_display_scale(self, multiplier):
         self.apply_display_scale_calls.append(multiplier)
@@ -32,6 +37,9 @@ class FakePet:
 
     def hide(self):
         self.hide_calls += 1
+
+    def is_activity_locked(self):
+        return self.activity_locked
 
 
 class DashboardActionsTests(unittest.TestCase):
@@ -106,6 +114,16 @@ class DashboardActionsTests(unittest.TestCase):
         actions.apply_pet_visibility(pet, False)
 
         self.assertFalse(pet.user_visible)
+        self.assertEqual(pet.hide_calls, 1)
+
+    def test_unsummon_interrupts_active_activity_before_hiding(self):
+        pet = FakePet()
+        pet.activity_locked = True
+        actions = DashboardActions(sim_clock=FakeClock(), now_provider=lambda: 0.0)
+
+        actions.apply_pet_visibility(pet, False)
+
+        self.assertEqual(pet.activity_interrupt_calls, ["user_unsummon"])
         self.assertEqual(pet.hide_calls, 1)
 
 

@@ -2,11 +2,16 @@ import unittest
 
 from tanuki_core.pet_random_rules import (
     NORMAL_RANDOM_DIRECTION_FLIP_CHANCE,
+    RANDOM_CONTEXT,
     SEVERE_RANDOM_DIRECTION_FLIP_CHANCE,
+    SIDE_READY_FOLLOWUP_CONTEXT,
     build_random_state_transition,
+    choose_idle_animation_context,
     derive_random_visual_purpose,
     extend_random_state_timer,
     get_idle_action_override,
+    is_side_ready_followup_eligible,
+    is_visible_side_ready_followup,
     resolve_random_stuck_behavior,
     should_refresh_severe_random_state,
 )
@@ -86,6 +91,16 @@ class PetRandomRuleTests(unittest.TestCase):
         )
         self.assertEqual(
             get_idle_action_override(
+                "Tsurumaru Tsuyoshi",
+                current_purpose="idle",
+                current_action_tag="stand",
+                next_purpose="idle",
+                next_action_tag="side_stand_cheer",
+            ),
+            ("side_ready", "side", "stand"),
+        )
+        self.assertEqual(
+            get_idle_action_override(
                 "Symboli Rudolf",
                 current_purpose="idle",
                 current_action_tag="stand",
@@ -93,6 +108,76 @@ class PetRandomRuleTests(unittest.TestCase):
                 next_action_tag="side_stand",
             ),
             (),
+        )
+
+    def test_side_ready_followup_eligibility_requires_current_visible_ready_pose(self):
+        kwargs = {
+            "side_ready_followup_armed": True,
+            "current_action_tag": "side_ready",
+            "current_frames": ["ready"],
+        }
+        self.assertTrue(
+            is_side_ready_followup_eligible(
+                "Tsurumaru Tsuyoshi",
+                **kwargs,
+            )
+        )
+        self.assertFalse(
+            is_side_ready_followup_eligible(
+                "Tsurumaru Tsuyoshi",
+                **{**kwargs, "current_action_tag": "eat"},
+            )
+        )
+        self.assertFalse(
+            is_side_ready_followup_eligible(
+                "Tsurumaru Tsuyoshi",
+                **{**kwargs, "current_frames": []},
+            )
+        )
+        self.assertFalse(
+            is_side_ready_followup_eligible(
+                "Tsurumaru Tsuyoshi",
+                **{**kwargs, "side_ready_followup_armed": False},
+            )
+        )
+
+    def test_side_ready_followup_uses_ten_percent_boundary(self):
+        self.assertEqual(
+            choose_idle_animation_context(
+                side_ready_followup_armed=True,
+                roll=0.099999,
+            ),
+            SIDE_READY_FOLLOWUP_CONTEXT,
+        )
+        self.assertEqual(
+            choose_idle_animation_context(
+                side_ready_followup_armed=True,
+                roll=0.10,
+            ),
+            RANDOM_CONTEXT,
+        )
+
+    def test_unarmed_idle_does_not_enter_followup_context(self):
+        self.assertEqual(
+            choose_idle_animation_context(
+                side_ready_followup_armed=False,
+                roll=0.0,
+            ),
+            RANDOM_CONTEXT,
+        )
+
+    def test_achievement_followup_requires_an_applied_standing_visual(self):
+        self.assertTrue(
+            is_visible_side_ready_followup("idle", "side_stand")
+        )
+        self.assertTrue(
+            is_visible_side_ready_followup("idle", "side_stand_cheer")
+        )
+        self.assertFalse(
+            is_visible_side_ready_followup("idle", "sit")
+        )
+        self.assertFalse(
+            is_visible_side_ready_followup("move", "side_stand")
         )
 
 

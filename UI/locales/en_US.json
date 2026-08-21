@@ -1,0 +1,267 @@
+{
+  "meta": {"language_name": "English"},
+  "app": {
+    "name": "Tanuki Desktop Pet",
+    "information_center": "Tanuki Information Center"
+  },
+  "characters": {
+    "Air Groove": "Air Groove",
+    "Sirius Symboli": "Sirius Symboli",
+    "Symboli Rudolf": "Symboli Rudolf",
+    "Tokai Teio": "Tokai Teio",
+    "Tsurumaru Tsuyoshi": "Tsurumaru Tsuyoshi",
+    "Player": "Player"
+  },
+  "settings": {
+    "language_and_updates": "Language and updates",
+    "interface_language": "Interface language"
+  },
+  "information_center": {
+    "title": "Tanuki Information Center",
+    "window_title": "Tanuki Information Center — {page}",
+    "loading": "Loading page…",
+    "size": "Window size",
+    "size_tooltip": "Apply a suggested aspect ratio. You can still resize the window afterward.",
+    "detach": "Detach page",
+    "detach_tooltip": "Move the current page into its own window",
+    "detached_title": "{page} (detached)",
+    "detached_placeholder": "This page is detached.\nSelect its tab above to recall the detached window.",
+    "detached_recall": "{page} (detached; select to recall)",
+    "dock_close": "Close and return to Information Center",
+    "pages": {
+      "relation_summon": {"navigation": "Relations + Summon", "title": "Relations + Summon", "placeholder": "Character portraits, summon controls, and two-way relationship data appear here."},
+      "event_log": {"navigation": "Event Log", "title": "Event Log", "placeholder": "Event filters, the event list, and detailed records appear here."},
+      "family_status": {"navigation": "Family Summary", "title": "Family Status Summary", "placeholder": "Living fund, household pressure, member cards, and recent events appear here."},
+      "achievements": {"navigation": "Trophy Cabinet", "title": "Trophy Cabinet", "placeholder": "Sandbox and Golden Legend achievement trophies appear here."},
+      "status_settings": {"navigation": "Status Settings", "title": "Status Settings", "placeholder": "General settings, social cooldowns, and advanced developer tools appear here."}
+    },
+    "sizes": {
+      "recommended_16_9": "Recommended (16:9)",
+      "comfortable_16_10": "Comfortable reading (16:10)",
+      "tall_4_3": "Vertical content (4:3)",
+      "compact_16_9": "Compact canvas (16:9)"
+    }
+  },
+  "launcher": {
+    "title": "Tanuki Control Center", "subtitle": "Desktop life shortcuts",
+    "main_actions": "Main actions", "information_center": "Information Center",
+    "open_information_center": "Open Information Center", "offer_tray": "Food Tray",
+    "open_offer_tray": "Open Food Tray", "current_status": "Current status",
+    "status_settings": "Status Settings", "open_status_settings": "Open Status Settings", "shutdown": "Exit",
+    "disconnected": "Disconnected", "care_on": "Care on", "care_off": "Care off",
+    "world_golden_legend": "Golden Legend", "world_sandbox": "Sandbox",
+    "pin_sidebar": "Pin sidebar", "collapse_sidebar": "Collapse sidebar", "pinned_tooltip": "Pinned; click to allow automatic collapse", "unpinned_tooltip": "Not pinned; click to keep the sidebar open"
+  },
+  "updates": {
+    "checking": "Checking for updates…",
+    "up_to_date": "You are using the latest version.",
+    "available": "Version {version} is available.",
+    "failed": "Unable to check for updates: {reason}",
+    "current": "Current version {version}",
+    "check_now": "Check now",
+    "view_release": "View release",
+    "download_updater": "Download updater",
+    "updater_ready": "Download and run TanukiUpdater.exe from the Release page.",
+    "manual_only": "This release does not include an automatic update package. You can view the Release instead."
+  },
+  "common": {
+    "on": "On", "off": "Off", "no_data": "No data", "not_recorded": "Not recorded", "character": "character", "name_separator": ", ",
+    "duration_minutes_seconds": "{minutes}m {seconds:02d}s", "duration_seconds": "{seconds}s", "duration_seconds_decimal": "{seconds:.1f} s",
+    "currency_amount": "{amount:+,d}", "currency_amount_unsigned": "{amount:,}", "people_count": "{count} members", "event_count": "{count} events"
+  },
+  "labels": {
+    "living_fund": "Living fund", "household_pressure": "Household pressure", "mood": "Mood",
+    "filters": {"all": "All", "personal": "Personal", "social": "Social", "economy": "Economy", "item": "Items", "system": "System"},
+    "channels": {"social": "Social", "economy": "Economy", "item": "Items", "story": "Story", "system": "System"},
+    "relationship_metrics": {"familiarity": "Familiarity", "trust": "Trust", "attachment": "Attachment", "tension": "Tension"},
+    "mood_states": {"normal": "Content", "unhappy": "Low", "depressed": "Very low"},
+    "forms": {"base": "Normal form", "transformed": "Transformed form"}
+  },
+  "window_chrome": {"pin": "Always on top", "minimize": "Minimize", "close": "Close"},
+  "offer_tray": {"title": "Food Tray", "drag_item": "Drag {item} to a character", "drag_to_character": "Drag to a character", "instruction_tooltip": "Hold an item and drag it onto a desktop character", "window_drag": "Move the Food Tray window"},
+  "items": {"ramen": "ramen", "honey": "honey", "tea": "tea", "bottle": "bottle", "lollipop": "lollipop"},
+  "dashboard": {"saving_settings": "Saving settings...", "shutting_down": "Shutting down...", "validation_warning": "Validation results (warnings)", "validation_ok": "Validation results (OK)"},
+  "family_summary": {
+    "title": "Family Summary", "status_title": "Family Status", "not_initialized": "Family data has not been initialized.", "no_key_events": "No notable family events yet.",
+    "fund_overview": "Living fund: {amount}", "pressure_overview": "Household pressure: {amount}%", "unavailable": "Family data is not connected to a running Dashboard.",
+    "race_rhythm_tooltip": "Schedule for the next autonomous race proposal. Eligibility, distance, and acceptance checks still apply.", "chorus_rhythm_tooltip": "Schedule for the next autonomous performance proposal. Eligibility, distance, and response checks still apply.",
+    "current_summons": "Summoned", "members": "Family Members", "recent_events": "Recent Events", "recent_events_accessible": "Recent family events", "no_runtime_members": "No character runtime data is available.", "no_members": "No members", "standby_count": "{count} standing by",
+    "mood_line": "Mood: {mood}", "mood_score": "{mood} ({score:.0f}/100)", "form_line": "Form: {form}", "form_base": "◇ Normal form", "form_transformed": "✦ Transformed form", "summoned": "● Summoned", "standby": "○ Standby", "summoned_now": "Currently summoned", "standby_now": "Currently standing by",
+    "donate_accessible": "Donate 100 to the living fund", "donate_tooltip": "Add 100 to the living fund", "donate_golden_only": "Living-fund donations are only available in Golden Legend mode",
+    "achievement_summary": "Achievement Summary", "open_trophy_cabinet": "Open Trophy Cabinet", "no_achievement_data": "No achievement data", "open_trophy_cabinet_status": "Open Trophy Cabinet; {status}", "open_trophy_cabinet_mode_status": "Open Trophy Cabinet; {mode}; {status}",
+    "pressure": {"high": "High pressure", "medium": "Moderate pressure", "low": "Low pressure"},
+    "stats": {"average_mood": "Average mood", "fund_delta": "Recent balance", "pressure_delta": "Pressure change", "event_count": "Events"}
+  },
+  "rhythm": {
+    "race_active": "Race: in progress", "race_cooldown_duration": "Race: next proposal in about {duration}", "race_cooldown": "Race: cooling down", "race_ready": "Race: waiting for eligible racers", "race_unscheduled": "Race: schedule not started",
+    "chorus_active": "Performance: in progress", "chorus_cooldown_duration": "Performance: next proposal in about {duration}", "chorus_cooldown": "Performance: cooling down", "chorus_ready": "Performance: waiting for an eligible performer", "chorus_unscheduled": "Performance: schedule not started",
+    "sleep_settling": "Getting ready to sleep", "sleeping": "Sleeping", "sleep_waking": "Waking up", "sleep_standby": "Sleepiness: standby", "sleep_calculating": "Sleepiness: calculating", "sleepiness": "Sleepiness {value}%",
+    "form_transition": "Changing form", "form_transformed_remaining": "Transformed: about {duration} remaining", "form_transformed": "Currently transformed", "form_cooldown_duration": "Transform: next attempt in about {duration}", "form_cooldown": "Transform: cooling down", "form_ready": "Transform: waiting for a safe moment", "form_unavailable": "Transform: unavailable"
+  },
+  "event_log": {
+    "title": "Event Log", "title_filtered": "Event Log - {filter}", "title_personal": "{title}: {character}", "unavailable": "The Event Log is not connected to a running Dashboard.",
+    "personal_filter_character": "Character for personal filter", "personal_filter": "Personal filter", "personal_filter_tooltip": "Used only when the Personal filter is selected", "event_list": "Event list",
+    "no_matching_records": "No records match the current filter.", "no_event_data": "No event data is available.", "select_event": "Select an event on the left to see its details.", "details": "Event Details", "family_system": "Family / System", "family_system_event": "Family / System event", "sequence": "Sequence #{sequence:03d}",
+    "no_tags": "No tags", "tags": "Tags  {tags}", "general_event": "General event", "no_effects": "This event did not change any values",
+    "importance": {"low": "Normal", "normal": "Normal", "major": "Important", "high": "Important", "critical": "Critical"},
+    "categories": {"social": "Social", "care": "Care", "relationship": "Relationship", "economy": "Economy", "player_help": "Player help", "player_offer": "Player offer", "item": "Item", "system": "System", "debug": "Debug", "household": "Household"}
+  },
+  "race": {"challenger": "Challenger", "opponent": "Opponent", "winner": "Winner", "distance": "Race distance", "direction": "Direction", "elapsed": "Race time"},
+  "relationship": {
+    "title": "Relationships", "unavailable": "Character data is not connected to a running Dashboard.", "not_enough_characters": "There are not enough characters to display relationships.", "no_data": "No relationship data is available.", "no_visible_data": "No relationships can be displayed.",
+    "affinity": "Affinity", "event_count": "Event count", "formula": "Affinity is provisional: Familiarity 45% + Trust 30% + Attachment 35% - Tension 20%", "formula_multiline": "Affinity = Familiarity×45% + Trust×30%\n          + Attachment×35% - Tension×20%",
+    "summon": "Summon", "hide": "Hide", "summon_character": "Summon {character}", "not_loaded": "{character} is not loaded", "race_summary": "🏁 {races} races  {wins} wins / {losses} losses  Win rate {win_rate}", "row_tooltip": "Affinity {affinity:.2f} | Events {event_count}",
+    "mood_no_data": "Mood: no data", "mood_score": "Mood: {mood} ({score:.0f}/100)", "view_relationships_tooltip": "View {character}'s relationships with other characters\n{mood}",
+    "row": "  -> {target}: Affinity {affinity:5.2f} | Familiarity {familiarity:5.2f} / Trust {trust:5.2f} / Attachment {attachment:5.2f} / Tension {tension:5.2f} | Events {event_count}"
+  },
+  "achievements": {
+    "modes": {"sandbox": "Sandbox", "golden_legend": "Golden Legend"}, "mode_tabs": {"sandbox": "Sandbox Achievements", "golden_legend": "Golden Legend Achievements"},
+    "progress": "Unlocked {unlocked} / {total}", "summary_recent": "{progress} | Latest: {title}", "summary_empty": "{progress} | No achievements yet", "acquisition_record": "Unlock Record", "hover_unlocked": "Hover over an unlocked trophy to see how it was earned.", "unlocked_at": "Unlocked: {time}",
+    "locked_accessible": "Locked {tier} trophy", "unlocked_accessible": "Unlocked {tier} achievement: {title}", "notification": {"single": "New achievement unlocked", "multiple": "{count} achievements unlocked", "more": " and {count} total"},
+    "definitions": {
+      "race": {
+        "first_natural_finish": {"title": "First Run", "description": "At 1x speed throughout, witness the first non-test race finish naturally."},
+        "ten_natural_finishes": {"title": "Track Regular", "description": "Witness ten non-test races finish naturally."},
+        "all_course_lengths": {"title": "Any Distance", "description": "Finish a race on each 500, 720, 1100, and 1500px course."},
+        "both_directions": {"title": "Both Ways", "description": "Finish one clockwise-left race and one counterclockwise-right race."},
+        "all_course_direction_pairs": {"title": "Run Every Way", "description": "Complete all eight combinations of four race distances and both directions."},
+        "every_competitor_form_wins": {"title": "Everyone's Specialty", "description": "Witness wins by normal Tokai Teio, Sirius Symboli, normal Symboli Rudolf, and transformed Symboli Rudolf."}
+      },
+      "chorus": {
+        "first_natural_finish": {"title": "First Ensemble", "description": "At 1x speed throughout, witness the first performance finish naturally."},
+        "three_performers": {"title": "Trio", "description": "Naturally finish a performance with at least three performers."},
+        "every_character_performed": {"title": "Everyone Takes the Stage", "description": "Have all five characters perform in a naturally completed session."},
+        "five_performers_same_session": {"title": "All Five on Stage", "description": "Naturally finish one performance with all five characters performing."}
+      },
+      "sleep": {
+        "first_natural_finish": {"title": "Sweet Dreams", "description": "Witness the first autonomous sleep session end with a natural awakening."},
+        "first_group_join": {"title": "Close Together", "description": "Witness a character notice a sleeper and autonomously join their sleep group."},
+        "every_character_natural_finish": {"title": "A Well-Rested Family", "description": "Witness each of the five characters complete autonomous sleep once."},
+        "five_simultaneous": {"title": "The Whole Family Asleep", "description": "At 1x speed throughout, have all five characters naturally asleep at the same time."}
+      },
+      "transformation": {
+        "teio_first_autonomous": {"title": "Teio's New Form", "description": "At 1x speed throughout, witness Tokai Teio autonomously complete a transformation for the first time."},
+        "rudolf_first_autonomous": {"title": "The White Emperor", "description": "At 1x speed throughout, witness Symboli Rudolf autonomously complete a transformation for the first time."},
+        "both_characters_autonomous": {"title": "Double Miracle", "description": "Witness Tokai Teio and Symboli Rudolf each autonomously complete a transformation."}
+      },
+      "care": {
+        "first_complete": {"title": "First Care", "description": "Witness the first non-test care session finish naturally."},
+        "three_distinct_guardians": {"title": "Care Relay", "description": "Witness three different caregivers each complete a care session."},
+        "sirius_shallow_sleep_rescue": {"title": "Light-Sleeping Guardian", "description": "Witness sleeping Sirius Symboli wake autonomously and finish caring for Tsurumaru Tsuyoshi."}
+      },
+      "honey": {"first_guard": {"title": "Honey Guardian", "description": "Successfully stop Tsurumaru Tsuyoshi from taking the honey for the first time."}},
+      "food": {"first_shared_finish": {"title": "Better Together", "description": "Witness characters naturally finish sharing food for the first time."}},
+      "work": {
+        "rudolf_first_complete": {"title": "Another Day's Work", "description": "In Golden Legend mode, witness Symboli Rudolf naturally finish work for the first time."},
+        "rudolf_ten_completions": {"title": "Family Breadwinner", "description": "In Golden Legend mode, witness Symboli Rudolf naturally finish work ten times."}
+      },
+      "activity": {
+        "variety_sampler": {"title": "Life Observer", "description": "Witness a race, performance, sleep, care, and autonomous transformation each finish naturally."},
+        "family_mastery": {"title": "Tanuki Family Chronicle", "description": "Complete the designated advanced race, performance, sleep, transformation, and care collection achievements."}
+      },
+      "ambient": {"tsuyoshi_rare_stand": {"title": "Tsuyoshi Stood Up!", "description": "In a 1x Sandbox session, witness Tsurumaru Tsuyoshi rarely follow side-ready by standing up."}}
+    }
+  },
+  "events": {
+    "unnamed": "Unnamed event", "types": {"opening_note": "Opening note", "fund_snapshot": "Fund snapshot", "pressure_snapshot": "Pressure snapshot", "player_donate_fund": "Fund donation", "teio_drink_expense": "Drink expense", "rudolf_collectible_expense": "Collectible expense", "rudolf_work_completed": "Work completed", "transformation_started": "Transformation started", "transformation_ended": "Transformation ended", "observe_social_log": "Quiet observation", "post_observe_social_log": "Everyday conversation", "race_completed": "Race completed", "race_declined": "Race declined", "chorus_completed": "Performance completed", "chorus_interrupted": "Performance interrupted", "offer_bottle_success": "Bottle received", "ground_bottle_pickup": "Bottle picked up", "offer_bottle_feed": "Bottle feeding", "ground_bottle_feed": "Bottle feeding", "offer_honey_success": "Honey received", "ground_honey_pickup": "Honey picked up", "offer_honey_guarded": "Honey protected", "offer_honey_denied": "Honey denied", "offer_hover_timeout": "Item interaction timed out", "shared_ramen": "Ramen shared", "shared_tea_chat": "Tea shared", "shared_honey": "Honey shared"}, "deltas": {"living_fund": "Living fund {amount:+,d}", "pressure": "Pressure {amount:+.1f}", "mood": "Mood {amount:+.1f}", "relationship": "Relationship {details}"},
+    "directions": {"clockwise_left": "clockwise (left)", "counterclockwise_right": "counterclockwise (right)"}, "performance": {"solo": "solo performance", "ensemble": "ensemble"},
+    "chorus_reasons": {"default": "conditions changed", "tsuyoshi_honey_guard_needed": "Tsuyoshi needed protection from the honey", "child_care_needed": "a child needed care", "no_performers_remaining": "all performers had left"},
+    "social_templates": {
+      "observe": {
+        "0": "{actor} noticed {target} minding their own business and watched quietly for a while.",
+        "1": "{actor} briefly met {target}'s gaze, and the mood relaxed a little.",
+        "2": "{actor} observed {target} from nearby, as if memorizing one of their little habits.",
+        "3": "{actor} noticed {target} hesitating and chose not to interrupt right away.",
+        "4": "{actor} quietly slowed down and waited for {target} to finish what they were doing.",
+        "5": "{actor} noticed {target}'s expression change, as if trying to gauge their mood today.",
+        "6": "{actor} watched {target} straighten their clothes and quietly remembered the habit.",
+        "7": "{actor} glanced at what was beside {target}, wondering whether it might be useful later.",
+        "8": "{actor} noticed {target} move closer and made a little room for them.",
+        "9": "{actor} watched {target} pause by the window, and everything grew quiet.",
+        "10": "{actor} noticed {target} looking rather pleased with themself and let it pass with a glance.",
+        "11": "{actor} saw that {target} was in good spirits and relaxed a little too.",
+        "12": "{actor} quietly followed {target}'s pace, as if matching the rhythm of the household.",
+        "13": "{actor} noticed {target} looking at something on the desktop and followed their gaze for a moment.",
+        "14": "{actor} sensed that {target} wanted someone to talk to and waited nearby for a while.",
+        "15": "{actor} watched {target} pass by, making way without hurrying them.",
+        "16": "{actor} and {target} both slowed slightly as they passed each other.",
+        "17": "{actor} caught a small expression from {target}, like a signal only the family would understand.",
+        "18": "{actor} noticed that {target} was unusually well behaved today and could not help looking twice.",
+        "19": "{actor} watched {target} wander nearby, as if checking that nothing was wrong.",
+        "20": "{actor} paused to observe {target}, then casually looked away.",
+        "21": "{actor} noticed {target}'s tail twitch and seemed to understand something.",
+        "22": "{actor} watched {target} approach and leave again, weighing whether to speak.",
+        "23": "{actor} noticed how lightly {target} was walking today and quietly felt relieved."
+      },
+      "post_observe_interaction": {
+        "0": "{actor} walked over to {target} and chatted briefly.",
+        "1": "{actor} and {target} huddled together for a little household talk.",
+        "2": "{actor} gave {target} a small response, and the two soon went their separate ways.",
+        "3": "{actor} asked {target} what they wanted to do later, and they seemed to think seriously about it.",
+        "4": "{actor} and {target} quietly exchanged a few words that probably only the family would understand.",
+        "5": "{actor} went over and reminded {target} not to push too hard, in a perfectly natural tone.",
+        "6": "{actor} and {target} chatted about what had just happened, keeping things light.",
+        "7": "{actor} checked how {target}'s day was going and received a short reply.",
+        "8": "{actor} and {target} seemed to discuss dinner before the topic quickly drifted elsewhere.",
+        "9": "{actor} went over and joked with {target}, bringing them a little closer.",
+        "10": "{actor} and {target} stood side by side for a moment, as if sharing the same little secret.",
+        "11": "{actor} nodded to {target}, and neither needed to say anything more.",
+        "12": "{actor} asked whether {target} wanted a break, more gently than usual.",
+        "13": "{actor} and {target} discussed things on the desktop, as if arranging a small family schedule.",
+        "14": "{actor} listened quietly while {target} talked about a few little things.",
+        "15": "{actor} checked on {target} and only left after making sure everything was fine.",
+        "16": "{actor} and {target} bickered a little, but soon returned to their usual mood.",
+        "17": "{actor} told {target} what they had noticed, and {target} seemed a little surprised.",
+        "18": "{actor} and {target} discussed snacks without quite reaching a decision.",
+        "19": "{actor} told {target} they had done well, as naturally as part of the daily routine.",
+        "20": "{actor} and {target} exchanged a look, understanding each other without words.",
+        "21": "{actor} went over with a few reminders, then let {target} return to whatever they wanted.",
+        "22": "{actor} and {target} gathered briefly, as if checking that both were doing all right.",
+        "23": "{actor} offered {target} a small suggestion, and {target} did not seem entirely opposed.",
+        "24": "{actor} stayed beside {target} for a while, making the household feel a little calmer."
+      }
+    },
+    "summaries": {
+      "opening_note": "Symboli Rudolf's family begins another day on the desktop.", "fund_snapshot": "The current living fund is {amount}.", "pressure_snapshot": "Household pressure is currently {amount}%.", "player_donate_fund": "The player donated {amount} to the living fund.",
+      "teio_drink_expense": "Tokai Teio secretly bought another drink.", "rudolf_collectible_expense": "Symboli Rudolf could not resist adding another collectible.", "rudolf_work_completed": "Symboli Rudolf finished work and earned money for the household.",
+      "transformation_started": "{character} began transforming.", "transformation_ended": "{character} returned to normal form.", "observe_social_log": "{actor} watched {target} for a moment.", "post_observe_social_log": "{actor} spent a moment with {target}.",
+      "race_completed": "{winner} beat {loser} in a {distance}px {direction} race, finishing in {elapsed:.1f} seconds.", "race_declined": "{opponent} declined {challenger}'s race challenge.",
+      "chorus_completed": "{performers} completed a {performance} lasting {elapsed:.1f} seconds.", "chorus_completed_with_audience": "{performers} completed a {performance} lasting {elapsed:.1f} seconds, with {audiences} in the audience.", "chorus_interrupted": "The {performance} ended early because {reason}.",
+      "offer_bottle_success": "{actor} picked up the bottle for {target}.", "ground_bottle_pickup": "{actor} picked up the bottle.", "offer_bottle_feed": "{actor} fed {target} with the bottle.", "ground_bottle_feed": "{actor} fed {target} with the bottle.", "offer_honey_success": "{target} received the honey.", "ground_honey_pickup": "{actor} picked up the honey.", "offer_honey_guarded": "{actor} protected the honey from {target}.", "offer_honey_denied": "{actor} stopped {target} from taking the honey.", "offer_hover_timeout": "{actor} put the item back after no recipient was available.",
+      "shared_ramen": "{holder} and {partner} shared {item}.", "shared_ramen_share_both": "{holder} and {partner} shared {item} together.", "shared_ramen_holder_keeps": "{partner} came over for a look, but {holder} kept the {item}.", "shared_ramen_holder_gives": "{holder} handed the {item} to {partner}.",
+      "shared_tea_chat": "{holder} and {partner} enjoyed {item} together.", "shared_tea_chat_share_both": "{holder} and {partner} sat together and shared {item}.", "shared_tea_chat_holder_keeps": "{partner} joined {holder}, but {holder} finished the {item}.", "shared_tea_chat_holder_gives": "{holder} offered the {item} to {partner}.",
+      "shared_honey": "{holder} and {partner} shared {item}.", "shared_honey_share_both": "{holder} and {partner} happily shared {item}.", "shared_honey_holder_keeps": "{partner} came closer, but {holder} kept the {item}.", "shared_honey_holder_gives": "{holder} gave the {item} to {partner}.",
+      "ground_item_pickup": "{target} picked up {item}.", "offer_item_success": "{target} enjoyed {item}.",
+      "generic_care": "{actor} cared for {target}.", "generic_social": "{actor} and {target} shared a social moment.", "generic_item": "{actor} and {target} completed an item interaction.", "generic_economy": "A household finance event was recorded.", "generic_system": "A system event was recorded.", "generic_family": "A family life event was recorded."
+    }
+  },
+  "settings": {
+    "language_and_updates": "Language and updates", "interface_language": "Interface language", "unavailable": "Status Settings is not connected to a running Dashboard.",
+    "groups": {"runtime": "Runtime Mode", "timing": "Time and Display", "social_cooldown": "Social Cooldown", "life_rhythm": "Life Rhythm", "developer": "Developer Tools"},
+    "world_mode": "World mode", "time_scale": "Time speed", "display_scale": "Display scale", "enable_care": "Enable character care", "enable_care_tooltip": "Allow care for low moods and related family interactions.",
+    "race_frequency": "Race frequency", "race_frequency_tooltip": "Adjust autonomous race wait and cooldown times. Eligibility, distance, and acceptance checks still apply.", "chorus_frequency": "Performance frequency", "chorus_frequency_tooltip": "Adjust autonomous performance wait, retry, and cooldown times. Eligibility, distance, and response checks still apply.",
+    "mood_climate": "Mood climate", "mood_climate_tooltip": "Natural mood changes follow simulation speed. The climate adjusts frequency, direction, and magnitude without imposing a target mood.",
+    "show_debug": "Show character debug data", "show_debug_tooltip": "Show full character and performance diagnostics.", "show_social_status": "Show social status labels", "show_social_status_tooltip": "Show testing labels such as random and relation_watch above characters.",
+    "preview_work": "Preview Rudolf's work", "preview_race": "Preview Rudolf vs Teio race", "preview_chorus": "Preview performance now", "transformation_control": "Sandbox Form Control", "sleep_control": "Sandbox Sleep Control", "validate_config_manifest": "Validate Config / Manifest",
+    "preview_work_idle": "Play work and rest animations without applying money, pressure, or mood settlement.", "preview_race_idle": "Play Rudolf and Teio's full race without recording an event or changing values.", "preview_chorus_idle": "Start a sandbox performance using autonomous responses, without events or rewards.",
+    "preview_work_active": "Rudolf's work preview has started; no settlement will be applied.", "preview_race_active": "The Rudolf vs Teio race preview has started; no formal event or value change will be applied.", "preview_chorus_active": "The performance preview has started; no event, mood reward, or relationship reward will be applied.", "sleep_control_idle": "Put a character to sleep or wake them through the existing waking flow; Sandbox only.",
+    "preview_work_tooltip": "Preview activity_work_stationary and activity_work_rest from the manifest without settlement.", "preview_work_sandbox_only": "Work preview is only available in Sandbox mode.", "preview_race_tooltip": "Play the full race flow from manifest contexts without events or value changes.", "preview_race_sandbox_only": "Race preview is only available in Sandbox mode.", "preview_chorus_tooltip": "Start a performance using autonomous join/watch responses, without events or rewards.", "preview_chorus_sandbox_only": "Performance preview is only available in Sandbox mode.",
+    "world_modes": {"golden_legend": "Golden Legend", "sandbox": "Sandbox"}, "frequencies": {"frequent": "Frequent", "normal": "Normal", "occasional": "Occasional"}, "mood_climates": {"cheerful": "Cheerful", "balanced": "Balanced", "expressive": "Expressive"},
+    "race_frequency_tooltips": {"frequent": "Autonomous race waits and cooldowns are about half the Normal duration.", "normal": "Use the standard race schedule for the selected world mode.", "occasional": "Autonomous race waits and cooldowns are about twice the Normal duration."},
+    "chorus_frequency_tooltips": {"frequent": "Autonomous performance waits, retries, and cooldowns are about half the Normal duration.", "normal": "Use the standard autonomous performance schedule.", "occasional": "Autonomous performance waits, retries, and cooldowns are about twice the Normal duration."},
+    "mood_climate_tooltips": {"cheerful": "Each natural mood tick changes 50% of the time, with small changes strongly biased positive.", "balanced": "Each natural mood tick changes 60% of the time. Normal mood drifts slightly downward; nearby adults only add recovery protection after a child enters Low.", "expressive": "Each natural mood tick changes 90% of the time, with frequent and larger negative changes; adults decline more slowly and self-regulate at low moods."}
+  },
+  "transformation": {
+    "completed_base": "{character} returned to normal form.", "completed_transformed": "{character} completed the transformation.", "button_waiting": "Waiting to revert {character}", "button_reverting": "{character} is reverting", "button_transforming": "{character} is transforming", "button_revert": "Revert {character}", "button_transform": "Transform {character}",
+    "tooltip_waiting": "The request is queued and will run when the character is grounded and idle.", "tooltip_reverting": "The character is safely reverting.", "tooltip_transforming": "The character is changing into transformed form.", "tooltip_revert": "Revert manually; the request waits while busy or airborne.", "tooltip_transform": "Transform manually without formal events or settlement.", "tooltip_sandbox_only": "Manual form control is only available in Sandbox mode.", "tooltip_unavailable": "The running runtime cannot find this character or transformation state.",
+    "status_sandbox_only": "Switch to Sandbox mode to inspect and manually control {teio} and {rudolf}.", "status_unavailable": "Form status is unavailable for {characters}.", "status_waiting": "{character}'s revert request is queued until they are grounded and idle.", "status_active": "{character} is {action}.", "status_transformed": "{character} is in an {source} transformed session; it will safely expire automatically or can be ended early.", "status_base": "{teio} and {rudolf} are both in normal form; autonomous transformation can still occur in Sandbox.", "action_revert": "reverting", "action_transform": "transforming", "action_revert_label": "reversion", "action_transform_label": "transformation", "source_autonomous": "autonomous", "source_manual": "manual"
+  },
+  "preview_messages": {
+    "runtime_or_sandbox": "Cannot preview: switch to Sandbox mode, or connect a running runtime.", "runtime_unavailable": "Cannot preview: no running runtime is connected.", "transformation_started": "{character}'s {action} transition has started.", "transformation_queued": "{character}'s reversion is queued and will run when they are grounded and idle.", "unknown": "Cannot start the preview.", "unknown_with_reason": "Cannot start the preview: {reason}", "work_not_started": "Cannot preview: the runtime did not start the work activity.",
+    "transformation_failures": {"preview_requires_sandbox": "Cannot preview: switch to Sandbox mode.", "transition_active": "Cannot preview: the character is already changing form.", "participant_unavailable": "Cannot preview: the requested character is unavailable.", "participant_disabled": "Cannot preview: the character is disabled.", "participant_hidden": "Cannot preview: the character is not summoned.", "participant_owned": "Cannot preview: the character is in another activity.", "participant_dragging": "Cannot preview: the character is being dragged.", "participant_offer_busy": "Cannot preview: the character is interacting with an item.", "participant_care_busy": "Cannot preview: the character is giving or receiving care.", "participant_social_busy": "Cannot preview: the character is in a social interaction.", "participant_recovering": "Cannot preview: the character is recovering or temporarily locked.", "airborne": "Cannot preview: the character must return to the ground.", "asset_directory_missing": "Cannot preview: the transformed asset folder is missing.", "capability_unavailable_random": "Cannot preview: the manifest has no usable random animation.", "asset_load_failed": "Cannot preview: transformed assets failed to load."},
+    "work_failures": {"preview_requires_sandbox": "Cannot preview: switch to Sandbox mode.", "severe_mood": "Cannot preview: {character} is in severe mood and has no matching work animation band.", "rudolf_unavailable": "Cannot preview: {character} is unavailable.", "participant_owned": "Cannot preview: {character} is in another activity.", "participant_hidden": "Cannot preview: {character} is not summoned.", "participant_disabled": "Cannot preview: {character} is disabled.", "settlement_pending": "Cannot preview: a formal work settlement is still pending.", "participant_busy": "Cannot preview: {character} is in another interaction.", "capability_unavailable": "Cannot preview: the manifest has no work animation for the current state."},
+    "race_failures": {"preview_requires_sandbox": "Cannot preview: switch to Sandbox mode.", "participant_unavailable": "Cannot preview: {rudolf} or {teio} is unavailable.", "participant_hidden": "Cannot preview: {character} is not summoned.", "participant_disabled": "Cannot preview: {character} is disabled.", "participant_busy": "Cannot preview: {character} is in another interaction.", "participant_airborne": "Cannot preview: {character} must return to the ground.", "form_blocks_race": "Cannot preview: {character}'s current form cannot race.", "severe_mood": "Cannot preview: {character} is in severe mood.", "race_already_active": "Cannot preview: another race is already active.", "participants_too_far": "Cannot preview: {rudolf} and {teio} are too far apart. Move them closer first.", "participants_too_close": "Cannot preview: {rudolf} and {teio} are too close. Wait for them to separate.", "race_course_unavailable": "Cannot preview: the desktop is too narrow for the shortest 500px course.", "participant_owned": "Cannot preview: a racer is in another activity.", "participant_busy_generic": "Cannot preview: a racer is in another interaction.", "capability_unavailable": "Cannot preview: the manifest lacks race animations for the current form and band."},
+    "chorus_failures": {"preview_requires_sandbox": "Cannot preview: switch to Sandbox mode.", "chorus_already_active": "Cannot preview: another performance is already active.", "no_eligible_performer": "Cannot preview: no idle performer with matching assets is available.", "empty_session_id": "Cannot preview: a performance session could not be created.", "perform_animation_unavailable": "Cannot preview: the manifest lacks a performance animation for the current form and band."}
+  },
+  "sleep_control": {"started": "{character} is going to sleep.", "waking": "{character} entered the waking transition.", "button_waking": "{character} is waking", "button_wake": "Wake {character}", "button_blocked": "{character} cannot sleep", "button_sleep": "Put {character} to sleep", "tooltip_waking": "The existing waking transition is playing.", "tooltip_wake": "Wake early using the existing waking flow.", "tooltip_blocked": "The current form cannot sleep.", "tooltip_sleep": "Start the existing sleep flow immediately.", "tooltip_sandbox_only": "Available only for summoned characters in Sandbox mode.", "failures": {"sandbox_required": "Sleep control is only available in Sandbox mode.", "participant_unavailable": "The requested character is unavailable.", "participant_hidden": "The character is not summoned and cannot be put to sleep.", "participant_owned": "The character is in another activity and cannot sleep yet.", "form_blocks_sleep": "The current form cannot sleep.", "already_waking": "The character is already waking.", "sleep_capacity_reached": "No sleep slot is currently available.", "unknown": "Unable to change sleep state.", "unknown_with_reason": "Unable to change sleep state: {reason}"}}
+}

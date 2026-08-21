@@ -26,6 +26,9 @@ class UiSkinAssets:
         self.asset_specs = UI_ASSET_SPECS if asset_specs is None else asset_specs
         self.skin_specs = UI_SKIN_SPECS if skin_specs is None else skin_specs
         self.avatar_specs = FAMILY_AVATAR_SPECS if avatar_specs is None else tuple(avatar_specs)
+        self._pixmap_cache = {}
+        self._first_frame_cache = {}
+        self._avatar_pixmap_cache = {}
 
     def get_asset_spec(self, asset_key):
         try:
@@ -78,33 +81,48 @@ class UiSkinAssets:
         return tuple(issues)
 
     def load_pixmap(self, asset_key):
+        cached = self._pixmap_cache.get(asset_key)
+        if cached is not None:
+            return QPixmap(cached)
         spec = self.get_asset_spec(asset_key)
         pixmap = QPixmap(self.resolve_asset_path(asset_key))
         if pixmap.isNull():
             raise UiSkinAssetError(f"failed to load UI image: {spec.relative_path}")
-        return pixmap
+        self._pixmap_cache[asset_key] = pixmap
+        return QPixmap(pixmap)
 
     def load_first_frame(self, asset_key):
+        cached = self._first_frame_cache.get(asset_key)
+        if cached is not None:
+            return QPixmap(cached)
         spec = self.get_asset_spec(asset_key)
         reader = QImageReader(self.resolve_asset_path(asset_key))
         reader.setAutoTransform(True)
         image = reader.read()
         if image.isNull():
             raise UiSkinAssetError(f"failed to read first frame: {spec.relative_path}")
-        return QPixmap.fromImage(image)
+        pixmap = QPixmap.fromImage(image)
+        self._first_frame_cache[asset_key] = pixmap
+        return QPixmap(pixmap)
 
     def load_avatar_pixmap(self, avatar_spec):
+        cached = self._avatar_pixmap_cache.get(avatar_spec)
+        if cached is not None:
+            return QPixmap(cached)
         pixmap = self.load_first_frame(avatar_spec.asset_key)
         crop_rect = avatar_spec.crop_rect
         if crop_rect is None:
-            return pixmap
-        source_rect = QRect(
-            int(round(pixmap.width() * crop_rect.x)),
-            int(round(pixmap.height() * crop_rect.y)),
-            max(1, int(round(pixmap.width() * crop_rect.width))),
-            max(1, int(round(pixmap.height() * crop_rect.height))),
-        ).intersected(pixmap.rect())
-        return pixmap.copy(source_rect)
+            avatar_pixmap = pixmap
+        else:
+            source_rect = QRect(
+                int(round(pixmap.width() * crop_rect.x)),
+                int(round(pixmap.height() * crop_rect.y)),
+                max(1, int(round(pixmap.width() * crop_rect.width))),
+                max(1, int(round(pixmap.height() * crop_rect.height))),
+            ).intersected(pixmap.rect())
+            avatar_pixmap = pixmap.copy(source_rect)
+        self._avatar_pixmap_cache[avatar_spec] = avatar_pixmap
+        return QPixmap(avatar_pixmap)
 
     def create_movie(self, asset_key, parent=None):
         spec = self.get_asset_spec(asset_key)

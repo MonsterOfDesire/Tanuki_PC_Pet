@@ -2,6 +2,7 @@ import unittest
 
 from tanuki_core.race_rules import (
     RACE_ACTIVITY_KIND,
+    RACE_COURSES,
     RACE_CHALLENGE_PHASE,
     RACE_FINISH_PHASE,
     RACE_READY_PHASE,
@@ -18,6 +19,8 @@ from tanuki_core.race_rules import (
     evaluate_race_eligibility,
     evaluate_race_emergency_interrupt,
     get_race_expected_speed,
+    get_race_finish_standoff_distance,
+    get_feasible_race_courses,
     get_race_schedule_policy,
     race_finish_is_ready,
     race_pair_has_valid_spacing,
@@ -25,6 +28,7 @@ from tanuki_core.race_rules import (
     race_pair_spacing_reason,
     resolve_race_finish_band,
     sample_race_speed,
+    select_race_course,
 )
 
 
@@ -146,16 +150,70 @@ class RaceRulesTests(unittest.TestCase):
         self.assertEqual(care.reason, "child_care_needed")
         self.assertEqual(honey.reason, "tsuyoshi_honey_guard_needed")
 
-    def test_lane_geometry_scales_down_without_leaving_screen_bounds(self):
+    def test_lane_geometry_uses_exact_discrete_course_distance(self):
         lane = build_race_lane_geometry(
+            left_bound=100.0,
+            right_bound=1000.0,
+            participant_widths=(120.0, 80.0),
+            course_distance=500.0,
+        )
+
+        self.assertGreaterEqual(lane.challenger_start_x, 100.0)
+        self.assertGreater(lane.opponent_start_x, lane.challenger_start_x)
+        self.assertLessEqual(lane.finish_x + 120.0, 1000.0)
+        self.assertEqual(lane.distance, 500.0)
+
+    def test_course_catalog_has_requested_distances_and_probabilities(self):
+        self.assertEqual(
+            tuple((course.distance_px, course.weight) for course in RACE_COURSES),
+            (
+                (500.0, 0.10),
+                (720.0, 0.30),
+                (1100.0, 0.40),
+                (1500.0, 0.20),
+            ),
+        )
+
+    def test_course_selection_uses_requested_weights_when_all_fit(self):
+        feasible = get_feasible_race_courses(
+            left_bound=0.0,
+            right_bound=2400.0,
+            participant_widths=(100.0, 100.0),
+            participant_radii=(50.0, 50.0),
+        )
+
+        self.assertEqual(feasible, RACE_COURSES)
+        self.assertEqual(select_race_course(feasible, roll=0.099).distance_px, 500.0)
+        self.assertEqual(select_race_course(feasible, roll=0.100).distance_px, 720.0)
+        self.assertEqual(select_race_course(feasible, roll=0.399).distance_px, 720.0)
+        self.assertEqual(select_race_course(feasible, roll=0.400).distance_px, 1100.0)
+        self.assertEqual(select_race_course(feasible, roll=0.799).distance_px, 1100.0)
+        self.assertEqual(select_race_course(feasible, roll=0.800).distance_px, 1500.0)
+
+    def test_unavailable_courses_are_removed_and_weights_are_renormalized(self):
+        feasible = get_feasible_race_courses(
+            left_bound=0.0,
+            right_bound=1200.0,
+            participant_widths=(100.0, 100.0),
+            participant_radii=(50.0, 50.0),
+        )
+
+        self.assertEqual(
+            tuple(course.distance_px for course in feasible),
+            (500.0, 720.0),
+        )
+        self.assertEqual(select_race_course(feasible, roll=0.249).distance_px, 500.0)
+        self.assertEqual(select_race_course(feasible, roll=0.250).distance_px, 720.0)
+
+    def test_course_selection_returns_none_when_even_500px_does_not_fit(self):
+        feasible = get_feasible_race_courses(
             left_bound=100.0,
             right_bound=620.0,
             participant_widths=(120.0, 80.0),
         )
 
-        self.assertGreaterEqual(lane.challenger_start_x, 100.0)
-        self.assertGreater(lane.opponent_start_x, lane.challenger_start_x)
-        self.assertLessEqual(lane.finish_x + 120.0, 620.0)
+        self.assertEqual(feasible, ())
+        self.assertIsNone(select_race_course(feasible, roll=0.0))
 
     def test_lane_geometry_offsets_full_size_racers_without_leaving_bounds(self):
         lane = build_race_lane_geometry(
@@ -163,11 +221,12 @@ class RaceRulesTests(unittest.TestCase):
             right_bound=1920.0,
             participant_widths=(480.0, 480.0),
             participant_radii=(100.0, 100.0),
+            course_distance=1100.0,
         )
 
         self.assertGreaterEqual(
             lane.opponent_start_x - lane.challenger_start_x,
-            224.0,
+            244.0,
         )
         self.assertGreaterEqual(lane.challenger_start_x, 0.0)
         self.assertLessEqual(lane.finish_x + 480.0, 1920.0)
@@ -177,6 +236,7 @@ class RaceRulesTests(unittest.TestCase):
             left_bound=0.0,
             right_bound=1920.0,
             participant_widths=(100.0, 100.0),
+            course_distance=1100.0,
             participant_positions=(1400.0, 1500.0),
         )
 
@@ -188,14 +248,58 @@ class RaceRulesTests(unittest.TestCase):
         self.assertEqual(lane.distance, 1100.0)
         self.assertLess(lane.finish_x, lane.challenger_start_x)
 
-    def test_challenge_distance_and_finish_regroup_thresholds_are_explicit(self):
+    def test_both_lanes_keep_equal_distance_and_the_same_finish_gap(self):
+        lane = build_race_lane_geometry(
+            left_bound=0.0,
+            right_bound=2400.0,
+            participant_widths=(480.0, 480.0),
+            participant_radii=(100.0, 100.0),
+            course_distance=1100.0,
+            participant_positions=(1700.0, 1800.0),
+        )
+        challenger_finish_x = (
+            lane.challenger_start_x + lane.direction * lane.distance
+        )
+        opponent_finish_x = (
+            lane.opponent_start_x + lane.direction * lane.distance
+        )
+
+        self.assertEqual(lane.direction, -1)
+        self.assertEqual(
+            abs(challenger_finish_x - lane.challenger_start_x),
+            lane.distance,
+        )
+        self.assertEqual(
+            abs(opponent_finish_x - lane.opponent_start_x),
+            lane.distance,
+        )
+        self.assertEqual(
+            abs(challenger_finish_x - opponent_finish_x),
+            abs(lane.challenger_start_x - lane.opponent_start_x),
+        )
+        self.assertEqual(
+            abs(challenger_finish_x - opponent_finish_x),
+            244.0,
+        )
+
+    def test_challenge_distance_and_finish_regroup_spacing_are_explicit(self):
         self.assertTrue(race_pair_is_close(420.0))
         self.assertFalse(race_pair_is_close(420.1))
+        target = get_race_finish_standoff_distance((80.0, 80.0))
+        self.assertEqual(target, 204.0)
         self.assertFalse(
-            race_finish_is_ready(winner_arrived=True, separation=150.1)
+            race_finish_is_ready(
+                winner_arrived=True,
+                separation=197.9,
+                target_separation=target,
+            )
         )
         self.assertTrue(
-            race_finish_is_ready(winner_arrived=True, separation=150.0)
+            race_finish_is_ready(
+                winner_arrived=True,
+                separation=198.0,
+                target_separation=target,
+            )
         )
 
     def test_challenge_spacing_distinguishes_overlap_from_remote_distance(self):

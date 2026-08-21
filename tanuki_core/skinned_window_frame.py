@@ -78,7 +78,15 @@ class _ScaledAssetLayer(QWidget):
 
 
 class SkinnedWindowFrame(QWidget):
-    def __init__(self, assets, skin_key, parent=None, theme=DEFAULT_UI_THEME):
+    def __init__(
+        self,
+        assets,
+        skin_key,
+        parent=None,
+        theme=DEFAULT_UI_THEME,
+        *,
+        defer_skin=False,
+    ):
         super().__init__(parent)
         self.assets = assets
         self.theme = theme
@@ -86,6 +94,8 @@ class SkinnedWindowFrame(QWidget):
         self._animation_active = False
         self._frame_sync_movie = None
         self._occlusion_source_bitmap = None
+        self._pending_skin_key = None
+        self._skin_loaded = False
 
         self.scene_viewport = QFrame(self)
         self.scene_viewport.setObjectName("tanukiSceneViewport")
@@ -105,7 +115,34 @@ class SkinnedWindowFrame(QWidget):
         self.content_layout.setSpacing(theme.spacing_md)
         self.foreground_layer = _ScaledAssetLayer(self.scene_viewport)
         self.setStyleSheet(build_ui_stylesheet(theme))
+        if defer_skin:
+            self._prepare_deferred_skin(skin_key)
+        else:
+            self.set_skin(skin_key)
+
+    @property
+    def skin_loaded(self):
+        return self._skin_loaded
+
+    def _prepare_deferred_skin(self, skin_key):
+        self._pending_skin_key = str(skin_key)
+        self.skin_spec = self.assets.get_skin_spec(skin_key)
+        self.setMinimumSize(*self.skin_spec.minimum_window_size)
+        self.content_surface.setProperty(
+            "surfaceRole",
+            self.skin_spec.surface_role,
+        )
+        self.occlusion_surface.hide()
+        self.foreground_layer.hide()
+
+    def ensure_skin_loaded(self):
+        if self._skin_loaded:
+            return False
+        skin_key = self._pending_skin_key
+        if skin_key is None:
+            return False
         self.set_skin(skin_key)
+        return True
 
     def set_skin(self, skin_key):
         self._disconnect_foreground_frame_sync()
@@ -151,6 +188,8 @@ class SkinnedWindowFrame(QWidget):
 
         self._connect_foreground_frame_sync()
 
+        self._pending_skin_key = None
+        self._skin_loaded = True
         self._update_layer_geometry()
         self.set_animation_active(self.isVisible())
 
@@ -173,6 +212,8 @@ class SkinnedWindowFrame(QWidget):
 
     def set_animation_active(self, active):
         self._animation_active = bool(active)
+        if not self._skin_loaded:
+            return
         layers = [self.background_layer]
         if not self.skin_spec.foreground_frame_map:
             layers.append(self.foreground_layer)

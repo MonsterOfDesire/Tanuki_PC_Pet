@@ -79,7 +79,9 @@ class DashboardStateMapperTests(unittest.TestCase):
             debug_enabled=True,
             social_status_enabled=True,
             race_frequency="frequent",
+            chorus_frequency="occasional",
             mood_climate="expressive",
+            ui_locale="ja_JP",
         )
 
         apply_dashboard_config_to_settings(settings, state)
@@ -93,7 +95,9 @@ class DashboardStateMapperTests(unittest.TestCase):
         self.assertTrue(settings.debug_enabled)
         self.assertTrue(settings.social_status_enabled)
         self.assertEqual(settings.race_frequency, "frequent")
+        self.assertEqual(settings.chorus_frequency, "occasional")
         self.assertEqual(settings.mood_climate, "expressive")
+        self.assertEqual(settings.ui_locale, "ja_JP")
 
     def test_dashboard_payload_round_trip_uses_expected_shape(self):
         state = build_dashboard_config_state(
@@ -129,7 +133,9 @@ class DashboardStateMapperTests(unittest.TestCase):
                 "debug_enabled": False,
                 "social_status_enabled": True,
                 "race_frequency": "normal",
+                "chorus_frequency": "normal",
                 "mood_climate": "cheerful",
+                "ui_locale": "zh_TW",
                 "information_center": {
                     "x": 120,
                     "y": 80,

@@ -18,9 +18,7 @@ from .race_rules import (
     RACE_ACTIVITY_KIND,
     RACE_ARRIVAL_DISTANCE,
     RACE_CHALLENGE_PHASE,
-    RACE_FINISH_MAX_SEPARATION,
     RACE_FINISH_PHASE,
-    RACE_FINISH_STANDOFF_DISTANCE,
     RACE_OPPONENT_ROLE,
     RACE_POST_INTERACTION_SECONDS,
     RACE_READY_PHASE,
@@ -40,10 +38,13 @@ from .race_rules import (
     evaluate_race_eligibility,
     evaluate_race_emergency_interrupt,
     get_race_expected_speed,
+    get_feasible_race_courses,
+    get_race_course,
     get_race_schedule_policy,
     race_finish_is_ready,
     race_pair_spacing_reason,
     resolve_race_finish_band,
+    select_race_course,
 )
 from .race_state import (
     RACE_EXECUTION_AUTONOMOUS,
@@ -62,6 +63,8 @@ from .transformation_profiles import (
 
 
 class RaceExecutor:
+    GROUND_Y_TOLERANCE = 2.0
+
     def __init__(
         self,
         *,
@@ -338,17 +341,32 @@ class RaceExecutor:
             )
 
         left_bound, right_bound = self.bounds_provider((challenger, opponent))
+        participant_widths = (
+            self._pet_width(challenger),
+            self._pet_width(opponent),
+        )
+        participant_radii = (
+            self._pet_radius(challenger),
+            self._pet_radius(opponent),
+        )
+        feasible_courses = get_feasible_race_courses(
+            left_bound=left_bound,
+            right_bound=right_bound,
+            participant_widths=participant_widths,
+            participant_radii=participant_radii,
+        )
+        course = select_race_course(
+            feasible_courses,
+            roll=self.random_value(),
+        )
+        if course is None:
+            return RaceRuntimeResult(False, "race_course_unavailable")
         lane = build_race_lane_geometry(
             left_bound=left_bound,
             right_bound=right_bound,
-            participant_widths=(
-                self._pet_width(challenger),
-                self._pet_width(opponent),
-            ),
-            participant_radii=(
-                self._pet_radius(challenger),
-                self._pet_radius(opponent),
-            ),
+            participant_widths=participant_widths,
+            participant_radii=participant_radii,
+            course_distance=course.distance_px,
             participant_positions=(
                 self._pet_x(challenger),
                 self._pet_x(opponent),
@@ -398,6 +416,8 @@ class RaceExecutor:
                 ),
                 "race_direction": lane.direction,
                 "race_distance": lane.distance,
+                "race_course_key": course.key,
+                "race_nominal_meters": course.nominal_meters,
                 "challenger_speed": challenger_speed,
                 "opponent_speed": opponent_speed,
                 "world_mode": plan.world_mode,
@@ -408,6 +428,7 @@ class RaceExecutor:
                 "opponent_move_remainder": 0.0,
                 "to_start_last_progress_at": float(now),
                 "to_start_last_distance": 0.0,
+                "to_start_replan_failed": False,
             },
         )
         if not start_result.started:
@@ -529,6 +550,13 @@ class RaceExecutor:
                 pets_by_name,
                 now=now,
             )
+            if bool(activity.metadata.pop("to_start_replan_failed", False)):
+                return self._interrupt(
+                    activity_id,
+                    now=now,
+                    reason="race_course_no_longer_fits",
+                    pets=pets,
+                )
             if arrived:
                 return self._advance_phase(
                     activity_id,
@@ -795,7 +823,13 @@ class RaceExecutor:
             - float(activity.metadata.get("to_start_last_progress_at", now))
             >= RACE_TO_START_STALL_REPLAN_SECONDS
         ):
-            self._replan_lane(activity, challenger, opponent, now=float(now))
+            if not self._replan_lane(
+                activity,
+                challenger,
+                opponent,
+                now=float(now),
+            ):
+                activity.metadata["to_start_replan_failed"] = True
         return all(arrivals)
 
     def _move_running(
@@ -863,32 +897,43 @@ class RaceExecutor:
 
         winner = pets_by_name.get(winner_name)
         loser = pets_by_name.get(loser_name)
-        separation = abs(self._pet_x(winner) - self._pet_x(loser))
-        if separation > RACE_FINISH_MAX_SEPARATION:
-            direction = int(activity.metadata.get("race_direction", 1) or 1)
-            loser_target_x = self._pet_x(winner) - (
-                direction * RACE_FINISH_STANDOFF_DISTANCE
-            )
-            loser_role = (
-                "challenger" if loser_name == challenger_name else "opponent"
-            )
-            self._move_pet_precise(
-                activity,
-                loser,
-                loser_target_x,
-                speed=float(
-                    activity.metadata.get(f"{loser_role}_speed", 1.0)
-                ),
-                remainder_key=f"{loser_role}_move_remainder",
-            )
-            self._face_each_other(winner, loser)
-
-        separation = abs(self._pet_x(winner) - self._pet_x(loser))
-        self._face_each_other(winner, loser)
-        return race_finish_is_ready(
+        winner_center = self._pet_x(winner) + self._pet_width(winner) / 2.0
+        loser_role = (
+            "challenger" if loser_name == challenger_name else "opponent"
+        )
+        loser_target_x = self._clamp_target_for_pet(
+            loser,
+            float(
+                activity.metadata.get(f"{loser_role}_finish_x", 0.0)
+                or 0.0
+            ),
+        )
+        effective_target_separation = abs(
+            winner_center
+            - (loser_target_x + self._pet_width(loser) / 2.0)
+        )
+        loser_arrived = self._move_pet_precise(
+            activity,
+            loser,
+            loser_target_x,
+            speed=float(
+                activity.metadata.get(f"{loser_role}_speed", 1.0)
+            ),
+            remainder_key=f"{loser_role}_move_remainder",
+        )
+        separation = self._pet_center_distance(winner, loser)
+        finish_ready = loser_arrived and race_finish_is_ready(
             winner_arrived=True,
             separation=separation,
-        ), ""
+            target_separation=effective_target_separation,
+        )
+        if finish_ready:
+            self._face_each_other(winner, loser)
+        elif winner is not None and loser is not None:
+            winner.direction = (
+                1 if self._pet_x(loser) >= self._pet_x(winner) else -1
+            )
+        return finish_ready, ""
 
     def _complete_declined(
         self,
@@ -1003,6 +1048,13 @@ class RaceExecutor:
                 world_mode=str(
                     activity.metadata.get("world_mode", "golden_legend")
                 ),
+                activity_started_at=float(activity.started_at),
+                race_course_key=str(
+                    activity.metadata.get("race_course_key", "")
+                ),
+                race_nominal_meters=int(
+                    activity.metadata.get("race_nominal_meters", 0) or 0
+                ),
                 race_distance=float(
                     activity.metadata.get("race_distance", 0.0) or 0.0
                 ),
@@ -1105,17 +1157,31 @@ class RaceExecutor:
                 mood_score=float(getattr(pet, "mood_score", 60.0)),
                 visible=snapshot.visible,
                 enabled=snapshot.enabled,
-                grounded=(
-                    float(getattr(pet, "vy", 0.0) or 0.0) == 0.0
-                    and str(getattr(pet, "flight_mode", "none") or "none")
-                    == "none"
-                    and not bool(getattr(pet, "perched_window_hwnd", 0))
-                ),
+                grounded=self._pet_is_on_race_floor(pet),
                 busy=bool(snapshot.active_activity_id or snapshot.busy_reasons),
                 capability_ready=bool(profile_ready and form_ready),
             ),
             preview=preview,
         )
+
+    def _pet_is_on_race_floor(self, pet) -> bool:
+        if bool(
+            float(getattr(pet, "vy", 0.0) or 0.0) != 0.0
+            or str(getattr(pet, "flight_mode", "none") or "none")
+            != "none"
+            or getattr(pet, "perched_window_hwnd", 0)
+        ):
+            return False
+        surface_getter = getattr(pet, "get_surface_snapshot", None)
+        y_getter = getattr(pet, "y", None)
+        if not callable(surface_getter) or not callable(y_getter):
+            return True
+        try:
+            floor_y = float(surface_getter().floor_top_y)
+            current_y = float(y_getter())
+        except (AttributeError, TypeError, ValueError):
+            return False
+        return abs(current_y - floor_y) <= self.GROUND_Y_TOLERANCE
 
     def _emergency_decision(self, pets):
         distressed_child_names = []
@@ -1201,19 +1267,38 @@ class RaceExecutor:
         clamp_x = getattr(surface, "clamp_x", None)
         return float(clamp_x(target_x)) if callable(clamp_x) else float(target_x)
 
-    def _replan_lane(self, activity, challenger, opponent, *, now: float) -> None:
+    def _replan_lane(self, activity, challenger, opponent, *, now: float) -> bool:
         left_bound, right_bound = self.bounds_provider((challenger, opponent))
+        participant_widths = (
+            self._pet_width(challenger),
+            self._pet_width(opponent),
+        )
+        participant_radii = (
+            self._pet_radius(challenger),
+            self._pet_radius(opponent),
+        )
+        course = get_race_course(
+            str(activity.metadata.get("race_course_key", ""))
+        )
+        if course is None:
+            return False
+        feasible_course_keys = {
+            candidate.key
+            for candidate in get_feasible_race_courses(
+                left_bound=left_bound,
+                right_bound=right_bound,
+                participant_widths=participant_widths,
+                participant_radii=participant_radii,
+            )
+        }
+        if course.key not in feasible_course_keys:
+            return False
         lane = build_race_lane_geometry(
             left_bound=left_bound,
             right_bound=right_bound,
-            participant_widths=(
-                self._pet_width(challenger),
-                self._pet_width(opponent),
-            ),
-            participant_radii=(
-                self._pet_radius(challenger),
-                self._pet_radius(opponent),
-            ),
+            participant_widths=participant_widths,
+            participant_radii=participant_radii,
+            course_distance=course.distance_px,
             participant_positions=(
                 self._pet_x(challenger),
                 self._pet_x(opponent),
@@ -1233,7 +1318,9 @@ class RaceExecutor:
             "race_distance": lane.distance,
             "to_start_last_progress_at": float(now),
             "to_start_last_distance": 0.0,
+            "to_start_replan_failed": False,
         })
+        return True
 
     def _performance_decision(self, challenger, opponent):
         return decide_race_performance(

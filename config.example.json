@@ -1,5 +1,5 @@
 {
-  "schema_version": 6,
+  "schema_version": 8,
   "dashboard": {
     "world_mode": "golden_legend",
     "care_feature_enabled": true,
@@ -10,7 +10,9 @@
     "debug_enabled": false,
     "social_status_enabled": false,
     "race_frequency": "normal",
-    "mood_climate": "cheerful"
+    "chorus_frequency": "normal",
+    "mood_climate": "cheerful",
+    "ui_locale": "zh_TW"
   },
   "pets": {},
   "household": {}

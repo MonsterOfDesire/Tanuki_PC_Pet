@@ -1,6 +1,7 @@
 import unittest
 
 from tanuki_core.ui_skin_spec import (
+    ASSET_ACHIEVEMENT_CHARACTER,
     ASSET_DASHBOARD_SIDE_ICON,
     FAMILY_AVATAR_SPECS,
     FIT_CONTAIN,
@@ -11,6 +12,7 @@ from tanuki_core.ui_skin_spec import (
     SKIN_FAMILY_STATUS,
     SKIN_RELATION_SUMMON,
     SKIN_STATUS_SETTINGS,
+    SKIN_ACHIEVEMENT_CABINET,
     UI_ASSET_SPECS,
     UI_SKIN_SPECS,
     GeometryRect,
@@ -111,6 +113,7 @@ class UiSkinSpecTests(unittest.TestCase):
             SKIN_EVENT_LOG,
             SKIN_FAMILY_STATUS,
             SKIN_STATUS_SETTINGS,
+            SKIN_ACHIEVEMENT_CABINET,
         ):
             with self.subTest(skin_key=skin_key):
                 skin = UI_SKIN_SPECS[skin_key]
@@ -146,6 +149,7 @@ class UiSkinSpecTests(unittest.TestCase):
             SKIN_EVENT_LOG: "event_character",
             SKIN_FAMILY_STATUS: "family_character",
             SKIN_STATUS_SETTINGS: "settings_character",
+            SKIN_ACHIEVEMENT_CABINET: ASSET_ACHIEVEMENT_CHARACTER,
         }
 
         for skin_key, foreground_asset_key in expected_foregrounds.items():
@@ -154,6 +158,17 @@ class UiSkinSpecTests(unittest.TestCase):
                 self.assertEqual(skin.foreground_asset_key, foreground_asset_key)
                 self.assertIsNotNone(skin.foreground_rect)
                 self.assertTrue(UI_ASSET_SPECS[foreground_asset_key].animated)
+
+    def test_achievement_cabinet_keeps_content_clear_of_character_layer(self):
+        skin = UI_SKIN_SPECS[SKIN_ACHIEVEMENT_CABINET]
+
+        self.assertEqual(skin.fit_mode, FIT_CONTAIN)
+        self.assertEqual(skin.minimum_window_size, (720, 405))
+        self.assertEqual(skin.minimum_content_size, (650, 360))
+        self.assertLessEqual(
+            skin.content_rect.x + skin.content_rect.width,
+            skin.foreground_rect.x + 0.05,
+        )
 
     def test_event_and_family_characters_use_requested_lower_corner_anchors(self):
         event_foreground = UI_SKIN_SPECS[SKIN_EVENT_LOG].foreground_rect

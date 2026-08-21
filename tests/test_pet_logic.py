@@ -18,6 +18,7 @@ from tanuki_core.pet_logic import (
     decide_release_interaction,
     decide_tick_phase,
     derive_mood_state,
+    natural_mood_update_is_paused,
     TICK_PHASE_AIRBORNE,
     TICK_PHASE_DRAGGING,
     TICK_PHASE_RUN_AI,
@@ -28,6 +29,32 @@ from tanuki_core.settings_provider import RuntimeSettings
 
 
 class MoodLogicTests(unittest.TestCase):
+    def test_sleep_and_chorus_pause_only_natural_mood_ticks(self):
+        self.assertTrue(
+            natural_mood_update_is_paused(
+                activity_kind="sleep",
+                activity_active=True,
+            )
+        )
+        self.assertTrue(
+            natural_mood_update_is_paused(
+                activity_kind="chorus",
+                activity_active=True,
+            )
+        )
+        self.assertFalse(
+            natural_mood_update_is_paused(
+                activity_kind="race",
+                activity_active=True,
+            )
+        )
+        self.assertFalse(
+            natural_mood_update_is_paused(
+                activity_kind="sleep",
+                activity_active=False,
+            )
+        )
+
     def test_adult_without_neighbors_recovers_slightly(self):
         update = compute_mood_update(
             current_score=60.0,
@@ -75,32 +102,167 @@ class MoodLogicTests(unittest.TestCase):
         self.assertEqual(derive_mood_state(25), "unhappy")
         self.assertEqual(derive_mood_state(80), "normal")
 
-    def test_expressive_climate_pulls_high_mood_down_without_hard_cap(self):
+    def test_expressive_climate_does_not_pull_low_mood_toward_a_target(self):
         update = compute_mood_update(
-            current_score=90.0,
+            current_score=30.0,
             lonely_timer=0,
             is_adult=True,
             nearby_count=2,
             has_adult_nearby=True,
-            noise=0.0,
             climate_key="expressive",
+            change_roll=0.0,
+            direction_roll=0.0,
+            magnitude_roll=0.5,
         )
 
-        self.assertLess(update.mood_score, 90.0)
-        self.assertGreater(update.mood_score, 50.0)
+        self.assertLess(update.mood_score, 30.0)
 
-    def test_cheerful_climate_recovers_low_mood_toward_high_target(self):
+    def test_cheerful_climate_skips_most_natural_mood_ticks(self):
         update = compute_mood_update(
             current_score=40.0,
             lonely_timer=0,
             is_adult=True,
             nearby_count=0,
             has_adult_nearby=False,
-            noise=0.0,
             climate_key="cheerful",
+            change_roll=0.75,
+            direction_roll=1.0,
+            magnitude_roll=1.0,
         )
 
-        self.assertGreater(update.mood_score, 40.0)
+        self.assertEqual(update.mood_score, 40.0)
+
+    def test_balanced_changes_more_often_than_old_low_frequency_model(self):
+        update = compute_mood_update(
+            current_score=45.0,
+            lonely_timer=0,
+            is_adult=True,
+            nearby_count=0,
+            has_adult_nearby=False,
+            climate_key="balanced",
+            change_roll=0.55,
+            direction_roll=1.0,
+            magnitude_roll=1.0,
+        )
+
+        self.assertGreater(update.mood_score, 45.0)
+
+    def test_balanced_child_gets_recovery_protection_only_after_entering_low(self):
+        common = dict(
+            lonely_timer=0,
+            is_adult=False,
+            nearby_count=1,
+            has_adult_nearby=True,
+            nearest_adult_distance=120.0,
+            climate_key="balanced",
+            change_roll=0.0,
+            direction_roll=0.51,
+            magnitude_roll=0.5,
+        )
+
+        normal = compute_mood_update(current_score=60.0, **common)
+        low = compute_mood_update(current_score=40.0, **common)
+
+        self.assertLess(normal.mood_score, 60.0)
+        self.assertGreater(low.mood_score, 40.0)
+
+    def test_expressive_negative_change_is_larger_than_cheerful(self):
+        common = dict(
+            current_score=70.0,
+            lonely_timer=0,
+            is_adult=True,
+            nearby_count=0,
+            has_adult_nearby=False,
+            change_roll=0.0,
+            direction_roll=0.0,
+            magnitude_roll=1.0,
+        )
+
+        cheerful = compute_mood_update(
+            **common,
+            climate_key="cheerful",
+        )
+        expressive = compute_mood_update(
+            **common,
+            climate_key="expressive",
+        )
+
+        self.assertGreater(cheerful.mood_score, expressive.mood_score)
+
+    def test_expressive_child_far_from_adult_loses_mood_faster(self):
+        common = dict(
+            current_score=70.0,
+            lonely_timer=9,
+            is_adult=False,
+            nearby_count=0,
+            has_adult_nearby=False,
+            climate_key="expressive",
+            change_roll=0.0,
+            direction_roll=0.0,
+            magnitude_roll=1.0,
+        )
+
+        far = compute_mood_update(
+            **common,
+            nearest_adult_distance=1500.0,
+        )
+        close = compute_mood_update(
+            **common,
+            nearest_adult_distance=320.0,
+        )
+
+        self.assertLess(far.mood_score, close.mood_score)
+
+    def test_expressive_adult_negative_change_is_damped(self):
+        common = dict(
+            current_score=70.0,
+            lonely_timer=9,
+            nearby_count=0,
+            has_adult_nearby=False,
+            climate_key="expressive",
+            change_roll=0.0,
+            direction_roll=0.0,
+            magnitude_roll=1.0,
+            nearest_adult_distance=1500.0,
+        )
+
+        adult = compute_mood_update(**common, is_adult=True)
+        child = compute_mood_update(**common, is_adult=False)
+
+        self.assertGreater(adult.mood_score, child.mood_score)
+
+    def test_expressive_severe_adult_can_self_regulate_upward(self):
+        common = dict(
+            lonely_timer=0,
+            is_adult=True,
+            nearby_count=0,
+            has_adult_nearby=False,
+            climate_key="expressive",
+            change_roll=0.0,
+            direction_roll=0.40,
+            magnitude_roll=0.5,
+        )
+
+        normal = compute_mood_update(current_score=60.0, **common)
+        severe = compute_mood_update(current_score=10.0, **common)
+
+        self.assertLess(normal.mood_score, 60.0)
+        self.assertGreater(severe.mood_score, 10.0)
+
+    def test_cheerful_positive_change_is_not_a_target_based_jump(self):
+        update = compute_mood_update(
+            current_score=10.0,
+            lonely_timer=0,
+            is_adult=True,
+            nearby_count=0,
+            has_adult_nearby=False,
+            climate_key="cheerful",
+            change_roll=0.0,
+            direction_roll=1.0,
+            magnitude_roll=1.0,
+        )
+
+        self.assertEqual(update.mood_score, 10.6)
 
 
 class ReleaseDecisionTests(unittest.TestCase):

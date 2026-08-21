@@ -5,8 +5,14 @@ from unittest.mock import patch
 from tests.qt_test_support import QT_BINDINGS_AVAILABLE, QtApplicationTestCase
 
 try:
+    from tanuki_core.activity_runtime_controller import (
+        ActivityRuntimeController,
+    )
     from tanuki_core.app_runtime import ActiveOfferScene, TanukiAppRuntime
     from tanuki_core.offer_interaction_rules import ITEM_BOTTLE, ITEM_HONEY, ITEM_RAMEN
+    from tanuki_core.transformation_runtime_controller import (
+        TransformationRuntimeController,
+    )
 except (ImportError, ModuleNotFoundError) as exc:
     TanukiAppRuntime = None
     ActiveOfferScene = None
@@ -166,6 +172,7 @@ class FakePet:
         forbidden=None,
         preserve=False,
         ignore_mood_band=False,
+        ordered_preferences=False,
     ):
         self.context_calls.append(
             (
@@ -175,6 +182,7 @@ class FakePet:
                 tuple(forbidden or ()),
                 bool(preserve),
                 bool(ignore_mood_band),
+                bool(ordered_preferences),
             )
         )
         if (purpose, context) not in self.context_successes:
@@ -379,7 +387,11 @@ class OfferInteractionRuntimeTests(QtApplicationTestCase):
             source="sandbox_autonomous_end",
         )
         pet = SimpleNamespace(transformation_state=state)
-        runtime.find_pet_by_name = lambda *args, **kwargs: pet
+        controller = object.__new__(TransformationRuntimeController)
+        controller.pet_registry = SimpleNamespace(
+            find_by_name=lambda *args, **kwargs: pet
+        )
+        runtime.transformation_runtime_controller = controller
 
         snapshot = TanukiAppRuntime.get_transformation_preview_state(
             runtime,
@@ -420,7 +432,12 @@ class OfferInteractionRuntimeTests(QtApplicationTestCase):
     def test_user_click_routes_sleep_activity_to_early_wake(self):
         calls = []
         runtime = object.__new__(TanukiAppRuntime)
-        runtime.sleep_executor = SimpleNamespace(
+        controller = object.__new__(ActivityRuntimeController)
+        controller.activity_coordinator = SimpleNamespace(
+            get_activity_for_participant=lambda _name: None
+        )
+        controller.now_provider = lambda: 0.0
+        controller.sleep_executor = SimpleNamespace(
             request_early_wake=lambda pet, **kwargs: (
                 calls.append(("early_wake", pet, kwargs))
                 or SimpleNamespace(handled=True)
@@ -430,6 +447,7 @@ class OfferInteractionRuntimeTests(QtApplicationTestCase):
                 or SimpleNamespace(handled=True)
             ),
         )
+        runtime.activity_runtime_controller = controller
         pet = object()
 
         handled = TanukiAppRuntime.interrupt_pet_activity_for_user(
@@ -456,18 +474,25 @@ class OfferInteractionRuntimeTests(QtApplicationTestCase):
         pet = SimpleNamespace(name="Tokai Teio")
         other = SimpleNamespace(name="Symboli Rudolf")
         runtime = object.__new__(TanukiAppRuntime)
-        runtime.pets_list = (pet, other)
-        runtime.activity_coordinator = SimpleNamespace(
+        controller = object.__new__(ActivityRuntimeController)
+        controller.pets = (pet, other)
+        controller.now_provider = lambda: 0.0
+        controller.activity_coordinator = SimpleNamespace(
             get_activity_for_participant=lambda _name: SimpleNamespace(
-                spec=SimpleNamespace(kind="race")
+                activity_id="race-1",
+                spec=SimpleNamespace(kind="race"),
             )
         )
-        runtime.race_executor = SimpleNamespace(
+        controller.race_executor = SimpleNamespace(
             interrupt_pet=lambda target, **kwargs: (
                 calls.append((target, kwargs))
                 or SimpleNamespace(handled=True)
             )
         )
+        controller.achievement_runtime_coordinator = SimpleNamespace(
+            cancel_activity_session=lambda *_args, **_kwargs: True
+        )
+        runtime.activity_runtime_controller = controller
 
         handled = TanukiAppRuntime.interrupt_pet_activity_for_user(
             runtime,
@@ -724,12 +749,12 @@ class OfferInteractionRuntimeTests(QtApplicationTestCase):
         )
         runtime = self.build_runtime([], dashboard=dashboard)
         recorded_events = []
-        runtime.record_transformation_event = (
+        runtime.transformation_runtime_controller.record_event = (
             lambda *args, **kwargs: recorded_events.append(
                 (args, kwargs)
             )
         )
-        runtime.transformation_executor = SimpleNamespace(
+        runtime.transformation_runtime_controller.executor = SimpleNamespace(
             update=lambda *_args, **_kwargs: (
                 SimpleNamespace(
                     completed=True,
@@ -1308,8 +1333,15 @@ class OfferInteractionRuntimeTests(QtApplicationTestCase):
         self.assertTrue(handled)
         self.assertEqual(holder.context_calls[0][1], "bottle_feed_hold")
         self.assertEqual(child.context_calls[0][1], "bottle_feed_child_approach")
+        self.assertFalse(holder.context_calls[0][4])
+        self.assertFalse(child.context_calls[0][4])
         self.assertEqual(holder.ensure_calls, [])
         self.assertEqual(child.ensure_calls, [])
+
+        runtime.update_bottle_feed_scene(10.1)
+
+        self.assertTrue(holder.context_calls[-1][4])
+        self.assertTrue(child.context_calls[-1][4])
 
     def test_update_bottle_feed_scene_drink_stage_removes_holder_item_and_rewards_child(self):
         holder = FakePet("Sirius Symboli")
@@ -1452,6 +1484,8 @@ class OfferInteractionRuntimeTests(QtApplicationTestCase):
         self.assertTrue(handled)
         self.assertEqual(child.context_calls[0][1], "offer_preview")
         self.assertEqual(guardian.context_calls[0][1], "honey_guard_move")
+        self.assertFalse(child.context_calls[0][6])
+        self.assertTrue(guardian.context_calls[0][6])
         self.assertEqual(guardian.ensure_calls, [])
 
     def test_honey_guard_approach_prefers_rudolf_run_for_first_available_mood(self):

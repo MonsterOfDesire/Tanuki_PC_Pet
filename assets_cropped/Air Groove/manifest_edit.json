@@ -195,7 +195,7 @@
         "severe"
       ],
       "contexts": [
-        "future_work"
+        "activity_chorus_perform"
       ],
       "weight": 1.0
     },
@@ -220,7 +220,8 @@
         "observe_hold",
         "bottle_feed_watch",
         "shared_food_react",
-        "random"
+        "random",
+        "activity_chorus_finish"
       ],
       "weight": 1.0
     },
@@ -237,7 +238,8 @@
         "bottle_feed_watch",
         "shared_food_react",
         "random",
-        "activity_sleep_observing"
+        "activity_sleep_observing",
+        "activity_chorus_observe"
       ],
       "weight": 1.0
     },
@@ -262,7 +264,8 @@
         "bottle_feed_watch",
         "shared_food_react",
         "random",
-        "activity_sleep_observing"
+        "activity_sleep_observing",
+        "activity_chorus_observe"
       ],
       "weight": 1.0
     },
@@ -349,7 +352,8 @@
         "bottle_feed_watch",
         "shared_food_react",
         "random",
-        "activity_sleep_join_settling"
+        "activity_sleep_join_settling",
+        "activity_chorus_observe"
       ],
       "weight": 1.0
     },
@@ -364,7 +368,8 @@
         "bottle_feed_watch",
         "shared_food_react",
         "random",
-        "activity_sleep_join_settling"
+        "activity_sleep_join_settling",
+        "activity_chorus_observe"
       ],
       "weight": 1.0
     },
@@ -495,7 +500,8 @@
       "contexts": [
         "window_walk",
         "random",
-        "activity_sleep_join_approach"
+        "activity_sleep_join_approach",
+        "activity_chorus_approach"
       ],
       "weight": 1.0
     },
@@ -519,7 +525,8 @@
         "window_walk",
         "random",
         "shared_food_approach",
-        "activity_sleep_join_approach"
+        "activity_sleep_join_approach",
+        "activity_chorus_approach"
       ],
       "weight": 1.0
     }

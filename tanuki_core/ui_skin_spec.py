@@ -13,6 +13,7 @@ SKIN_RELATION_SUMMON = "relation_summon"
 SKIN_EVENT_LOG = "event_log"
 SKIN_FAMILY_STATUS = "family_status"
 SKIN_STATUS_SETTINGS = "status_settings"
+SKIN_ACHIEVEMENT_CABINET = "achievement_cabinet"
 
 ASSET_DIET_BACKGROUND = "diet_background"
 ASSET_DIET_CHARACTER = "diet_character"
@@ -24,6 +25,8 @@ ASSET_FAMILY_BACKGROUND = "family_background"
 ASSET_FAMILY_CHARACTER = "family_character"
 ASSET_SETTINGS_BACKGROUND = "settings_background"
 ASSET_SETTINGS_CHARACTER = "settings_character"
+ASSET_ACHIEVEMENT_BACKGROUND = "achievement_background"
+ASSET_ACHIEVEMENT_CHARACTER = "achievement_character"
 ASSET_DASHBOARD_SIDE_ICON = "dashboard_side_icon"
 
 
@@ -376,6 +379,17 @@ UI_ASSET_SPECS = MappingProxyType(
             (500, 500),
             animated=True,
         ),
+        ASSET_ACHIEVEMENT_BACKGROUND: UiAssetSpec(
+            ASSET_ACHIEVEMENT_BACKGROUND,
+            "UI/achievement.png",
+            (1600, 900),
+        ),
+        ASSET_ACHIEVEMENT_CHARACTER: UiAssetSpec(
+            ASSET_ACHIEVEMENT_CHARACTER,
+            "UI/achievement_char.gif",
+            (500, 500),
+            animated=True,
+        ),
         ASSET_DASHBOARD_SIDE_ICON: UiAssetSpec(
             ASSET_DASHBOARD_SIDE_ICON,
             "UI/side.png",
@@ -488,6 +502,23 @@ UI_SKIN_SPECS = MappingProxyType(
             fit_mode=FIT_CONTAIN,
             foreground_asset_key=ASSET_SETTINGS_CHARACTER,
             foreground_rect=NormalizedLayerRect(0.720, 0.390, 0.280, 0.500),
+        ),
+        SKIN_ACHIEVEMENT_CABINET: UiSkinSpec(
+            key=SKIN_ACHIEVEMENT_CABINET,
+            background_asset_key=ASSET_ACHIEVEMENT_BACKGROUND,
+            content_rect=NormalizedRect(0.050, 0.055, 0.680, 0.775),
+            minimum_frame_size=(960, 540),
+            minimum_window_size=(720, 405),
+            minimum_content_size=(650, 360),
+            surface_role="achievement_cabinet",
+            fit_mode=FIT_CONTAIN,
+            foreground_asset_key=ASSET_ACHIEVEMENT_CHARACTER,
+            foreground_rect=NormalizedLayerRect(
+                0.690,
+                0.465,
+                0.310,
+                0.525,
+            ),
         ),
     }
 )

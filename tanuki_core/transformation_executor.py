@@ -34,6 +34,11 @@ from .transformation_state import (
     TRANSFORMATION_PHASE_REVEALING,
     TRANSFORMATION_PHASE_WHITENING,
 )
+from .transformation_tendency import (
+    TransformationTendencyApplyResult,
+    apply_transformation_tendency,
+    evaluate_transformation_tendency,
+)
 
 
 @dataclass(frozen=True)
@@ -216,10 +221,29 @@ class TransformationExecutor:
                 )
             )
             if decision.action == AUTO_ACTION_SCHEDULE:
-                state.auto_next_attempt_at = float(sim_now) + self._uniform(
+                base_delay = self._uniform(
                     profile.auto_base_seconds_min,
                     profile.auto_base_seconds_max,
                 )
+                pending_advance = max(
+                    0.0,
+                    float(
+                        getattr(
+                            state,
+                            "auto_pending_tendency_advance_seconds",
+                            0.0,
+                        )
+                        or 0.0
+                    ),
+                )
+                state.auto_next_attempt_at = float(sim_now) + max(
+                    30.0,
+                    base_delay - pending_advance,
+                )
+                state.auto_pending_tendency_advance_seconds = 0.0
+                state.auto_attempt_serial = int(
+                    getattr(state, "auto_attempt_serial", 0) or 0
+                ) + 1
                 state.auto_retry_at = 0.0
                 continue
             if decision.action == AUTO_ACTION_SCHEDULE_MANUAL_END:
@@ -257,6 +281,7 @@ class TransformationExecutor:
                             profile.auto_duration_seconds_max,
                         )
                     )
+                    self._reset_tendency_state(state)
                 else:
                     state.auto_retry_at = (
                         float(sim_now)
@@ -359,6 +384,7 @@ class TransformationExecutor:
                             profile.auto_duration_seconds_max,
                         )
                     )
+                self._reset_tendency_state(state)
             return result
         if (
             state.current_form == FORM_TRANSFORMED
@@ -395,6 +421,38 @@ class TransformationExecutor:
             if result.handled:
                 results.append(result)
         return tuple(results)
+
+    def apply_tendency_signal(
+        self,
+        pet,
+        *,
+        signal_kind: str,
+        strength: float = 1.0,
+        sim_now: float,
+    ) -> TransformationTendencyApplyResult:
+        name = str(getattr(pet, "name", "") or "")
+        state = getattr(pet, "transformation_state", None)
+        if state is None:
+            return TransformationTendencyApplyResult(
+                False,
+                "missing_transformation_state",
+                character_name=name,
+                signal_kind=str(signal_kind or ""),
+            )
+        decision = evaluate_transformation_tendency(
+            character_name=name,
+            current_form=state.current_form,
+            transitioning=state.active,
+            signal_kind=signal_kind,
+            strength=strength,
+        )
+        return apply_transformation_tendency(
+            state,
+            decision,
+            character_name=name,
+            signal_kind=signal_kind,
+            now=float(sim_now),
+        )
 
     def update_pet(self, pet, *, now: float) -> TransformationRuntimeResult:
         state = getattr(pet, "transformation_state", None)
@@ -475,6 +533,12 @@ class TransformationExecutor:
 
     def _uniform(self, lower: float, upper: float) -> float:
         return float(self.random_source.uniform(float(lower), float(upper)))
+
+    @staticmethod
+    def _reset_tendency_state(state) -> None:
+        state.auto_tendency_score = 0.0
+        state.auto_pending_tendency_advance_seconds = 0.0
+        state.auto_tendency_last_signal = ""
 
     def _update_manual_end_request(
         self,

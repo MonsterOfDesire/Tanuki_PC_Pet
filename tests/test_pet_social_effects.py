@@ -174,6 +174,29 @@ class SocialCareEffectsTests(unittest.TestCase):
         self.assertIs(child.care_partner, adult)
         self.assertEqual(adult.social_cooldown_end, 0.0)
 
+    def test_care_lifecycle_provider_receives_start_and_completion(self):
+        adult = FakeAdult()
+        child = FakeChild()
+        events = []
+        adult.care_activity_event_provider = (
+            lambda stage, caregiver, target, **kwargs: events.append(
+                (stage, caregiver, target, kwargs)
+            )
+        )
+
+        SOCIAL_CARE_EFFECTS.start_care_approach(adult, child, 10.0)
+        SOCIAL_CARE_EFFECTS.finish_care_mode(
+            adult,
+            success=True,
+            now=15.0,
+        )
+
+        self.assertEqual([event[0] for event in events], ["started", "completed"])
+        self.assertIs(events[0][1], adult)
+        self.assertIs(events[0][2], child)
+        self.assertEqual(events[1][3]["care_mode"], "approach")
+        self.assertTrue(events[1][3]["success"])
+
     def test_begin_hidden_interaction_sets_hidden_lock_and_animation_state(self):
         adult = FakeAdult()
         child = FakeChild()

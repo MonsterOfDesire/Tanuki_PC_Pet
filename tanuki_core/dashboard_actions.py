@@ -24,6 +24,19 @@ class DashboardActions:
             tsuyoshi.social_cooldown_duration = float(tsuyoshi_seconds)
 
     def apply_pet_visibility(self, pet, checked):
+        if not checked:
+            interrupt_provider = getattr(
+                pet,
+                "activity_user_interrupt_provider",
+                None,
+            )
+            is_activity_locked = getattr(pet, "is_activity_locked", None)
+            if (
+                callable(interrupt_provider)
+                and callable(is_activity_locked)
+                and bool(is_activity_locked())
+            ):
+                interrupt_provider(pet, reason="user_unsummon")
         pet.user_visible = bool(checked)
         if checked:
             if not (pet.care_lock_mode == "hidden" and pet.is_under_care(self.now_provider())):

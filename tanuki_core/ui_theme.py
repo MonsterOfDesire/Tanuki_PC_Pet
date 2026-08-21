@@ -70,6 +70,11 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
     QFrame#tanukiSkinContentSurface[surfaceRole="glass"] {{
         background: {tokens.glass_surface};
     }}
+    QFrame#tanukiSkinContentSurface[surfaceRole="achievement_cabinet"] {{
+        background: rgba(31, 24, 35, 205);
+        color: #fff8e8;
+        border-color: rgba(244, 214, 132, 180);
+    }}
     QWidget#tanukiOfferTray {{
         background: #fffdf7;
         border: 1px solid rgba(82, 59, 34, 175);
@@ -271,6 +276,15 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
     }}
     QLabel[tanukiRole="pagePlaceholder"] {{
         font-size: 14px;
+    }}
+    QLabel[tanukiRole="pageLoading"] {{
+        max-width: 150px;
+        padding: 7px 10px;
+        color: {tokens.text_primary};
+        background: rgba(255, 250, 239, 215);
+        border: 1px solid rgba(111, 88, 67, 105);
+        border-radius: {tokens.radius_small}px;
+        font-weight: 700;
     }}
     QLabel[tanukiRole="settingsNotice"],
     QLabel[tanukiRole="settingsLabel"] {{
@@ -635,6 +649,108 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
     QLabel[tanukiRole="familyAchievementStatus"] {{
         color: rgba(92, 72, 55, 125);
         font-size: 11px;
+        font-weight: 700;
+    }}
+    QFrame[tanukiRole="familyAchievementSlot"] {{
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: {tokens.radius_small}px;
+    }}
+    QFrame[tanukiRole="familyAchievementSlot"]:hover,
+    QFrame[tanukiRole="familyAchievementSlot"]:focus {{
+        background: rgba(230, 202, 112, 40);
+        border-color: rgba(116, 88, 39, 90);
+    }}
+    QFrame[tanukiRole="achievementHeader"] {{
+        background: rgba(24, 17, 29, 150);
+        border: 1px solid rgba(244, 214, 132, 115);
+        border-radius: {tokens.radius_medium}px;
+    }}
+    QLabel[tanukiRole="achievementHeading"] {{
+        color: #fff7dc;
+        font-size: 19px;
+        font-weight: 900;
+    }}
+    QPushButton[tanukiRole="achievementModeTab"],
+    QPushButton[tanukiRole="achievementTierTab"] {{
+        min-height: 28px;
+        padding: 2px 10px;
+        color: #fff8e8;
+        background: rgba(30, 23, 34, 185);
+        border: 1px solid rgba(244, 214, 132, 105);
+        border-radius: {tokens.radius_small}px;
+    }}
+    QPushButton[tanukiRole="achievementModeTab"]:checked,
+    QPushButton[tanukiRole="achievementTierTab"]:checked {{
+        color: #322413;
+        background: rgba(245, 213, 123, 235);
+        border-color: rgba(255, 239, 177, 245);
+        font-weight: 900;
+    }}
+    QLabel[tanukiRole="achievementProgress"] {{
+        color: #fff2c2;
+        font-weight: 800;
+    }}
+    QScrollArea[tanukiRole="achievementScroll"],
+    QWidget[tanukiRole="achievementGrid"] {{
+        background: transparent;
+        border: none;
+    }}
+    QFrame[tanukiRole="achievementCard"] {{
+        background: rgba(255, 252, 239, 190);
+        border: 1px solid rgba(244, 214, 132, 125);
+        border-radius: {tokens.radius_medium}px;
+    }}
+    QFrame[tanukiRole="achievementCard"]:hover,
+    QFrame[tanukiRole="achievementCard"]:focus {{
+        background: rgba(255, 250, 222, 232);
+        border: 2px solid #f2cd69;
+    }}
+    QFrame[tanukiRole="achievementCard"][unlocked="false"] {{
+        background: rgba(19, 17, 23, 178);
+        border-color: rgba(210, 195, 166, 65);
+    }}
+    QLabel[tanukiRole="achievementCardTitle"] {{
+        color: #3b2c1e;
+        font-size: 12px;
+        font-weight: 900;
+    }}
+    QFrame[tanukiRole="achievementDetail"] {{
+        background: rgba(22, 17, 27, 205);
+        border: 1px solid rgba(244, 214, 132, 110);
+        border-radius: {tokens.radius_medium}px;
+    }}
+    QLabel[tanukiRole="achievementDetailHeading"] {{
+        color: #efd47f;
+        font-size: 12px;
+        font-weight: 900;
+    }}
+    QLabel[tanukiRole="achievementDetailTitle"] {{
+        color: #fff8e7;
+        font-size: 16px;
+        font-weight: 900;
+    }}
+    QLabel[tanukiRole="achievementDetailText"] {{
+        color: rgba(255, 248, 231, 215);
+        font-size: 12px;
+    }}
+    QLabel[tanukiRole="achievementDetailTime"] {{
+        color: rgba(239, 212, 127, 210);
+        font-size: 11px;
+    }}
+    QFrame[tanukiRole="achievementToast"] {{
+        background: rgba(25, 19, 29, 242);
+        border: 2px solid #e7c761;
+        border-radius: {tokens.radius_large}px;
+    }}
+    QLabel[tanukiRole="achievementToastHeading"] {{
+        color: #efd47f;
+        font-size: 14px;
+        font-weight: 900;
+    }}
+    QLabel[tanukiRole="achievementToastMessage"] {{
+        color: #fff8e8;
+        font-size: 12px;
         font-weight: 700;
     }}
     QLabel[tanukiRole="eventHeading"] {{

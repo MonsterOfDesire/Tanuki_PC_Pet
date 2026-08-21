@@ -125,7 +125,7 @@ class RelationSummonPanelTests(unittest.TestCase):
             ("Air Groove", "Tokai Teio"),
         )
         self.assertIn(
-            "氣槽 → 東海帝皇",
+            "氣槽 → 帝寶",
             self.panel.relationship_list.item(0).toolTip(),
         )
         row_card = self.panel.relationship_list.itemWidget(
@@ -182,6 +182,20 @@ class RelationSummonPanelTests(unittest.TestCase):
         self.assertFalse(hasattr(self.panel, "refresh_button"))
         self.assertFalse(hasattr(self.panel, "relationship_info_button"))
         self.assertFalse(hasattr(self.panel, "selected_label"))
+
+    def test_unchanged_presentation_keeps_existing_relationship_cards(self):
+        original_card = self.panel.relationship_list.itemWidget(
+            self.panel.relationship_list.item(0)
+        )
+
+        self.panel.refresh_from_binding()
+
+        self.assertIs(
+            self.panel.relationship_list.itemWidget(
+                self.panel.relationship_list.item(0)
+            ),
+            original_card,
+        )
 
     def test_avatar_without_runtime_or_relationship_member_is_disabled(self):
         self.assertFalse(self.panel.avatar_buttons["Sirius Symboli"].isEnabled())

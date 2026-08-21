@@ -1,0 +1,246 @@
+{
+  "meta": {"language_name": "日本語"},
+  "app": {
+    "name": "たぬきデスクトップペット",
+    "information_center": "たぬき情報センター"
+  },
+  "characters": {
+    "Air Groove": "エアグルーヴ",
+    "Sirius Symboli": "シリウスシンボリ",
+    "Symboli Rudolf": "シンボリルドルフ",
+    "Tokai Teio": "トウカイテイオー",
+    "Tsurumaru Tsuyoshi": "ツルマルツヨシ",
+    "Player": "プレイヤー"
+  },
+  "settings": {
+    "language_and_updates": "言語とアップデート",
+    "interface_language": "表示言語"
+  },
+  "information_center": {
+    "title": "たぬき情報センター",
+    "window_title": "たぬき情報センター — {page}",
+    "loading": "ページを読み込んでいます…",
+    "size": "ウィンドウサイズ",
+    "size_tooltip": "推奨比率を適用します。適用後もウィンドウ枠をドラッグして調整できます。",
+    "detach": "ページを分離",
+    "detach_tooltip": "現在のページを独立したウィンドウに移動します",
+    "detached_title": "{page}（別ウィンドウ）",
+    "detached_placeholder": "このページは分離されています。\n上のタブをクリックすると別ウィンドウを呼び戻せます。",
+    "detached_recall": "{page}（分離中・選択して呼び戻す）",
+    "dock_close": "閉じて情報センターに戻す",
+    "pages": {
+      "relation_summon": {"navigation": "関係・呼び出し", "title": "キャラクター関係・呼び出し", "placeholder": "キャラクターの顔、呼び出し操作、双方向の関係データを表示します。"},
+      "event_log": {"navigation": "イベントログ", "title": "イベントログ", "placeholder": "イベントの絞り込み、一覧、詳細記録を表示します。"},
+      "family_status": {"navigation": "家族概要", "title": "家族ステータス概要", "placeholder": "生活費、家族ストレス、メンバーカード、最近のイベントを表示します。"},
+      "achievements": {"navigation": "トロフィー棚", "title": "トロフィー棚", "placeholder": "サンドボックスと黄金伝説の実績トロフィーを表示します。"},
+      "status_settings": {"navigation": "状態設定", "title": "状態設定", "placeholder": "一般設定、交流クールダウン、開発用ツールを表示します。"}
+    },
+    "sizes": {
+      "recommended_16_9": "システム推奨（16:9）",
+      "comfortable_16_10": "読みやすさ優先（16:10）",
+      "tall_4_3": "縦長コンテンツ（4:3）",
+      "compact_16_9": "コンパクト（16:9）"
+    }
+  },
+  "launcher": {
+    "title": "たぬきコントロールセンター", "subtitle": "デスクトップ生活ショートカット",
+    "main_actions": "主な機能", "information_center": "情報センター",
+    "open_information_center": "情報センターを開く", "offer_tray": "フードトレイ",
+    "open_offer_tray": "フードトレイを開く", "current_status": "現在の状態",
+    "status_settings": "状態設定", "open_status_settings": "状態設定を開く", "shutdown": "システムを終了",
+    "disconnected": "未接続", "care_on": "お世話：オン", "care_off": "お世話：オフ",
+    "world_golden_legend": "黄金伝説", "world_sandbox": "サンドボックス",
+    "pin_sidebar": "サイドバーを固定", "collapse_sidebar": "サイドバーを折りたたむ", "pinned_tooltip": "固定中です。クリックすると自動折りたたみを許可します", "unpinned_tooltip": "固定されていません。クリックすると展開したままにします"
+  },
+  "updates": {
+    "checking": "アップデートを確認しています…",
+    "up_to_date": "最新バージョンです。",
+    "available": "新しいバージョン {version} があります。",
+    "failed": "アップデートを確認できませんでした：{reason}",
+    "current": "現在のバージョン {version}",
+    "check_now": "今すぐ確認",
+    "view_release": "新しいリリースを見る",
+    "download_updater": "アップデーターをダウンロード",
+    "updater_ready": "Release から TanukiUpdater.exe をダウンロードして実行してください。",
+    "manual_only": "このリリースには自動更新パッケージがありません。Release を確認してください。"
+  },
+  "common": {
+    "on": "オン", "off": "オフ", "no_data": "データなし", "not_recorded": "記録なし", "character": "キャラクター", "name_separator": "、",
+    "duration_minutes_seconds": "{minutes}分{seconds:02d}秒", "duration_seconds": "{seconds}秒", "duration_seconds_decimal": "{seconds:.1f}秒",
+    "currency_amount": "{amount:+,d}", "currency_amount_unsigned": "{amount:,}", "people_count": "{count}人", "event_count": "{count}件"
+  },
+  "labels": {
+    "living_fund": "生活費", "household_pressure": "家族ストレス", "mood": "気分",
+    "filters": {"all": "すべて", "personal": "個人", "social": "交流", "economy": "家計", "item": "アイテム", "system": "システム"},
+    "channels": {"social": "交流", "economy": "家計", "item": "アイテム", "story": "物語", "system": "システム"},
+    "relationship_metrics": {"familiarity": "親しさ", "trust": "信頼", "attachment": "愛着", "tension": "緊張"},
+    "mood_states": {"normal": "穏やか", "unhappy": "落ち込み", "depressed": "ひどく落ち込み"},
+    "forms": {"base": "通常形態", "transformed": "変身形態"}
+  },
+  "window_chrome": {"pin": "最前面に固定", "minimize": "最小化", "close": "閉じる"},
+  "offer_tray": {"title": "フードトレイ", "drag_item": "{item}をキャラクターへドラッグ", "drag_to_character": "キャラクターへドラッグ", "instruction_tooltip": "食べ物を押したままデスクトップのキャラクターへドラッグします", "window_drag": "フードトレイを移動"},
+  "items": {"ramen": "ラーメン", "honey": "ハチミツ", "tea": "お茶", "bottle": "哺乳瓶", "lollipop": "ロリポップ"},
+  "dashboard": {"saving_settings": "設定を保存しています...", "shutting_down": "終了しています...", "validation_warning": "チェック結果（警告あり）", "validation_ok": "チェック結果（正常）"},
+  "family_summary": {
+    "title": "家族概要", "status_title": "家族ステータス", "not_initialized": "家族データはまだ初期化されていません。", "no_key_events": "家族の主なイベントはまだありません。", "fund_overview": "生活費：{amount}", "pressure_overview": "家族ストレス：{amount}%", "unavailable": "家族データが実行中の Dashboard に接続されていません。",
+    "race_rhythm_tooltip": "次の自律レース提案までの予定です。開始時には参加資格・距離・承諾の判定があります。", "chorus_rhythm_tooltip": "次の自律演奏提案までの予定です。開始時には参加資格・距離・反応の判定があります。",
+    "current_summons": "呼び出し中", "members": "家族メンバー", "recent_events": "最近のイベント", "recent_events_accessible": "最近の家族イベント", "no_runtime_members": "キャラクターのランタイムデータがありません。", "no_members": "メンバーなし", "standby_count": "待機 {count}人",
+    "mood_line": "気分：{mood}", "mood_score": "{mood}（{score:.0f}/100）", "form_line": "形態：{form}", "form_base": "◇ 通常形態", "form_transformed": "✦ 変身形態", "summoned": "● 呼び出し中", "standby": "○ 待機", "summoned_now": "現在呼び出し中", "standby_now": "現在待機中",
+    "donate_accessible": "生活費を100寄付", "donate_tooltip": "生活費に100追加", "donate_golden_only": "生活費の寄付は黄金伝説モードでのみ利用できます",
+    "achievement_summary": "実績概要", "open_trophy_cabinet": "トロフィー棚を開く", "no_achievement_data": "実績データなし", "open_trophy_cabinet_status": "トロフィー棚を開く；{status}", "open_trophy_cabinet_mode_status": "トロフィー棚を開く；{mode}；{status}",
+    "pressure": {"high": "高ストレス", "medium": "中ストレス", "low": "低ストレス"}, "stats": {"average_mood": "平均気分", "fund_delta": "最近の収支", "pressure_delta": "ストレス変化", "event_count": "イベント数"}
+  },
+  "rhythm": {
+    "race_active": "レース：進行中", "race_cooldown_duration": "レース：約{duration}後に再提案", "race_cooldown": "レース：クールダウン中", "race_ready": "レース：参加者を待っています", "race_unscheduled": "レース：スケジュール未開始",
+    "chorus_active": "演奏：進行中", "chorus_cooldown_duration": "演奏：約{duration}後に再提案", "chorus_cooldown": "演奏：クールダウン中", "chorus_ready": "演奏：演奏者を待っています", "chorus_unscheduled": "演奏：スケジュール未開始",
+    "sleep_settling": "就寝準備中", "sleeping": "睡眠中", "sleep_waking": "目覚め中", "sleep_standby": "眠気：待機", "sleep_calculating": "眠気：計算中", "sleepiness": "眠気 {value}%", "form_transition": "形態切替中", "form_transformed_remaining": "変身残り約{duration}", "form_transformed": "現在は変身形態", "form_cooldown_duration": "変身：約{duration}後に再試行", "form_cooldown": "変身：クールダウン中", "form_ready": "変身：機会を待っています", "form_unavailable": "変身：利用不可"
+  },
+  "event_log": {
+    "title": "イベントログ", "title_filtered": "イベントログ - {filter}", "title_personal": "{title}：{character}", "unavailable": "イベントログが実行中の Dashboard に接続されていません。", "personal_filter_character": "個人フィルターのキャラクター", "personal_filter": "個人フィルター", "personal_filter_tooltip": "「個人」フィルター選択時のみ使用します", "event_list": "イベント一覧",
+    "no_matching_records": "条件に一致する記録はありません。", "no_event_data": "イベントデータはありません。", "select_event": "左側のイベントを選択すると詳細を表示します。", "details": "イベント詳細", "family_system": "家族／システム", "family_system_event": "家族／システムイベント", "sequence": "時系列 #{sequence:03d}", "no_tags": "タグなし", "tags": "タグ　{tags}", "general_event": "一般イベント", "no_effects": "このイベントによる数値変化はありません",
+    "importance": {"low": "通常", "normal": "通常", "major": "重要", "high": "重要", "critical": "重大"},
+    "categories": {"social": "交流", "care": "お世話", "relationship": "関係", "economy": "家計", "player_help": "プレイヤー支援", "player_offer": "プレゼント", "item": "アイテム", "system": "システム", "debug": "デバッグ", "household": "家族"}
+  },
+  "race": {"challenger": "挑戦者", "opponent": "相手", "winner": "勝者", "distance": "レース距離", "direction": "方向", "elapsed": "所要時間"},
+  "relationship": {
+    "title": "関係表", "unavailable": "キャラクターデータが実行中の Dashboard に接続されていません。", "not_enough_characters": "関係を表示できるキャラクターが足りません。", "no_data": "関係データはまだありません。", "no_visible_data": "表示できる関係データはありません。", "affinity": "好感度", "event_count": "イベント回数",
+    "formula": "好感度は暫定値です：親しさ45% + 信頼30% + 愛着35% - 緊張20%", "formula_multiline": "好感度＝親しさ×45%＋信頼×30%\n　　　　＋愛着×35%－緊張×20%", "summon": "呼び出す", "hide": "隠す", "summon_character": "{character}を呼び出す", "not_loaded": "{character}は未ロードです",
+    "race_summary": "🏁 レース {races}回　{wins}勝 {losses}敗　勝率 {win_rate}", "row_tooltip": "好感 {affinity:.2f}｜イベント {event_count}", "mood_no_data": "気分：データなし", "mood_score": "気分：{mood}（{score:.0f}/100）", "view_relationships_tooltip": "{character}から他のキャラクターへの関係を見る\n{mood}",
+    "row": "  -> {target}: 好感度 {affinity:5.2f} | 親しさ {familiarity:5.2f} / 信頼 {trust:5.2f} / 愛着 {attachment:5.2f} / 緊張 {tension:5.2f} | イベント {event_count}"
+  },
+  "achievements": {
+    "modes": {"sandbox": "サンドボックス", "golden_legend": "黄金伝説"}, "mode_tabs": {"sandbox": "サンドボックス実績", "golden_legend": "黄金伝説実績"}, "progress": "取得済み {unlocked} / {total}", "summary_recent": "{progress}｜最新：{title}", "summary_empty": "{progress}｜取得済み実績なし", "acquisition_record": "取得記録", "hover_unlocked": "取得済みトロフィーにカーソルを合わせると取得条件を表示します。", "unlocked_at": "取得日時：{time}", "locked_accessible": "未取得の{tier}トロフィー", "unlocked_accessible": "取得済み{tier}実績：{title}", "notification": {"single": "新しい実績を取得", "multiple": "実績を{count}件同時取得", "more": " など計{count}件"},
+    "definitions": {
+      "race": {
+        "first_natural_finish": {"title": "初めての疾走", "description": "全行程1xで、テストではないレースが初めて自然完走するところを見届ける。"},
+        "ten_natural_finishes": {"title": "常連レーサー", "description": "テストではないレースの自然完走を10回見届ける。"},
+        "all_course_lengths": {"title": "距離を選ばず", "description": "500、720、1100、1500pxの各コースでレースを完走する。"},
+        "both_directions": {"title": "左右自在", "description": "時計回り・左向きと反時計回り・右向きのレースをそれぞれ完走する。"},
+        "all_course_direction_pairs": {"title": "縦横無尽", "description": "4つの距離と2つの方向、全8組み合わせを完走する。"},
+        "every_competitor_form_wins": {"title": "それぞれの得意技", "description": "通常トウカイテイオー、シリウスシンボリ、通常シンボリルドルフ、変身シンボリルドルフの勝利をそれぞれ見届ける。"}
+      },
+      "chorus": {
+        "first_natural_finish": {"title": "初めての合奏", "description": "全行程1xで、最初の演奏が自然に完奏するところを見届ける。"},
+        "three_performers": {"title": "三重奏", "description": "3人以上の演奏者による演奏を自然に完奏する。"},
+        "every_character_performed": {"title": "みんなのステージ", "description": "5人全員が自然完奏したセッションで演奏者を経験する。"},
+        "five_performers_same_session": {"title": "5人そろって", "description": "5人全員が演奏者となった演奏を自然に完奏する。"}
+      },
+      "sleep": {
+        "first_natural_finish": {"title": "よい夢を", "description": "最初の自律睡眠が自然な目覚めで終わるところを見届ける。"},
+        "first_group_join": {"title": "寄り添って", "description": "眠っている相手に気づいたキャラクターが自律的に睡眠グループへ加わるところを見届ける。"},
+        "every_character_natural_finish": {"title": "家族みんな快眠", "description": "5人それぞれが自律睡眠を一度完了するところを見届ける。"},
+        "five_simultaneous": {"title": "家族みんな夢の中", "description": "全行程1xで、5人全員が同時に自然睡眠状態になる。"}
+      },
+      "transformation": {
+        "teio_first_autonomous": {"title": "テイオーの新しい姿", "description": "全行程1xで、トウカイテイオーが初めて自律変身を完了するところを見る。"},
+        "rudolf_first_autonomous": {"title": "白き皇帝", "description": "全行程1xで、シンボリルドルフが初めて自律変身を完了するところを見る。"},
+        "both_characters_autonomous": {"title": "二つの奇跡", "description": "トウカイテイオーとシンボリルドルフがそれぞれ自律変身を完了するところを見る。"}
+      },
+      "care": {
+        "first_complete": {"title": "初めてのお世話", "description": "テストではない最初のお世話が自然に完了するところを見届ける。"},
+        "three_distinct_guardians": {"title": "お世話リレー", "description": "異なる3人のお世話役がそれぞれ一度お世話を完了するところを見る。"},
+        "sirius_shallow_sleep_rescue": {"title": "眠りの浅い守護者", "description": "眠っていたシリウスシンボリが自律的に起き、ツルマルツヨシのお世話を完了するところを見る。"}
+      },
+      "honey": {"first_guard": {"title": "ハチミツの守護", "description": "ツルマルツヨシがハチミツを持ち去るのを初めて阻止する。"}},
+      "food": {"first_shared_finish": {"title": "一緒ならもっとおいしい", "description": "キャラクターが初めて自然に食べ物を分け合い終えるところを見る。"}},
+      "work": {
+        "rudolf_first_complete": {"title": "今日もお疲れさま", "description": "黄金伝説で、シンボリルドルフが初めて自然に仕事を終えるところを見る。"},
+        "rudolf_ten_completions": {"title": "一家の大黒柱", "description": "黄金伝説で、シンボリルドルフが自然に仕事を10回終えるところを見る。"}
+      },
+      "activity": {
+        "variety_sampler": {"title": "暮らしの観察者", "description": "レース、演奏、睡眠、お世話、自律変身をそれぞれ一度自然完了まで見届ける。"},
+        "family_mastery": {"title": "たぬき家族大事記", "description": "指定されたレース、演奏、睡眠、変身、お世話の上級収集実績を完成する。"}
+      },
+      "ambient": {"tsuyoshi_rare_stand": {"title": "ツヨシが立った！", "description": "1xのサンドボックスで、ツルマルツヨシがside-readyからまれに立ち上がるところを見る。"}}
+    }
+  },
+  "events": {
+    "unnamed": "名称未設定のイベント", "types": {"opening_note": "一日の始まり", "fund_snapshot": "生活費スナップショット", "pressure_snapshot": "家族ストレスの記録", "player_donate_fund": "生活費の寄付", "teio_drink_expense": "飲み物の支出", "rudolf_collectible_expense": "コレクションの支出", "rudolf_work_completed": "仕事完了", "transformation_started": "変身開始", "transformation_ended": "変身終了", "observe_social_log": "静かな見守り", "post_observe_social_log": "日常の会話", "race_completed": "レース完走", "race_declined": "レース辞退", "chorus_completed": "演奏完了", "chorus_interrupted": "演奏中断", "offer_bottle_success": "哺乳瓶を受け取った", "ground_bottle_pickup": "哺乳瓶を拾った", "offer_bottle_feed": "哺乳瓶でお世話", "ground_bottle_feed": "哺乳瓶でお世話", "offer_honey_success": "ハチミツを受け取った", "ground_honey_pickup": "ハチミツを拾った", "offer_honey_guarded": "ハチミツ保護", "offer_honey_denied": "ハチミツ阻止", "offer_hover_timeout": "アイテム待機終了", "shared_ramen": "ラーメンを共有", "shared_tea_chat": "お茶を共有", "shared_honey": "ハチミツを共有"}, "deltas": {"living_fund": "生活費 {amount:+,d}", "pressure": "ストレス {amount:+.1f}", "mood": "気分 {amount:+.1f}", "relationship": "関係 {details}"},
+    "directions": {"clockwise_left": "右回り", "counterclockwise_right": "左回り"}, "performance": {"solo": "独奏", "ensemble": "合奏"}, "chorus_reasons": {"default": "状況が変化したため", "tsuyoshi_honey_guard_needed": "ツヨシをハチミツから守る必要があったため", "child_care_needed": "子どものお世話が必要になったため", "no_performers_remaining": "演奏者が全員いなくなったため"},
+    "social_templates": {
+      "observe": {
+        "0": "{actor}は{target}が自分のことをしているのに気づき、しばらく静かに見守りました。",
+        "1": "{actor}と{target}は一瞬目が合い、少し空気が和らぎました。",
+        "2": "{actor}は近くから{target}を眺め、相手の小さな癖を覚えようとしているようでした。",
+        "3": "{actor}は{target}が迷っていることに気づき、すぐには声をかけませんでした。",
+        "4": "{actor}はそっと歩調を緩め、{target}が目の前の用事を終えるのを待ちました。",
+        "5": "{actor}は{target}の表情の変化に気づき、今日の気分を確かめているようでした。",
+        "6": "{actor}は{target}が服を整える様子を見て、その小さな癖をそっと覚えました。",
+        "7": "{actor}は{target}の手元を見て、あとで役に立つか考えているようでした。",
+        "8": "{actor}は{target}が少し近づいたことに気づき、そっと場所を空けました。",
+        "9": "{actor}が窓辺で立ち止まる{target}を見ていると、辺りは静かになりました。",
+        "10": "{actor}は少し得意げな{target}に気づきましたが、何も言わず一目見るだけにしました。",
+        "11": "{actor}は{target}が元気そうなのを見て、自分も少し安心しました。",
+        "12": "{actor}は家のリズムに合わせるように、{target}の歩調を静かに見守りました。",
+        "13": "{actor}は{target}がデスク上の物を見ていることに気づき、少しだけ同じ方を眺めました。",
+        "14": "{actor}は{target}が誰かと話したそうなのに気づき、そばで少し待ちました。",
+        "15": "{actor}は通り過ぎる{target}を急かさず、そっと道を譲りました。",
+        "16": "{actor}と{target}はすれ違う時、お互いに少し歩調を緩めました。",
+        "17": "{actor}は{target}の小さな表情を、家族だけに通じる合図のように受け取りました。",
+        "18": "{actor}は今日の{target}が特におとなしいことに気づき、つい何度か見てしまいました。",
+        "19": "{actor}は近くに来た{target}を見て、困ったことがないか確かめているようでした。",
+        "20": "{actor}は少し立ち止まって{target}を観察し、何事もなかったように目をそらしました。",
+        "21": "{actor}は{target}の尻尾が動いたことに気づき、何かを理解したようでした。",
+        "22": "{actor}は近づいてまた離れる{target}を見ながら、声をかけるか考えていました。",
+        "23": "{actor}は今日の{target}の足取りが軽いことに気づき、ひそかに安心しました。"
+      },
+      "post_observe_interaction": {
+        "0": "{actor}は{target}に近づき、少しだけ言葉を交わしました。",
+        "1": "{actor}と{target}は寄り添って、ちょっとした家の話をしました。",
+        "2": "{actor}は{target}に小さく応じ、二人はすぐにそれぞれの場所へ戻りました。",
+        "3": "{actor}があとで何をしたいか{target}に尋ねると、相手は真剣に考えたようでした。",
+        "4": "{actor}と{target}は、家族にしか分からなそうな言葉を小声で交わしました。",
+        "5": "{actor}は{target}に近づき、無理をしすぎないよう自然な口調で声をかけました。",
+        "6": "{actor}と{target}はさっきの出来事を話し、和やかな時間を過ごしました。",
+        "7": "{actor}が今日の調子を{target}に尋ねると、短い返事が返ってきました。",
+        "8": "{actor}と{target}は夕食の相談をしていたようですが、話題はすぐ別の方へそれました。",
+        "9": "{actor}は{target}に近づいて冗談を言い、二人の距離が少し縮まりました。",
+        "10": "{actor}と{target}は少しの間並んで立ち、同じ小さな秘密を共有しているようでした。",
+        "11": "{actor}が{target}にうなずくと、二人はそれ以上何も言わずに通じ合いました。",
+        "12": "{actor}はいつもより優しい口調で、少し休むか{target}に尋ねました。",
+        "13": "{actor}と{target}はデスク上の物について話し、家の予定を組んでいるようでした。",
+        "14": "{actor}は口を挟まず、{target}のちょっとした話を静かに聞きました。",
+        "15": "{actor}は{target}の様子を確かめ、問題がないと分かってから安心して離れました。",
+        "16": "{actor}と{target}は少し言い合いましたが、すぐにいつもの空気へ戻りました。",
+        "17": "{actor}がさっき気づいたことを{target}に伝えると、相手は少し驚いたようでした。",
+        "18": "{actor}と{target}はおやつについて話しましたが、結論はまだ出ていないようです。",
+        "19": "{actor}は日常の一言のように、{target}へお疲れさまと伝えました。",
+        "20": "{actor}と{target}は目を合わせ、言葉がなくても分かり合ったようでした。",
+        "21": "{actor}は{target}にいくつか言葉をかけ、最後は好きに過ごさせました。",
+        "22": "{actor}と{target}は少しだけ集まり、お互いが元気か確かめたようでした。",
+        "23": "{actor}が{target}に小さな提案をすると、相手も完全には反対していないようでした。",
+        "24": "{actor}がしばらく{target}のそばにいると、家の空気が少し落ち着きました。"
+      }
+    },
+    "summaries": {
+      "opening_note": "シンボリルドルフの家族が今日もデスクトップでの暮らしを始めました。", "fund_snapshot": "現在の生活費は{amount}です。", "pressure_snapshot": "現在の家族ストレスは{amount}%です。", "player_donate_fund": "プレイヤーが生活費を{amount}寄付しました。", "teio_drink_expense": "トウカイテイオーがまたこっそり飲み物を買いました。", "rudolf_collectible_expense": "シンボリルドルフがコレクションを一つ増やしました。", "rudolf_work_completed": "シンボリルドルフが仕事を終え、家族の生活費を稼ぎました。",
+      "transformation_started": "{character}が変身を始めました。", "transformation_ended": "{character}が通常形態に戻りました。", "observe_social_log": "{actor}がしばらく{target}を見つめていました。", "post_observe_social_log": "{actor}が{target}と少し過ごしました。", "race_completed": "{winner}が{distance}px・{direction}のレースで{loser}に勝ち、{elapsed:.1f}秒でゴールしました。", "race_declined": "{opponent}が{challenger}のレース挑戦を断りました。",
+      "chorus_completed": "{performers}が{elapsed:.1f}秒の{performance}を完奏しました。", "chorus_completed_with_audience": "{performers}が{elapsed:.1f}秒の{performance}を完奏し、{audiences}が観客として見届けました。", "chorus_interrupted": "{performance}は{reason}途中で終了しました。",
+      "offer_bottle_success": "{actor}が{target}のために哺乳瓶を受け取りました。", "ground_bottle_pickup": "{actor}が哺乳瓶を拾いました。", "offer_bottle_feed": "{actor}が{target}に哺乳瓶で飲ませました。", "ground_bottle_feed": "{actor}が{target}に哺乳瓶で飲ませました。", "offer_honey_success": "{target}がハチミツを受け取りました。", "ground_honey_pickup": "{actor}がハチミツを拾いました。", "offer_honey_guarded": "{actor}が{target}からハチミツを守りました。", "offer_honey_denied": "{actor}が{target}のハチミツ持ち去りを止めました。", "offer_hover_timeout": "渡せる相手が見つからず、{actor}がアイテムを戻しました。",
+      "shared_ramen": "{holder}と{partner}が{item}を分け合いました。", "shared_ramen_share_both": "{holder}と{partner}が一緒に{item}を分け合いました。", "shared_ramen_holder_keeps": "{partner}が見に来ましたが、{holder}が{item}を食べました。", "shared_ramen_holder_gives": "{holder}が{item}を{partner}に譲りました。",
+      "shared_tea_chat": "{holder}と{partner}が一緒に{item}を楽しみました。", "shared_tea_chat_share_both": "{holder}と{partner}が並んで{item}を楽しみました。", "shared_tea_chat_holder_keeps": "{partner}もそばに来ましたが、{holder}が{item}を飲みました。", "shared_tea_chat_holder_gives": "{holder}が{item}を{partner}に勧めました。",
+      "shared_honey": "{holder}と{partner}が{item}を分け合いました。", "shared_honey_share_both": "{holder}と{partner}がうれしそうに{item}を分け合いました。", "shared_honey_holder_keeps": "{partner}も近づきましたが、{holder}が{item}を楽しみました。", "shared_honey_holder_gives": "{holder}が{item}を{partner}に譲りました。",
+      "ground_item_pickup": "{target}が{item}を拾いました。", "offer_item_success": "{target}が{item}を楽しみました。",
+      "generic_care": "{actor}が{target}のお世話をしました。", "generic_social": "{actor}と{target}が交流しました。", "generic_item": "{actor}と{target}がアイテムでやり取りしました。", "generic_economy": "家族の収支イベントが記録されました。", "generic_system": "システムイベントが記録されました。", "generic_family": "家族の生活イベントが記録されました。"
+    }
+  },
+  "settings": {
+    "language_and_updates": "言語とアップデート", "interface_language": "表示言語", "unavailable": "状態設定が実行中の Dashboard に接続されていません。", "groups": {"runtime": "実行モード", "timing": "時間と表示", "social_cooldown": "交流クールダウン", "life_rhythm": "生活リズム", "developer": "開発ツール"},
+    "world_mode": "ワールドモード", "time_scale": "時間速度", "display_scale": "表示倍率", "enable_care": "キャラクターのお世話を有効化", "enable_care_tooltip": "気分が低い時のお世話と家族の関連行動を許可します。", "race_frequency": "レース頻度", "race_frequency_tooltip": "自律レースの待機・クールダウン時間を調整します。参加資格・距離・承諾判定は省略しません。", "chorus_frequency": "演奏頻度", "chorus_frequency_tooltip": "自律演奏の待機・再試行・クールダウン時間を調整します。参加資格・距離・反応判定は省略しません。", "mood_climate": "感情傾向", "mood_climate_tooltip": "自然な気分変化はシミュレーション速度に従います。目標値は設けず、頻度・方向・変化量だけを調整します。",
+    "show_debug": "キャラクターのデバッグ情報を表示", "show_debug_tooltip": "キャラクターとパフォーマンスの詳細診断を表示します。", "show_social_status": "交流状態ラベルを表示", "show_social_status_tooltip": "random、relation_watch などのテスト用ラベルをキャラクターの上に表示します。", "preview_work": "ルドルフの仕事をプレビュー", "preview_race": "ルドルフ対テイオーをプレビュー", "preview_chorus": "今すぐ演奏をプレビュー", "transformation_control": "サンドボックス形態操作", "sleep_control": "サンドボックス睡眠操作", "validate_config_manifest": "Config / Manifest をチェック",
+    "preview_work_idle": "仕事と休憩のアニメーションのみ再生し、金銭・ストレス・気分の精算は行いません。", "preview_race_idle": "ルドルフとテイオーのレースを再生し、イベント記録や数値変化は行いません。", "preview_chorus_idle": "自律反応を使って演奏を開始し、イベントや報酬は適用しません。", "preview_work_active": "ルドルフの仕事プレビューを開始しました。今回は精算を適用しません。", "preview_race_active": "ルドルフ対テイオーのレースプレビューを開始しました。正式イベントや数値変化はありません。", "preview_chorus_active": "演奏プレビューを開始しました。イベント・気分・関係報酬は適用しません。", "sleep_control_idle": "キャラクターを眠らせるか、既存の waking フローで起こします。サンドボックス限定です。", "preview_work_tooltip": "manifest の仕事・休憩を正式な精算なしでプレビューします。", "preview_work_sandbox_only": "仕事プレビューはサンドボックスでのみ利用できます。", "preview_race_tooltip": "manifest contexts のレース全工程をイベントや数値変化なしで再生します。", "preview_race_sandbox_only": "レースプレビューはサンドボックスでのみ利用できます。", "preview_chorus_tooltip": "自律的な参加・観覧反応を使い、イベントや報酬なしで演奏を開始します。", "preview_chorus_sandbox_only": "演奏プレビューはサンドボックスでのみ利用できます。",
+    "world_modes": {"golden_legend": "黄金伝説", "sandbox": "サンドボックス"}, "frequencies": {"frequent": "頻繁", "normal": "標準", "occasional": "少なめ"}, "mood_climates": {"cheerful": "明るい", "balanced": "バランス", "expressive": "表情豊か"},
+    "race_frequency_tooltips": {"frequent": "自律レースの待機とクールダウンが標準のおよそ半分になります。", "normal": "選択中のワールドモードの標準レース予定を使用します。", "occasional": "自律レースの待機とクールダウンが標準のおよそ2倍になります。"},
+    "chorus_frequency_tooltips": {"frequent": "自律演奏の待機・再試行・クールダウンが標準のおよそ半分になります。", "normal": "標準の自律演奏予定を使用します。", "occasional": "自律演奏の待機・再試行・クールダウンが標準のおよそ2倍になります。"},
+    "mood_climate_tooltips": {"cheerful": "自然な気分tickの50%で小幅に変化し、明確にプラス寄りです。", "balanced": "自然な気分tickの60%で変化します。normalでは少し低下寄りで、子どもがlowに入ってから近くの大人による回復保護が働きます。", "expressive": "自然な気分tickの90%で変化し、マイナスが多く変化量も最大です。大人は低下が緩やかで、低気分時に自己調整します。"}
+  },
+  "transformation": {"completed_base": "{character}が通常形態に戻りました。", "completed_transformed": "{character}が変身を完了しました。", "button_waiting": "{character}の解除待ち", "button_reverting": "{character}が解除中", "button_transforming": "{character}が変身中", "button_revert": "{character}の変身を解除", "button_transform": "{character}を変身", "tooltip_waiting": "地上で空き状態になるまで解除要求を待機します。", "tooltip_reverting": "安全に変身を解除しています。", "tooltip_transforming": "変身形態へ切り替えています。", "tooltip_revert": "手動で解除します。多忙時や空中では安全な機会を待ちます。", "tooltip_transform": "正式なイベントや精算なしで手動変身します。", "tooltip_sandbox_only": "手動形態操作はサンドボックスでのみ利用できます。", "tooltip_unavailable": "実行中の Runtime からキャラクターまたは変身状態を取得できません。", "status_sandbox_only": "サンドボックスへ切り替えると{teio}と{rudolf}の形態を確認・操作できます。", "status_unavailable": "{characters}の形態状態を取得できません。", "status_waiting": "{character}の変身解除は地上で空くまで待機中です。", "status_active": "{character}は{action}です。", "status_transformed": "{character}は{source}変身中です。時間切れで安全に解除され、ボタンでも早期解除できます。", "status_base": "{teio}と{rudolf}は通常形態です。サンドボックスでも自律変身する可能性があります。", "action_revert": "変身解除中", "action_transform": "変身中", "action_revert_label": "変身解除", "action_transform_label": "変身", "source_autonomous": "自律", "source_manual": "手動"},
+  "preview_messages": {
+    "runtime_or_sandbox": "プレビューできません。サンドボックスへ切り替えるか、実行中の Runtime に接続してください。", "runtime_unavailable": "プレビューできません。実行中の Runtime に接続されていません。", "transformation_started": "{character}の{action}演出を開始しました。", "transformation_queued": "{character}の変身解除を待機列に入れました。地上で空き状態になると安全に解除します。", "unknown": "プレビューを開始できません。", "unknown_with_reason": "プレビューを開始できません：{reason}", "work_not_started": "プレビューできません。Runtime が仕事 Activity を開始しませんでした。",
+    "transformation_failures": {"preview_requires_sandbox": "プレビューできません。サンドボックスへ切り替えてください。", "transition_active": "プレビューできません。キャラクターは形態を切り替え中です。", "participant_unavailable": "プレビューできません。指定したキャラクターが見つかりません。", "participant_disabled": "プレビューできません。キャラクターは無効です。", "participant_hidden": "プレビューできません。キャラクターは呼び出されていません。", "participant_owned": "プレビューできません。キャラクターは別の Activity 中です。", "participant_dragging": "プレビューできません。キャラクターはドラッグ中です。", "participant_offer_busy": "プレビューできません。キャラクターはアイテムとやり取り中です。", "participant_care_busy": "プレビューできません。キャラクターはお世話中です。", "participant_social_busy": "プレビューできません。キャラクターは交流中です。", "participant_recovering": "プレビューできません。キャラクターは回復または一時ロック中です。", "airborne": "プレビューできません。キャラクターを地上へ戻してください。", "asset_directory_missing": "プレビューできません。変身素材フォルダーが見つかりません。", "capability_unavailable_random": "プレビューできません。manifest に使用可能な random アニメーションがありません。", "asset_load_failed": "プレビューできません。変身素材の読み込みに失敗しました。"},
+    "work_failures": {"preview_requires_sandbox": "プレビューできません。サンドボックスへ切り替えてください。", "severe_mood": "プレビューできません。{character}の気分が severe で、該当 band の仕事素材がありません。", "rudolf_unavailable": "プレビューできません。{character}が見つかりません。", "participant_owned": "プレビューできません。{character}は別の Activity 中です。", "participant_hidden": "プレビューできません。{character}は呼び出されていません。", "participant_disabled": "プレビューできません。{character}は無効です。", "settlement_pending": "プレビューできません。正式な仕事の精算が完了していません。", "participant_busy": "プレビューできません。{character}は別のやり取り中です。", "capability_unavailable": "プレビューできません。manifest に現在の状態に合う仕事素材がありません。"},
+    "race_failures": {"preview_requires_sandbox": "プレビューできません。サンドボックスへ切り替えてください。", "participant_unavailable": "プレビューできません。{rudolf}または{teio}が見つかりません。", "participant_hidden": "プレビューできません。{character}は呼び出されていません。", "participant_disabled": "プレビューできません。{character}は無効です。", "participant_busy": "プレビューできません。{character}は別のやり取り中です。", "participant_airborne": "プレビューできません。{character}を地上へ戻してください。", "form_blocks_race": "プレビューできません。{character}の現在の形態はレースに参加できません。", "severe_mood": "プレビューできません。{character}の気分は severe です。", "race_already_active": "プレビューできません。別のレースが進行中です。", "participants_too_far": "プレビューできません。{rudolf}と{teio}が遠すぎます。先に近づけてください。", "participants_too_close": "プレビューできません。{rudolf}と{teio}が近すぎます。自然に離れるまでお待ちください。", "race_course_unavailable": "プレビューできません。デスクトップの幅が最短500pxコースに足りません。", "participant_owned": "プレビューできません。参加者は別の Activity 中です。", "participant_busy_generic": "プレビューできません。参加者は別のやり取り中です。", "capability_unavailable": "プレビューできません。manifest に現在の形態と band に合うレース素材がありません。"},
+    "chorus_failures": {"preview_requires_sandbox": "プレビューできません。サンドボックスへ切り替えてください。", "chorus_already_active": "プレビューできません。別の演奏が進行中です。", "no_eligible_performer": "プレビューできません。空いている演奏者または対応素材がありません。", "empty_session_id": "プレビューできません。演奏セッションを作成できませんでした。", "perform_animation_unavailable": "プレビューできません。manifest に現在の形態と band に合う演奏素材がありません。"}
+  },
+  "sleep_control": {"started": "{character}が眠り始めました。", "waking": "{character}が目覚め演出に入りました。", "button_waking": "{character}は目覚め中", "button_wake": "{character}を起こす", "button_blocked": "{character}は眠れません", "button_sleep": "{character}を眠らせる", "tooltip_waking": "既存の waking 演出を再生しています。", "tooltip_wake": "既存の waking フローで早めに起こします。", "tooltip_blocked": "現在の形態では眠れません。", "tooltip_sleep": "既存の睡眠フローをすぐ開始します。", "tooltip_sandbox_only": "サンドボックスで呼び出し中のキャラクターにのみ使用できます。", "failures": {"sandbox_required": "睡眠操作はサンドボックスでのみ利用できます。", "participant_unavailable": "指定したキャラクターが見つかりません。", "participant_hidden": "キャラクターが呼び出されていないため眠らせられません。", "participant_owned": "キャラクターは別の Activity 中のため、まだ眠れません。", "form_blocks_sleep": "現在の形態では眠れません。", "already_waking": "キャラクターはすでに目覚め演出中です。", "sleep_capacity_reached": "現在利用できる睡眠枠がありません。", "unknown": "睡眠状態を切り替えられません。", "unknown_with_reason": "睡眠状態を切り替えられません：{reason}"}}
+}

@@ -4,8 +4,8 @@ from .item_scene_coordinator import SharedFoodSceneState
 from .offer_interaction_rules import (
     get_direct_offer_accept_candidates,
     get_direct_offer_accept_context,
-    get_offer_item_definition,
 )
+from .offer_scene_execution_port import adapt_offer_scene_executor
 from .runtime import app_now
 from .shared_food_outcome_rules import (
     get_shared_food_consumer_names,
@@ -21,7 +21,6 @@ from .shared_food_partner_rules import (
 from .shared_food_profiles import (
     SHARED_FOOD_CONTEXT_BY_CAPABILITY,
     SHARED_FOOD_OUTCOME_HOLDER_GIVES,
-    SHARED_FOOD_OUTCOME_HOLDER_KEEPS,
     SHARED_FOOD_OUTCOME_SHARE_BOTH,
     SharedFoodCharacterCapabilities,
     get_shared_food_profile,
@@ -41,12 +40,13 @@ SHARED_FOOD_FINISH_SECONDS = 0.65
 SHARED_FOOD_APPROACH_MIN_SPEED = 1.5
 
 
+@adapt_offer_scene_executor
 class SharedFoodSceneExecutor:
     """Executes shared-food eligibility, scene stages, and outcome settlement."""
 
     def get_shared_food_capability_contexts(
         self,
-        runtime,
+        port,
         item_kind,
         pet_name,
         capability_name,
@@ -63,7 +63,7 @@ class SharedFoodSceneExecutor:
 
     def get_shared_food_candidate_result(
         self,
-        runtime,
+        port,
         pet,
         candidate,
         preferred_moods,
@@ -89,14 +89,14 @@ class SharedFoodSceneExecutor:
 
     def filter_shared_food_candidates(
         self,
-        runtime,
+        port,
         pet,
         item_kind,
         capability_name,
         candidates,
         preferred_moods,
     ):
-        contexts = runtime.get_shared_food_capability_contexts(
+        contexts = port.shared_food.get_capability_contexts(
             item_kind,
             pet.name,
             capability_name,
@@ -104,7 +104,7 @@ class SharedFoodSceneExecutor:
         return tuple(
             candidate
             for candidate in tuple(candidates or ())
-            if runtime.get_shared_food_candidate_result(
+            if port.shared_food.get_candidate_result(
                 pet,
                 candidate,
                 preferred_moods,
@@ -114,7 +114,7 @@ class SharedFoodSceneExecutor:
 
     def build_runtime_shared_food_capabilities(
         self,
-        runtime,
+        port,
         profile,
         pet,
         preferred_moods,
@@ -124,7 +124,7 @@ class SharedFoodSceneExecutor:
             return None
         capability_kwargs = {}
         for capability_name in ("hold", "approach", "consume", "request", "watch", "react"):
-            capability_kwargs[f"{capability_name}_candidates"] = runtime.filter_shared_food_candidates(
+            capability_kwargs[f"{capability_name}_candidates"] = port.shared_food.filter_candidates(
                 pet,
                 profile.item_kind,
                 capability_name,
@@ -135,7 +135,7 @@ class SharedFoodSceneExecutor:
 
     def apply_shared_food_capability(
         self,
-        runtime,
+        port,
         pet,
         item_kind,
         capability_name,
@@ -147,7 +147,7 @@ class SharedFoodSceneExecutor:
         candidate_list = tuple(candidates or ())
         if not candidate_list:
             return False
-        contexts = runtime.get_shared_food_capability_contexts(
+        contexts = port.shared_food.get_capability_contexts(
             item_kind,
             pet.name,
             capability_name,
@@ -158,7 +158,7 @@ class SharedFoodSceneExecutor:
         )
         current_mood = getattr(pet, "current_mood_tag", "")
         if preserve and current_candidate in candidate_list and current_mood in set(preferred_moods or ()):
-            current_result = runtime.get_shared_food_candidate_result(
+            current_result = port.shared_food.get_candidate_result(
                 pet,
                 current_candidate,
                 (current_mood,),
@@ -168,7 +168,7 @@ class SharedFoodSceneExecutor:
                 pet.state = "move" if current_candidate[0] == "move" else "idle"
                 return True
         for candidate in candidate_list:
-            result = runtime.get_shared_food_candidate_result(
+            result = port.shared_food.get_candidate_result(
                 pet,
                 candidate,
                 preferred_moods,
@@ -181,7 +181,7 @@ class SharedFoodSceneExecutor:
 
     def apply_shared_food_role_action(
         self,
-        runtime,
+        port,
         pet,
         profile,
         capabilities,
@@ -192,7 +192,7 @@ class SharedFoodSceneExecutor:
     ):
         for capability_name in capability_order:
             candidates = getattr(capabilities, f"{capability_name}_candidates", ())
-            if runtime.apply_shared_food_capability(
+            if port.shared_food.apply_capability(
                 pet,
                 profile.item_kind,
                 capability_name,
@@ -203,7 +203,7 @@ class SharedFoodSceneExecutor:
                 return True
         return False
 
-    def capture_shared_food_animation(self, runtime, pet):
+    def capture_shared_food_animation(self, port, pet):
         if pet is None:
             return ()
         return (
@@ -212,7 +212,7 @@ class SharedFoodSceneExecutor:
             str(getattr(pet, "current_mood_tag", "") or ""),
         )
 
-    def apply_shared_food_scene_lock_state(self, runtime, pet, focus_name):
+    def apply_shared_food_scene_lock_state(self, port, pet, focus_name):
         pet.perception_situation_tag = "locked"
         pet.expression_animation_context = "ambient"
         pet.expression_relation_overlay = "none"
@@ -222,7 +222,7 @@ class SharedFoodSceneExecutor:
         pet.expression_look_at_target = True
         pet.relationship_focus_target_name = focus_name
 
-    def build_shared_food_participant_state(self, runtime, pet, now):
+    def build_shared_food_participant_state(self, port, pet, now):
         return SharedFoodParticipantState(
             visible=bool(pet is not None and pet.isVisible()),
             busy=bool(
@@ -231,7 +231,7 @@ class SharedFoodSceneExecutor:
                     CAPABILITY_SHARED_FOOD,
                 )
                 or
-                runtime.pet_is_busy_for_offer_interaction(pet, now)
+                port.pets.is_busy(pet, now)
                 or getattr(pet, "is_angry_locked", False)
             ),
             dragging=bool(getattr(pet, "dragging", False)),
@@ -242,10 +242,10 @@ class SharedFoodSceneExecutor:
             has_held_item=bool(getattr(pet, "held_item_kind", "")),
         )
 
-    def pet_is_unavailable_during_shared_food(self, runtime, pet, now):
+    def pet_is_unavailable_during_shared_food(self, port, pet, now):
         return bool(
             pet is None
-            or runtime.pet_is_busy_for_offer_interaction(pet, now)
+            or port.pets.is_busy(pet, now)
             or getattr(pet, "is_angry_locked", False)
             or getattr(pet, "dragging", False)
             or getattr(pet, "is_recovering", False)
@@ -256,7 +256,7 @@ class SharedFoodSceneExecutor:
 
     def evaluate_runtime_shared_food_partner(
         self,
-        runtime,
+        port,
         profile,
         holder_pet,
         partner_pet,
@@ -269,13 +269,13 @@ class SharedFoodSceneExecutor:
         except (AttributeError, TypeError, ValueError):
             distance = float("inf")
         return evaluate_shared_food_partner_eligibility(
-            holder=runtime.build_shared_food_participant_state(holder_pet, now),
-            partner=runtime.build_shared_food_participant_state(partner_pet, now),
+            holder=port.shared_food.build_participant_state(holder_pet, now),
+            partner=port.shared_food.build_participant_state(partner_pet, now),
             distance=distance,
             join_distance=profile.join_distance,
         )
 
-    def get_shared_food_approach_timeout(self, runtime, profile, holder_pet, partner_pet):
+    def get_shared_food_approach_timeout(self, port, profile, holder_pet, partner_pet):
         partner_speed = max(
             SHARED_FOOD_APPROACH_MIN_SPEED,
             float(partner_pet.get_base_speed()),
@@ -289,11 +289,11 @@ class SharedFoodSceneExecutor:
             maximum_seconds=SHARED_FOOD_APPROACH_TIMEOUT_MAX_SECONDS,
         )
 
-    def find_shared_food_partner(self, runtime, profile, holder_pet, now=None):
+    def find_shared_food_partner(self, port, profile, holder_pet, now=None):
         now = app_now() if now is None else float(now)
         for partner_name in profile.partner_names_for_holder(holder_pet.name):
-            partner_pet = runtime.find_pet_by_name(partner_name, visible_only=False)
-            eligibility = runtime.evaluate_runtime_shared_food_partner(
+            partner_pet = port.pets.find_by_name(partner_name, visible_only=False)
+            eligibility = port.shared_food.evaluate_partner(
                 profile,
                 holder_pet,
                 partner_pet,
@@ -306,7 +306,7 @@ class SharedFoodSceneExecutor:
 
     def start_shared_food_scene(
         self,
-        runtime,
+        port,
         holder_pet,
         partner_pet=None,
         *,
@@ -316,7 +316,7 @@ class SharedFoodSceneExecutor:
         now=None,
         roll_provider=None,
     ):
-        if holder_pet is None or runtime.offer_scene is not None:
+        if holder_pet is None or port.scene.current is not None:
             return False
         if not pet_form_allows_capability(
             holder_pet,
@@ -331,13 +331,13 @@ class SharedFoodSceneExecutor:
             return False
         if now is None:
             now = app_now()
-        partner_pet = partner_pet or runtime.find_shared_food_partner(profile, holder_pet, now=now)
+        partner_pet = partner_pet or port.shared_food.find_partner(profile, holder_pet, now=now)
         if (
             partner_pet is None
             or partner_pet.name not in profile.partner_names_for_holder(holder_pet.name)
         ):
             return False
-        eligibility = runtime.evaluate_runtime_shared_food_partner(
+        eligibility = port.shared_food.evaluate_partner(
             profile,
             holder_pet,
             partner_pet,
@@ -346,19 +346,19 @@ class SharedFoodSceneExecutor:
         if not eligibility.eligible:
             return False
         if (
-            runtime.pet_is_window_transitioning_for_offer(holder_pet)
-            or runtime.pet_is_window_transitioning_for_offer(partner_pet)
-            or runtime.prepare_pet_window_state_for_offer(holder_pet)
-            or runtime.prepare_pet_window_state_for_offer(partner_pet)
+            port.animation.is_window_transitioning(holder_pet)
+            or port.animation.is_window_transitioning(partner_pet)
+            or port.animation.prepare_window_state(holder_pet)
+            or port.animation.prepare_window_state(partner_pet)
         ):
             return False
 
-        holder_capabilities = runtime.build_runtime_shared_food_capabilities(
+        holder_capabilities = port.shared_food.build_capabilities(
             profile,
             holder_pet,
             profile.holder_preferred_moods,
         )
-        partner_capabilities = runtime.build_runtime_shared_food_capabilities(
+        partner_capabilities = port.shared_food.build_capabilities(
             profile,
             partner_pet,
             profile.partner_preferred_moods,
@@ -372,12 +372,12 @@ class SharedFoodSceneExecutor:
         )
         if not available_outcomes:
             return False
-        held_widget = runtime.ensure_pet_held_item(holder_pet, profile.item_kind, source=source)
+        held_widget = port.items.ensure_held_item(holder_pet, profile.item_kind, source=source)
         if held_widget is None:
             return False
 
-        runtime.interrupt_pet_window_motion_for_offer(holder_pet)
-        runtime.interrupt_pet_window_motion_for_offer(partner_pet)
+        port.animation.interrupt_window_motion(holder_pet)
+        port.animation.interrupt_window_motion(partner_pet)
         if outcome_roll is None:
             if roll_provider is None:
                 roll_provider = random.random
@@ -390,13 +390,12 @@ class SharedFoodSceneExecutor:
             available_outcomes=tuple(available_outcomes),
             outcome_roll=roll,
         )
-        approach_end = float(now) + runtime.get_shared_food_approach_timeout(
+        approach_end = float(now) + port.shared_food.get_approach_timeout(
             profile,
             holder_pet,
             partner_pet,
         )
-        start_result = runtime.item_scene_coordinator.start_scene(
-            runtime,
+        start_result = port.scene.start(
             participant_pets=(holder_pet, partner_pet),
             item_kind=profile.item_kind,
             scene_kind="shared_food",
@@ -412,53 +411,11 @@ class SharedFoodSceneExecutor:
             shared_food_state=shared_state,
         )
         if not start_result.started:
-            runtime.clear_pet_held_item(holder_pet)
+            port.items.clear_held_item(holder_pet)
             return False
-        return bool(runtime.update_shared_food_scene(now))
+        return bool(port.flow.update_shared_food_scene(now))
 
-    def record_shared_food_event(
-        self,
-        runtime,
-        profile,
-        shared_state,
-        source="offer_tray",
-        now=None,
-    ):
-        item_definition = get_offer_item_definition(profile.item_kind)
-        item_label = item_definition.label if item_definition is not None else profile.item_kind
-        if shared_state.outcome_key == SHARED_FOOD_OUTCOME_SHARE_BOTH:
-            summary = profile.success_summary_by_holder.get(
-                shared_state.holder_name,
-                f"{shared_state.holder_name} 和 {shared_state.partner_name} 分享了{item_label}。",
-            )
-        elif shared_state.outcome_key == SHARED_FOOD_OUTCOME_HOLDER_KEEPS:
-            summary = (
-                f"{shared_state.partner_name} 靠過來看了看，"
-                f"{shared_state.holder_name} 最後還是自己享用了{item_label}。"
-            )
-        else:
-            summary = (
-                f"{shared_state.holder_name} 把{item_label}讓給了"
-                f"{shared_state.partner_name}。"
-            )
-        runtime.record_household_event(
-            occurred_at=app_now() if now is None else float(now),
-            category="player_offer",
-            event_type=profile.success_event_type,
-            summary=summary,
-            actor_name=shared_state.holder_name,
-            target_name=shared_state.partner_name,
-            household_pressure_delta=-1.0,
-            metadata={
-                "source": source,
-                "item_kind": profile.item_kind,
-                "scene_kind": "shared_food",
-                "profile_key": profile.profile_key,
-                "outcome": shared_state.outcome_key,
-            },
-        )
-
-    def apply_shared_food_outcome_effects(self, runtime, shared_state):
+    def apply_shared_food_outcome_effects(self, port, shared_state):
         if shared_state.effects_applied:
             return False
         reward_by_name = {}
@@ -470,59 +427,59 @@ class SharedFoodSceneExecutor:
                 2.0,
             )
         for pet_name, amount in reward_by_name.items():
-            runtime.apply_offer_mood_reward(pet_name, amount=amount)
+            port.events.apply_mood_reward(pet_name, amount=amount)
         shared_state.effects_applied = True
         return True
 
-    def set_shared_food_stage(self, runtime, stage, now, duration):
-        if runtime.offer_scene is None or runtime.offer_scene.scene_kind != "shared_food":
+    def set_shared_food_stage(self, port, stage, now, duration):
+        if port.scene.current is None or port.scene.current.scene_kind != "shared_food":
             return False
         stage_end = float(now) + max(0.05, float(duration))
-        runtime.offer_scene.stage = stage
-        runtime.offer_scene.stage_initialized = False
-        runtime.offer_scene.stage_started_at = float(now)
-        runtime.offer_scene.stage_ends_at = stage_end
-        runtime.offer_scene.scene_ends_at = stage_end
+        port.scene.current.stage = stage
+        port.scene.current.stage_initialized = False
+        port.scene.current.stage_started_at = float(now)
+        port.scene.current.stage_ends_at = stage_end
+        port.scene.current.scene_ends_at = stage_end
         return True
 
-    def hide_shared_food_item(self, runtime, holder_pet, shared_state):
+    def hide_shared_food_item(self, port, holder_pet, shared_state):
         if shared_state.item_hidden:
             return False
-        runtime.clear_pet_held_item(holder_pet)
+        port.items.clear_held_item(holder_pet)
         shared_state.item_hidden = True
         return True
 
-    def fallback_shared_food_to_solo(self, runtime, holder_pet):
-        if runtime.offer_scene is None or runtime.offer_scene.scene_kind != "shared_food":
+    def fallback_shared_food_to_solo(self, port, holder_pet):
+        if port.scene.current is None or port.scene.current.scene_kind != "shared_food":
             return False
-        item_kind = runtime.offer_scene.item_kind
-        source = runtime.offer_scene.source
-        runtime.clear_offer_scene()
+        item_kind = port.scene.current.item_kind
+        source = port.scene.current.source
+        port.scene.clear()
         if (
             holder_pet is None
             or not holder_pet.isVisible()
             or not get_direct_offer_accept_candidates(item_kind, holder_pet.name)
         ):
             return False
-        return runtime.start_direct_offer_scene(item_kind, holder_pet, source=source)
+        return port.flow.start_direct_offer_scene(item_kind, holder_pet, source=source)
 
     def resolve_active_shared_food_outcome(
         self,
-        runtime,
+        port,
         profile,
         holder_pet,
         partner_pet,
     ):
-        scene = runtime.offer_scene
+        scene = port.scene.current
         shared_state = scene.shared_food_state
         if shared_state.outcome_resolved:
             return True
-        holder_capabilities = runtime.build_runtime_shared_food_capabilities(
+        holder_capabilities = port.shared_food.build_capabilities(
             profile,
             holder_pet,
             profile.holder_preferred_moods,
         )
-        partner_capabilities = runtime.build_runtime_shared_food_capabilities(
+        partner_capabilities = port.shared_food.build_capabilities(
             profile,
             partner_pet,
             profile.partner_preferred_moods,
@@ -552,7 +509,7 @@ class SharedFoodSceneExecutor:
             consumer_names=consumer_names,
         )
 
-    def get_shared_food_consume_stage_seconds(self, runtime, profile, outcome_key):
+    def get_shared_food_consume_stage_seconds(self, port, profile, outcome_key):
         shared_seconds = max(2.0, float(profile.shared_duration_seconds))
         if outcome_key == SHARED_FOOD_OUTCOME_SHARE_BOTH:
             remaining = shared_seconds - SHARED_FOOD_TRANSITION_SECONDS - SHARED_FOOD_FINISH_SECONDS
@@ -561,14 +518,14 @@ class SharedFoodSceneExecutor:
 
     def apply_shared_food_stage_animations(
         self,
-        runtime,
+        port,
         profile,
         holder_pet,
         partner_pet,
         holder_capabilities,
         partner_capabilities,
     ):
-        scene = runtime.offer_scene
+        scene = port.scene.current
         shared_state = scene.shared_food_state
         preserve = bool(scene.stage_initialized)
         holder_moods = profile.holder_preferred_moods
@@ -578,7 +535,7 @@ class SharedFoodSceneExecutor:
 
         if scene.stage == "partner_approach":
             holder_pet.state = "idle"
-            runtime.apply_shared_food_role_action(
+            port.shared_food.apply_role_action(
                 holder_pet,
                 profile,
                 holder_capabilities,
@@ -586,7 +543,7 @@ class SharedFoodSceneExecutor:
                 holder_moods,
                 preserve=preserve,
             )
-            runtime.apply_shared_food_role_action(
+            port.shared_food.apply_role_action(
                 partner_pet,
                 profile,
                 partner_capabilities,
@@ -600,17 +557,17 @@ class SharedFoodSceneExecutor:
                 speed_scale=1.0,
                 min_speed=max(SHARED_FOOD_APPROACH_MIN_SPEED, partner_pet.get_base_speed()),
             )
-            runtime.update_held_offer_widget_position(
+            port.items.update_held_item_position(
                 getattr(holder_pet, "held_item_widget", None),
                 holder_pet,
                 profile.item_kind,
                 prefer_preview=True,
             )
         else:
-            runtime.reset_offer_scene_pet_motion(holder_pet)
-            runtime.reset_offer_scene_pet_motion(partner_pet)
+            port.animation.reset_pet_motion(holder_pet)
+            port.animation.reset_pet_motion(partner_pet)
             if scene.stage == "request_decision":
-                runtime.apply_shared_food_role_action(
+                port.shared_food.apply_role_action(
                     holder_pet,
                     profile,
                     holder_capabilities,
@@ -618,7 +575,7 @@ class SharedFoodSceneExecutor:
                     holder_moods,
                     preserve=preserve,
                 )
-                runtime.apply_shared_food_role_action(
+                port.shared_food.apply_role_action(
                     partner_pet,
                     profile,
                     partner_capabilities,
@@ -626,7 +583,7 @@ class SharedFoodSceneExecutor:
                     partner_moods,
                     preserve=preserve,
                 )
-                runtime.update_held_offer_widget_position(
+                port.items.update_held_item_position(
                     getattr(holder_pet, "held_item_widget", None),
                     holder_pet,
                     profile.item_kind,
@@ -648,7 +605,7 @@ class SharedFoodSceneExecutor:
                     partner_capabilities if supporter_pet is partner_pet else holder_capabilities
                 )
                 supporter_moods = partner_moods if supporter_pet is partner_pet else holder_moods
-                runtime.apply_shared_food_role_action(
+                port.shared_food.apply_role_action(
                     consumer_pet,
                     profile,
                     consumer_capabilities,
@@ -656,7 +613,7 @@ class SharedFoodSceneExecutor:
                     consumer_moods,
                     preserve=preserve,
                 )
-                runtime.apply_shared_food_role_action(
+                port.shared_food.apply_role_action(
                     supporter_pet,
                     profile,
                     supporter_capabilities,
@@ -665,69 +622,69 @@ class SharedFoodSceneExecutor:
                     preserve=preserve,
                 )
 
-        shared_state.holder_animation = runtime.capture_shared_food_animation(holder_pet)
-        shared_state.partner_animation = runtime.capture_shared_food_animation(partner_pet)
-        runtime.apply_shared_food_scene_lock_state(holder_pet, partner_pet.name)
-        runtime.apply_shared_food_scene_lock_state(partner_pet, holder_pet.name)
+        shared_state.holder_animation = port.shared_food.capture_animation(holder_pet)
+        shared_state.partner_animation = port.shared_food.capture_animation(partner_pet)
+        port.shared_food.apply_lock_state(holder_pet, partner_pet.name)
+        port.shared_food.apply_lock_state(partner_pet, holder_pet.name)
         holder_pet.refresh_movement_state()
         partner_pet.refresh_movement_state()
         scene.stage_initialized = True
         return True
 
-    def update_shared_food_scene(self, runtime, now):
-        scene = runtime.offer_scene
+    def update_shared_food_scene(self, port, now):
+        scene = port.scene.current
         if scene is None or scene.scene_kind != "shared_food":
             return False
         profile = get_shared_food_profile(scene.profile_key)
         if profile is None or profile.item_kind != scene.item_kind:
-            runtime.clear_offer_scene()
+            port.scene.clear()
             return False
         shared_state = scene.shared_food_state
-        holder_pet = runtime.find_pet_by_name(
+        holder_pet = port.pets.find_by_name(
             shared_state.holder_name or scene.actor_name,
             visible_only=False,
         )
-        partner_pet = runtime.find_pet_by_name(
+        partner_pet = port.pets.find_by_name(
             shared_state.partner_name or scene.target_name,
             visible_only=False,
         )
         if holder_pet is None or not holder_pet.isVisible():
-            runtime.clear_offer_scene()
+            port.scene.clear()
             return False
         pre_consume = scene.stage in ("partner_approach", "request_decision")
         if partner_pet is None or not partner_pet.isVisible():
             if pre_consume:
-                return runtime.fallback_shared_food_to_solo(holder_pet)
-            runtime.clear_offer_scene()
+                return port.shared_food.fallback_to_solo(holder_pet)
+            port.scene.clear()
             return False
-        if runtime.pet_is_unavailable_during_shared_food(holder_pet, now):
-            runtime.clear_offer_scene()
+        if port.shared_food.pet_is_unavailable(holder_pet, now):
+            port.scene.clear()
             return False
-        if runtime.pet_is_unavailable_during_shared_food(partner_pet, now):
+        if port.shared_food.pet_is_unavailable(partner_pet, now):
             if pre_consume:
-                return runtime.fallback_shared_food_to_solo(holder_pet)
-            runtime.clear_offer_scene()
+                return port.shared_food.fallback_to_solo(holder_pet)
+            port.scene.clear()
             return False
 
-        holder_capabilities = runtime.build_runtime_shared_food_capabilities(
+        holder_capabilities = port.shared_food.build_capabilities(
             profile,
             holder_pet,
             profile.holder_preferred_moods,
         )
-        partner_capabilities = runtime.build_runtime_shared_food_capabilities(
+        partner_capabilities = port.shared_food.build_capabilities(
             profile,
             partner_pet,
             profile.partner_preferred_moods,
         )
         if holder_capabilities is None or partner_capabilities is None:
             if pre_consume:
-                return runtime.fallback_shared_food_to_solo(holder_pet)
-            runtime.clear_offer_scene()
+                return port.shared_food.fallback_to_solo(holder_pet)
+            port.scene.clear()
             return False
-        runtime.refresh_offer_scene_locks(holder_pet, partner_pet)
+        port.scene.refresh_locks(holder_pet, partner_pet)
 
         if scene.stage == "partner_approach":
-            runtime.apply_shared_food_stage_animations(
+            port.shared_food.apply_stage_animations(
                 profile,
                 holder_pet,
                 partner_pet,
@@ -735,18 +692,18 @@ class SharedFoodSceneExecutor:
                 partner_capabilities,
             )
             if partner_pet.distance_to(holder_pet) <= float(profile.approach_distance):
-                runtime.set_shared_food_stage(
+                port.shared_food.set_stage(
                     "request_decision",
                     now,
                     SHARED_FOOD_REQUEST_DECISION_SECONDS,
                 )
-                return runtime.update_shared_food_scene(now)
+                return port.flow.update_shared_food_scene(now)
             if float(now) >= float(scene.stage_ends_at):
-                return runtime.fallback_shared_food_to_solo(holder_pet)
+                return port.shared_food.fallback_to_solo(holder_pet)
             return True
 
         if scene.stage == "request_decision":
-            runtime.apply_shared_food_stage_animations(
+            port.shared_food.apply_stage_animations(
                 profile,
                 holder_pet,
                 partner_pet,
@@ -756,22 +713,22 @@ class SharedFoodSceneExecutor:
             if float(now) < float(scene.stage_ends_at):
                 return True
             if not shared_state.outcome_resolved:
-                if not runtime.resolve_active_shared_food_outcome(profile, holder_pet, partner_pet):
-                    return runtime.fallback_shared_food_to_solo(holder_pet)
-                runtime.hide_shared_food_item(holder_pet, shared_state)
-                runtime.set_shared_food_stage(
+                if not port.shared_food.resolve_outcome(profile, holder_pet, partner_pet):
+                    return port.shared_food.fallback_to_solo(holder_pet)
+                port.shared_food.hide_item(holder_pet, shared_state)
+                port.shared_food.set_stage(
                     "first_consume",
                     now,
-                    runtime.get_shared_food_consume_stage_seconds(
+                    port.shared_food.get_consume_stage_seconds(
                         profile,
                         shared_state.outcome_key,
                     ),
                 )
-            return runtime.update_shared_food_scene(now)
+            return port.flow.update_shared_food_scene(now)
 
         if scene.stage == "first_consume":
-            runtime.hide_shared_food_item(holder_pet, shared_state)
-            runtime.apply_shared_food_stage_animations(
+            port.shared_food.hide_item(holder_pet, shared_state)
+            port.shared_food.apply_stage_animations(
                 profile,
                 holder_pet,
                 partner_pet,
@@ -781,21 +738,21 @@ class SharedFoodSceneExecutor:
             if float(now) < float(scene.stage_ends_at):
                 return True
             if shared_state.outcome_key == SHARED_FOOD_OUTCOME_SHARE_BOTH:
-                runtime.set_shared_food_stage(
+                port.shared_food.set_stage(
                     "transition",
                     now,
                     SHARED_FOOD_TRANSITION_SECONDS,
                 )
             else:
-                runtime.set_shared_food_stage(
+                port.shared_food.set_stage(
                     "finish",
                     now,
                     SHARED_FOOD_FINISH_SECONDS,
                 )
-            return runtime.update_shared_food_scene(now)
+            return port.flow.update_shared_food_scene(now)
 
         if scene.stage == "transition":
-            runtime.apply_shared_food_stage_animations(
+            port.shared_food.apply_stage_animations(
                 profile,
                 holder_pet,
                 partner_pet,
@@ -804,18 +761,18 @@ class SharedFoodSceneExecutor:
             )
             if float(now) < float(scene.stage_ends_at):
                 return True
-            runtime.set_shared_food_stage(
+            port.shared_food.set_stage(
                 "second_consume",
                 now,
-                runtime.get_shared_food_consume_stage_seconds(
+                port.shared_food.get_consume_stage_seconds(
                     profile,
                     shared_state.outcome_key,
                 ),
             )
-            return runtime.update_shared_food_scene(now)
+            return port.flow.update_shared_food_scene(now)
 
         if scene.stage == "second_consume":
-            runtime.apply_shared_food_stage_animations(
+            port.shared_food.apply_stage_animations(
                 profile,
                 holder_pet,
                 partner_pet,
@@ -824,29 +781,29 @@ class SharedFoodSceneExecutor:
             )
             if float(now) < float(scene.stage_ends_at):
                 return True
-            runtime.set_shared_food_stage(
+            port.shared_food.set_stage(
                 "finish",
                 now,
                 SHARED_FOOD_FINISH_SECONDS,
             )
-            return runtime.update_shared_food_scene(now)
+            return port.flow.update_shared_food_scene(now)
 
         if scene.stage == "finish":
-            runtime.apply_shared_food_stage_animations(
+            port.shared_food.apply_stage_animations(
                 profile,
                 holder_pet,
                 partner_pet,
                 holder_capabilities,
                 partner_capabilities,
             )
-            runtime.apply_shared_food_outcome_effects(shared_state)
+            port.events.apply_shared_food_outcome_effects(shared_state)
             if not scene.event_recorded:
-                runtime.record_shared_food_event(profile, shared_state, source=scene.source)
+                port.events.record_shared_food_event(profile, shared_state, source=scene.source)
                 scene.event_recorded = True
             if float(now) < float(scene.stage_ends_at):
                 return True
-            runtime.clear_offer_scene()
+            port.scene.clear()
             return True
 
-        runtime.clear_offer_scene()
+        port.scene.clear()
         return False

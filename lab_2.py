@@ -2,7 +2,7 @@ import sys
 
 from PyQt6.QtWidgets import QApplication, QMessageBox
 
-from tanuki_core.app_runtime import run_application
+from tanuki_core.runtime_bootstrap import run_application
 
 
 STARTUP_ERROR_TITLE = "Tanuki PC Pet 啟動失敗"

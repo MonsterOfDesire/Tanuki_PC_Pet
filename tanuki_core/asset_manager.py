@@ -18,6 +18,7 @@ from .asset_selection_rules import (
     get_record_weight as get_record_weight_rule,
     is_record_eligible as is_record_eligible_rule,
     select_contextual_result,
+    select_contextual_result_for_candidates,
     select_contextual_result_for_purposes,
     select_result_by_score,
     select_result_for_preferences,
@@ -236,6 +237,28 @@ class AssetManager:
             mood_score=mood_score,
             ordered_preferences=ordered_preferences,
             rng=random,
+        )
+
+    def get_contextual_result_for_candidates(
+        self,
+        candidates,
+        context=None,
+        preferred_moods=None,
+        forbidden=None,
+        mood_score=None,
+        ordered_preferences=False,
+        rng=None,
+    ):
+        self.ensure_context_assets(context)
+        return select_contextual_result_for_candidates(
+            self.asset_records,
+            candidates,
+            context=context,
+            preferred_moods=preferred_moods,
+            forbidden=forbidden,
+            mood_score=mood_score,
+            ordered_preferences=ordered_preferences,
+            rng=rng or random,
         )
 
     def get_contextual_result_for_any_purpose(

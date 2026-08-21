@@ -17,6 +17,8 @@ from tanuki_core.dashboard_launcher_ui import (
     EXPANDED_LAUNCHER_WIDTH,
     DashboardLauncherPanel,
 )
+from tanuki_core.information_center_spec import PAGE_STATUS_SETTINGS
+from tanuki_core.ui_localization import set_ui_locale
 
 
 class FakeLauncherBinding:
@@ -266,6 +268,41 @@ class DashboardLauncherPanelTests(unittest.TestCase):
             self.assertEqual(dashboard.pos(), dashboard.show_pos)
         finally:
             dashboard.update_timer.stop()
+            dashboard.close()
+            dashboard.deleteLater()
+            self.app.processEvents()
+
+    def test_language_switch_after_lazy_settings_load_does_not_crash(self):
+        dashboard = Dashboard(
+            QRect(0, 0, 1280, 720),
+            {},
+            AssetManager.get_resource_path,
+        )
+        try:
+            dashboard.show_information_center(PAGE_STATUS_SETTINGS)
+            dashboard.information_center_window._ensure_page_ready(
+                PAGE_STATUS_SETTINGS
+            )
+            self.app.processEvents()
+            panel = dashboard.information_center_window.status_settings_panel
+
+            panel.ui_locale_buttons[2].click()
+            self.app.processEvents()
+
+            self.assertEqual(dashboard.ui_locale, "ja_JP")
+            self.assertEqual(
+                dashboard.information_center_window.windowTitle(),
+                "たぬき情報センター — 状態設定",
+            )
+            self.assertEqual(
+                dashboard.launcher_panel.title_label.text(),
+                "たぬきコントロールセンター",
+            )
+        finally:
+            set_ui_locale("zh_TW")
+            dashboard.update_timer.stop()
+            if dashboard.information_center_window is not None:
+                dashboard.information_center_window.close()
             dashboard.close()
             dashboard.deleteLater()
             self.app.processEvents()

@@ -50,6 +50,14 @@ class SocialCareEffects:
         adult.care_target = child
         adult.care_plan = "auto"
         child.care_partner = adult
+        self._emit_care_lifecycle(
+            adult,
+            "started",
+            child,
+            now=float(now),
+            success=None,
+            care_mode="approach",
+        )
 
     def begin_hidden_interaction(self, adult, child, animation_spec, now):
         action_key, mood, frames = animation_spec
@@ -73,6 +81,8 @@ class SocialCareEffects:
         adult.current_purpose = "interaction"
         adult.current_action_tag = action_key
         adult.current_mood_tag = mood
+        if hasattr(adult, "idle_side_stand_armed"):
+            adult.idle_side_stand_armed = False
         adult.state = "move" if adult.care_mode == "moving_interaction" else "idle"
 
     def begin_companion_care(self, adult, child, now):
@@ -90,6 +100,15 @@ class SocialCareEffects:
     def finish_care_mode(self, adult, success, now):
         child = adult.care_target
         previous_mode = adult.care_mode
+        if child is not None and previous_mode != "none":
+            self._emit_care_lifecycle(
+                adult,
+                "completed" if success else "interrupted",
+                child,
+                now=float(now),
+                success=bool(success),
+                care_mode=previous_mode,
+            )
         if child:
             if previous_mode == "moving_interaction":
                 adult.release_hidden_child_nearby(child)
@@ -114,6 +133,15 @@ class SocialCareEffects:
 
     def cancel_care_mode(self, adult):
         child = adult.care_target
+        if child is not None and adult.care_mode != "none":
+            self._emit_care_lifecycle(
+                adult,
+                "interrupted",
+                child,
+                now=float(app_now()),
+                success=False,
+                care_mode=adult.care_mode,
+            )
         if child:
             if adult.care_mode == "moving_interaction":
                 adult.release_hidden_child_nearby(child)
@@ -126,6 +154,27 @@ class SocialCareEffects:
         adult.care_end_time = 0.0
         adult.care_move_direction = 0
         adult.care_plan = "auto"
+
+    @staticmethod
+    def _emit_care_lifecycle(
+        adult,
+        stage,
+        child,
+        *,
+        now,
+        success,
+        care_mode,
+    ):
+        provider = getattr(adult, "care_activity_event_provider", None)
+        if callable(provider):
+            provider(
+                str(stage or ""),
+                adult,
+                child,
+                now=float(now),
+                success=success,
+                care_mode=str(care_mode or ""),
+            )
 
 
 SOCIAL_CARE_EFFECTS = SocialCareEffects()
