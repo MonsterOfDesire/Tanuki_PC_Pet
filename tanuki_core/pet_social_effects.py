@@ -81,6 +81,8 @@ class SocialCareEffects:
         adult.current_purpose = "interaction"
         adult.current_action_tag = action_key
         adult.current_mood_tag = mood
+        if hasattr(adult, "idle_side_stand_armed"):
+            adult.idle_side_stand_armed = False
         adult.state = "move" if adult.care_mode == "moving_interaction" else "idle"
 
     def begin_companion_care(self, adult, child, now):

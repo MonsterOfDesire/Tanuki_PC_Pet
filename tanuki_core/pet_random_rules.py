@@ -95,10 +95,26 @@ def is_visible_side_ready_followup(purpose, action_tag):
     )
 
 
+def is_side_ready_followup_eligible(
+    name,
+    *,
+    side_ready_followup_armed,
+    current_action_tag,
+    current_frames,
+):
+    """Return whether a side-ready pose may be consumed by its next resolver."""
+    return (
+        str(name or "") == "Tsurumaru Tsuyoshi"
+        and bool(side_ready_followup_armed)
+        and str(current_action_tag or "") == "side_ready"
+        and bool(current_frames)
+    )
+
+
 def get_idle_action_override(name, *, current_purpose, current_action_tag, next_purpose, next_action_tag):
     if name != "Tsurumaru Tsuyoshi":
         return ()
-    if next_purpose != "idle" or next_action_tag != "side_stand":
+    if next_purpose != "idle" or next_action_tag not in SIDE_READY_FOLLOWUP_ACTIONS:
         return ()
     if current_purpose == "idle" and current_action_tag == "side_ready":
         return ()

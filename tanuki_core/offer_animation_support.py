@@ -499,6 +499,7 @@ class OfferAnimationSupport:
         forbidden=None,
         preserve=False,
         ignore_mood_band=False,
+        ordered_preferences=False,
     ):
         if pet is None or not context:
             return False
@@ -509,16 +510,15 @@ class OfferAnimationSupport:
         )
         if not callable(changer):
             return False
-        return bool(
-            changer(
-                purpose,
-                context,
-                preferred_moods=preferred_moods,
-                forbidden=forbidden,
-                preserve=preserve,
-                ignore_mood_band=ignore_mood_band,
-            )
-        )
+        selection_options = {
+            "preferred_moods": preferred_moods,
+            "forbidden": forbidden,
+            "preserve": preserve,
+            "ignore_mood_band": ignore_mood_band,
+        }
+        if ordered_preferences:
+            selection_options["ordered_preferences"] = True
+        return bool(changer(purpose, context, **selection_options))
 
     def apply_scene_contexts_with_preferences(
         self,
@@ -529,6 +529,7 @@ class OfferAnimationSupport:
         forbidden=None,
         preserve=False,
         ignore_mood_band=False,
+        ordered_preferences=False,
     ):
         for purpose in purposes:
             if self.apply_scene_context_with_preferences(
@@ -539,6 +540,7 @@ class OfferAnimationSupport:
                 forbidden=forbidden,
                 preserve=preserve,
                 ignore_mood_band=ignore_mood_band,
+                ordered_preferences=ordered_preferences,
             ):
                 return True
         return False
@@ -642,6 +644,7 @@ class OfferAnimationSupport:
         preferred_moods,
         forbidden=None,
         preserve=False,
+        ordered_preferences=True,
     ):
         candidate_list = list(candidates or ())
         preferred = list(preferred_moods or ())
@@ -656,46 +659,53 @@ class OfferAnimationSupport:
         asset_manager = getattr(pet, "asset_manager", None)
         if asset_manager is None:
             return False
-        for mood_tag in preferred:
-            if mood_tag in forbidden:
-                continue
+        mood_groups = (
+            tuple((mood_tag,) for mood_tag in preferred)
+            if ordered_preferences else
+            (tuple(preferred),)
+        )
+        for mood_group in mood_groups:
             weighted_matches = []
             for purpose, action_type in candidate_list:
-                record = asset_manager.get_record(
-                    purpose,
-                    action_type,
-                    mood_tag,
-                )
-                frames = record.get("frames") if record else None
-                if frames:
-                    weighted_matches.append(
-                        (
-                            frames,
-                            purpose,
-                            action_type,
-                            mood_tag,
-                            asset_manager.get_record_weight(record),
-                        )
-                    )
-            if weighted_matches:
-                chosen = asset_manager.choose_weighted_result(
-                    [
-                        (frames, (purpose, action_type), mood_tag, weight)
-                        for frames, purpose, action_type, mood_tag, weight
-                        in weighted_matches
-                    ]
-                )
-                if chosen:
-                    frames, purpose_action, chosen_mood = chosen
-                    purpose, action_type = purpose_action
-                    if pet.apply_animation_result(
+                for mood_tag in mood_group:
+                    if mood_tag in forbidden:
+                        continue
+                    record = asset_manager.get_record(
                         purpose,
-                        (frames, action_type, chosen_mood),
-                    ):
-                        pet.state = (
-                            purpose if purpose in {"idle", "move"} else "idle"
+                        action_type,
+                        mood_tag,
+                    )
+                    frames = record.get("frames") if record else None
+                    if frames:
+                        weighted_matches.append(
+                            (
+                                frames,
+                                purpose,
+                                action_type,
+                                mood_tag,
+                                asset_manager.get_record_weight(record),
+                            )
                         )
-                        return True
+            if not weighted_matches:
+                continue
+            chosen = asset_manager.choose_weighted_result(
+                [
+                    (frames, (purpose, action_type), mood_tag, weight)
+                    for frames, purpose, action_type, mood_tag, weight
+                    in weighted_matches
+                ]
+            )
+            if chosen:
+                frames, purpose_action, chosen_mood = chosen
+                purpose, action_type = purpose_action
+                if pet.apply_animation_result(
+                    purpose,
+                    (frames, action_type, chosen_mood),
+                ):
+                    pet.state = (
+                        purpose if purpose in {"idle", "move"} else "idle"
+                    )
+                    return True
         for purpose, action_type in candidate_list:
             result = asset_manager.get_frames_for_action_by_preferences(
                 purpose,

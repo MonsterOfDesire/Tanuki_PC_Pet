@@ -6,7 +6,10 @@ import threading
 from PyQt6.QtCore import QObject, pyqtSignal
 
 from .app_version import APP_VERSION, GITHUB_RELEASES_URL
-from .update_service import GitHubReleaseClient
+from .update_service import (
+    GitHubReleaseClient,
+    get_release_update_bundle_assets,
+)
 
 
 @dataclass(frozen=True)
@@ -15,8 +18,9 @@ class UpdateStatusSnapshot:
     current_version: str = APP_VERSION
     available_version: str = ""
     release_page_url: str = ""
+    updater_download_url: str = ""
     error_message: str = ""
-    package_manifest_available: bool = False
+    update_bundle_available: bool = False
 
 
 class UpdateCheckCoordinator(QObject):
@@ -64,6 +68,9 @@ class UpdateCheckCoordinator(QObject):
         if not result.update_available or release is None:
             self._set_status(UpdateStatusSnapshot(state="up_to_date"))
             return
+        bundle_assets = get_release_update_bundle_assets(release)
+        updater_asset = bundle_assets[0] if bundle_assets else None
+        bundle_available = bundle_assets is not None
         self._set_status(
             UpdateStatusSnapshot(
                 state="available",
@@ -71,9 +78,12 @@ class UpdateCheckCoordinator(QObject):
                 release_page_url=(
                     release.page_url or GITHUB_RELEASES_URL
                 ),
-                package_manifest_available=(
-                    release.find_asset("tanuki-update.json") is not None
+                updater_download_url=(
+                    updater_asset.download_url
+                    if bundle_available and updater_asset is not None
+                    else ""
                 ),
+                update_bundle_available=bundle_available,
             )
         )
 

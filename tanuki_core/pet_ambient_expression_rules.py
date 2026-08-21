@@ -91,15 +91,39 @@ def apply_ambient_low_mood_tendency(
         rng = random_module
     candidates = tuple(dict.fromkeys(tuple(candidates or ())))
 
-    def apply_default_selection():
+    def apply_legacy_selection():
         return pet.change_state_candidates(candidates, context=context)
 
+    def apply_weighted_contextual_selection():
+        asset_manager = getattr(pet, "asset_manager", None)
+        selector = getattr(
+            asset_manager,
+            "get_contextual_result_for_candidates",
+            None,
+        )
+        apply_animation_result = getattr(pet, "apply_animation_result", None)
+        if callable(selector) and callable(apply_animation_result):
+            result = selector(
+                candidates,
+                context=context,
+                mood_score=getattr(pet, "mood_score", 60.0),
+                rng=rng,
+            )
+            if result:
+                frames, purpose, action_type, mood_tag = result
+                if apply_animation_result(
+                    purpose,
+                    (frames, action_type, mood_tag),
+                ):
+                    return True
+        return apply_legacy_selection()
+
     if context != "random":
-        return apply_default_selection()
+        return apply_legacy_selection()
 
     if get_mood_band(getattr(pet, "mood_score", 60.0)) != "low":
         reset_ambient_low_mood_tendency_if_inactive(pet)
-        return apply_default_selection()
+        return apply_weighted_contextual_selection()
 
     should_apply_afterglow = getattr(
         pet,
@@ -107,7 +131,7 @@ def apply_ambient_low_mood_tendency(
         None,
     )
     if callable(should_apply_afterglow) and should_apply_afterglow(candidates):
-        return apply_default_selection()
+        return apply_legacy_selection()
 
     asset_manager = getattr(pet, "asset_manager", None)
     get_specific_frames = getattr(asset_manager, "get_specific_frames", None)
@@ -161,9 +185,9 @@ def apply_ambient_low_mood_tendency(
         roll=rng.random(),
     )
 
-    # The first low-band draw keeps the existing manifest selector's behavior.
+    # The first low-band draw uses the complete weighted manifest candidate pool.
     if selected_mood_tag is None:
-        applied = apply_default_selection()
+        applied = apply_weighted_contextual_selection()
         if applied:
             _record_selected_mood(pet)
         return applied
@@ -181,7 +205,7 @@ def apply_ambient_low_mood_tendency(
         _record_selected_mood(pet)
         return True
 
-    applied = apply_default_selection()
+    applied = apply_weighted_contextual_selection()
     if applied:
         _record_selected_mood(pet)
     return applied

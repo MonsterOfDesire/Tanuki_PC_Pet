@@ -420,6 +420,27 @@ class StatusSettingsPanelTests(unittest.TestCase):
         self.assertIn(("check_updates",), self.binding.calls)
         self.assertFalse(self.panel.update_check_button.isEnabled())
 
+    def test_updater_download_only_appears_for_complete_release_bundle(self):
+        self.binding.state = replace(
+            self.binding.state,
+            update_status="available",
+            update_page_url="https://example.test/release",
+            update_updater_url="",
+            update_package_ready=False,
+        )
+        self.panel.refresh_from_binding()
+        self.assertFalse(self.panel.update_open_button.isVisible())
+
+        self.binding.state = replace(
+            self.binding.state,
+            update_updater_url="https://example.test/TanukiUpdater.exe",
+            update_package_ready=True,
+        )
+        self.panel.refresh_from_binding()
+        self.assertTrue(self.panel.update_open_button.isVisible())
+        self.panel.update_open_button.click()
+        self.assertIn(("open_update_page",), self.binding.calls)
+
     def test_mood_climate_tooltips_describe_dynamics_not_targets(self):
         tooltips = [
             button.toolTip()
@@ -436,7 +457,7 @@ class StatusSettingsPanelTests(unittest.TestCase):
         )
         self.assertTrue(all("目標" not in text for text in tooltips))
         self.assertIn("50%", tooltips[0])
-        self.assertIn("70%", tooltips[1])
+        self.assertIn("60%", tooltips[1])
         self.assertIn("90%", tooltips[2])
 
     def test_social_cooldown_uses_localized_character_names(self):

@@ -1,4 +1,5 @@
 import hashlib
+import io
 import json
 from pathlib import Path
 import tempfile
@@ -7,9 +8,19 @@ import zipfile
 
 from tanuki_core.update_package import (
     UpdatePackageManifest,
+    download_update_package,
     extract_update_package,
+    get_update_package_asset_name,
     verify_update_package,
 )
+
+
+class FakeResponse(io.BytesIO):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        self.close()
 
 
 def manifest_payload(package_path, *, digest=None, size=None):
@@ -41,6 +52,36 @@ class UpdatePackageTests(unittest.TestCase):
             invalid["package"]["url"] = "http://example.test/update.zip"
             with self.assertRaises(ValueError):
                 UpdatePackageManifest.from_payload(invalid)
+
+    def test_package_asset_name_is_shared_with_release_validation(self):
+        self.assertEqual(
+            get_update_package_asset_name("0.8.0-beta"),
+            "TanukiPet-0.8.0-beta-windows-x64.zip",
+        )
+
+    def test_download_reports_verified_byte_progress(self):
+        with tempfile.TemporaryDirectory() as temporary_dir:
+            root = Path(temporary_dir)
+            source = root / "source.zip"
+            source.write_bytes(b"verified package bytes")
+            manifest = UpdatePackageManifest.from_payload(
+                manifest_payload(source)
+            )
+            progress = []
+
+            result = download_update_package(
+                manifest,
+                root / "downloads",
+                opener=lambda *_args, **_kwargs: FakeResponse(
+                    source.read_bytes()
+                ),
+                progress_callback=lambda current, total: progress.append(
+                    (current, total)
+                ),
+            )
+
+            self.assertEqual(result.read_bytes(), source.read_bytes())
+            self.assertEqual(progress[-1], (manifest.size, manifest.size))
 
     def test_verifies_size_and_sha256(self):
         with tempfile.TemporaryDirectory() as temporary_dir:

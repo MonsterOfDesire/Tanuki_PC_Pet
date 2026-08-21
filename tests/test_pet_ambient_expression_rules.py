@@ -50,6 +50,37 @@ class FakeAssetManager:
     def get_record(self, purpose, action_type, mood_tag):
         return self.records.get((purpose, action_type, mood_tag))
 
+    def get_contextual_result_for_candidates(
+        self,
+        candidates,
+        *,
+        context=None,
+        mood_score=None,
+        rng=None,
+    ):
+        band = "severe" if mood_score < 20 else "low" if mood_score < 50 else "normal"
+        options = []
+        weights = []
+        for purpose, action_type in candidates:
+            for (record_purpose, record_action, mood_tag), record in self.records.items():
+                manifest = record["manifest"]
+                if (record_purpose, record_action) != (purpose, action_type):
+                    continue
+                if context not in manifest["contexts"] or band not in manifest["band"]:
+                    continue
+                options.append(
+                    (
+                        record["frames"],
+                        purpose,
+                        action_type,
+                        mood_tag,
+                    )
+                )
+                weights.append(manifest["weight"])
+        if not options:
+            return None
+        return rng.choices(options, weights=weights, k=1)[0]
+
 
 class FakePet:
     def __init__(self, records, *, mood_score=40.0):
@@ -182,6 +213,33 @@ class PetAmbientExpressionRulesTests(unittest.TestCase):
         self.assertEqual(pet.current_mood_tag, "angry")
         self.assertEqual(pet.ambient_low_mood_streak, 2)
         self.assertEqual(rng.seen_weights, [2.0, 7.0])
+        self.assertEqual(pet.default_calls, [])
+
+    def test_normal_random_selection_uses_weight_across_moods_for_same_action(self):
+        records = {
+            ("move", "fly", "happy"): build_record(
+                "happy-fly",
+                weight=1.0,
+                bands=("normal",),
+            ),
+            ("move", "fly", "smile"): build_record(
+                "smile-fly",
+                weight=3.0,
+                bands=("normal",),
+            ),
+        }
+        pet = FakePet(records, mood_score=80.0)
+        rng = StubRng(choice_index=1)
+
+        applied = apply_ambient_low_mood_tendency(
+            pet,
+            (("move", "fly"),),
+            rng=rng,
+        )
+
+        self.assertTrue(applied)
+        self.assertEqual(pet.current_mood_tag, "smile")
+        self.assertEqual(rng.seen_weights, [1.0, 3.0])
         self.assertEqual(pet.default_calls, [])
 
     def test_first_low_draw_uses_existing_selector_then_starts_streak(self):

@@ -38,7 +38,6 @@ from .race_rules import (
     evaluate_race_eligibility,
     evaluate_race_emergency_interrupt,
     get_race_expected_speed,
-    get_race_finish_standoff_distance,
     get_feasible_race_courses,
     get_race_course,
     get_race_schedule_policy,
@@ -898,24 +897,22 @@ class RaceExecutor:
 
         winner = pets_by_name.get(winner_name)
         loser = pets_by_name.get(loser_name)
-        direction = int(activity.metadata.get("race_direction", 1) or 1)
-        desired_separation = get_race_finish_standoff_distance(
-            (self._pet_radius(winner), self._pet_radius(loser))
-        )
         winner_center = self._pet_x(winner) + self._pet_width(winner) / 2.0
-        loser_target_center = winner_center - direction * desired_separation
+        loser_role = (
+            "challenger" if loser_name == challenger_name else "opponent"
+        )
         loser_target_x = self._clamp_target_for_pet(
             loser,
-            loser_target_center - self._pet_width(loser) / 2.0,
+            float(
+                activity.metadata.get(f"{loser_role}_finish_x", 0.0)
+                or 0.0
+            ),
         )
         effective_target_separation = abs(
             winner_center
             - (loser_target_x + self._pet_width(loser) / 2.0)
         )
-        loser_role = (
-            "challenger" if loser_name == challenger_name else "opponent"
-        )
-        self._move_pet_precise(
+        loser_arrived = self._move_pet_precise(
             activity,
             loser,
             loser_target_x,
@@ -925,12 +922,18 @@ class RaceExecutor:
             remainder_key=f"{loser_role}_move_remainder",
         )
         separation = self._pet_center_distance(winner, loser)
-        self._face_each_other(winner, loser)
-        return race_finish_is_ready(
+        finish_ready = loser_arrived and race_finish_is_ready(
             winner_arrived=True,
             separation=separation,
             target_separation=effective_target_separation,
-        ), ""
+        )
+        if finish_ready:
+            self._face_each_other(winner, loser)
+        elif winner is not None and loser is not None:
+            winner.direction = (
+                1 if self._pet_x(loser) >= self._pet_x(winner) else -1
+            )
+        return finish_ready, ""
 
     def _complete_declined(
         self,

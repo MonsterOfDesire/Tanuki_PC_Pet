@@ -462,6 +462,7 @@ class DirectHoverSceneExecutor:
                 forbidden=get_denied_offer_forbidden_moods(),
                 preserve=True,
                 ignore_mood_band=True,
+                ordered_preferences=True,
             ) and not port.animation.apply_candidates(
                 target_pet,
                 candidates,

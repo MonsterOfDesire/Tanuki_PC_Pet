@@ -8,6 +8,7 @@ from tanuki_core.activity_rhythm import (
 )
 from tanuki_core.dashboard_presenter import DashboardPresenter
 from tanuki_core.dashboard_tools_actions import ValidationCheckResult
+from tanuki_core.event_localization import localized_event_type_label
 from tanuki_core.household_state import HouseholdState
 from tanuki_core.ui_localization import set_ui_locale
 
@@ -115,6 +116,139 @@ class DashboardPresenterTests(unittest.TestCase):
         self.assertIn(
             "Symboli Rudolf and Tokai Teio shared a social moment.",
             presentation.entries[0].summary,
+        )
+
+    def test_social_event_templates_remain_varied_outside_chinese(self):
+        set_ui_locale("en_US")
+
+        def entry(sequence, template_index):
+            return SimpleNamespace(
+                sequence=sequence,
+                wall_clock_time=0.0,
+                channel="social",
+                category="social",
+                event_type="observe_social_log",
+                summary="legacy text is not used when metadata is present",
+                actor_name="Air Groove",
+                target_name="Sirius Symboli",
+                living_fund_delta=0,
+                household_pressure_delta=0.0,
+                mood_delta=0.0,
+                relation_delta={},
+                metadata={
+                    "source": "observe",
+                    "template_index": template_index,
+                },
+                tags=("observe", "ambient_social"),
+                importance="low",
+            )
+
+        presentation = DashboardPresenter().build_social_log(
+            (entry(1, 0), entry(2, 23)),
+        )
+        summaries = {item.summary for item in presentation.entries}
+
+        self.assertEqual(len(summaries), 2)
+        self.assertIn(
+            "Air Groove noticed Sirius Symboli minding their own business "
+            "and watched quietly for a while.",
+            summaries,
+        )
+        self.assertIn(
+            "Air Groove noticed how lightly Sirius Symboli was walking "
+            "today and quietly felt relieved.",
+            summaries,
+        )
+
+    def test_legacy_social_summary_recovers_japanese_template(self):
+        set_ui_locale("ja_JP")
+        entry = SimpleNamespace(
+            sequence=1,
+            wall_clock_time=0.0,
+            channel="social",
+            category="social",
+            event_type="observe_social_log",
+            summary=(
+                "Air Groove看見Sirius Symboli露出一點小表情，"
+                "像是家裡才懂的暗號。"
+            ),
+            actor_name="Air Groove",
+            target_name="Sirius Symboli",
+            living_fund_delta=0,
+            household_pressure_delta=0.0,
+            mood_delta=0.0,
+            relation_delta={},
+            metadata={"source": "observe"},
+            tags=("observe", "ambient_social"),
+            importance="low",
+        )
+
+        presentation = DashboardPresenter().build_social_log((entry,))
+
+        self.assertEqual(
+            presentation.entries[0].summary,
+            "エアグルーヴはシリウスシンボリの小さな表情を、"
+            "家族だけに通じる合図のように受け取りました。",
+        )
+
+    def test_non_chinese_event_details_keep_outcome_and_interrupt_reason(self):
+        set_ui_locale("en_US")
+
+        def event(event_type, *, sequence, metadata):
+            return SimpleNamespace(
+                sequence=sequence,
+                wall_clock_time=0.0,
+                channel="social",
+                category="social",
+                event_type=event_type,
+                summary="legacy localized summary",
+                actor_name="Symboli Rudolf",
+                target_name="Air Groove",
+                living_fund_delta=0,
+                household_pressure_delta=0.0,
+                mood_delta=0.0,
+                relation_delta={},
+                metadata=metadata,
+                tags=(),
+                importance="normal",
+            )
+
+        presentation = DashboardPresenter().build_social_log(
+            (
+                event(
+                    "shared_tea_chat",
+                    sequence=1,
+                    metadata={
+                        "holder_name": "Symboli Rudolf",
+                        "partner_name": "Air Groove",
+                        "item_kind": "tea",
+                        "outcome": "holder_gives",
+                    },
+                ),
+                event(
+                    "chorus_interrupted",
+                    sequence=2,
+                    metadata={
+                        "performer_names": ("Tokai Teio",),
+                        "audience_names": (),
+                        "reason": "child_care_needed",
+                    },
+                ),
+            )
+        )
+        summaries = {item.summary for item in presentation.entries}
+
+        self.assertIn(
+            "Symboli Rudolf offered the tea to Air Groove.",
+            summaries,
+        )
+        self.assertIn(
+            "The solo performance ended early because a child needed care.",
+            summaries,
+        )
+        self.assertEqual(
+            localized_event_type_label("post_observe_social_log"),
+            "Everyday conversation",
         )
 
     def test_build_household_summary_includes_runtime_members_and_recent_stats(self):
@@ -529,6 +663,46 @@ class DashboardPresenterTests(unittest.TestCase):
                 ("比赛用时", "12.4 秒"),
             ),
         )
+
+    def test_japanese_race_directions_use_standard_course_terms(self):
+        set_ui_locale("ja_JP")
+        presenter = DashboardPresenter()
+
+        def build(direction_key):
+            entry = SimpleNamespace(
+                sequence=8,
+                wall_clock_time=0.0,
+                channel="social",
+                category="social",
+                event_type="race_completed",
+                importance="normal",
+                actor_name="Tokai Teio",
+                target_name="Symboli Rudolf",
+                summary="legacy summary",
+                living_fund_delta=0,
+                household_pressure_delta=0.0,
+                mood_delta=0.0,
+                relation_delta={},
+                tags=("race", "completed"),
+                metadata={
+                    "challenger_name": "Symboli Rudolf",
+                    "opponent_name": "Tokai Teio",
+                    "winner_name": "Tokai Teio",
+                    "loser_name": "Symboli Rudolf",
+                    "race_distance_px": 720.0,
+                    "direction_key": direction_key,
+                    "race_elapsed_seconds": 12.4,
+                },
+            )
+            return presenter.build_social_log((entry,)).entries[0]
+
+        clockwise = build("clockwise_left")
+        counterclockwise = build("counterclockwise_right")
+
+        self.assertIn("右回り", clockwise.summary)
+        self.assertIn("左回り", counterclockwise.summary)
+        self.assertEqual(clockwise.details[4].value_text, "右回り")
+        self.assertEqual(counterclockwise.details[4].value_text, "左回り")
 
     def test_build_relationship_table_includes_all_pet_pairs_and_details(self):
         presenter = DashboardPresenter()

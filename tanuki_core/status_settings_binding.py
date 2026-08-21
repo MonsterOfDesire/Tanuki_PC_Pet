@@ -47,6 +47,7 @@ class StatusSettingsSnapshot:
     update_current_version: str = ""
     update_available_version: str = ""
     update_page_url: str = ""
+    update_updater_url: str = ""
     update_error_message: str = ""
     update_package_ready: bool = False
 
@@ -122,9 +123,10 @@ class DashboardStatusSettingsBinding:
             update_current_version=str(update_status.current_version),
             update_available_version=str(update_status.available_version),
             update_page_url=str(update_status.release_page_url),
+            update_updater_url=str(update_status.updater_download_url),
             update_error_message=str(update_status.error_message),
             update_package_ready=bool(
-                update_status.package_manifest_available
+                update_status.update_bundle_available
             ),
         )
 

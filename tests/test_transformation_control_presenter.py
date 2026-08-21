@@ -4,6 +4,7 @@ from tanuki_core.transformation_control_presenter import (
     build_transformation_completion_text,
     build_transformation_control_presentation,
 )
+from tanuki_core.ui_localization import set_ui_locale
 
 
 def _states(**overrides):
@@ -33,6 +34,9 @@ def _states(**overrides):
 
 
 class TransformationControlPresenterTests(unittest.TestCase):
+    def tearDown(self):
+        set_ui_locale("zh_TW")
+
     def test_sandbox_base_forms_stay_polling_for_autonomous_changes(self):
         presentation = build_transformation_control_presentation(
             _states(),
@@ -157,6 +161,39 @@ class TransformationControlPresenterTests(unittest.TestCase):
             ),
             "魯道夫象徵已完成變身，目前為變身形態。",
         )
+
+    def test_simplified_chinese_status_formats_runtime_values(self):
+        set_ui_locale("zh_CN")
+        active = build_transformation_control_presentation(
+            _states(
+                **{
+                    "Symboli Rudolf": {
+                        "current_form": "transformed",
+                        "target_form": "base",
+                        "active": True,
+                    }
+                }
+            ),
+            world_mode="sandbox",
+        )
+        transformed = build_transformation_control_presentation(
+            _states(
+                **{
+                    "Symboli Rudolf": {
+                        "current_form": "transformed",
+                        "auto_session": True,
+                    }
+                }
+            ),
+            world_mode="sandbox",
+        )
+
+        self.assertEqual(active.status_text, "鲁道夫象征正在解除。")
+        self.assertIn(
+            "鲁道夫象征目前处于自主变身状态",
+            transformed.status_text,
+        )
+        self.assertNotIn("{", active.status_text + transformed.status_text)
 
 
 if __name__ == "__main__":

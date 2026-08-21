@@ -100,6 +100,28 @@ def get_social_log_template_count(source_context: str) -> int:
     return len(SOCIAL_LOG_EVENT_TEMPLATES.get(source, ()))
 
 
+def find_social_log_template_index(
+    summary: str,
+    *,
+    actor_name: str,
+    target_name: str,
+    source_context: str,
+) -> int | None:
+    """Recover the template identity for events saved before it was persisted."""
+
+    source = normalize_social_log_source(source_context)
+    summary = str(summary or "")
+    for index, template in enumerate(
+        SOCIAL_LOG_EVENT_TEMPLATES.get(source, ())
+    ):
+        if summary == template.format(
+            actor=str(actor_name or ""),
+            target=str(target_name or ""),
+        ):
+            return index
+    return None
+
+
 def resolve_social_log_event_plan(
     *,
     actor_name: str,
@@ -153,6 +175,9 @@ def resolve_social_log_event_plan(
         summary=template.format(actor=actor_name, target=target_name),
         relation_delta=relation_delta,
         tags=tags,
-        metadata={"source": source},
+        metadata={
+            "source": source,
+            "template_index": resolved_template_index,
+        },
         reason="emit",
     )

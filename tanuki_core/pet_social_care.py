@@ -35,6 +35,10 @@ from .pet_observe_rules import (
     resolve_post_observe_escape,
     should_pause_observe_backoff,
 )
+from .pet_random_rules import (
+    SIDE_READY_FOLLOWUP_ACTIONS,
+    is_side_ready_followup_eligible,
+)
 from .pet_social_log_rules import get_social_log_template_count, resolve_social_log_event_plan
 from .pet_social_coordinator import (
     ActiveCareContext,
@@ -284,12 +288,17 @@ class PetSocialCareMixin:
         frames, action_type, mood = result
         if not frames:
             return False
-        tsuyoshi_side_stand_armed = bool(getattr(self, "idle_side_stand_armed", False))
+        tsuyoshi_followup_eligible = is_side_ready_followup_eligible(
+            getattr(self, "name", ""),
+            side_ready_followup_armed=getattr(self, "idle_side_stand_armed", False),
+            current_action_tag=getattr(self, "current_action_tag", ""),
+            current_frames=getattr(self, "current_frames", ()),
+        )
         if (
             getattr(self, "name", "") == "Tsurumaru Tsuyoshi" and
             purpose == "idle" and
-            action_type == "side_stand" and
-            not tsuyoshi_side_stand_armed
+            action_type in SIDE_READY_FOLLOWUP_ACTIONS and
+            not tsuyoshi_followup_eligible
         ):
             fallback = self.asset_manager.get_specific_frames("idle", "side_ready", mood, mood_score=self.mood_score)
             if fallback:
@@ -304,6 +313,8 @@ class PetSocialCareMixin:
                 )
                 if fallback_result:
                     frames, action_type, mood = fallback_result
+                else:
+                    return False
         self.current_frames = frames
         self.frame_index = 0
         if hasattr(self, "animation_step_budget"):
@@ -314,13 +325,10 @@ class PetSocialCareMixin:
         self.current_purpose = purpose
         self.current_action_tag = action_type
         self.current_mood_tag = mood
-        if getattr(self, "name", "") == "Tsurumaru Tsuyoshi" and purpose == "idle":
-            if action_type == "side_ready":
-                self.idle_side_stand_armed = True
-            elif action_type == "side_stand":
-                self.idle_side_stand_armed = False
-            else:
-                self.idle_side_stand_armed = False
+        if getattr(self, "name", "") == "Tsurumaru Tsuyoshi":
+            self.idle_side_stand_armed = bool(
+                purpose == "idle" and action_type == "side_ready"
+            )
         return True
 
     def change_state_candidates(self, candidates, context=None):
@@ -332,6 +340,7 @@ class PetSocialCareMixin:
                 forbidden=forbidden_moods,
                 context=context,
                 ignore_mood_band=True,
+                ordered_preferences=True,
             ):
                 return True
         for purpose, action_type in candidates:
@@ -346,12 +355,40 @@ class PetSocialCareMixin:
                 return True
         return False
 
-    def change_state_candidates_with_preferences(self, candidates, preferred_moods, forbidden=None, context=None, ignore_mood_band=False):
+    def change_state_candidates_with_preferences(
+        self,
+        candidates,
+        preferred_moods,
+        forbidden=None,
+        context=None,
+        ignore_mood_band=False,
+        ordered_preferences=False,
+    ):
         mood_score = (
             None
             if ignore_mood_band
             else PetSocialCareMixin.get_visual_mood_score(self)
         )
+        contextual_selector = getattr(
+            self.asset_manager,
+            "get_contextual_result_for_candidates",
+            None,
+        )
+        if callable(contextual_selector):
+            result = contextual_selector(
+                candidates,
+                context=context,
+                preferred_moods=preferred_moods,
+                forbidden=forbidden,
+                mood_score=mood_score,
+                ordered_preferences=ordered_preferences,
+            )
+            if result:
+                frames, purpose, action_type, mood_tag = result
+                return self.apply_animation_result(
+                    purpose,
+                    (frames, action_type, mood_tag),
+                )
         for mood_tag in preferred_moods:
             for purpose, action_type in candidates:
                 frames = self.asset_manager.get_specific_frames(
@@ -419,6 +456,7 @@ class PetSocialCareMixin:
         forbidden=None,
         preserve=False,
         ignore_mood_band=False,
+        ordered_preferences=False,
     ):
         asset_manager = getattr(self, "asset_manager", None)
         if asset_manager is None:
@@ -444,7 +482,7 @@ class PetSocialCareMixin:
                 if ignore_mood_band
                 else PetSocialCareMixin.get_visual_mood_score(self)
             ),
-            ordered_preferences=True,
+            ordered_preferences=ordered_preferences,
         )
         if not result:
             return False
@@ -459,6 +497,7 @@ class PetSocialCareMixin:
         forbidden=None,
         preserve=False,
         ignore_mood_band=False,
+        ordered_preferences=False,
     ):
         asset_manager = getattr(self, "asset_manager", None)
         normalized_purposes = self.normalize_animation_purposes(purposes)
@@ -485,7 +524,7 @@ class PetSocialCareMixin:
                 if ignore_mood_band
                 else PetSocialCareMixin.get_visual_mood_score(self)
             ),
-            ordered_preferences=True,
+            ordered_preferences=ordered_preferences,
         )
         if not result:
             return False
@@ -499,6 +538,7 @@ class PetSocialCareMixin:
         forbidden=None,
         preserve=False,
         ignore_mood_band=False,
+        ordered_preferences=False,
     ):
         asset_manager = getattr(self, "asset_manager", None)
         if asset_manager is None:
@@ -527,7 +567,7 @@ class PetSocialCareMixin:
                 if ignore_mood_band
                 else PetSocialCareMixin.get_visual_mood_score(self)
             ),
-            ordered_preferences=True,
+            ordered_preferences=ordered_preferences,
         )
         if not result:
             return False
@@ -745,6 +785,7 @@ class PetSocialCareMixin:
             forbidden=forbidden_moods,
             preserve=True,
             ignore_mood_band=ignore_mood_band,
+            ordered_preferences=ignore_mood_band,
         )
 
     def apply_post_observe_interaction_idle_behavior(self, preserve=True):
@@ -758,6 +799,7 @@ class PetSocialCareMixin:
             forbidden=forbidden_moods,
             preserve=preserve,
             ignore_mood_band=ignore_mood_band,
+            ordered_preferences=ignore_mood_band,
         )
 
     def enqueue_social_log_event_from_observe(
@@ -1265,8 +1307,13 @@ class PetSocialCareMixin:
                 getattr(self, "name", "") == "Tsurumaru Tsuyoshi" and
                 purpose == "idle" and
                 context == "random" and
-                action_type == "side_stand" and
-                not bool(getattr(self, "idle_side_stand_armed", False))
+                action_type in SIDE_READY_FOLLOWUP_ACTIONS and
+                not is_side_ready_followup_eligible(
+                    getattr(self, "name", ""),
+                    side_ready_followup_armed=getattr(self, "idle_side_stand_armed", False),
+                    current_action_tag=getattr(self, "current_action_tag", ""),
+                    current_frames=getattr(self, "current_frames", ()),
+                )
             ):
                 continue
             candidate = (purpose, action_type)
@@ -1301,7 +1348,14 @@ class PetSocialCareMixin:
             return True
         return self.change_state_candidates(candidates, context=context)
 
-    def ensure_candidate_animation_with_preferences(self, candidates, preferred_moods, forbidden=None, context=None):
+    def ensure_candidate_animation_with_preferences(
+        self,
+        candidates,
+        preferred_moods,
+        forbidden=None,
+        context=None,
+        ordered_preferences=False,
+    ):
         ignore_mood_band = self.should_apply_negative_afterglow_to_candidates(candidates)
         frames = self.asset_manager.get_specific_frames(
             self.current_purpose,
@@ -1330,6 +1384,7 @@ class PetSocialCareMixin:
             forbidden=forbidden,
             context=context,
             ignore_mood_band=ignore_mood_band,
+            ordered_preferences=ordered_preferences,
         )
 
     def get_child_comfort_candidates(self):
@@ -1451,6 +1506,17 @@ class PetSocialCareMixin:
         return contexts
 
     def sync_mimic_animation(self, target):
+        if (
+            getattr(self, "name", "") == "Tsurumaru Tsuyoshi" and
+            getattr(target, "current_action_tag", "") in SIDE_READY_FOLLOWUP_ACTIONS and
+            not is_side_ready_followup_eligible(
+                getattr(self, "name", ""),
+                side_ready_followup_armed=getattr(self, "idle_side_stand_armed", False),
+                current_action_tag=getattr(self, "current_action_tag", ""),
+                current_frames=getattr(self, "current_frames", ()),
+            )
+        ):
+            return False
         frames = self.asset_manager.get_specific_frames(
             target.current_purpose,
             target.current_action_tag,
@@ -1473,6 +1539,11 @@ class PetSocialCareMixin:
             self.current_purpose = target.current_purpose
             self.current_action_tag = target.current_action_tag
             self.current_mood_tag = target.current_mood_tag
+            if getattr(self, "name", "") == "Tsurumaru Tsuyoshi":
+                self.idle_side_stand_armed = bool(
+                    self.current_purpose == "idle" and
+                    self.current_action_tag == "side_ready"
+                )
         return True
 
     def select_interaction_animation(self, child):

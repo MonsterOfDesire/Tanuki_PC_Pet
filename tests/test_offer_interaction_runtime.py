@@ -172,6 +172,7 @@ class FakePet:
         forbidden=None,
         preserve=False,
         ignore_mood_band=False,
+        ordered_preferences=False,
     ):
         self.context_calls.append(
             (
@@ -181,6 +182,7 @@ class FakePet:
                 tuple(forbidden or ()),
                 bool(preserve),
                 bool(ignore_mood_band),
+                bool(ordered_preferences),
             )
         )
         if (purpose, context) not in self.context_successes:
@@ -1331,8 +1333,15 @@ class OfferInteractionRuntimeTests(QtApplicationTestCase):
         self.assertTrue(handled)
         self.assertEqual(holder.context_calls[0][1], "bottle_feed_hold")
         self.assertEqual(child.context_calls[0][1], "bottle_feed_child_approach")
+        self.assertFalse(holder.context_calls[0][4])
+        self.assertFalse(child.context_calls[0][4])
         self.assertEqual(holder.ensure_calls, [])
         self.assertEqual(child.ensure_calls, [])
+
+        runtime.update_bottle_feed_scene(10.1)
+
+        self.assertTrue(holder.context_calls[-1][4])
+        self.assertTrue(child.context_calls[-1][4])
 
     def test_update_bottle_feed_scene_drink_stage_removes_holder_item_and_rewards_child(self):
         holder = FakePet("Sirius Symboli")
@@ -1475,6 +1484,8 @@ class OfferInteractionRuntimeTests(QtApplicationTestCase):
         self.assertTrue(handled)
         self.assertEqual(child.context_calls[0][1], "offer_preview")
         self.assertEqual(guardian.context_calls[0][1], "honey_guard_move")
+        self.assertFalse(child.context_calls[0][6])
+        self.assertTrue(guardian.context_calls[0][6])
         self.assertEqual(guardian.ensure_calls, [])
 
     def test_honey_guard_approach_prefers_rudolf_run_for_first_available_mood(self):

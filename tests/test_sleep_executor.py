@@ -167,6 +167,7 @@ class SleepExecutorTests(unittest.TestCase):
         )
 
     def test_schedule_runs_all_three_manifest_context_phases(self):
+        self.pet.mood_score = 52.0
         self.assertEqual(self.update(0.0), ())
 
         started = self.update(120.0)[0]
@@ -196,12 +197,24 @@ class SleepExecutorTests(unittest.TestCase):
 
         finished = self.update(171.0)[0]
         self.assertTrue(finished.finished)
-        self.assertEqual(self.pet.mood_score, 63.0)
+        self.assertEqual(self.pet.mood_score, 55.0)
         self.assertFalse(self.pet.activity_state.active)
         self.assertEqual(
             self.executor.schedules[self.pet.name].next_proposal_at,
             351.0,
         )
+
+    def test_natural_sleep_does_not_raise_mood_above_maintenance_ceiling(self):
+        self.pet.mood_score = 60.0
+        self.update(0.0)
+        self.update(120.0)
+        self.update(123.0)
+        self.update(168.0)
+
+        finished = self.update(171.0)[0]
+
+        self.assertTrue(finished.finished)
+        self.assertEqual(self.pet.mood_score, 60.0)
 
     def test_user_click_enters_waking_phase_instead_of_force_interrupting(self):
         self.update(0.0)

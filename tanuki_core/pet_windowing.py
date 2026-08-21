@@ -3,6 +3,10 @@ import random
 
 from .activity_runtime_adapter import pet_has_active_activity
 from .pet_intent_rules import pet_has_sleep_join_intent
+from .pet_random_rules import (
+    SIDE_READY_FOLLOWUP_ACTIONS,
+    is_side_ready_followup_eligible,
+)
 from .pet_social_rules import CareTargetCandidate, choose_care_target
 from .runtime import app_now, get_pet_logic_step_count
 from .window_mode_rules import (
@@ -56,8 +60,13 @@ class PetWindowingMixin:
             if (
                 self.name == "Tsurumaru Tsuyoshi" and
                 purpose == "idle" and
-                action_type == "side_stand" and
-                self.current_action_tag != "side_ready"
+                action_type in SIDE_READY_FOLLOWUP_ACTIONS and
+                not is_side_ready_followup_eligible(
+                    self.name,
+                    side_ready_followup_armed=getattr(self, "idle_side_stand_armed", False),
+                    current_action_tag=getattr(self, "current_action_tag", ""),
+                    current_frames=getattr(self, "current_frames", ()),
+                )
             ):
                 continue
             candidates.append((purpose, action_type))

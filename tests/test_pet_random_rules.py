@@ -10,6 +10,7 @@ from tanuki_core.pet_random_rules import (
     derive_random_visual_purpose,
     extend_random_state_timer,
     get_idle_action_override,
+    is_side_ready_followup_eligible,
     is_visible_side_ready_followup,
     resolve_random_stuck_behavior,
     should_refresh_severe_random_state,
@@ -90,6 +91,16 @@ class PetRandomRuleTests(unittest.TestCase):
         )
         self.assertEqual(
             get_idle_action_override(
+                "Tsurumaru Tsuyoshi",
+                current_purpose="idle",
+                current_action_tag="stand",
+                next_purpose="idle",
+                next_action_tag="side_stand_cheer",
+            ),
+            ("side_ready", "side", "stand"),
+        )
+        self.assertEqual(
+            get_idle_action_override(
                 "Symboli Rudolf",
                 current_purpose="idle",
                 current_action_tag="stand",
@@ -97,6 +108,37 @@ class PetRandomRuleTests(unittest.TestCase):
                 next_action_tag="side_stand",
             ),
             (),
+        )
+
+    def test_side_ready_followup_eligibility_requires_current_visible_ready_pose(self):
+        kwargs = {
+            "side_ready_followup_armed": True,
+            "current_action_tag": "side_ready",
+            "current_frames": ["ready"],
+        }
+        self.assertTrue(
+            is_side_ready_followup_eligible(
+                "Tsurumaru Tsuyoshi",
+                **kwargs,
+            )
+        )
+        self.assertFalse(
+            is_side_ready_followup_eligible(
+                "Tsurumaru Tsuyoshi",
+                **{**kwargs, "current_action_tag": "eat"},
+            )
+        )
+        self.assertFalse(
+            is_side_ready_followup_eligible(
+                "Tsurumaru Tsuyoshi",
+                **{**kwargs, "current_frames": []},
+            )
+        )
+        self.assertFalse(
+            is_side_ready_followup_eligible(
+                "Tsurumaru Tsuyoshi",
+                **{**kwargs, "side_ready_followup_armed": False},
+            )
         )
 
     def test_side_ready_followup_uses_ten_percent_boundary(self):

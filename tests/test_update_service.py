@@ -6,6 +6,7 @@ from tanuki_core.app_version import AppVersion
 from tanuki_core.update_service import (
     GitHubReleaseClient,
     ReleaseInfo,
+    get_release_update_bundle_assets,
     select_newest_release,
 )
 
@@ -102,6 +103,103 @@ class UpdateServiceTests(unittest.TestCase):
             release.find_asset("tanuki-update.json").size,
             200,
         )
+
+    def test_manifest_package_must_match_asset_on_same_release(self):
+        package_name = "TanukiPet-0.8.0-beta-windows-x64.zip"
+        manifest_payload = {
+            "schema_version": 1,
+            "version": "0.8.0-beta",
+            "executable_name": "TanukiPet.exe",
+            "package": {
+                "name": package_name,
+                "url": "https://example.test/package",
+                "sha256": "a" * 64,
+                "size": 123,
+            },
+        }
+        release = ReleaseInfo.from_github_payload(
+            release_payload(
+                "v0.8.0-beta",
+                prerelease=True,
+                assets=(
+                    {
+                        "name": "tanuki-update.json",
+                        "browser_download_url": "https://example.test/manifest",
+                    },
+                    {
+                        "name": package_name,
+                        "browser_download_url": "https://example.test/package",
+                        "size": 123,
+                    },
+                ),
+            )
+        )
+        responses = iter(
+            (
+                FakeResponse(json.dumps(manifest_payload).encode("utf-8")),
+            )
+        )
+        client = GitHubReleaseClient(
+            opener=lambda *_args, **_kwargs: next(responses)
+        )
+
+        manifest = client.fetch_update_manifest(release)
+
+        self.assertEqual(manifest.package_name, package_name)
+        mismatched = dict(manifest_payload)
+        mismatched["package"] = dict(manifest_payload["package"])
+        mismatched["package"]["url"] = "https://example.test/other"
+        client = GitHubReleaseClient(
+            opener=lambda *_args, **_kwargs: FakeResponse(
+                json.dumps(mismatched).encode("utf-8")
+            )
+        )
+        with self.assertRaisesRegex(ValueError, "URL does not match"):
+            client.fetch_update_manifest(release)
+
+    def test_update_bundle_requires_updater_manifest_and_matching_zip(self):
+        release = ReleaseInfo.from_github_payload(
+            release_payload(
+                "v0.8.0-beta",
+                prerelease=True,
+                assets=(
+                    {
+                        "name": "TanukiUpdater.exe",
+                        "browser_download_url": "https://example.test/updater",
+                    },
+                    {
+                        "name": "tanuki-update.json",
+                        "browser_download_url": "https://example.test/manifest",
+                    },
+                    {
+                        "name": "TanukiPet-0.8.0-beta-windows-x64.zip",
+                        "browser_download_url": "https://example.test/package",
+                    },
+                ),
+            )
+        )
+
+        assets = get_release_update_bundle_assets(release)
+
+        self.assertIsNotNone(assets)
+        self.assertEqual(assets[0].name, "TanukiUpdater.exe")
+        incomplete = ReleaseInfo.from_github_payload(
+            release_payload(
+                "v0.8.0-beta",
+                prerelease=True,
+                assets=(
+                    {
+                        "name": "TanukiUpdater.exe",
+                        "browser_download_url": "https://example.test/updater",
+                    },
+                    {
+                        "name": "tanuki-update.json",
+                        "browser_download_url": "https://example.test/manifest",
+                    },
+                ),
+            )
+        )
+        self.assertIsNone(get_release_update_bundle_assets(incomplete))
 
 
 if __name__ == "__main__":

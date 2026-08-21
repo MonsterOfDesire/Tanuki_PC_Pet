@@ -112,7 +112,7 @@
 - [x] `post_observe` — **情境**：一般觀察結束後，角色短暫面向對方並延續互動；**對象**：觀察者 ↔ 剛才的被觀察者；**效果**：在小聊／觀察後鎖定期間選擇 idle 或 move 動畫；**狀態**：Runtime 選圖。
 - [x] `relation_close` — **情境**：對焦角色具有較高熟悉與依附，或觀察後進入親近互動；**對象**：角色 → 關係親近的另一名角色；**效果**：選擇較溫暖的表情素材、面向目標並使用 close posture／overlay 語意；**狀態**：Runtime 選圖。
 - [x] `relation_watch` — **情境**：角色對附近已有一定熟悉度的角色感到好奇；**對象**：角色 → 被關注的另一名角色；**效果**：選擇觀看／思考類表情並面向目標；**狀態**：Runtime 選圖。
-- [x] `side_ready_followup` — **情境**：鶴寶已播放 `side_ready`，下一次真正需要重選 idle 動畫時的稀有後續姿勢池；**對象**：鶴寶自身；**效果**：每次 side-ready 機會只擲一次，10% 依目前 band 從此 context 選圖，90% 回到 `random`；選圖後至少保留 60 logic steps，且只有 `side_stand`／`side_stand_cheer` 的角色幀實際完成一次畫面繪製、繪製前未被其他動作覆蓋，才送出 1x 沙盒 G2 成就事件；不指定 GIF 或 follow-up action；**狀態**：Runtime 選圖與畫面確認。
+- [x] `side_ready_followup` — **情境**：鶴寶目前畫面仍是 `side_ready`，且下一次真正需要重選 idle 動畫時的稀有後續姿勢池；**對象**：鶴寶自身；**效果**：每次 side-ready 機會只擲一次，10% 依目前 band 從此 context 選圖，90% 回到 `random`。資格只允許緊鄰使用，任何其他 idle／move／drag／Activity 動畫都立即取消；`side_stand`／`side_stand_cheer` 最終套用前會再次驗證一次性 token、目前 action 與畫面幀。選圖後至少保留 60 logic steps，且角色幀實際完成一次畫面繪製、繪製前未被其他動作覆蓋，才送出 1x 沙盒 G2 成就事件；不指定 GIF 或 follow-up action；**狀態**：Runtime 選圖與畫面確認。
 - [x] `social_follow` — **情境**：帝寶或鶴寶跟在魯道夫身後；**對象**：社交小孩 → 魯道夫；**效果**：作為 intent／expression 狀態名稱；跟隨者可用任意既有移動方式追上魯道夫，因此刻意使用一般 move candidates，不要求另外配置此 context；**狀態**：狀態語意。
 - [x] `social_mimic` — **情境**：帝寶或鶴寶模仿魯道夫正在播放的動作；**對象**：社交小孩 → 魯道夫；**效果**：作為 intent／expression 狀態名稱，實際畫面直接同步魯道夫相同 purpose/action/mood；**狀態**：狀態語意。
 
@@ -120,7 +120,7 @@
 
 - [x] `drag` — **情境**：使用者按住角色至少 0.1 秒後進入拖曳，即使游標完全沒有移動也會套用；在 0.1 秒內放開仍視為短點，不使用此 context；**對象**：玩家游標 ↔ 被拖曳角色；**效果**：優先選擇 purpose=`drag`，缺少時依同一 context 跨 purpose 尋找素材，並在拖曳期間暫停一般 AI；**狀態**：Runtime 選圖。
 - [x] `hard_landing` — **情境**：角色從較高位置重摔到合法地面；**對象**：角色自身 ↔ 地面；**效果**：物理依跌落高度扣心情後，先依目前 band 選擇此 context；該 band 缺素材時只放寬 band、仍不離開此 context；**狀態**：Runtime 選圖。
-- [x] `random` — **情境**：沒有更高優先場景時的一般待機、漫遊、玩家短點反應，以及普通拖曳／合奏離場後回到日常；**對象**：角色自身／目前桌面／玩家短點；**效果**：提供 idle 與 move 的日常隨機素材池；一般環境行為會受 mood band、weight 與關係 expression context 共同篩選，短點與兩種離場恢復均嚴格限定此 context 的 idle 素材，不會取用合奏、工作、照護或供品等專用 context；短點另依序優先 `happy`、`smile`；**狀態**：Runtime 選圖。
+- [x] `random` — **情境**：沒有更高優先場景時的一般待機、漫遊、玩家短點反應，以及普通拖曳／合奏離場後回到日常；**對象**：角色自身／目前桌面／玩家短點；**效果**：提供 idle 與 move 的日常隨機素材池；一般環境重選會把符合目前 purpose、context 與 mood band 的既有候選素材合併成單一池，直接依每張素材的 manifest weight 抽選，不會先用固定 mood 優先順序覆蓋權重。候選 action 限制仍保留，因此不會擴張鶴寶稀有站立或其他場景；短點與兩種離場恢復均嚴格限定此 context 的 idle 素材，不會取用合奏、工作、照護或供品等專用 context；短點另依序優先 `happy`、`smile`；**狀態**：Runtime 選圖。
 - [x] `window_flight` — **情境**：具飛行能力的角色離開地面、飛向視窗或工作列；**對象**：角色自身 → 目標視窗 surface；**效果**：嚴格選擇 purpose=`move` 的飛行素材；缺少此 context 時角色不具自由飛行能力；**狀態**：Runtime 選圖。
 - [x] `window_perch` — **情境**：角色停在視窗上緣；**對象**：角色自身 ↔ 被選中的視窗；**效果**：嚴格選擇 purpose=`idle` 的停棲素材；**狀態**：Runtime 選圖。
 - [x] `window_walk` — **情境**：角色沿視窗上緣水平移動；**對象**：角色自身 ↔ 目前停棲視窗；**效果**：嚴格選擇 purpose=`move` 的窗台行走素材；**狀態**：Runtime 選圖。

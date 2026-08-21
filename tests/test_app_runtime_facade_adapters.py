@@ -51,8 +51,49 @@ class GameplayRewardAdapterTests(unittest.TestCase):
             updated_at=20.0,
         )
 
+    def test_optional_mood_ceiling_maintains_without_lowering_high_score(self):
+        pet = SimpleNamespace(
+            transformation_state=None,
+            mood_score=59.0,
+            sync_mood_state_with_score=Mock(),
+        )
+        adapter = GameplayRewardAdapter(
+            pet_registry=SimpleNamespace(find_by_name=Mock(return_value=pet)),
+            household=SimpleNamespace(),
+        )
+
+        self.assertTrue(
+            adapter.apply_mood_reward("Tokai Teio", 2.0, ceiling=60.0)
+        )
+        self.assertEqual(pet.mood_score, 60.0)
+
+        pet.mood_score = 70.0
+        self.assertTrue(
+            adapter.apply_mood_reward("Tokai Teio", 2.0, ceiling=60.0)
+        )
+        self.assertEqual(pet.mood_score, 70.0)
+
 
 class GameplayAppAdapterTests(unittest.TestCase):
+    def test_chorus_reward_uses_maintenance_ceiling_but_race_does_not(self):
+        runtime = GameplayAppAdapterMixin()
+        runtime.gameplay_reward_adapter = SimpleNamespace(
+            apply_mood_reward=Mock(return_value=True),
+        )
+
+        self.assertTrue(runtime.apply_chorus_mood_reward("Tokai Teio", 2.0))
+        runtime.gameplay_reward_adapter.apply_mood_reward.assert_called_with(
+            "Tokai Teio",
+            2.0,
+            ceiling=60.0,
+        )
+
+        self.assertTrue(runtime.apply_race_mood_reward("Tokai Teio", 2.0))
+        runtime.gameplay_reward_adapter.apply_mood_reward.assert_called_with(
+            "Tokai Teio",
+            2.0,
+        )
+
     def test_activity_and_transformation_calls_use_owned_controllers(self):
         runtime = GameplayAppAdapterMixin()
         runtime.activity_runtime_controller = SimpleNamespace(

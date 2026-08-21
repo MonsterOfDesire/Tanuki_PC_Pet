@@ -36,6 +36,7 @@ from .pet_random_rules import (
     derive_random_visual_purpose,
     extend_random_state_timer,
     get_idle_action_override,
+    is_side_ready_followup_eligible,
     is_visible_side_ready_followup,
     resolve_random_stuck_behavior,
     should_refresh_severe_random_state,
@@ -648,7 +649,8 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
                         visual_purpose,
                         context=random_context,
                     )
-                    changed = self.change_state_candidates(
+                    changed = apply_ambient_low_mood_tendency(
+                        self,
                         self.get_randomized_candidates(severe_candidates),
                         context=random_context,
                     )
@@ -661,7 +663,8 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
                 if not self.stationary_move_mode:
                     self.move_logic()
                 if self.current_purpose != "move":
-                    if self.change_state_candidates(
+                    if apply_ambient_low_mood_tendency(
+                        self,
                         self.get_randomized_candidates(
                             self.get_random_manifest_candidates("move", context=random_context)
                         ),
@@ -713,9 +716,16 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         base_speed = self.get_base_speed()
         visual_purpose = derive_random_visual_purpose(self.state, base_speed)
         expression_handled = False
+        side_ready_followup_eligible = is_side_ready_followup_eligible(
+            getattr(self, "name", ""),
+            side_ready_followup_armed=getattr(self, "idle_side_stand_armed", False),
+            current_action_tag=getattr(self, "current_action_tag", ""),
+            current_frames=getattr(self, "current_frames", ()),
+        )
+        if getattr(self, "idle_side_stand_armed", False) and not side_ready_followup_eligible:
+            self.idle_side_stand_armed = False
         side_ready_followup_pending = bool(
-            visual_purpose == "idle"
-            and getattr(self, "idle_side_stand_armed", False)
+            visual_purpose == "idle" and side_ready_followup_eligible
         )
         if visual_purpose == "idle" and not side_ready_followup_pending:
             expression_handled = self.apply_expression_idle_behavior(expression_context)
@@ -770,9 +780,14 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
                     self.reset_stationary_move_mode()
 
     def apply_random_idle_animation(self):
-        followup_armed = bool(
-            getattr(self, "idle_side_stand_armed", False)
+        followup_armed = is_side_ready_followup_eligible(
+            getattr(self, "name", ""),
+            side_ready_followup_armed=getattr(self, "idle_side_stand_armed", False),
+            current_action_tag=getattr(self, "current_action_tag", ""),
+            current_frames=getattr(self, "current_frames", ()),
         )
+        if getattr(self, "idle_side_stand_armed", False) and not followup_armed:
+            self.idle_side_stand_armed = False
         context = RANDOM_CONTEXT
         if followup_armed:
             context = choose_idle_animation_context(
@@ -992,10 +1007,21 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
 
     def apply_reaction(self, preferred_moods, is_negative=False):
         forbidden = ["happy", "smile", "confidence", "cool", "glance"] if is_negative else []
+        selection_moods = list(dict.fromkeys(preferred_moods or ()))
+        if not is_negative and len(selection_moods) > 1:
+            # Pick the positive expression family first so characters with
+            # many more happy assets (notably Rudolf) can still visibly use
+            # smile. Manifest weights continue to decide the concrete asset
+            # inside the chosen family; unavailable families fall through.
+            chosen_mood = random.choice(selection_moods)
+            selection_moods = [
+                chosen_mood,
+                *(mood for mood in selection_moods if mood != chosen_mood),
+            ]
         result = self.asset_manager.get_contextual_result(
             "idle",
             context="random",
-            preferred_moods=preferred_moods,
+            preferred_moods=selection_moods,
             forbidden=forbidden,
             ordered_preferences=True,
         )

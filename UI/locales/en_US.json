@@ -163,9 +163,64 @@
     }
   },
   "events": {
-    "unnamed": "Unnamed event", "types": {"opening_note": "Opening note", "fund_snapshot": "Fund snapshot", "pressure_snapshot": "Pressure snapshot", "player_donate_fund": "Fund donation", "teio_drink_expense": "Drink expense", "rudolf_collectible_expense": "Collectible expense", "rudolf_work_completed": "Work completed", "transformation_started": "Transformation started", "transformation_ended": "Transformation ended", "race_completed": "Race completed", "race_declined": "Race declined", "chorus_completed": "Performance completed", "chorus_interrupted": "Performance interrupted", "offer_honey_guarded": "Honey protected", "offer_honey_denied": "Honey denied", "offer_hover_timeout": "Item interaction timed out", "shared_ramen": "Ramen shared", "shared_tea_chat": "Tea shared", "shared_honey": "Honey shared"}, "deltas": {"living_fund": "Living fund {amount:+,d}", "pressure": "Pressure {amount:+.1f}", "mood": "Mood {amount:+.1f}", "relationship": "Relationship {details}"},
+    "unnamed": "Unnamed event", "types": {"opening_note": "Opening note", "fund_snapshot": "Fund snapshot", "pressure_snapshot": "Pressure snapshot", "player_donate_fund": "Fund donation", "teio_drink_expense": "Drink expense", "rudolf_collectible_expense": "Collectible expense", "rudolf_work_completed": "Work completed", "transformation_started": "Transformation started", "transformation_ended": "Transformation ended", "observe_social_log": "Quiet observation", "post_observe_social_log": "Everyday conversation", "race_completed": "Race completed", "race_declined": "Race declined", "chorus_completed": "Performance completed", "chorus_interrupted": "Performance interrupted", "offer_bottle_success": "Bottle received", "ground_bottle_pickup": "Bottle picked up", "offer_bottle_feed": "Bottle feeding", "ground_bottle_feed": "Bottle feeding", "offer_honey_success": "Honey received", "ground_honey_pickup": "Honey picked up", "offer_honey_guarded": "Honey protected", "offer_honey_denied": "Honey denied", "offer_hover_timeout": "Item interaction timed out", "shared_ramen": "Ramen shared", "shared_tea_chat": "Tea shared", "shared_honey": "Honey shared"}, "deltas": {"living_fund": "Living fund {amount:+,d}", "pressure": "Pressure {amount:+.1f}", "mood": "Mood {amount:+.1f}", "relationship": "Relationship {details}"},
     "directions": {"clockwise_left": "clockwise (left)", "counterclockwise_right": "counterclockwise (right)"}, "performance": {"solo": "solo performance", "ensemble": "ensemble"},
-    "chorus_reasons": {"default": "conditions changed"},
+    "chorus_reasons": {"default": "conditions changed", "tsuyoshi_honey_guard_needed": "Tsuyoshi needed protection from the honey", "child_care_needed": "a child needed care", "no_performers_remaining": "all performers had left"},
+    "social_templates": {
+      "observe": {
+        "0": "{actor} noticed {target} minding their own business and watched quietly for a while.",
+        "1": "{actor} briefly met {target}'s gaze, and the mood relaxed a little.",
+        "2": "{actor} observed {target} from nearby, as if memorizing one of their little habits.",
+        "3": "{actor} noticed {target} hesitating and chose not to interrupt right away.",
+        "4": "{actor} quietly slowed down and waited for {target} to finish what they were doing.",
+        "5": "{actor} noticed {target}'s expression change, as if trying to gauge their mood today.",
+        "6": "{actor} watched {target} straighten their clothes and quietly remembered the habit.",
+        "7": "{actor} glanced at what was beside {target}, wondering whether it might be useful later.",
+        "8": "{actor} noticed {target} move closer and made a little room for them.",
+        "9": "{actor} watched {target} pause by the window, and everything grew quiet.",
+        "10": "{actor} noticed {target} looking rather pleased with themself and let it pass with a glance.",
+        "11": "{actor} saw that {target} was in good spirits and relaxed a little too.",
+        "12": "{actor} quietly followed {target}'s pace, as if matching the rhythm of the household.",
+        "13": "{actor} noticed {target} looking at something on the desktop and followed their gaze for a moment.",
+        "14": "{actor} sensed that {target} wanted someone to talk to and waited nearby for a while.",
+        "15": "{actor} watched {target} pass by, making way without hurrying them.",
+        "16": "{actor} and {target} both slowed slightly as they passed each other.",
+        "17": "{actor} caught a small expression from {target}, like a signal only the family would understand.",
+        "18": "{actor} noticed that {target} was unusually well behaved today and could not help looking twice.",
+        "19": "{actor} watched {target} wander nearby, as if checking that nothing was wrong.",
+        "20": "{actor} paused to observe {target}, then casually looked away.",
+        "21": "{actor} noticed {target}'s tail twitch and seemed to understand something.",
+        "22": "{actor} watched {target} approach and leave again, weighing whether to speak.",
+        "23": "{actor} noticed how lightly {target} was walking today and quietly felt relieved."
+      },
+      "post_observe_interaction": {
+        "0": "{actor} walked over to {target} and chatted briefly.",
+        "1": "{actor} and {target} huddled together for a little household talk.",
+        "2": "{actor} gave {target} a small response, and the two soon went their separate ways.",
+        "3": "{actor} asked {target} what they wanted to do later, and they seemed to think seriously about it.",
+        "4": "{actor} and {target} quietly exchanged a few words that probably only the family would understand.",
+        "5": "{actor} went over and reminded {target} not to push too hard, in a perfectly natural tone.",
+        "6": "{actor} and {target} chatted about what had just happened, keeping things light.",
+        "7": "{actor} checked how {target}'s day was going and received a short reply.",
+        "8": "{actor} and {target} seemed to discuss dinner before the topic quickly drifted elsewhere.",
+        "9": "{actor} went over and joked with {target}, bringing them a little closer.",
+        "10": "{actor} and {target} stood side by side for a moment, as if sharing the same little secret.",
+        "11": "{actor} nodded to {target}, and neither needed to say anything more.",
+        "12": "{actor} asked whether {target} wanted a break, more gently than usual.",
+        "13": "{actor} and {target} discussed things on the desktop, as if arranging a small family schedule.",
+        "14": "{actor} listened quietly while {target} talked about a few little things.",
+        "15": "{actor} checked on {target} and only left after making sure everything was fine.",
+        "16": "{actor} and {target} bickered a little, but soon returned to their usual mood.",
+        "17": "{actor} told {target} what they had noticed, and {target} seemed a little surprised.",
+        "18": "{actor} and {target} discussed snacks without quite reaching a decision.",
+        "19": "{actor} told {target} they had done well, as naturally as part of the daily routine.",
+        "20": "{actor} and {target} exchanged a look, understanding each other without words.",
+        "21": "{actor} went over with a few reminders, then let {target} return to whatever they wanted.",
+        "22": "{actor} and {target} gathered briefly, as if checking that both were doing all right.",
+        "23": "{actor} offered {target} a small suggestion, and {target} did not seem entirely opposed.",
+        "24": "{actor} stayed beside {target} for a while, making the household feel a little calmer."
+      }
+    },
     "summaries": {
       "opening_note": "Symboli Rudolf's family begins another day on the desktop.", "fund_snapshot": "The current living fund is {amount}.", "pressure_snapshot": "Household pressure is currently {amount}%.", "player_donate_fund": "The player donated {amount} to the living fund.",
       "teio_drink_expense": "Tokai Teio secretly bought another drink.", "rudolf_collectible_expense": "Symboli Rudolf could not resist adding another collectible.", "rudolf_work_completed": "Symboli Rudolf finished work and earned money for the household.",
@@ -173,7 +228,10 @@
       "race_completed": "{winner} beat {loser} in a {distance}px {direction} race, finishing in {elapsed:.1f} seconds.", "race_declined": "{opponent} declined {challenger}'s race challenge.",
       "chorus_completed": "{performers} completed a {performance} lasting {elapsed:.1f} seconds.", "chorus_completed_with_audience": "{performers} completed a {performance} lasting {elapsed:.1f} seconds, with {audiences} in the audience.", "chorus_interrupted": "The {performance} ended early because {reason}.",
       "offer_bottle_success": "{actor} picked up the bottle for {target}.", "ground_bottle_pickup": "{actor} picked up the bottle.", "offer_bottle_feed": "{actor} fed {target} with the bottle.", "ground_bottle_feed": "{actor} fed {target} with the bottle.", "offer_honey_success": "{target} received the honey.", "ground_honey_pickup": "{actor} picked up the honey.", "offer_honey_guarded": "{actor} protected the honey from {target}.", "offer_honey_denied": "{actor} stopped {target} from taking the honey.", "offer_hover_timeout": "{actor} put the item back after no recipient was available.",
-      "shared_ramen": "{holder} and {partner} shared {item}.", "shared_tea_chat": "{holder} and {partner} enjoyed {item} together.", "shared_honey": "{holder} and {partner} shared {item}.", "ground_item_pickup": "{target} picked up {item}.", "offer_item_success": "{target} enjoyed {item}.",
+      "shared_ramen": "{holder} and {partner} shared {item}.", "shared_ramen_share_both": "{holder} and {partner} shared {item} together.", "shared_ramen_holder_keeps": "{partner} came over for a look, but {holder} kept the {item}.", "shared_ramen_holder_gives": "{holder} handed the {item} to {partner}.",
+      "shared_tea_chat": "{holder} and {partner} enjoyed {item} together.", "shared_tea_chat_share_both": "{holder} and {partner} sat together and shared {item}.", "shared_tea_chat_holder_keeps": "{partner} joined {holder}, but {holder} finished the {item}.", "shared_tea_chat_holder_gives": "{holder} offered the {item} to {partner}.",
+      "shared_honey": "{holder} and {partner} shared {item}.", "shared_honey_share_both": "{holder} and {partner} happily shared {item}.", "shared_honey_holder_keeps": "{partner} came closer, but {holder} kept the {item}.", "shared_honey_holder_gives": "{holder} gave the {item} to {partner}.",
+      "ground_item_pickup": "{target} picked up {item}.", "offer_item_success": "{target} enjoyed {item}.",
       "generic_care": "{actor} cared for {target}.", "generic_social": "{actor} and {target} shared a social moment.", "generic_item": "{actor} and {target} completed an item interaction.", "generic_economy": "A household finance event was recorded.", "generic_system": "A system event was recorded.", "generic_family": "A family life event was recorded."
     }
   },
@@ -191,7 +249,7 @@
     "world_modes": {"golden_legend": "Golden Legend", "sandbox": "Sandbox"}, "frequencies": {"frequent": "Frequent", "normal": "Normal", "occasional": "Occasional"}, "mood_climates": {"cheerful": "Cheerful", "balanced": "Balanced", "expressive": "Expressive"},
     "race_frequency_tooltips": {"frequent": "Autonomous race waits and cooldowns are about half the Normal duration.", "normal": "Use the standard race schedule for the selected world mode.", "occasional": "Autonomous race waits and cooldowns are about twice the Normal duration."},
     "chorus_frequency_tooltips": {"frequent": "Autonomous performance waits, retries, and cooldowns are about half the Normal duration.", "normal": "Use the standard autonomous performance schedule.", "occasional": "Autonomous performance waits, retries, and cooldowns are about twice the Normal duration."},
-    "mood_climate_tooltips": {"cheerful": "Each natural mood tick changes 50% of the time, with small changes strongly biased positive.", "balanced": "Each natural mood tick changes 70% of the time, with medium changes and a more even positive/negative balance.", "expressive": "Each natural mood tick changes 90% of the time, with frequent and larger negative changes; adults decline more slowly and self-regulate at low moods."}
+    "mood_climate_tooltips": {"cheerful": "Each natural mood tick changes 50% of the time, with small changes strongly biased positive.", "balanced": "Each natural mood tick changes 60% of the time. Normal mood drifts slightly downward; nearby adults only add recovery protection after a child enters Low.", "expressive": "Each natural mood tick changes 90% of the time, with frequent and larger negative changes; adults decline more slowly and self-regulate at low moods."}
   },
   "transformation": {
     "completed_base": "{character} returned to normal form.", "completed_transformed": "{character} completed the transformation.", "button_waiting": "Waiting to revert {character}", "button_reverting": "{character} is reverting", "button_transforming": "{character} is transforming", "button_revert": "Revert {character}", "button_transform": "Transform {character}",

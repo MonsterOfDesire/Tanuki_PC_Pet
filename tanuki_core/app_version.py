@@ -6,7 +6,7 @@ import re
 
 
 APP_NAME = "Tanuki PC Pet"
-APP_VERSION = "0.7.0-beta"
+APP_VERSION = "0.8.0-beta"
 GITHUB_REPOSITORY = "MonsterOfDesire/Tanuki_PC_Pet"
 GITHUB_RELEASES_URL = (
     f"https://github.com/{GITHUB_REPOSITORY}/releases"
@@ -15,6 +15,7 @@ GITHUB_RELEASES_API_URL = (
     f"https://api.github.com/repos/{GITHUB_REPOSITORY}/releases"
 )
 UPDATE_MANIFEST_ASSET_NAME = "tanuki-update.json"
+UPDATER_ASSET_NAME = "TanukiUpdater.exe"
 
 
 _VERSION_PATTERN = re.compile(

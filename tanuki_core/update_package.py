@@ -14,6 +14,14 @@ from .app_version import AppVersion
 
 UPDATE_PACKAGE_SCHEMA_VERSION = 1
 DEFAULT_EXECUTABLE_NAME = "TanukiPet.exe"
+UPDATE_PACKAGE_PLATFORM_SUFFIX = "windows-x64.zip"
+
+
+def get_update_package_asset_name(version):
+    return (
+        f"TanukiPet-{AppVersion.parse(version)}-"
+        f"{UPDATE_PACKAGE_PLATFORM_SUFFIX}"
+    )
 
 
 @dataclass(frozen=True)
@@ -109,6 +117,7 @@ def download_update_package(
     *,
     opener=urlopen,
     timeout_seconds=30.0,
+    progress_callback=None,
 ):
     destination_dir = Path(destination_dir)
     destination_dir.mkdir(parents=True, exist_ok=True)
@@ -121,7 +130,15 @@ def download_update_package(
     try:
         with opener(request, timeout=float(timeout_seconds)) as response:
             with open(partial_path, "wb") as output:
-                shutil.copyfileobj(response, output, length=1024 * 1024)
+                downloaded = 0
+                while True:
+                    chunk = response.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    output.write(chunk)
+                    downloaded += len(chunk)
+                    if callable(progress_callback):
+                        progress_callback(downloaded, manifest.size)
         verify_update_package(partial_path, manifest)
         os.replace(partial_path, final_path)
     finally:

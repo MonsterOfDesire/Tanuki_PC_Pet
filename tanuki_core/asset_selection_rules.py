@@ -337,6 +337,42 @@ def select_contextual_result_for_purposes(
     return frames, purpose, action_type, mood_tag
 
 
+def select_contextual_result_for_candidates(
+    asset_records,
+    candidates,
+    *,
+    context=None,
+    preferred_moods=None,
+    forbidden=None,
+    mood_score=None,
+    ordered_preferences=False,
+    rng=None,
+):
+    """Select only from explicit purpose/action candidates as one weighted pool."""
+
+    records_by_purpose = {}
+    for purpose, action_type in tuple(candidates or ()):
+        action_records = asset_records.get(purpose, {}).get(action_type)
+        if not action_records:
+            continue
+        records_by_purpose.setdefault(purpose, {})[action_type] = action_records
+    if not records_by_purpose:
+        return None
+    result = _select_contextual_candidate(
+        tuple(records_by_purpose.items()),
+        context=context,
+        preferred_moods=preferred_moods,
+        forbidden=forbidden,
+        mood_score=mood_score,
+        ordered_preferences=ordered_preferences,
+        rng=rng,
+    )
+    if not result:
+        return None
+    frames, purpose, action_type, mood_tag, _weight = result
+    return frames, purpose, action_type, mood_tag
+
+
 def select_safe_result(
     available_types,
     mood_list,

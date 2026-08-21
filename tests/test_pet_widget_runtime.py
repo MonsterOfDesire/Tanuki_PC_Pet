@@ -403,7 +403,7 @@ class FakeAssetManagerForDirectSideStand:
 class FakeAssetManagerForContextExpansion:
     def get_action_keys_for_context(self, purpose, mood_score=None, context=None):
         if purpose == "idle" and context == "random":
-            return ["side_stand", "stand"]
+            return ["side_stand", "side_stand_cheer", "stand"]
         return []
 
 
@@ -440,6 +440,8 @@ class FakePetForContextExpansion:
         self.name = "Tsurumaru Tsuyoshi"
         self.mood_score = 60.0
         self.idle_side_stand_armed = armed
+        self.current_action_tag = "side_ready" if armed else "stand"
+        self.current_frames = ["ready"] if armed else ["stand"]
         self.asset_manager = FakeAssetManagerForContextExpansion()
 
 
@@ -768,7 +770,11 @@ class PetWidgetRuntimeTests(unittest.TestCase):
     def test_click_reaction_uses_strict_random_context(self):
         pet = FakePetForClickReaction()
 
-        TanukiPet.apply_reaction(pet, ["happy", "smile"])
+        with patch(
+            "tanuki_core.pet_widget.random.choice",
+            return_value="smile",
+        ):
+            TanukiPet.apply_reaction(pet, ["happy", "smile"])
 
         self.assertEqual(
             pet.asset_manager.calls,
@@ -777,7 +783,7 @@ class PetWidgetRuntimeTests(unittest.TestCase):
                     "idle",
                     {
                         "context": "random",
-                        "preferred_moods": ["happy", "smile"],
+                        "preferred_moods": ["smile", "happy"],
                         "forbidden": [],
                         "ordered_preferences": True,
                     },
@@ -1084,12 +1090,46 @@ class PetWidgetRuntimeTests(unittest.TestCase):
     def test_apply_animation_result_for_tsuyoshi_consumes_side_ready_arm_on_immediate_side_stand(self):
         pet = FakePetForDirectSideStand()
         pet.current_action_tag = "side_ready"
+        pet.current_frames = ["ready"]
         pet.idle_side_stand_armed = True
 
         applied = TanukiPet.apply_animation_result(pet, "idle", (["stand"], "side_stand", "happy"))
 
         self.assertTrue(applied)
         self.assertEqual(pet.current_action_tag, "side_stand")
+        self.assertFalse(pet.idle_side_stand_armed)
+
+    def test_apply_animation_result_rejects_stale_side_ready_arm_after_another_visual(self):
+        pet = FakePetForDirectSideStand()
+        pet.current_action_tag = "eat"
+        pet.current_frames = ["eat"]
+        pet.idle_side_stand_armed = True
+
+        applied = TanukiPet.apply_animation_result(
+            pet,
+            "idle",
+            (["stand"], "side_stand", "happy"),
+        )
+
+        self.assertTrue(applied)
+        self.assertEqual(pet.current_action_tag, "side_ready")
+        self.assertEqual(pet.current_frames, ["ready"])
+        self.assertTrue(pet.idle_side_stand_armed)
+
+    def test_apply_animation_result_clears_side_ready_arm_for_non_idle_visual(self):
+        pet = FakePetForDirectSideStand()
+        pet.current_action_tag = "side_ready"
+        pet.current_frames = ["ready"]
+        pet.idle_side_stand_armed = True
+
+        applied = TanukiPet.apply_animation_result(
+            pet,
+            "move",
+            (["walk"], "walk", "happy"),
+        )
+
+        self.assertTrue(applied)
+        self.assertEqual(pet.current_action_tag, "walk")
         self.assertFalse(pet.idle_side_stand_armed)
 
     def test_expand_candidates_with_context_blocks_tsuyoshi_side_stand_when_not_armed(self):
@@ -1104,7 +1144,29 @@ class PetWidgetRuntimeTests(unittest.TestCase):
 
         candidates = TanukiPet.expand_candidates_with_context(pet, "idle", [("idle", "side")], context="random")
 
-        self.assertEqual(candidates, [("idle", "side"), ("idle", "side_stand"), ("idle", "stand")])
+        self.assertEqual(
+            candidates,
+            [
+                ("idle", "side"),
+                ("idle", "side_stand"),
+                ("idle", "side_stand_cheer"),
+                ("idle", "stand"),
+            ],
+        )
+
+    def test_expand_candidates_with_context_rejects_stale_arm_after_another_visual(self):
+        pet = FakePetForContextExpansion(armed=True)
+        pet.current_action_tag = "eat"
+        pet.current_frames = ["eat"]
+
+        candidates = TanukiPet.expand_candidates_with_context(
+            pet,
+            "idle",
+            [("idle", "side")],
+            context="random",
+        )
+
+        self.assertEqual(candidates, [("idle", "side"), ("idle", "stand")])
 
     def test_random_behavior_uses_manifest_random_context_without_catalog_candidates(self):
         pet = FakePetForRandomManifest()
@@ -1177,6 +1239,18 @@ class PetWidgetRuntimeTests(unittest.TestCase):
 
         self.assertEqual(pet.changed_contexts, ["random"])
         self.assertEqual(pet.ambient_events, [])
+
+    def test_stale_side_ready_arm_does_not_roll_followup_after_another_visual(self):
+        pet = FakePetForSideReadyFollowup()
+        pet.current_action_tag = "eat"
+        pet.current_frames = ["eat"]
+
+        with patch("tanuki_core.pet_widget.random.random") as roll:
+            TanukiPet.apply_random_idle_animation(pet)
+
+        roll.assert_not_called()
+        self.assertEqual(pet.changed_contexts, ["random"])
+        self.assertFalse(pet.idle_side_stand_armed)
 
     def test_side_ready_does_not_reroll_while_current_idle_is_valid(self):
         pet = FakePetForSideReadyFollowup()

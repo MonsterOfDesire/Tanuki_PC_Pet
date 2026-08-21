@@ -38,8 +38,12 @@ class MoodClimateProfile:
     companion_relief: float
     companion_positive_bonus: float
     adult_comfort_relief: float
+    adult_comfort_positive_bonus: float
     child_separation_chance_bonus: float
     child_separation_magnitude_bonus: float
+    child_lonely_chance_bonus: float
+    child_lonely_magnitude_scale: float
+    child_low_recovery_bias: float
     adult_negative_magnitude_scale: float
     adult_low_recovery_bias: float
     adult_severe_recovery_bias: float
@@ -60,27 +64,35 @@ MOOD_CLIMATE_PROFILES = {
         companion_relief=0.03,
         companion_positive_bonus=0.10,
         adult_comfort_relief=0.06,
+        adult_comfort_positive_bonus=0.30,
         child_separation_chance_bonus=0.06,
         child_separation_magnitude_bonus=0.08,
+        child_lonely_chance_bonus=0.08,
+        child_lonely_magnitude_scale=1.15,
+        child_low_recovery_bias=0.00,
         adult_negative_magnitude_scale=1.00,
         adult_low_recovery_bias=0.00,
         adult_severe_recovery_bias=0.00,
     ),
     "balanced": MoodClimateProfile(
-        change_chance=0.70,
-        negative_chance=0.42,
+        change_chance=0.68,
+        negative_chance=0.66,
         positive_delta_min=0.18,
-        positive_delta_max=0.50,
-        negative_delta_min=0.18,
-        negative_delta_max=0.52,
-        companion_relief=0.08,
-        companion_positive_bonus=0.15,
-        adult_comfort_relief=0.16,
-        child_separation_chance_bonus=0.18,
-        child_separation_magnitude_bonus=0.38,
-        adult_negative_magnitude_scale=1.00,
-        adult_low_recovery_bias=0.00,
-        adult_severe_recovery_bias=0.00,
+        positive_delta_max=0.42,
+        negative_delta_min=0.25,
+        negative_delta_max=0.55,
+        companion_relief=0.02,
+        companion_positive_bonus=0.03,
+        adult_comfort_relief=0.00,
+        adult_comfort_positive_bonus=0.03,
+        child_separation_chance_bonus=0.02,
+        child_separation_magnitude_bonus=0.04,
+        child_lonely_chance_bonus=0.01,
+        child_lonely_magnitude_scale=1.02,
+        child_low_recovery_bias=0.19,
+        adult_negative_magnitude_scale=0.85,
+        adult_low_recovery_bias=0.15,
+        adult_severe_recovery_bias=0.08,
     ),
     "expressive": MoodClimateProfile(
         change_chance=0.90,
@@ -92,8 +104,12 @@ MOOD_CLIMATE_PROFILES = {
         companion_relief=0.10,
         companion_positive_bonus=0.10,
         adult_comfort_relief=0.28,
+        adult_comfort_positive_bonus=0.30,
         child_separation_chance_bonus=0.20,
         child_separation_magnitude_bonus=0.55,
+        child_lonely_chance_bonus=0.08,
+        child_lonely_magnitude_scale=1.15,
+        child_low_recovery_bias=0.00,
         adult_negative_magnitude_scale=0.45,
         adult_low_recovery_bias=0.25,
         adult_severe_recovery_bias=0.18,
@@ -225,13 +241,28 @@ def compute_mood_update(
             if not is_adult:
                 if adult_is_comfortably_close:
                     negative_chance -= profile.adult_comfort_relief
-                    positive_multiplier += 0.30
+                    positive_multiplier += (
+                        profile.adult_comfort_positive_bonus
+                    )
                 else:
                     negative_chance += (
                         profile.child_separation_chance_bonus * separation
                     )
+                if float(current_score) < 50.0:
+                    # Low-band children retain some natural resilience even
+                    # when alone, while a nearby adult provides the full
+                    # stabilising effect. This lets balanced mood visit low
+                    # without turning ordinary solitude into an immediate
+                    # severe-state trigger.
+                    child_recovery_bias = profile.child_low_recovery_bias * (
+                        1.0 if adult_is_comfortably_close else 0.75
+                    )
+                    negative_chance -= child_recovery_bias
+                    positive_multiplier += child_recovery_bias
                 if nearby_count == 0 and next_lonely_timer >= 10:
-                    negative_chance += 0.08
+                    negative_chance += (
+                        profile.child_lonely_chance_bonus
+                    )
             elif float(current_score) < 50.0:
                 adult_recovery_bias = profile.adult_low_recovery_bias
                 if float(current_score) < 20.0:
@@ -259,7 +290,9 @@ def compute_mood_update(
                         * profile.child_separation_magnitude_bonus
                     )
                     if nearby_count == 0 and next_lonely_timer >= 10:
-                        negative_magnitude *= 1.15
+                        negative_magnitude *= (
+                            profile.child_lonely_magnitude_scale
+                        )
                 mood_delta = -negative_magnitude
             else:
                 mood_delta = _interpolate(

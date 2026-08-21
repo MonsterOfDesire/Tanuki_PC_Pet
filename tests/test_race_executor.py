@@ -449,9 +449,63 @@ class RaceExecutorTests(unittest.TestCase):
             (winner._x + winner.width() / 2.0)
             - (loser._x + loser.width() / 2.0)
         )
-        self.assertEqual(center_distance, 184.0)
+        self.assertEqual(center_distance, 204.0)
         self.assertEqual(winner.direction, -direction)
         self.assertEqual(loser.direction, direction)
+
+    def test_leftward_finish_preserves_the_starting_side_order(self):
+        self.rudolf._x = 550.0
+        self.teio._x = 800.0
+        self.advance_to_running()
+        activity = self.coordinator.get_active_activities()[0]
+        self.assertEqual(activity.metadata["race_direction"], -1)
+        self.assertGreater(
+            activity.metadata["challenger_start_x"],
+            activity.metadata["opponent_start_x"],
+        )
+
+        rudolf_finish = float(activity.metadata["challenger_finish_x"])
+        teio_finish = float(activity.metadata["opponent_finish_x"])
+        self.assertGreater(rudolf_finish, teio_finish)
+        self.assertEqual(
+            abs(rudolf_finish - activity.metadata["challenger_start_x"]),
+            activity.metadata["race_distance"],
+        )
+        self.assertEqual(
+            abs(teio_finish - activity.metadata["opponent_start_x"]),
+            activity.metadata["race_distance"],
+        )
+        self.assertEqual(
+            abs(rudolf_finish - teio_finish),
+            abs(
+                activity.metadata["challenger_start_x"]
+                - activity.metadata["opponent_start_x"]
+            ),
+        )
+        self.rudolf._x = rudolf_finish
+        self.teio._x = teio_finish + 100.0
+        self.rudolf.honor_min_speed = True
+        self.teio.honor_min_speed = True
+        activity.metadata["challenger_speed"] = 20.0
+        activity.metadata["opponent_speed"] = 10.0
+        teio_before = self.teio._x
+
+        winner_arrived = self.update(16.2)
+
+        self.assertFalse(winner_arrived.phase_changed)
+        self.assertEqual(activity.metadata["winner_name"], "Symboli Rudolf")
+        self.assertLess(self.teio._x, teio_before)
+        self.assertGreater(self.rudolf._x, self.teio._x)
+        self.assertEqual(self.teio.direction, -1)
+
+        self.teio._x = teio_finish
+        finished_running = self.update(16.3)
+
+        self.assertTrue(finished_running.phase_changed)
+        self.assertEqual(self.teio._x, teio_finish)
+        self.assertGreater(self.rudolf._x, self.teio._x)
+        self.assertEqual(self.rudolf.direction, -1)
+        self.assertEqual(self.teio.direction, 1)
 
     def test_child_distress_immediately_interrupts_race_for_care(self):
         self.advance_to_running()

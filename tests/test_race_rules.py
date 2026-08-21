@@ -226,7 +226,7 @@ class RaceRulesTests(unittest.TestCase):
 
         self.assertGreaterEqual(
             lane.opponent_start_x - lane.challenger_start_x,
-            224.0,
+            244.0,
         )
         self.assertGreaterEqual(lane.challenger_start_x, 0.0)
         self.assertLessEqual(lane.finish_x + 480.0, 1920.0)
@@ -248,22 +248,56 @@ class RaceRulesTests(unittest.TestCase):
         self.assertEqual(lane.distance, 1100.0)
         self.assertLess(lane.finish_x, lane.challenger_start_x)
 
+    def test_both_lanes_keep_equal_distance_and_the_same_finish_gap(self):
+        lane = build_race_lane_geometry(
+            left_bound=0.0,
+            right_bound=2400.0,
+            participant_widths=(480.0, 480.0),
+            participant_radii=(100.0, 100.0),
+            course_distance=1100.0,
+            participant_positions=(1700.0, 1800.0),
+        )
+        challenger_finish_x = (
+            lane.challenger_start_x + lane.direction * lane.distance
+        )
+        opponent_finish_x = (
+            lane.opponent_start_x + lane.direction * lane.distance
+        )
+
+        self.assertEqual(lane.direction, -1)
+        self.assertEqual(
+            abs(challenger_finish_x - lane.challenger_start_x),
+            lane.distance,
+        )
+        self.assertEqual(
+            abs(opponent_finish_x - lane.opponent_start_x),
+            lane.distance,
+        )
+        self.assertEqual(
+            abs(challenger_finish_x - opponent_finish_x),
+            abs(lane.challenger_start_x - lane.opponent_start_x),
+        )
+        self.assertEqual(
+            abs(challenger_finish_x - opponent_finish_x),
+            244.0,
+        )
+
     def test_challenge_distance_and_finish_regroup_spacing_are_explicit(self):
         self.assertTrue(race_pair_is_close(420.0))
         self.assertFalse(race_pair_is_close(420.1))
         target = get_race_finish_standoff_distance((80.0, 80.0))
-        self.assertEqual(target, 184.0)
+        self.assertEqual(target, 204.0)
         self.assertFalse(
             race_finish_is_ready(
                 winner_arrived=True,
-                separation=177.9,
+                separation=197.9,
                 target_separation=target,
             )
         )
         self.assertTrue(
             race_finish_is_ready(
                 winner_arrived=True,
-                separation=178.0,
+                separation=198.0,
                 target_separation=target,
             )
         )

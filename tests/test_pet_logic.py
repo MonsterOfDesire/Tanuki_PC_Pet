@@ -140,12 +140,31 @@ class MoodLogicTests(unittest.TestCase):
             nearby_count=0,
             has_adult_nearby=False,
             climate_key="balanced",
-            change_roll=0.60,
+            change_roll=0.55,
             direction_roll=1.0,
             magnitude_roll=1.0,
         )
 
         self.assertGreater(update.mood_score, 45.0)
+
+    def test_balanced_child_gets_recovery_protection_only_after_entering_low(self):
+        common = dict(
+            lonely_timer=0,
+            is_adult=False,
+            nearby_count=1,
+            has_adult_nearby=True,
+            nearest_adult_distance=120.0,
+            climate_key="balanced",
+            change_roll=0.0,
+            direction_roll=0.51,
+            magnitude_roll=0.5,
+        )
+
+        normal = compute_mood_update(current_score=60.0, **common)
+        low = compute_mood_update(current_score=40.0, **common)
+
+        self.assertLess(normal.mood_score, 60.0)
+        self.assertGreater(low.mood_score, 40.0)
 
     def test_expressive_negative_change_is_larger_than_cheerful(self):
         common = dict(

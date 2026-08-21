@@ -10,16 +10,23 @@ class GameplayRewardAdapter:
         self.pet_registry = pet_registry
         self.household = household
 
-    def apply_mood_reward(self, target_name, amount):
+    def apply_mood_reward(self, target_name, amount, *, ceiling=None):
         pet = self.pet_registry.find_by_name(
             target_name,
             visible_only=False,
         )
         if pet is None:
             return False
+        current_mood = float(pet.mood_score)
+        mood_gain = max(0.0, float(amount))
+        if ceiling is not None:
+            mood_gain = min(
+                mood_gain,
+                max(0.0, float(ceiling) - current_mood),
+            )
         pet.mood_score = apply_pet_form_mood_floor(
             pet,
-            min(100.0, float(pet.mood_score) + float(amount)),
+            min(100.0, current_mood + mood_gain),
         )
         sync_mood = getattr(pet, "sync_mood_state_with_score", None)
         if callable(sync_mood):

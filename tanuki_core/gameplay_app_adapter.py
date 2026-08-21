@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from .activity_rhythm_provider import ActivityRhythmProvider
+from .chorus_settlement import CHORUS_MOOD_REWARD_CEILING
 
 
 def _build_forwarder(target_getter, target_method):
@@ -69,6 +70,7 @@ class GameplayAppAdapterMixin:
         return self.gameplay_reward_adapter.apply_mood_reward(
             target_name,
             amount,
+            ceiling=CHORUS_MOOD_REWARD_CEILING,
         )
 
     def apply_chorus_relationship_reward(

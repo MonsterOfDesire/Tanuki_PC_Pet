@@ -2,6 +2,11 @@ from __future__ import annotations
 
 import re
 
+from .pet_social_log_rules import (
+    find_social_log_template_index,
+    get_social_log_template_count,
+    normalize_social_log_source,
+)
 from .ui_localization import (
     character_display_name,
     get_ui_locale,
@@ -112,6 +117,40 @@ def localized_event_summary(entry):
             character=actor,
         )
     if event_type in {"observe_social_log", "post_observe_social_log"}:
+        source = normalize_social_log_source(
+            metadata.get("source")
+            or (
+                "post_observe_interaction"
+                if event_type == "post_observe_social_log"
+                else "observe"
+            )
+        )
+        template_count = get_social_log_template_count(source)
+        try:
+            template_index = int(metadata.get("template_index"))
+        except (TypeError, ValueError):
+            template_index = -1
+        if not 0 <= template_index < template_count:
+            inferred_index = find_social_log_template_index(
+                original,
+                actor_name=actor_name,
+                target_name=target_name,
+                source_context=source,
+            )
+            template_index = (
+                inferred_index if inferred_index is not None else -1
+            )
+        if template_index >= 0:
+            return translate_ui(
+                f"events.social_templates.{source}.{template_index}",
+                default=(
+                    "{actor}和{target}相處了一會兒。"
+                    if source == "post_observe_interaction"
+                    else "{actor}注意了{target}一會兒。"
+                ),
+                actor=actor,
+                target=target,
+            )
         return _event_template(
             event_type,
             "{actor}注意了{target}一會兒。",

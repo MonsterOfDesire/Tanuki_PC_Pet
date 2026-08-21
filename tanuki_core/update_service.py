@@ -10,9 +10,13 @@ from .app_version import (
     CURRENT_APP_VERSION,
     GITHUB_RELEASES_API_URL,
     UPDATE_MANIFEST_ASSET_NAME,
+    UPDATER_ASSET_NAME,
     AppVersion,
 )
-from .update_package import UpdatePackageManifest
+from .update_package import (
+    UpdatePackageManifest,
+    get_update_package_asset_name,
+)
 
 
 GITHUB_API_VERSION = "2022-11-28"
@@ -90,6 +94,23 @@ class UpdateCheckResult:
             self.release is not None
             and self.release.version > self.current_version
         )
+
+
+def get_release_update_bundle_assets(release):
+    if release is None:
+        return None
+    updater = release.find_asset(UPDATER_ASSET_NAME)
+    manifest = release.find_asset(UPDATE_MANIFEST_ASSET_NAME)
+    package = release.find_asset(
+        get_update_package_asset_name(release.version)
+    )
+    assets = (updater, manifest, package)
+    if not all(
+        asset is not None and bool(asset.download_url)
+        for asset in assets
+    ):
+        return None
+    return assets
 
 
 def select_newest_release(
@@ -188,5 +209,18 @@ class GitHubReleaseClient:
         if manifest.version != release.version:
             raise ValueError(
                 "update manifest version does not match release tag"
+            )
+        package_asset = release.find_asset(manifest.package_name)
+        if package_asset is None or not package_asset.download_url:
+            raise ValueError(
+                "update manifest package is not attached to the same release"
+            )
+        if package_asset.download_url != manifest.package_url:
+            raise ValueError(
+                "update manifest package URL does not match release asset"
+            )
+        if package_asset.size and package_asset.size != manifest.size:
+            raise ValueError(
+                "update manifest package size does not match release asset"
             )
         return manifest

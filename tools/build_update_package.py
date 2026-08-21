@@ -16,6 +16,7 @@ from tanuki_core.update_package import (
     DEFAULT_EXECUTABLE_NAME,
     UpdatePackageManifest,
     calculate_sha256,
+    get_update_package_asset_name,
 )
 
 
@@ -71,7 +72,7 @@ def main(argv=None):
 
     version = AppVersion.parse(args.version)
     output_dir = Path(args.output_dir).resolve()
-    package_name = f"TanukiPet-{version}-windows-x64.zip"
+    package_name = get_update_package_asset_name(version)
     package_path = build_zip(
         args.source_dir,
         output_dir / package_name,

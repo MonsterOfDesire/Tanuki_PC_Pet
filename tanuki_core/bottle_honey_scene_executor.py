@@ -147,6 +147,7 @@ class BottleHoneySceneExecutor:
         port.scene.refresh_locks(holder_pet, child_pet)
 
         if port.scene.current.stage == "approach":
+            initialize_stage = not port.scene.current.stage_initialized
             holder_pet.state = "idle"
             holder_candidates = get_bottle_feed_holder_idle_candidates(holder_pet.name)
             holder_moods = get_bottle_feed_holder_idle_preferred_moods()
@@ -157,12 +158,13 @@ class BottleHoneySceneExecutor:
                     "idle",
                     holder_context,
                     holder_moods,
-                    preserve=True,
+                    preserve=not initialize_stage,
                 ) and not port.animation.apply_candidates(
                     holder_pet,
                     holder_candidates,
                     holder_moods,
-                    preserve=True,
+                    preserve=not initialize_stage,
+                    ordered_preferences=False,
                 ):
                     holder_pet.ensure_candidate_animation_with_preferences(holder_candidates, holder_moods)
             port.items.update_held_item_position(
@@ -184,14 +186,16 @@ class BottleHoneySceneExecutor:
                     "move",
                     child_context,
                     child_moods,
-                    preserve=True,
+                    preserve=not initialize_stage,
                 ) and not port.animation.apply_candidates(
                     child_pet,
                     child_candidates,
                     child_moods,
-                    preserve=True,
+                    preserve=not initialize_stage,
+                    ordered_preferences=False,
                 ):
                     child_pet.ensure_candidate_animation_with_preferences(child_candidates, child_moods)
+            port.scene.current.stage_initialized = True
             child_pet.move_toward_x(
                 holder_pet.x(),
                 speed_scale=1.0,
@@ -245,6 +249,7 @@ class BottleHoneySceneExecutor:
                     holder_pet,
                     holder_candidates,
                     holder_moods,
+                    ordered_preferences=False,
                 )
             if child_moods and not port.animation.apply_context(
                 child_pet,
@@ -256,6 +261,7 @@ class BottleHoneySceneExecutor:
                     child_pet,
                     child_candidates,
                     child_moods,
+                    ordered_preferences=False,
                 )
             port.scene.current.stage_initialized = True
         else:
@@ -271,6 +277,7 @@ class BottleHoneySceneExecutor:
                     holder_candidates,
                     holder_moods,
                     preserve=True,
+                    ordered_preferences=False,
                 )
             if child_moods and not port.animation.apply_context(
                 child_pet,
@@ -284,6 +291,7 @@ class BottleHoneySceneExecutor:
                     child_candidates,
                     child_moods,
                     preserve=True,
+                    ordered_preferences=False,
                 )
         holder_pet.refresh_movement_state()
         child_pet.refresh_movement_state()
@@ -376,6 +384,7 @@ class BottleHoneySceneExecutor:
                 move_moods,
                 preserve=True,
                 ignore_mood_band=True,
+                ordered_preferences=True,
             ) and move_candidates:
                 if not port.animation.apply_candidates(
                     guardian_pet,
@@ -479,6 +488,7 @@ class BottleHoneySceneExecutor:
                 HONEY_GUARD_TAKE_PREFERRED_MOODS,
                 forbidden=HONEY_GUARD_TAKE_FORBIDDEN_MOODS,
                 ignore_mood_band=True,
+                ordered_preferences=True,
             )
             if not guardian_changed and guardian_candidates:
                 guardian_changed = port.animation.apply_candidates(
@@ -500,6 +510,7 @@ class BottleHoneySceneExecutor:
                 denied_moods,
                 forbidden=denied_forbidden,
                 ignore_mood_band=True,
+                ordered_preferences=True,
             )
             if not child_changed and denied_candidates:
                 child_changed = port.animation.apply_candidates(
@@ -524,6 +535,7 @@ class BottleHoneySceneExecutor:
                 forbidden=HONEY_GUARD_TAKE_FORBIDDEN_MOODS,
                 preserve=True,
                 ignore_mood_band=True,
+                ordered_preferences=True,
             )
             if not guardian_changed and guardian_candidates:
                 guardian_changed = port.animation.apply_candidates(
@@ -548,6 +560,7 @@ class BottleHoneySceneExecutor:
                 forbidden=denied_forbidden,
                 preserve=True,
                 ignore_mood_band=True,
+                ordered_preferences=True,
             )
             if not child_changed and denied_candidates:
                 child_changed = port.animation.apply_candidates(

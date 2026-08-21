@@ -129,14 +129,16 @@ class UiLocalizationTests(unittest.TestCase):
             "天狼星叔叔、鲁道夫象征、鹤宝",
         )
 
-    def test_simplified_chinese_catalog_covers_all_english_ui_keys(self):
+    def test_non_default_catalogs_cover_all_english_ui_keys(self):
         catalog = UiTranslationCatalog()
 
-        missing_keys = set(catalog._load("en_US")) - set(
-            catalog._load("zh_CN")
-        )
-
-        self.assertEqual(missing_keys, set())
+        reference_keys = set(catalog._load("en_US"))
+        for locale in ("zh_CN", "ja_JP"):
+            with self.subTest(locale=locale):
+                self.assertEqual(
+                    reference_keys - set(catalog._load(locale)),
+                    set(),
+                )
         self.assertEqual(
             catalog.translate(
                 "achievements.definitions.ambient.tsuyoshi_rare_stand.title",

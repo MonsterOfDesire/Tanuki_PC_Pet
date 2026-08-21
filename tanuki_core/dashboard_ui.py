@@ -966,7 +966,11 @@ class Dashboard(QWidget):
 
     def open_update_page(self):
         status = self.get_update_status_snapshot()
-        url = status.release_page_url or GITHUB_RELEASES_URL
+        url = (
+            status.updater_download_url
+            or status.release_page_url
+            or GITHUB_RELEASES_URL
+        )
         return QDesktopServices.openUrl(QUrl(url))
 
     def retranslate_ui(self):

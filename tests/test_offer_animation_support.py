@@ -94,6 +94,81 @@ class OfferAnimationSupportTests(unittest.TestCase):
             prefer_preview=True,
         )
 
+    def test_scene_context_can_explicitly_preserve_semantic_mood_order(self):
+        changer = Mock(return_value=True)
+        pet = SimpleNamespace(
+            change_state_for_context_with_preferences=changer,
+        )
+
+        applied = self.build_support().apply_scene_context_with_preferences(
+            pet,
+            "idle",
+            "offer_denied",
+            preferred_moods=("hard-cry", "cry", "sad"),
+            ignore_mood_band=True,
+            ordered_preferences=True,
+        )
+
+        self.assertTrue(applied)
+        self.assertTrue(
+            changer.call_args.kwargs["ordered_preferences"]
+        )
+
+    def test_scene_candidate_pool_weights_all_allowed_moods_when_unordered(self):
+        class AssetManager:
+            def __init__(self):
+                self.received = []
+
+            def get_record(self, purpose, action_type, mood_tag):
+                if (purpose, action_type, mood_tag) not in {
+                    ("move", "climb", "happy"),
+                    ("move", "climb", "smile"),
+                }:
+                    return None
+                return {
+                    "frames": [mood_tag],
+                    "manifest": {
+                        "weight": 1.0 if mood_tag == "happy" else 3.0,
+                    },
+                }
+
+            def get_record_weight(self, record):
+                return record["manifest"]["weight"]
+
+            def choose_weighted_result(self, results):
+                self.received = list(results)
+                return results[-1][0], results[-1][1], results[-1][2]
+
+            def get_frames_for_action_by_preferences(self, *args, **kwargs):
+                return None
+
+        manager = AssetManager()
+        pet = SimpleNamespace(
+            asset_manager=manager,
+            current_mood_tag="happy",
+            current_purpose="idle",
+            current_action_tag="stand",
+            state="idle",
+            apply_animation_result=Mock(return_value=True),
+        )
+
+        applied = self.build_support().apply_scene_candidates_with_preferences(
+            pet,
+            [("move", "climb")],
+            ["happy", "smile"],
+            ordered_preferences=False,
+        )
+
+        self.assertTrue(applied)
+        self.assertEqual(
+            [result[3] for result in manager.received],
+            [1.0, 3.0],
+        )
+        pet.apply_animation_result.assert_called_once_with(
+            "move",
+            (["smile"], "climb", "smile"),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

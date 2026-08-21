@@ -983,6 +983,21 @@ class PetSocialCareMixinTests(unittest.TestCase):
         )
 
         self.assertTrue(handled)
+        self.assertEqual(pet.applied, [("idle", "get", "happy", ("get-happy",))])
+
+    def test_change_state_for_context_can_explicitly_use_ordered_preferences(self):
+        pet = FakeContextPet()
+        pet.mood_score = 60.0
+
+        handled = pet.change_state_for_context_with_preferences(
+            "idle",
+            "offer_preview",
+            preferred_moods=["sad", "happy"],
+            ignore_mood_band=True,
+            ordered_preferences=True,
+        )
+
+        self.assertTrue(handled)
         self.assertEqual(pet.applied, [("idle", "get", "sad", ("get-sad",))])
 
     def test_change_state_for_context_preserves_matching_current_animation(self):

@@ -43,6 +43,7 @@ from .sleep_rules import (
     SLEEP_JOIN_ARRIVAL_DISTANCE,
     SLEEP_JOIN_MOVE_SPEED_SCALE,
     SLEEP_MAX_CONCURRENT,
+    SLEEP_NATURAL_COMPLETION_MOOD_CEILING,
     SLEEP_NATURAL_COMPLETION_MOOD_REWARD,
     SLEEP_OBSERVE_MAX_SECONDS,
     SLEEP_OBSERVE_MIN_SECONDS,
@@ -975,10 +976,17 @@ class SleepExecutor:
                 not early_wake_reason
                 and trigger_kind != SLEEP_TRIGGER_SANDBOX_CONTROL
             ):
-                self.runtime_adapter.apply_mood_delta(
-                    pet,
+                current_mood = float(getattr(pet, "mood_score", 60.0))
+                mood_delta = min(
                     SLEEP_NATURAL_COMPLETION_MOOD_REWARD,
+                    max(
+                        0.0,
+                        SLEEP_NATURAL_COMPLETION_MOOD_CEILING
+                        - current_mood,
+                    ),
                 )
+                if mood_delta > 0.0:
+                    self.runtime_adapter.apply_mood_delta(pet, mood_delta)
             self._schedule_after_wake(participant_name, now=now)
             if group_id:
                 self._reanchor_sleep_group(group_id)

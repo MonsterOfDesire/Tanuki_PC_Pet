@@ -64,8 +64,8 @@ MOOD_CLIMATE_TOOLTIPS = {
         "低落後較容易重新露出笑容。"
     ),
     "balanced": (
-        "每個自然心情 tick 有 70% 會變動；正負較接近、幅度居中，"
-        "兼顧恢復與低落情境。"
+        "每個自然心情 tick 有 60% 會變動；normal 時略偏負向，"
+        "小孩進入 low 後才會因附近的大人得到恢復保護。"
     ),
     "expressive": (
         "每個自然心情 tick 有 90% 會變動；負向較頻繁且幅度最大，"
@@ -986,7 +986,9 @@ class StatusSettingsPanel(QWidget):
         state = str(snapshot.update_status or "idle")
         self.update_check_button.setEnabled(state != "checking")
         self.update_open_button.setVisible(
-            state == "available" and bool(snapshot.update_page_url)
+            state == "available"
+            and snapshot.update_package_ready
+            and bool(snapshot.update_updater_url)
         )
         if state == "checking":
             text = translate_ui(
