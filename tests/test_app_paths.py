@@ -54,7 +54,10 @@ class AppPathsTests(unittest.TestCase):
                     platform="darwin",
                 )
 
-            self.assertEqual(path, str(Path(temp_dir) / "config.json"))
+            self.assertEqual(
+                Path(path).resolve(),
+                (Path(temp_dir) / "config.json").resolve(),
+            )
 
     def test_windows_config_keeps_existing_portable_location(self):
         path = get_runtime_config_path(

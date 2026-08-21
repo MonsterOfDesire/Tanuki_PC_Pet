@@ -431,7 +431,10 @@ def run_updater(argv=None, *, client=None, progress_factory=None):
             )
             return 0
         release = check.release
-        if get_release_update_bundle_assets(release) is None:
+        if get_release_update_bundle_assets(
+            release,
+            platform="win32",
+        ) is None:
             raise ValueError(_message(locale, "incomplete_release"))
         if not args.yes and not _message_box(
             _message(
