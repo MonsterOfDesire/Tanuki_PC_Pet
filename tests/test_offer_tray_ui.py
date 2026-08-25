@@ -22,7 +22,10 @@ class OfferTrayWindowTests(unittest.TestCase):
         cls.assets = UiSkinAssets(AssetManager.get_resource_path)
 
     def setUp(self):
-        self.window = OfferTrayWindow(assets=self.assets)
+        self.window = OfferTrayWindow(
+            assets=self.assets,
+            platform_capabilities=get_platform_capabilities("win32"),
+        )
         self.window.show()
         self.app.processEvents()
 

@@ -196,7 +196,10 @@ class InformationCenterWindowTests(unittest.TestCase):
         cls.app = QApplication.instance() or QApplication([])
 
     def setUp(self):
-        self.window = InformationCenterWindow(AssetManager.get_resource_path)
+        self.window = InformationCenterWindow(
+            AssetManager.get_resource_path,
+            platform_capabilities=get_platform_capabilities("win32"),
+        )
         self.window.resize(1120, 720)
         self.app.processEvents()
 
