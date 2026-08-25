@@ -8,9 +8,14 @@ from PyQt6.QtWidgets import (
 )
 
 from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
-from .window_chrome import SkinnedToolWindowChrome
+from .window_chrome import create_platform_window_chrome
 from .ui_localization import translate_ui
-from .overlay_window import apply_platform_tool_window_attributes
+from .overlay_window import (
+    WINDOW_ROLE_UTILITY,
+    apply_platform_tool_window_attributes,
+    build_utility_window_flags,
+)
+from .platform_capabilities import get_platform_capabilities
 
 
 class DetachedInformationPageWindow(QWidget):
@@ -24,9 +29,20 @@ class DetachedInformationPageWindow(QWidget):
         *,
         initial_size=None,
         theme=DEFAULT_UI_THEME,
+        platform_capabilities=None,
     ):
-        super().__init__(None, Qt.WindowType.Tool)
-        apply_platform_tool_window_attributes(self)
+        self.platform_capabilities = (
+            platform_capabilities or get_platform_capabilities()
+        )
+        super().__init__(
+            None,
+            build_utility_window_flags(self.platform_capabilities),
+        )
+        apply_platform_tool_window_attributes(
+            self,
+            self.platform_capabilities,
+            role=WINDOW_ROLE_UTILITY,
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_QuitOnClose, False)
         self.setObjectName("tanukiDetachedInformationPage")
         self.setWindowTitle(
@@ -62,17 +78,20 @@ class DetachedInformationPageWindow(QWidget):
         header_layout.addWidget(self.title_label)
         header_layout.addStretch(1)
 
-        self.window_chrome = SkinnedToolWindowChrome(
+        self.window_chrome = create_platform_window_chrome(
             self,
             drag_widgets=(self.header, self.title_label),
             controls_variant="dark",
+            capabilities=self.platform_capabilities,
         )
-        self.window_chrome.controls.close_button.setToolTip(
-            "關閉並歸回資訊中心"
+        close_button = getattr(
+            self.window_chrome.controls,
+            "close_button",
+            None,
         )
-        self.window_chrome.controls.close_button.setAccessibleName(
-            "關閉並歸回資訊中心"
-        )
+        if close_button is not None:
+            close_button.setToolTip("關閉並歸回資訊中心")
+            close_button.setAccessibleName("關閉並歸回資訊中心")
         header_layout.addWidget(self.window_chrome.controls)
         root_layout.addWidget(self.header)
 
@@ -121,8 +140,14 @@ class DetachedInformationPageWindow(QWidget):
             "information_center.dock_close",
             default="關閉並歸回資訊中心",
         )
-        self.window_chrome.controls.close_button.setToolTip(tooltip)
-        self.window_chrome.controls.close_button.setAccessibleName(tooltip)
+        close_button = getattr(
+            self.window_chrome.controls,
+            "close_button",
+            None,
+        )
+        if close_button is not None:
+            close_button.setToolTip(tooltip)
+            close_button.setAccessibleName(tooltip)
 
     def release_page(self):
         page = self.page

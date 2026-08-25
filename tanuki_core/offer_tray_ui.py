@@ -11,15 +11,24 @@ from .skinned_window_frame import SkinnedWindowFrame
 from .ui_skin_assets import UiSkinAssets
 from .ui_skin_spec import SKIN_DIET
 from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
-from .window_chrome import SkinnedToolWindowChrome
+from .window_chrome import create_platform_window_chrome
 from .ui_localization import translate_ui
-from .overlay_window import apply_platform_tool_window_attributes
+from .overlay_window import (
+    WINDOW_ROLE_PERSISTENT_OVERLAY,
+    WINDOW_ROLE_UTILITY,
+    apply_platform_tool_window_attributes,
+    build_utility_window_flags,
+)
+from .platform_capabilities import get_platform_capabilities
 
 
 class OfferDragGhost(QFrame):
     def __init__(self, label, accent_color, icon_relative_path=""):
         super().__init__(None, Qt.WindowType.ToolTip | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
-        apply_platform_tool_window_attributes(self)
+        apply_platform_tool_window_attributes(
+            self,
+            role=WINDOW_ROLE_PERSISTENT_OVERLAY,
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -162,9 +171,20 @@ class OfferTrayWindow(QWidget):
         clear_hover_handler=None,
         assets=None,
         theme=DEFAULT_UI_THEME,
+        platform_capabilities=None,
     ):
-        super().__init__(None, Qt.WindowType.Tool)
-        apply_platform_tool_window_attributes(self)
+        self.platform_capabilities = (
+            platform_capabilities or get_platform_capabilities()
+        )
+        super().__init__(
+            None,
+            build_utility_window_flags(self.platform_capabilities),
+        )
+        apply_platform_tool_window_attributes(
+            self,
+            self.platform_capabilities,
+            role=WINDOW_ROLE_UTILITY,
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_QuitOnClose, False)
         self.setObjectName("tanukiOfferTray")
         self.resize(760, 570)
@@ -227,11 +247,14 @@ class OfferTrayWindow(QWidget):
         self.chrome_drag_zone = QFrame(self)
         self.chrome_drag_zone.setObjectName("tanukiDietChromeDragZone")
         self.chrome_drag_zone.setAccessibleName("拖曳飲食托盤視窗")
-        self.window_chrome = SkinnedToolWindowChrome(
+        self.window_chrome = create_platform_window_chrome(
             self,
             drag_widgets=(self.chrome_drag_zone,),
             controls_variant="light",
+            capabilities=self.platform_capabilities,
         )
+        if self.platform_capabilities.native_utility_window_chrome:
+            self.chrome_drag_zone.hide()
         self.retranslate_ui()
         self._update_chrome_geometry()
 

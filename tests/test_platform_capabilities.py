@@ -24,6 +24,11 @@ class PlatformCapabilitiesTests(unittest.TestCase):
         self.assertTrue(capabilities.window_perching)
         self.assertTrue(capabilities.window_to_window_flight)
         self.assertTrue(capabilities.global_mouse_listener)
+        self.assertFalse(capabilities.precise_pet_pointer_hit_test)
+        self.assertFalse(
+            capabilities.pet_overlay_avoids_application_activation
+        )
+        self.assertFalse(capabilities.native_utility_window_chrome)
         self.assertEqual(capabilities.update_method, "standalone_updater")
 
     def test_macos_uses_explicit_limited_capabilities(self):
@@ -35,6 +40,11 @@ class PlatformCapabilitiesTests(unittest.TestCase):
         self.assertTrue(
             capabilities.keep_tool_windows_visible_when_inactive
         )
+        self.assertTrue(capabilities.precise_pet_pointer_hit_test)
+        self.assertTrue(
+            capabilities.pet_overlay_avoids_application_activation
+        )
+        self.assertTrue(capabilities.native_utility_window_chrome)
         self.assertEqual(capabilities.update_method, "manual_release")
 
     def test_capability_report_is_serializable_shape(self):
@@ -42,6 +52,8 @@ class PlatformCapabilitiesTests(unittest.TestCase):
 
         self.assertEqual(report["platform"], "macos")
         self.assertFalse(report["window_tracking"])
+        self.assertTrue(report["precise_pet_pointer_hit_test"])
+        self.assertTrue(report["native_utility_window_chrome"])
         self.assertEqual(report["update_method"], "manual_release")
 
 

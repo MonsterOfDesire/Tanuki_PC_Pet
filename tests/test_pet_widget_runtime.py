@@ -132,6 +132,7 @@ from tanuki_core.geometry import DesktopGeometry
 from tanuki_core.pet_basics import PetBasicsMixin
 from tanuki_core.pet_widget import Qt, TanukiPet
 from tanuki_core.pet_logic import MoodUpdate
+from tanuki_core.platform_capabilities import get_platform_capabilities
 
 
 class FakeStarTimer:
@@ -180,6 +181,7 @@ class FakePoint:
 class FakeMouseEvent:
     def __init__(self, x=100, y=120):
         self._point = FakePoint(x, y)
+        self.ignored = False
 
     def button(self):
         return Qt.MouseButton.LeftButton
@@ -187,12 +189,23 @@ class FakeMouseEvent:
     def globalPosition(self):
         return types.SimpleNamespace(toPoint=lambda: self._point)
 
+    def ignore(self):
+        self.ignored = True
+
 
 class FakePetForPointerInteraction:
     DRAG_HOLD_THRESHOLD_MS = TanukiPet.DRAG_HOLD_THRESHOLD_MS
     DRAG_HOLD_THRESHOLD_SECONDS = TanukiPet.DRAG_HOLD_THRESHOLD_SECONDS
 
-    def __init__(self, activity_locked=False):
+    def __init__(
+        self,
+        activity_locked=False,
+        platform="win32",
+        pointer_hit=True,
+    ):
+        self.platform_capabilities = get_platform_capabilities(platform)
+        self.pointer_hit = bool(pointer_hit)
+        self.pointer_hit_calls = []
         self.transformation_state = types.SimpleNamespace(active=False)
         self.dragging = False
         self.drag_press_pending = False
@@ -226,6 +239,10 @@ class FakePetForPointerInteraction:
 
     def pos(self):
         return FakePoint(10, 20)
+
+    def pointer_hits_visible_character(self, local_point):
+        self.pointer_hit_calls.append((local_point.x(), local_point.y()))
+        return self.pointer_hit
 
     def is_activity_locked(self):
         return self._activity_locked
@@ -767,6 +784,35 @@ class FakePetForMoodAnimationGuard:
 
 
 class PetWidgetRuntimeTests(unittest.TestCase):
+    def test_macos_transparent_pixel_does_not_start_click_or_drag(self):
+        pet = FakePetForPointerInteraction(
+            platform="darwin",
+            pointer_hit=False,
+        )
+        event = FakeMouseEvent(100, 120)
+
+        with patch("tanuki_core.pet_widget.time.time", return_value=100.0):
+            TanukiPet.mousePressEvent(pet, event)
+
+        self.assertTrue(event.ignored)
+        self.assertFalse(pet.drag_press_pending)
+        self.assertEqual(pet.drag_hold_timer.started_with, [])
+        self.assertEqual(pet.pointer_hit_calls, [(90, 100)])
+
+    def test_windows_keeps_existing_rectangular_pointer_behavior(self):
+        pet = FakePetForPointerInteraction(
+            platform="win32",
+            pointer_hit=False,
+        )
+        event = FakeMouseEvent(100, 120)
+
+        with patch("tanuki_core.pet_widget.time.time", return_value=100.0):
+            TanukiPet.mousePressEvent(pet, event)
+
+        self.assertFalse(event.ignored)
+        self.assertTrue(pet.drag_press_pending)
+        self.assertEqual(pet.pointer_hit_calls, [])
+
     def test_click_reaction_uses_strict_random_context(self):
         pet = FakePetForClickReaction()
 

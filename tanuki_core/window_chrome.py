@@ -3,11 +3,25 @@ from PyQt6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPen, QPixmap
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QToolButton, QWidget
 
 from .ui_localization import translate_ui
+from .platform_capabilities import get_platform_capabilities
 
 
 CHROME_PIN = "pin"
 CHROME_MINIMIZE = "minimize"
 CHROME_CLOSE = "close"
+
+
+def _set_window_pinned(window, pinned):
+    was_visible = window.isVisible()
+    geometry = window.geometry()
+    position_locked = getattr(window, "user_position_locked", None)
+    window.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, bool(pinned))
+    window.setGeometry(geometry)
+    if position_locked is not None:
+        window.user_position_locked = position_locked
+    if was_visible:
+        window.show()
+        window.raise_()
 
 
 def _create_chrome_icon(action, color, size=16):
@@ -113,17 +127,45 @@ class WindowChromeControls(QFrame):
         return button
 
     def _set_pinned(self, pinned):
-        window = self.target_window
-        was_visible = window.isVisible()
-        geometry = window.geometry()
-        position_locked = getattr(window, "user_position_locked", None)
-        window.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, bool(pinned))
-        window.setGeometry(geometry)
-        if position_locked is not None:
-            window.user_position_locked = position_locked
-        if was_visible:
-            window.show()
-            window.raise_()
+        _set_window_pinned(self.target_window, pinned)
+
+
+class NativeWindowChromeControls(QFrame):
+    def __init__(self, target_window, variant="dark", parent=None):
+        super().__init__(parent or target_window)
+        self.target_window = target_window
+        self.variant = str(variant or "dark")
+        self.setObjectName("tanukiWindowChromeControls")
+        self.setProperty("chromeVariant", self.variant)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(3, 3, 3, 3)
+        layout.setSpacing(3)
+        icon_color = "#2f2924" if self.variant == "light" else "#fffaf2"
+        self.pin_button = QToolButton(self)
+        self.pin_button.setFixedSize(28, 28)
+        self.pin_button.setCheckable(True)
+        self.pin_button.setIcon(_create_chrome_icon(CHROME_PIN, icon_color))
+        self.pin_button.setIconSize(QPixmap(16, 16).size())
+        self.pin_button.setProperty("tanukiRole", "chromeButton")
+        self.pin_button.setProperty("chromeAction", CHROME_PIN)
+        self.pin_button.setProperty("chromeVariant", self.variant)
+        self.pin_button.toggled.connect(
+            lambda pinned: _set_window_pinned(
+                self.target_window,
+                pinned,
+            )
+        )
+        layout.addWidget(self.pin_button)
+        self.retranslate_ui()
+        self.adjustSize()
+
+    def retranslate_ui(self):
+        label = translate_ui(
+            "window_chrome.pin",
+            default="視窗置頂",
+        )
+        self.pin_button.setToolTip(label)
+        self.pin_button.setAccessibleName(label)
 
 
 class _WindowDragFilter(QObject):
@@ -250,3 +292,47 @@ class SkinnedToolWindowChrome(QObject):
             handle.setGeometry(geometries[edges])
             handle.raise_()
         self.controls.raise_()
+
+
+class NativeUtilityWindowChrome(QObject):
+    def __init__(self, target_window, controls_variant="dark"):
+        super().__init__(target_window)
+        self.target_window = target_window
+        target_window.setWindowFlag(
+            Qt.WindowType.FramelessWindowHint,
+            False,
+        )
+        self.controls = NativeWindowChromeControls(
+            target_window,
+            variant=controls_variant,
+            parent=target_window,
+        )
+        self.resize_handles = {}
+
+    def add_drag_widget(self, widget):
+        _ = widget
+
+    def retranslate_ui(self):
+        self.controls.retranslate_ui()
+
+    def refresh_geometry(self):
+        self.controls.raise_()
+
+
+def create_platform_window_chrome(
+    target_window,
+    drag_widgets=(),
+    controls_variant="dark",
+    capabilities=None,
+):
+    capabilities = capabilities or get_platform_capabilities()
+    if capabilities.native_utility_window_chrome:
+        return NativeUtilityWindowChrome(
+            target_window,
+            controls_variant=controls_variant,
+        )
+    return SkinnedToolWindowChrome(
+        target_window,
+        drag_widgets=drag_widgets,
+        controls_variant=controls_variant,
+    )

@@ -24,9 +24,13 @@ from .dashboard_launcher_ui import (
 )
 from .dashboard_presenter import DashboardPresenter
 from .overlay_window import (
+    WINDOW_ROLE_PERSISTENT_TOOL,
+    WINDOW_ROLE_UTILITY,
     apply_platform_tool_window_attributes,
     build_overlay_window_flags,
+    build_utility_window_flags,
 )
+from .platform_capabilities import get_platform_capabilities
 from .dashboard_state_mapper import (
     DashboardConfigState,
     DashboardOptionBounds,
@@ -63,9 +67,19 @@ from .app_version import GITHUB_RELEASES_URL
 
 
 class HouseholdSummaryWindow(QWidget):
-    def __init__(self):
-        super().__init__(None, Qt.WindowType.Tool)
-        apply_platform_tool_window_attributes(self)
+    def __init__(self, platform_capabilities=None):
+        self.platform_capabilities = (
+            platform_capabilities or get_platform_capabilities()
+        )
+        super().__init__(
+            None,
+            build_utility_window_flags(self.platform_capabilities),
+        )
+        apply_platform_tool_window_attributes(
+            self,
+            self.platform_capabilities,
+            role=WINDOW_ROLE_UTILITY,
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_QuitOnClose, False)
         self.setWindowTitle("家庭摘要")
         self.resize(420, 520)
@@ -127,9 +141,19 @@ class SocialLogWindow(QWidget):
         ("item", "道具"),
     )
 
-    def __init__(self, refresh_handler=None):
-        super().__init__(None, Qt.WindowType.Tool)
-        apply_platform_tool_window_attributes(self)
+    def __init__(self, refresh_handler=None, platform_capabilities=None):
+        self.platform_capabilities = (
+            platform_capabilities or get_platform_capabilities()
+        )
+        super().__init__(
+            None,
+            build_utility_window_flags(self.platform_capabilities),
+        )
+        apply_platform_tool_window_attributes(
+            self,
+            self.platform_capabilities,
+            role=WINDOW_ROLE_UTILITY,
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_QuitOnClose, False)
         self.setWindowTitle("社交紀錄")
         self.resize(520, 560)
@@ -263,9 +287,19 @@ class SocialLogWindow(QWidget):
 
 
 class RelationshipTableWindow(QWidget):
-    def __init__(self):
-        super().__init__(None, Qt.WindowType.Tool)
-        apply_platform_tool_window_attributes(self)
+    def __init__(self, platform_capabilities=None):
+        self.platform_capabilities = (
+            platform_capabilities or get_platform_capabilities()
+        )
+        super().__init__(
+            None,
+            build_utility_window_flags(self.platform_capabilities),
+        )
+        apply_platform_tool_window_attributes(
+            self,
+            self.platform_capabilities,
+            role=WINDOW_ROLE_UTILITY,
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_QuitOnClose, False)
         self.setWindowTitle("關係表")
         self.resize(560, 560)
@@ -335,8 +369,12 @@ class Dashboard(QWidget):
         household_state_provider=None,
         household_events_provider=None,
         household_donate_provider=None,
+        platform_capabilities=None,
     ):
         super().__init__()
+        self.platform_capabilities = (
+            platform_capabilities or get_platform_capabilities()
+        )
         self.settings_provider = settings_provider or RuntimeSettings()
         actions = actions or DashboardActions(sim_clock=SIM_CLOCK, now_provider=app_now)
         tools_actions = tools_actions or DashboardToolsActions()
@@ -450,8 +488,14 @@ class Dashboard(QWidget):
         self.achievement_binding = DashboardAchievementBinding(self)
         self.event_log_binding = DashboardEventLogBinding(self)
         self.relation_summon_binding = DashboardRelationSummonBinding(self)
-        self.setWindowFlags(build_overlay_window_flags())
-        apply_platform_tool_window_attributes(self)
+        self.setWindowFlags(
+            build_overlay_window_flags(self.platform_capabilities)
+        )
+        apply_platform_tool_window_attributes(
+            self,
+            self.platform_capabilities,
+            role=WINDOW_ROLE_PERSISTENT_TOOL,
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.layout = QVBoxLayout()
         self.layout.setSpacing(10)
@@ -1375,7 +1419,9 @@ class Dashboard(QWidget):
 
     def show_household_summary(self, presentation):
         if self.household_summary_window is None:
-            self.household_summary_window = HouseholdSummaryWindow()
+            self.household_summary_window = HouseholdSummaryWindow(
+                getattr(self, "platform_capabilities", None)
+            )
         self.household_summary_window.apply_presentation(presentation)
         if not self.household_summary_window.user_position_locked:
             self.household_summary_window.move_near_anchor(self.x() + self.width() + 16, max(40, self.y()))
@@ -1385,7 +1431,14 @@ class Dashboard(QWidget):
 
     def show_social_log(self, presentation):
         if self.social_log_window is None:
-            self.social_log_window = SocialLogWindow(refresh_handler=self.open_social_log)
+            self.social_log_window = SocialLogWindow(
+                refresh_handler=self.open_social_log,
+                platform_capabilities=getattr(
+                    self,
+                    "platform_capabilities",
+                    None,
+                ),
+            )
         self.social_log_window.apply_presentation(presentation)
         if not self.social_log_window.user_position_locked:
             self.social_log_window.move_near_anchor(self.x() + self.width() + 16, max(40, self.y() + 80))
@@ -1395,7 +1448,9 @@ class Dashboard(QWidget):
 
     def show_relationship_table(self, presentation):
         if self.relationship_table_window is None:
-            self.relationship_table_window = RelationshipTableWindow()
+            self.relationship_table_window = RelationshipTableWindow(
+                getattr(self, "platform_capabilities", None)
+            )
         self.relationship_table_window.apply_presentation(presentation)
         if not self.relationship_table_window.user_position_locked:
             self.relationship_table_window.move_near_anchor(self.x() + self.width() + 16, max(40, self.y() + 120))
@@ -1409,6 +1464,11 @@ class Dashboard(QWidget):
                 drop_handler=self.apply_offer_item_drop,
                 hover_handler=self.apply_offer_item_hover,
                 clear_hover_handler=self.clear_offer_item_hover,
+                platform_capabilities=getattr(
+                    self,
+                    "platform_capabilities",
+                    None,
+                ),
             )
         if not self.offer_tray_window.user_position_locked:
             self.offer_tray_window.move_near_anchor(self.x() + self.width() + 16, max(40, self.y() + 160))
@@ -1425,6 +1485,11 @@ class Dashboard(QWidget):
                 event_log_binding=self.event_log_binding,
                 relation_summon_binding=self.relation_summon_binding,
                 achievement_binding=self.achievement_binding,
+                platform_capabilities=getattr(
+                    self,
+                    "platform_capabilities",
+                    None,
+                ),
             )
             self.information_center_window.state_changed.connect(
                 self._handle_information_center_state_changed

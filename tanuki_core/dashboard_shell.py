@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import QWidget
 from .dashboard_shell_lifecycle import shutdown_listener
 from .dashboard_shell_rules import should_request_slide_out
 from .overlay_window import (
+    WINDOW_ROLE_PERSISTENT_OVERLAY,
     apply_platform_tool_window_attributes,
     build_overlay_window_flags,
 )
@@ -64,7 +65,10 @@ class SensorZone(QWidget):
         self.dashboard = dashboard
         self._shutdown = False
         self.setWindowFlags(build_overlay_window_flags())
-        apply_platform_tool_window_attributes(self)
+        apply_platform_tool_window_attributes(
+            self,
+            role=WINDOW_ROLE_PERSISTENT_OVERLAY,
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.progress = 0.0
         self.glow_anim = QVariantAnimation(self)

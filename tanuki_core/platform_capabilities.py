@@ -30,6 +30,18 @@ class PlatformCapabilities:
     keep_tool_windows_visible_when_inactive: bool
 
     @property
+    def precise_pet_pointer_hit_test(self):
+        return self.platform_key == PLATFORM_MACOS
+
+    @property
+    def pet_overlay_avoids_application_activation(self):
+        return self.platform_key == PLATFORM_MACOS
+
+    @property
+    def native_utility_window_chrome(self):
+        return self.platform_key == PLATFORM_MACOS
+
+    @property
     def window_perching(self):
         return self.window_tracking
 
@@ -81,5 +93,14 @@ def build_capability_report(platform=None):
         "window_perching": capabilities.window_perching,
         "window_to_window_flight": capabilities.window_to_window_flight,
         "global_mouse_listener": capabilities.global_mouse_listener,
+        "precise_pet_pointer_hit_test": (
+            capabilities.precise_pet_pointer_hit_test
+        ),
+        "pet_overlay_avoids_application_activation": (
+            capabilities.pet_overlay_avoids_application_activation
+        ),
+        "native_utility_window_chrome": (
+            capabilities.native_utility_window_chrome
+        ),
         "update_method": capabilities.update_method,
     }

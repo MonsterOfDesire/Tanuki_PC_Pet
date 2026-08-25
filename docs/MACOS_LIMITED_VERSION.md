@@ -18,6 +18,13 @@ Tanuki PC Pet 的 macOS 版本沿用同一套角色、Activity、manifest、存�
 - 不提供 `TanukiUpdater.exe` 或背景自動替換；下載新的 `.app` 後由使用者手動替換。
 - 首批 GitHub Actions 產物採 ad-hoc 簽章，未做 Apple Developer ID 簽章或 Apple notarization，Gatekeeper 仍可能要求使用者確認來源。
 
+## 平台視窗互動
+
+- macOS 的角色點擊使用目前 GIF 畫面的可見像素 alpha 判定，邊緣只保留 3px 容錯；角色周圍的透明 `QWidget` 區域不再觸發點擊或拖曳。
+- macOS 角色 overlay 使用不接受焦點、顯示時不啟用應用程式的視窗政策；點擊角色不應把已開啟的狸貓資訊中心帶到最上層。
+- macOS 的資訊中心、分離頁面、飲食餐盤、家庭摘要與事件／關係工具視窗使用系統原生標題列及 traffic-light 關閉／最小化按鈕。原本的釘選功能仍保留在內容列中。
+- Windows 不啟用上述三項 macOS policy，繼續使用既有角色命中行為、工具視窗層級與自繪關閉／最小化控制列。
+
 ## 建置
 
 在對應架構的 Mac 上執行：
@@ -40,10 +47,12 @@ TANUKI_PYTHON=.venv/bin/python bash ./build_macos.sh
 `.github/workflows/macos-ci.yml` 在 `macos-15`（Apple Silicon）與 `macos-15-intel`（Intel）執行完整測試、manifest 驗證、PyInstaller 建置、ad-hoc 簽章驗證與三秒啟動 smoke test。Actions artifact 可交由 Mac 測試者進行下列人工驗證：
 
 1. 第一次啟動、四語切換、資訊中心顯示與重新叫出。
-2. 點擊、原地長按拖曳、跨螢幕拖曳與召喚／隱藏。
+2. 點擊角色可見像素、確認透明周邊不會觸發、原地長按拖曳、跨螢幕拖曳與召喚／隱藏。
 3. 1x／8x 下的睡眠、照護、變身、競賽、合奏及供品互動。
 4. 關閉後重新啟動，確認設定、位置、事件與成就仍存在。
 5. 確認角色只在 macOS 可用工作區地面活動，不嘗試停在其他應用程式視窗上。
+6. 資訊中心保持開啟但不置頂時點擊角色，確認資訊中心不會自動浮到最上層；再由功能列主動叫出時仍能正常聚焦。
+7. 確認資訊中心、分離頁面與飲食餐盤使用 macOS 原生 traffic-light 控制，釘選功能仍可正常切換。
 
 CI 能證明程式可建置、啟動與通過自動測試，但不能取代真實桌面、多螢幕、Dock 位置、Mission Control 與 Gatekeeper 的人工驗證。
 

@@ -52,9 +52,12 @@ from .pet_intent_rules import (
 )
 from .pet_windowing import PetWindowingMixin
 from .overlay_window import (
+    WINDOW_ROLE_PET,
     apply_platform_tool_window_attributes,
     build_overlay_window_flags,
 )
+from .pet_pointer_hit_test import visible_frame_pixel_hit
+from .platform_capabilities import get_platform_capabilities
 from .runtime import SIM_CLOCK, app_now, get_pet_logic_step_count
 from .transformation_profiles import (
     apply_pet_form_mood_floor,
@@ -108,7 +111,15 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
     DRAG_HOLD_THRESHOLD_MS = 100
     DRAG_HOLD_THRESHOLD_SECONDS = DRAG_HOLD_THRESHOLD_MS / 1000.0
 
-    def __init__(self, char_id, char_folder, scale=0.8, settings_provider=None, window_tracker=None):
+    def __init__(
+        self,
+        char_id,
+        char_folder,
+        scale=0.8,
+        settings_provider=None,
+        window_tracker=None,
+        platform_capabilities=None,
+    ):
         super().__init__()
         self.char_id = char_id
         self.name = char_id
@@ -159,6 +170,9 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
 
         self.settings_provider = settings_provider
         self.window_tracker = window_tracker
+        self.platform_capabilities = (
+            platform_capabilities or get_platform_capabilities()
+        )
 
         self.bar_opacity = 0.0
         self.fade_anim = QVariantAnimation(self)
@@ -196,8 +210,17 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         self.log_icon_anim.finished.connect(lambda: setattr(self, "show_log_icon", False))
         self.radius = 100 * self.get_effective_scale()
         self.mass = 2 if self.is_adult else 0.8
-        self.setWindowFlags(build_overlay_window_flags())
-        apply_platform_tool_window_attributes(self)
+        self.setWindowFlags(
+            build_overlay_window_flags(
+                self.platform_capabilities,
+                role=WINDOW_ROLE_PET,
+            )
+        )
+        apply_platform_tool_window_attributes(
+            self,
+            self.platform_capabilities,
+            role=WINDOW_ROLE_PET,
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setMouseTracking(True)
         self.anim_timer = QTimer(self)
@@ -1133,6 +1156,26 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         self.fade_anim.setEndValue(0.0)
         self.fade_anim.start()
 
+    def pointer_hits_visible_character(self, local_point):
+        if not self.current_frames:
+            return False
+        frame = self.current_frames[
+            int(self.frame_index) % len(self.current_frames)
+        ]
+        should_flip = (
+            (self.direction == 1)
+            if self.original_face_left
+            else (self.direction == -1)
+        )
+        return visible_frame_pixel_hit(
+            frame,
+            widget_width=self.width(),
+            widget_height=self.height(),
+            local_x=local_point.x(),
+            local_y=local_point.y(),
+            flipped=should_flip,
+        )
+
     def mousePressEvent(self, event):
         if (
             event.button() != Qt.MouseButton.LeftButton
@@ -1140,6 +1183,19 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             or self.dragging
             or self.drag_press_pending
         ):
+            return
+        global_point = event.globalPosition().toPoint()
+        capabilities = getattr(self, "platform_capabilities", None)
+        if (
+            capabilities is not None
+            and capabilities.precise_pet_pointer_hit_test
+            and not self.pointer_hits_visible_character(
+                global_point - self.pos()
+            )
+        ):
+            ignore = getattr(event, "ignore", None)
+            if callable(ignore):
+                ignore()
             return
         if (
             self.is_activity_locked()
@@ -1156,7 +1212,6 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             return
         self.drag_press_pending = True
         self.drag_start_time = time.time()
-        global_point = event.globalPosition().toPoint()
         self.drag_pos = global_point - self.pos()
         self.drag_hold_timer.start(self.DRAG_HOLD_THRESHOLD_MS)
 

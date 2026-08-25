@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import QApplication
 
 from tanuki_core.asset_manager import AssetManager
 from tanuki_core.offer_tray_ui import OfferTrayWindow
+from tanuki_core.platform_capabilities import get_platform_capabilities
 from tanuki_core.ui_skin_assets import UiSkinAssets
 from tanuki_core.ui_skin_spec import SKIN_DIET
 from tanuki_core.ui_localization import set_ui_locale
@@ -53,6 +54,28 @@ class OfferTrayWindowTests(unittest.TestCase):
             self.window.window_chrome.controls.geometry().right(),
             self.window.width(),
         )
+
+    def test_macos_tray_uses_native_title_bar_and_hides_custom_drag_zone(self):
+        mac_window = OfferTrayWindow(
+            assets=self.assets,
+            platform_capabilities=get_platform_capabilities("darwin"),
+        )
+        try:
+            mac_window.show()
+            self.app.processEvents()
+            self.assertEqual(mac_window.windowType(), Qt.WindowType.Window)
+            self.assertFalse(
+                bool(mac_window.windowFlags() & Qt.WindowType.FramelessWindowHint)
+            )
+            self.assertTrue(mac_window.chrome_drag_zone.isHidden())
+            self.assertTrue(hasattr(mac_window.window_chrome.controls, "pin_button"))
+            self.assertFalse(
+                hasattr(mac_window.window_chrome.controls, "close_button")
+            )
+        finally:
+            mac_window.close()
+            mac_window.deleteLater()
+            self.app.processEvents()
 
     def test_character_foreground_animates_without_blocking_drag_targets(self):
         foreground = self.window.skin_frame.foreground_layer

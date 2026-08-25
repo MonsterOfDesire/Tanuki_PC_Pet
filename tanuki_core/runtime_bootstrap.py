@@ -32,7 +32,13 @@ def build_default_pet_specs():
     return DEFAULT_PET_SPECS
 
 
-def create_pets(assets_dir, pet_specs, settings_provider, window_tracker):
+def create_pets(
+    assets_dir,
+    pet_specs,
+    settings_provider,
+    window_tracker,
+    capabilities=None,
+):
     pets_dict, pets_list = {}, []
     for index, spec in enumerate(pet_specs):
         character_path = os.path.join(assets_dir, spec.folder_name)
@@ -45,6 +51,7 @@ def create_pets(assets_dir, pet_specs, settings_provider, window_tracker):
             spec.scale,
             settings_provider=settings_provider,
             window_tracker=window_tracker,
+            platform_capabilities=capabilities,
         )
         pet.move(500 + (index * 100), 600)
         if not spec.initially_visible:
@@ -59,7 +66,12 @@ def create_pets(assets_dir, pet_specs, settings_provider, window_tracker):
     return pets_dict, pets_list
 
 
-def build_dashboard(pets_dict, settings_provider, save_scheduler):
+def build_dashboard(
+    pets_dict,
+    settings_provider,
+    save_scheduler,
+    capabilities=None,
+):
     left_screen = min(
         QApplication.screens(),
         key=lambda screen: screen.geometry().x(),
@@ -71,6 +83,7 @@ def build_dashboard(pets_dict, settings_provider, save_scheduler):
         AssetManager.get_resource_path,
         settings_provider=settings_provider,
         save_scheduler=save_scheduler,
+        platform_capabilities=capabilities,
     )
     return dashboard, available_rect
 
@@ -116,11 +129,13 @@ def create_runtime(app=None, capabilities=None):
         build_default_pet_specs(),
         settings_provider,
         window_tracker,
+        capabilities,
     )
     dashboard, available_rect = build_dashboard(
         pets_dict,
         settings_provider,
         save_scheduler,
+        capabilities,
     )
     window_tracker.refresh()
 

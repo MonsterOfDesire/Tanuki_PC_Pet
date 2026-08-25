@@ -18,6 +18,7 @@ from tanuki_core.information_center_spec import (
 )
 from tanuki_core.information_center_ui import InformationCenterWindow
 from tanuki_core.information_center_size_rules import SIZE_16_10, SIZE_COMPACT
+from tanuki_core.platform_capabilities import get_platform_capabilities
 from tanuki_core.information_center_state import (
     build_information_center_config_state,
 )
@@ -288,6 +289,28 @@ class InformationCenterWindowTests(unittest.TestCase):
             self.window.window_chrome.controls.close_button.toolTip(),
             "關閉",
         )
+
+    def test_macos_uses_native_title_bar_with_only_the_pin_control(self):
+        mac_window = InformationCenterWindow(
+            AssetManager.get_resource_path,
+            platform_capabilities=get_platform_capabilities("darwin"),
+        )
+        try:
+            self.assertEqual(mac_window.windowType(), Qt.WindowType.Window)
+            self.assertFalse(
+                bool(mac_window.windowFlags() & Qt.WindowType.FramelessWindowHint)
+            )
+            self.assertTrue(hasattr(mac_window.window_chrome.controls, "pin_button"))
+            self.assertFalse(
+                hasattr(mac_window.window_chrome.controls, "close_button")
+            )
+            self.assertFalse(
+                hasattr(mac_window.window_chrome.controls, "minimize_button")
+            )
+        finally:
+            mac_window.close()
+            mac_window.deleteLater()
+            self.app.processEvents()
 
     def test_window_exposes_recommended_size_menu(self):
         self.assertEqual(len(self.window.size_actions), 4)

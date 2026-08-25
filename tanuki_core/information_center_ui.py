@@ -35,13 +35,18 @@ from .information_center_state import (
     clamp_information_center_geometry,
     normalize_information_center_config_state,
 )
-from .overlay_window import apply_platform_tool_window_attributes
+from .overlay_window import (
+    WINDOW_ROLE_UTILITY,
+    apply_platform_tool_window_attributes,
+    build_utility_window_flags,
+)
+from .platform_capabilities import get_platform_capabilities
 from .information_center_detached_ui import DetachedInformationPageWindow
 from .ui_skin_assets import UiSkinAssets
 from .ui_icons import create_ui_icon
 from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
 from .ui_localization import translate_ui
-from .window_chrome import SkinnedToolWindowChrome
+from .window_chrome import create_platform_window_chrome
 from .status_settings_ui import StatusSettingsPanel
 from .family_summary_ui import FamilySummaryPanel
 from .event_log_ui import EventLogPanel
@@ -141,9 +146,20 @@ class InformationCenterWindow(QWidget):
         event_log_binding=None,
         relation_summon_binding=None,
         achievement_binding=None,
+        platform_capabilities=None,
     ):
-        super().__init__(parent, Qt.WindowType.Tool)
-        apply_platform_tool_window_attributes(self)
+        self.platform_capabilities = (
+            platform_capabilities or get_platform_capabilities()
+        )
+        super().__init__(
+            parent,
+            build_utility_window_flags(self.platform_capabilities),
+        )
+        apply_platform_tool_window_attributes(
+            self,
+            self.platform_capabilities,
+            role=WINDOW_ROLE_UTILITY,
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_QuitOnClose, False)
         self.setObjectName("tanukiInformationCenter")
         self.setWindowTitle("狸貓資訊中心")
@@ -253,10 +269,11 @@ class InformationCenterWindow(QWidget):
             self.navigation_layout.addWidget(button)
         self.navigation_layout.addWidget(self.detach_button)
         self.navigation_layout.addWidget(self.size_button)
-        self.window_chrome = SkinnedToolWindowChrome(
+        self.window_chrome = create_platform_window_chrome(
             self,
             drag_widgets=(self.navigation_frame, self.navigation_title),
             controls_variant="dark",
+            capabilities=self.platform_capabilities,
         )
         self.navigation_layout.addWidget(self.window_chrome.controls)
         root_layout.addWidget(self.navigation_frame)
@@ -555,6 +572,7 @@ class InformationCenterWindow(QWidget):
             self.navigation_buttons[page_id].icon(),
             initial_size=self.size(),
             theme=self.theme,
+            platform_capabilities=self.platform_capabilities,
         )
         detached_window.dock_requested.connect(
             self._handle_detached_page_close
