@@ -1,7 +1,9 @@
 import unittest
+from unittest.mock import patch
 
 from tanuki_core.macos_window_policy import (
     apply_macos_native_window_policy,
+    is_cocoa_qt_platform,
 )
 
 
@@ -41,6 +43,13 @@ class FakeNativeWindow:
 
 
 class MacOSWindowPolicyTests(unittest.TestCase):
+    def test_offscreen_qt_platform_never_uses_native_appkit_handles(self):
+        with patch.dict(
+            "os.environ",
+            {"QT_QPA_PLATFORM": "offscreen"},
+        ):
+            self.assertFalse(is_cocoa_qt_platform())
+
     def test_pet_policy_is_nonactivating_and_joins_all_spaces(self):
         native_window = FakeNativeWindow()
 

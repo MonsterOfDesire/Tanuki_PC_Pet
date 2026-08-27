@@ -1,9 +1,23 @@
 from __future__ import annotations
 
 from ctypes import c_void_p
+import os
 import sys
 
 from PyQt6.QtCore import QEvent, QObject, QTimer
+from PyQt6.QtGui import QGuiApplication
+
+
+def is_cocoa_qt_platform():
+    requested_platform = str(
+        os.environ.get("QT_QPA_PLATFORM", "") or ""
+    ).strip().lower()
+    if requested_platform and requested_platform != "cocoa":
+        return False
+    app = QGuiApplication.instance()
+    if app is None:
+        return requested_platform in {"", "cocoa"}
+    return str(app.platformName() or "").strip().lower() == "cocoa"
 
 
 def _load_appkit_bridge():
@@ -140,6 +154,7 @@ def install_macos_native_window_policy(
 ):
     if (
         sys.platform != "darwin"
+        or not is_cocoa_qt_platform()
         or not bool(nonactivating or join_all_spaces)
         or not callable(getattr(widget, "installEventFilter", None))
     ):
