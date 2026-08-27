@@ -744,6 +744,18 @@ class Dashboard(QWidget):
 
     def _hide_launcher_fully(self):
         self.is_expanded = False
+        if self.sensor_zone is None:
+            self.setAttribute(
+                Qt.WidgetAttribute.WA_TransparentForMouseEvents,
+                False,
+            )
+            self.update_positions(self.target_rect)
+            animation = getattr(self, "anim", None)
+            if animation is not None:
+                animation.stop()
+            self.move(self.show_pos)
+            self.show()
+            return
         self.setAttribute(
             Qt.WidgetAttribute.WA_TransparentForMouseEvents,
             True,
@@ -1558,6 +1570,41 @@ class Dashboard(QWidget):
         h = self.height()
         self.show_pos = QPoint(rect.left(), rect.bottom() - h)
         self.hide_pos = QPoint(rect.left() - w - 10, rect.bottom() - h)
+
+    def reconcile_screen_geometry(self, rect):
+        self.target_rect = rect
+        available_height = max(
+            LAUNCHER_MINIMUM_HEIGHT,
+            rect.height() - 20,
+        )
+        self.launcher_shell_height = min(520, available_height)
+        expanded = bool(
+            self.launcher_panel.is_expanded
+            or self.launcher_panel.is_pinned
+        )
+        self.setFixedSize(
+            EXPANDED_LAUNCHER_WIDTH
+            if expanded
+            else COLLAPSED_LAUNCHER_WIDTH,
+            self.launcher_shell_height,
+        )
+        self.update_positions(rect)
+        animation = getattr(self, "anim", None)
+        if animation is not None:
+            animation.stop()
+        stays_visible_when_collapsed = self.sensor_zone is None
+        self.move(
+            self.show_pos
+            if expanded or stays_visible_when_collapsed
+            else self.hide_pos
+        )
+        information_center = getattr(
+            self,
+            "information_center_window",
+            None,
+        )
+        if information_center is not None:
+            information_center.ensure_reachable_on_screen()
 
     def slide_in(self, pets, sensor):
         if sensor is not None:

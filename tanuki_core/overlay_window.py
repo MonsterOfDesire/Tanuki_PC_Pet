@@ -2,6 +2,7 @@ import os
 
 from PyQt6.QtCore import Qt
 
+from .macos_window_policy import install_macos_native_window_policy
 from .platform_capabilities import get_platform_capabilities
 
 
@@ -64,4 +65,15 @@ def apply_platform_tool_window_attributes(
             Qt.WidgetAttribute.WA_ShowWithoutActivating,
             True,
         )
+    install_macos_native_window_policy(
+        widget,
+        nonactivating=(
+            role == WINDOW_ROLE_PET
+            and capabilities.native_pet_nonactivating_panel
+        ),
+        join_all_spaces=(
+            role in {WINDOW_ROLE_PET, WINDOW_ROLE_PERSISTENT_OVERLAY}
+            and capabilities.persistent_overlays_join_all_spaces
+        ),
+    )
     return widget

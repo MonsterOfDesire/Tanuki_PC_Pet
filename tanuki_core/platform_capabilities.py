@@ -42,6 +42,26 @@ class PlatformCapabilities:
         return self.platform_key == PLATFORM_MACOS
 
     @property
+    def edge_hover_sensor(self):
+        return self.platform_key == PLATFORM_WINDOWS
+
+    @property
+    def alpha_pet_input_region(self):
+        return self.platform_key == PLATFORM_MACOS
+
+    @property
+    def native_pet_nonactivating_panel(self):
+        return self.platform_key == PLATFORM_MACOS
+
+    @property
+    def persistent_overlays_join_all_spaces(self):
+        return self.platform_key == PLATFORM_MACOS
+
+    @property
+    def floor_anchor_guard(self):
+        return self.platform_key == PLATFORM_MACOS
+
+    @property
     def window_perching(self):
         return self.window_tracking
 
@@ -102,5 +122,14 @@ def build_capability_report(platform=None):
         "native_utility_window_chrome": (
             capabilities.native_utility_window_chrome
         ),
+        "edge_hover_sensor": capabilities.edge_hover_sensor,
+        "alpha_pet_input_region": capabilities.alpha_pet_input_region,
+        "native_pet_nonactivating_panel": (
+            capabilities.native_pet_nonactivating_panel
+        ),
+        "persistent_overlays_join_all_spaces": (
+            capabilities.persistent_overlays_join_all_spaces
+        ),
+        "floor_anchor_guard": capabilities.floor_anchor_guard,
         "update_method": capabilities.update_method,
     }

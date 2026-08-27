@@ -57,6 +57,7 @@ from .overlay_window import (
     build_overlay_window_flags,
 )
 from .pet_pointer_hit_test import visible_frame_pixel_hit
+from .pet_input_region import PetInputRegionController
 from .platform_capabilities import get_platform_capabilities
 from .runtime import SIM_CLOCK, app_now, get_pet_logic_step_count
 from .transformation_profiles import (
@@ -173,6 +174,9 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         self.platform_capabilities = (
             platform_capabilities or get_platform_capabilities()
         )
+        self.input_region_controller = PetInputRegionController(
+            enabled=self.platform_capabilities.alpha_pet_input_region,
+        )
 
         self.bar_opacity = 0.0
         self.fade_anim = QVariantAnimation(self)
@@ -235,6 +239,7 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         )
         self.tick_coordinator = PetTickCoordinator()
         self.change_state("idle", "stand")
+        self.refresh_pointer_input_region(force=True)
         self.last_x = self.x()
         self.refresh_movement_state()
         self.show()
@@ -398,6 +403,13 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
     def next_frame(self, steps=1):
         if self.current_frames:
             self.frame_index = (self.frame_index + int(steps)) % len(self.current_frames)
+            refresh_pointer_input_region = getattr(
+                self,
+                "refresh_pointer_input_region",
+                None,
+            )
+            if callable(refresh_pointer_input_region):
+                refresh_pointer_input_region()
             self.update()
 
     def advance_animation_timer(self):
@@ -1175,6 +1187,12 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             local_y=local_point.y(),
             flipped=should_flip,
         )
+
+    def refresh_pointer_input_region(self, *, force=False):
+        controller = getattr(self, "input_region_controller", None)
+        if controller is None:
+            return False
+        return controller.refresh(self, force=force)
 
     def mousePressEvent(self, event):
         if (

@@ -317,6 +317,13 @@ class PetSocialCareMixin:
                     return False
         self.current_frames = frames
         self.frame_index = 0
+        refresh_pointer_input_region = getattr(
+            self,
+            "refresh_pointer_input_region",
+            None,
+        )
+        if callable(refresh_pointer_input_region):
+            refresh_pointer_input_region(force=True)
         if hasattr(self, "animation_step_budget"):
             self.animation_step_budget = 0.0
         animation_stepper = getattr(self, "animation_stepper", None)

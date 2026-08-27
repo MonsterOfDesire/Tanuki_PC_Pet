@@ -57,7 +57,7 @@
 - Windows 可攜版仍將 `config.json` 放在主程式資料夾並由 `TanukiUpdater.exe` 保留。
 - macOS 功能受限版使用 `~/Library/Application Support/Tanuki_PC_Pet/config.json`，不寫入 `.app` bundle。
 - macOS 不啟動 Win32 WindowTracker、全域滑鼠監聽器或 Windows 獨立更新器；完整能力差異見 [MACOS_LIMITED_VERSION.md](MACOS_LIMITED_VERSION.md)。
-- macOS 角色 overlay 使用逐幀 alpha 命中與非啟用視窗政策；工具介面使用原生標題列。這些能力由 `PlatformCapabilities` 隔離，Windows 保持既有矩形 widget 命中、自繪 chrome 與工具視窗行為。
+- macOS 角色 overlay 使用逐幀 alpha 原生輸入遮罩、AppKit non-activating panel 與 all-Spaces 視窗政策；工具介面使用原生標題列，收合入口不建立 Windows `SensorZone`。這些能力由 `PlatformCapabilities` 隔離，Windows 保持既有矩形 widget 命中、自繪 chrome、邊緣感應區與工具視窗行為；跨平台只在實際螢幕拓撲改變時共用安全重算。
 
 ## 發版前相容性檢查
 

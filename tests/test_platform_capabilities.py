@@ -29,6 +29,11 @@ class PlatformCapabilitiesTests(unittest.TestCase):
             capabilities.pet_overlay_avoids_application_activation
         )
         self.assertFalse(capabilities.native_utility_window_chrome)
+        self.assertTrue(capabilities.edge_hover_sensor)
+        self.assertFalse(capabilities.alpha_pet_input_region)
+        self.assertFalse(capabilities.native_pet_nonactivating_panel)
+        self.assertFalse(capabilities.persistent_overlays_join_all_spaces)
+        self.assertFalse(capabilities.floor_anchor_guard)
         self.assertEqual(capabilities.update_method, "standalone_updater")
 
     def test_macos_uses_explicit_limited_capabilities(self):
@@ -45,6 +50,11 @@ class PlatformCapabilitiesTests(unittest.TestCase):
             capabilities.pet_overlay_avoids_application_activation
         )
         self.assertTrue(capabilities.native_utility_window_chrome)
+        self.assertFalse(capabilities.edge_hover_sensor)
+        self.assertTrue(capabilities.alpha_pet_input_region)
+        self.assertTrue(capabilities.native_pet_nonactivating_panel)
+        self.assertTrue(capabilities.persistent_overlays_join_all_spaces)
+        self.assertTrue(capabilities.floor_anchor_guard)
         self.assertEqual(capabilities.update_method, "manual_release")
 
     def test_capability_report_is_serializable_shape(self):
@@ -54,6 +64,11 @@ class PlatformCapabilitiesTests(unittest.TestCase):
         self.assertFalse(report["window_tracking"])
         self.assertTrue(report["precise_pet_pointer_hit_test"])
         self.assertTrue(report["native_utility_window_chrome"])
+        self.assertFalse(report["edge_hover_sensor"])
+        self.assertTrue(report["alpha_pet_input_region"])
+        self.assertTrue(report["native_pet_nonactivating_panel"])
+        self.assertTrue(report["persistent_overlays_join_all_spaces"])
+        self.assertTrue(report["floor_anchor_guard"])
         self.assertEqual(report["update_method"], "manual_release")
 
 

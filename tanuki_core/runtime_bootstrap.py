@@ -12,6 +12,7 @@ from .config_store import ConfigStore
 from .dashboard_shell import GlobalMouseListener, SensorZone
 from .dashboard_shell_lifecycle import DashboardShellLifecycle
 from .dashboard_ui import Dashboard
+from .display_topology import DisplayTopologyCoordinator
 from .geometry import DesktopGeometry
 from .household_state import seed_default_household_events
 from .installation_registry import (
@@ -139,14 +140,16 @@ def create_runtime(app=None, capabilities=None):
     )
     window_tracker.refresh()
 
-    sensor = SensorZone(dashboard)
-    sensor.setGeometry(
-        available_rect.left(),
-        available_rect.bottom() - 300,
-        20,
-        300,
-    )
-    dashboard.set_sensor_zone(sensor)
+    sensor = None
+    if capabilities.edge_hover_sensor:
+        sensor = SensorZone(dashboard)
+        sensor.setGeometry(
+            available_rect.left(),
+            available_rect.bottom() - 300,
+            20,
+            300,
+        )
+        dashboard.set_sensor_zone(sensor)
     monitor = (
         GlobalMouseListener(dashboard)
         if capabilities.global_mouse_listener
@@ -174,6 +177,14 @@ def create_runtime(app=None, capabilities=None):
     runtime.household_coordinator.reset_event_schedule(app_now())
     bind_runtime_providers(runtime)
     config_store.bind(dashboard, pets_dict)
+    runtime.display_topology_coordinator = DisplayTopologyCoordinator(
+        app=app,
+        dashboard=dashboard,
+        pets=pets_list,
+        sensor=sensor,
+        capabilities=capabilities,
+    )
+    runtime.display_topology_coordinator.start()
     if is_frozen_runtime() and capabilities.standalone_updater:
         record_current_installation(dashboard.ui_locale)
     runtime.timers = start_runtime_timers(runtime)
@@ -188,7 +199,8 @@ def create_runtime(app=None, capabilities=None):
 def run_application():
     runtime = create_runtime()
     runtime.dashboard.show()
-    runtime.sensor.show()
+    if runtime.sensor is not None:
+        runtime.sensor.show()
     QTimer.singleShot(0, lambda: ensure_visible_pets(runtime.pets_list))
     QTimer.singleShot(300, lambda: ensure_visible_pets(runtime.pets_list))
     try:

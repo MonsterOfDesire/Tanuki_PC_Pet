@@ -97,16 +97,19 @@ class PetBasicsMixin:
 
     def update_bar_opacity(self, value):
         self.bar_opacity = value
+        self.refresh_pointer_input_region()
         self.update()
 
     def animate_heart(self, value):
         self.heart_opacity = 1.0 - (value ** 2)
         self.heart_y_offset = int(value * 60)
+        self.refresh_pointer_input_region()
         self.update()
 
     def animate_log_icon(self, value):
         self.log_icon_opacity = 1.0 - (value ** 2)
         self.log_icon_y_offset = int(value * 42)
+        self.refresh_pointer_input_region()
         self.update()
 
     def pop_heart(self):

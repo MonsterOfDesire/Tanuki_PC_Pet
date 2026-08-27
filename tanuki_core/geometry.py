@@ -62,7 +62,40 @@ class DesktopGeometry:
 
     @classmethod
     def get_screen_for_widget(cls, widget):
-        return QApplication.screenAt(widget.geometry().center()) or QApplication.primaryScreen()
+        return cls.get_screen_for_rect(widget.geometry())
+
+    @classmethod
+    def get_screen_for_rect(cls, rect, screens=None):
+        candidates = tuple(
+            QApplication.screens() if screens is None else screens
+        )
+        if not candidates:
+            return QApplication.primaryScreen()
+
+        rect_center = rect.center()
+        ranked = []
+        for screen in candidates:
+            screen_rect = screen.geometry()
+            intersection = screen_rect.intersected(rect)
+            intersection_area = max(0, intersection.width()) * max(
+                0,
+                intersection.height(),
+            )
+            center = screen_rect.center()
+            distance_squared = (
+                (center.x() - rect_center.x()) ** 2
+                + (center.y() - rect_center.y()) ** 2
+            )
+            ranked.append(
+                (
+                    -intersection_area,
+                    distance_squared,
+                    screen_rect.left(),
+                    screen_rect.top(),
+                    screen,
+                )
+            )
+        return min(ranked, key=lambda item: item[:-1])[-1]
 
     @staticmethod
     def detect_dock_edge(screen_rect, available_rect):

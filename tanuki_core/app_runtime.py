@@ -21,6 +21,7 @@ from .dashboard_shell import GlobalMouseListener, SensorZone
 from .dashboard_shell_lifecycle import DashboardShellLifecycle
 from .dashboard_ui import Dashboard
 from .direct_hover_scene_executor import DirectHoverSceneExecutor
+from .display_topology import DisplayTopologyCoordinator
 from .ground_item_coordinator import GroundItemCoordinator
 from .gameplay_app_adapter import GameplayAppAdapterMixin
 from .gameplay_reward_adapter import GameplayRewardAdapter
@@ -81,9 +82,10 @@ class TanukiAppRuntime(
     pets_dict: dict
     pets_list: list
     dashboard: Dashboard
-    sensor: SensorZone
-    monitor: GlobalMouseListener
+    sensor: SensorZone | None
+    monitor: GlobalMouseListener | None
     shell: DashboardShellLifecycle | None = None
+    display_topology_coordinator: DisplayTopologyCoordinator | None = None
     timers: dict = field(default_factory=dict)
     household: HouseholdState = field(default_factory=build_default_household_state)
     household_event_log: HouseholdEventLog = field(default_factory=build_default_household_event_log)
@@ -392,6 +394,8 @@ class TanukiAppRuntime(
         self.activity_runtime_controller.shutdown()
         self.transformation_runtime_controller.shutdown()
         self.offer_item_scene_runtime_controller.shutdown()
+        if self.display_topology_coordinator is not None:
+            self.display_topology_coordinator.shutdown()
         if self.shell is not None:
             self.shell.shutdown()
 

@@ -272,6 +272,27 @@ class DashboardLauncherPanelTests(unittest.TestCase):
             dashboard.deleteLater()
             self.app.processEvents()
 
+    def test_launcher_without_edge_sensor_keeps_collapsed_rail_visible(self):
+        dashboard = Dashboard(
+            QRect(0, 0, 1280, 720),
+            {},
+            AssetManager.get_resource_path,
+        )
+        dashboard.anim.setDuration(0)
+        try:
+            dashboard.launcher_panel.set_expanded(False)
+            self.app.processEvents()
+
+            self.assertFalse(dashboard.is_expanded)
+            self.assertEqual(dashboard.width(), COLLAPSED_LAUNCHER_WIDTH)
+            self.assertEqual(dashboard.pos(), dashboard.show_pos)
+            self.assertTrue(dashboard.isVisible())
+        finally:
+            dashboard.update_timer.stop()
+            dashboard.close()
+            dashboard.deleteLater()
+            self.app.processEvents()
+
     def test_language_switch_after_lazy_settings_load_does_not_crash(self):
         dashboard = Dashboard(
             QRect(0, 0, 1280, 720),
