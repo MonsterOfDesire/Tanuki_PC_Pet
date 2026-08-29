@@ -1,0 +1,134 @@
+name: 可重現錯誤
+description: 回報能以明確步驟重現的程式錯誤。
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感謝協助改善 Tanuki PC Pet。一般使用問題、想法或交流請改用 GitHub Discussions。
+        請勿貼上密碼、存取權杖、私人檔案路徑或其他敏感資料。
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 回報前確認
+      options:
+        - label: 我已搜尋現有 Issues，沒有找到相同問題。
+          required: true
+        - label: 我使用的是 GitHub Release 或可識別的開發版本。
+          required: true
+        - label: 我已移除紀錄與畫面中的敏感資料。
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Tanuki PC Pet 版本
+      description: 例如 v0.8.0-beta；開發版本請填 branch 與 commit SHA。
+      placeholder: v0.8.0-beta
+    validations:
+      required: true
+
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: 作業系統
+      description: macOS 目前仍在開發中，請註明是否為開發測試版本。
+      options:
+        - Windows 10
+        - Windows 11
+        - macOS 開發測試版本
+        - 其他
+    validations:
+      required: true
+
+  - type: input
+    id: os-details
+    attributes:
+      label: 作業系統詳細版本
+      description: 例如 Windows 11 24H2、macOS 15.1 arm64。
+      placeholder: Windows 11 24H2
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation
+    attributes:
+      label: 安裝或執行方式
+      options:
+        - GitHub Release Windows 可攜版
+        - 原始碼與 Python 虛擬環境
+        - 開發分支建置
+        - 其他
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 問題範圍
+      options:
+        - 角色行為與自然互動
+        - 競賽、合唱／合奏或其他 Activity
+        - 資訊中心與狀態設定
+        - 啟動、安裝或更新器
+        - 存檔、設定或成就
+        - 建置、測試或開發工具
+        - 文件或網站
+        - 不確定
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 重現步驟
+      description: 請從乾淨啟動或已知狀態開始，逐步列出操作。
+      placeholder: |
+        1. 啟動 Tanuki PC Pet
+        2. 開啟……
+        3. 執行……
+        4. 問題發生
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 預期結果
+      description: 你原本預期程式如何回應？
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 實際結果
+      description: 實際發生了什麼？是否有錯誤訊息？
+    validations:
+      required: true
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: 重現頻率
+      options:
+        - 每次都會發生
+        - 經常發生
+        - 偶爾發生
+        - 只發生一次
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 已去除敏感資料的紀錄
+      description: 可貼上精簡錯誤訊息或相關 log；沒有可填「無」。
+      placeholder: 請勿貼上密碼、權杖、私人路徑或個人資料。
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: 畫面、影片或其他補充
+      description: 可拖放已去除敏感資料的截圖或短片，並補充顯示縮放、多螢幕等環境資訊。

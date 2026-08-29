@@ -1,0 +1,96 @@
+name: 開發與文件問題
+description: 回報建置、測試、CI、開發文件或二次開發中可追蹤的問題。
+title: "[Dev] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        此表單用於能明確界定的開發問題。一般功能想法與開放式討論請使用 GitHub Discussions。
+        請勿公開憑證、權杖、私人 repository 內容或未清理的完整環境變數。
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 提交前確認
+      options:
+        - label: 我已搜尋現有 Issues 與開發文件。
+          required: true
+        - label: 這是可追蹤的開發問題，不是一般使用提問或未成形的功能想法。
+          required: true
+        - label: 我已移除所有敏感資料。
+          required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 問題類型
+      options:
+        - 本機開發環境
+        - Windows 建置或封裝
+        - macOS 開發中版本
+        - 自動測試或 CI
+        - 更新與 Release 流程
+        - 開發文件
+        - 二次開發或整合
+        - 網站開發
+        - 其他
+    validations:
+      required: true
+
+  - type: input
+    id: revision
+    attributes:
+      label: Branch 與 commit SHA
+      placeholder: main @ 0123456789abcdef
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 開發環境
+      description: 請列出作業系統、Python 或 Node 版本、架構及使用的命令。
+      placeholder: |
+        OS: Windows 11 24H2
+        Python: 3.10.x
+        Architecture: x64
+        Command: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 問題說明
+      description: 說明目前行為、阻礙以及問題的範圍。
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 最小重現方式
+      description: 提供能重現問題的最少步驟、命令或檔案位置。
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 預期結果或完成條件
+      description: 說明什麼結果代表此問題已解決。
+    validations:
+      required: true
+
+  - type: textarea
+    id: attempts
+    attributes:
+      label: 已嘗試的方法
+      description: 列出已嘗試的修正、檢查與結果，避免重複調查。
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 已去除敏感資料的輸出
+      description: 貼上最小必要的錯誤輸出或 CI 訊息。
+      placeholder: 請勿貼上權杖、憑證、完整環境變數或私人路徑。
