@@ -1,0 +1,43 @@
+title: "[交流] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        歡迎分享使用心得、桌面配置、玩法觀察與其他公開交流內容。
+        請只分享你有權公開的圖片、影片與文字，並移除私人資料。
+
+  - type: dropdown
+    id: topic
+    attributes:
+      label: 分享類型
+      options:
+        - 使用心得
+        - 桌面配置
+        - 玩法或角色行為觀察
+        - 圖片或影片分享
+        - 社群交流
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: content
+    attributes:
+      label: 分享內容
+      description: 請加入足夠的背景，讓其他人容易理解與回應。
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 使用版本（選填）
+      placeholder: v0.8.0-beta
+
+  - type: checkboxes
+    id: rights
+    attributes:
+      label: 公開分享確認
+      options:
+        - label: 我確認內容不含敏感資料，且我有權公開其中的圖片、影片與文字。
+          required: true

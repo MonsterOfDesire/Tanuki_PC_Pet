@@ -1,0 +1,37 @@
+title: "[想法] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        這裡適合尚未需要排入開發追蹤的想法與改善建議。提出想法不代表已承諾實作。
+        Discussions 是公開空間，請勿貼上敏感資料。
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: 想法或建議
+      description: 請先用幾句話說明你希望改善或新增什麼。
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 使用情境與目前困難
+      description: 這個想法會在哪種使用情境中帶來幫助？目前的替代方式是什麼？
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: 理想結果
+      description: 描述使用者可以完成什麼，而不必限定技術實作方法。
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: 補充資料（選填）
+      description: 可附上已獲授權公開的示意圖、參考連結或相關討論。

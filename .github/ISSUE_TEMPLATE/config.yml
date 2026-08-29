@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 公開提問、交流與分享
+    url: https://github.com/MonsterOfDesire/Tanuki_PC_Pet/discussions
+    about: 使用方式、尚未確認是否為錯誤的問題、想法與經驗分享請使用 GitHub Discussions。
