@@ -46,7 +46,7 @@ TANUKI_PYTHON=.venv/bin/python bash ./build_macos.sh
 
 ## 無 Mac 開發機時的驗證
 
-`.github/workflows/macos-ci.yml` 在 `macos-15`（Apple Silicon）與 `macos-15-intel`（Intel）執行完整測試、manifest 驗證、PyInstaller 建置、ad-hoc 簽章驗證與三秒啟動 smoke test。Actions artifact 可交由 Mac 測試者進行下列人工驗證：
+`.github/workflows/macos-ci.yml` 在 `macos-26`（Apple Silicon）與 `macos-26-intel`（Intel）執行完整測試、manifest 驗證、PyInstaller 建置、ad-hoc 簽章驗證與三秒啟動 smoke test。單元測試維持 `offscreen`，但打包後啟動檢查明確改用真正的 Cocoa backend，會建立角色與原生視窗；因此 AppKit 視窗政策造成的啟動期例外不能再被離屏測試掩蓋。Actions artifact 可交由 Mac 測試者進行下列人工驗證：
 
 1. 第一次啟動、四語切換、資訊中心顯示與重新叫出。
 2. 點擊角色可見像素、確認透明周邊不會觸發、原地長按拖曳、跨螢幕拖曳與召喚／隱藏。
@@ -59,6 +59,8 @@ TANUKI_PYTHON=.venv/bin/python bash ./build_macos.sh
 9. 在內建螢幕多個 Spaces 間切換，確認角色與收合入口持續可見，且角色能在高低不同的兩個螢幕間回到正確地板。
 
 CI 能證明程式可建置、啟動與通過自動測試，但不能取代真實桌面、多螢幕、Dock 位置、Mission Control 與 Gatekeeper 的人工驗證。
+
+macOS 原生視窗增強屬於可降級能力：套用 all-Spaces 時必須先清除與其互斥的 `MoveToActiveSpace`，PyObjC／AppKit 若仍拒絕某項選用政策，只停用該項增強，不得使主程式在第一個視窗顯示前結束。
 
 ## Release 內容
 
