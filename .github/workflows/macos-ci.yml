@@ -25,9 +25,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: macos-15
+          - runner: macos-26
             architecture: arm64
-          - runner: macos-15-intel
+          - runner: macos-26-intel
             architecture: x64
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
@@ -67,6 +67,8 @@ jobs:
 
       - name: Smoke test packaged application
         env:
+          QT_QPA_PLATFORM: cocoa
+          PYTHONFAULTHANDLER: "1"
           TANUKI_SMOKE_TEST_SECONDS: "3"
           TANUKI_USER_DATA_DIR: ${{ runner.temp }}/tanuki-smoke-data
         run: |
