@@ -41,7 +41,10 @@ def get_native_nswindow(widget, bridge=None):
             c_void_p=c_void_p(int(widget.winId()))
         )
         return native_view.window()
-    except (AttributeError, TypeError, ValueError):
+    except Exception:
+        # PyObjC can surface Objective-C exceptions while a Qt native view is
+        # being replaced.  The AppKit policy is optional and must never make
+        # the application fail during window construction.
         return None
 
 
@@ -60,43 +63,60 @@ def apply_macos_native_window_policy(
     provider = native_window_provider or (
         lambda candidate: get_native_nswindow(candidate, bridge=bridge)
     )
-    window = provider(widget)
-    if window is None:
+    try:
+        window = provider(widget)
+        if window is None:
+            return False
+
+        changed = False
+        if join_all_spaces:
+            behavior = int(window.collectionBehavior())
+            # Qt Tool windows can start with MoveToActiveSpace.  AppKit 26
+            # raises NSInternalInconsistencyException if that mutually
+            # exclusive flag is combined with CanJoinAllSpaces.
+            move_to_active_space = int(
+                getattr(
+                    appkit,
+                    "NSWindowCollectionBehaviorMoveToActiveSpace",
+                    0,
+                )
+            )
+            target_behavior = behavior & ~move_to_active_space
+            target_behavior |= int(
+                appkit.NSWindowCollectionBehaviorCanJoinAllSpaces
+            )
+            target_behavior |= int(
+                appkit.NSWindowCollectionBehaviorFullScreenAuxiliary
+            )
+            if target_behavior != behavior:
+                window.setCollectionBehavior_(target_behavior)
+                changed = True
+            if bool(window.hidesOnDeactivate()):
+                window.setHidesOnDeactivate_(False)
+                changed = True
+
+        if nonactivating:
+            style_mask = int(window.styleMask())
+            target_style_mask = style_mask | int(
+                appkit.NSWindowStyleMaskNonactivatingPanel
+            )
+            if target_style_mask != style_mask:
+                window.setStyleMask_(target_style_mask)
+                changed = True
+            set_key_only_when_needed = getattr(
+                window,
+                "setBecomesKeyOnlyIfNeeded_",
+                None,
+            )
+            if callable(set_key_only_when_needed):
+                set_key_only_when_needed(True)
+
+        return changed or bool(nonactivating or join_all_spaces)
+    except Exception:
+        # Native window policy improves macOS integration, but the Qt window
+        # remains usable without it.  A bridge or OS-policy failure must fail
+        # closed instead of terminating TanukiPet before its first window.
         return False
-
-    changed = False
-    if join_all_spaces:
-        behavior = int(window.collectionBehavior())
-        target_behavior = behavior | int(
-            appkit.NSWindowCollectionBehaviorCanJoinAllSpaces
-        )
-        target_behavior |= int(
-            appkit.NSWindowCollectionBehaviorFullScreenAuxiliary
-        )
-        if target_behavior != behavior:
-            window.setCollectionBehavior_(target_behavior)
-            changed = True
-        if bool(window.hidesOnDeactivate()):
-            window.setHidesOnDeactivate_(False)
-            changed = True
-
-    if nonactivating:
-        style_mask = int(window.styleMask())
-        target_style_mask = style_mask | int(
-            appkit.NSWindowStyleMaskNonactivatingPanel
-        )
-        if target_style_mask != style_mask:
-            window.setStyleMask_(target_style_mask)
-            changed = True
-        set_key_only_when_needed = getattr(
-            window,
-            "setBecomesKeyOnlyIfNeeded_",
-            None,
-        )
-        if callable(set_key_only_when_needed):
-            set_key_only_when_needed(True)
-
-    return changed or bool(nonactivating or join_all_spaces)
 
 
 class MacOSNativeWindowPolicyController(QObject):
@@ -114,7 +134,9 @@ class MacOSNativeWindowPolicyController(QObject):
         self._apply_scheduled = False
         self._applying = False
         widget.installEventFilter(self)
-        self.apply()
+        # Defer native handle access until Qt has completed the current window
+        # construction pass. Show/WinIdChange will also request reapplication.
+        self.schedule_apply()
 
     def eventFilter(self, watched, event):
         if watched is self.widget and event.type() in {
