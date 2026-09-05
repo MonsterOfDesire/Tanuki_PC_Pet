@@ -31,6 +31,12 @@ body:
       required: true
 
   - type: textarea
+    id: tradeoffs
+    attributes:
+      label: 可能的取捨（選填）
+      description: 若已想到對效能、操作方式或相容性的影響，可以補充在這裡。
+
+  - type: textarea
     id: references
     attributes:
       label: 補充資料（選填）

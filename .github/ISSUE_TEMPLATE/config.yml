@@ -3,3 +3,15 @@ contact_links:
   - name: 公開提問、交流與分享
     url: https://github.com/MonsterOfDesire/Tanuki_PC_Pet/discussions
     about: 使用方式、尚未確認是否為錯誤的問題、想法與經驗分享請使用 GitHub Discussions。
+  - name: 免註冊錯誤與意見回饋（繁體中文）
+    url: https://tally.so/r/vGZMj4
+    about: 沒有 GitHub 帳號也可以回報錯誤或提供一般意見。
+  - name: 登録不要の不具合・ご意見フォーム（日本語）
+    url: https://tally.so/r/J9PdRK
+    about: GitHub アカウントがなくても、不具合の報告やご意見の送信ができます。
+  - name: No-sign-up bug and feedback form (English)
+    url: https://tally.so/r/446BJ5
+    about: Report a bug or send general feedback without a GitHub account.
+  - name: 私密回報安全漏洞
+    url: https://github.com/MonsterOfDesire/Tanuki_PC_Pet/security/advisories/new
+    about: 漏洞、憑證外洩或可能被濫用的安全問題，請勿建立公開 Issue。

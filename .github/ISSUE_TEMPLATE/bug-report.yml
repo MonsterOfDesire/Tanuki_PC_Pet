@@ -42,6 +42,18 @@ body:
     validations:
       required: true
 
+  - type: dropdown
+    id: architecture
+    attributes:
+      label: 系統架構
+      options:
+        - x64
+        - arm64
+        - 不確定
+        - 其他
+    validations:
+      required: true
+
   - type: input
     id: os-details
     attributes:
@@ -120,6 +132,22 @@ body:
     validations:
       required: true
 
+  - type: dropdown
+    id: previous-version
+    attributes:
+      label: 是否曾在舊版本正常運作
+      options:
+        - 是
+        - 否
+        - 不確定
+
+  - type: input
+    id: last-working-version
+    attributes:
+      label: 最後正常運作的版本（選填）
+      description: 若上題選「是」，請填最後確認正常的版本。
+      placeholder: 例如 v0.7.0-beta
+
   - type: textarea
     id: logs
     attributes:
@@ -132,3 +160,11 @@ body:
     attributes:
       label: 畫面、影片或其他補充
       description: 可拖放已去除敏感資料的截圖或短片，並補充顯示縮放、多螢幕等環境資訊。
+
+  - type: checkboxes
+    id: public-content
+    attributes:
+      label: 公開內容確認
+      options:
+        - label: 我了解這份 Issue 會公開顯示，並確認內容不含敏感資料，且我有權公開附件。
+          required: true

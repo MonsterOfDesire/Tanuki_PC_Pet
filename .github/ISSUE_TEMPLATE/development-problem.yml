@@ -49,12 +49,20 @@ body:
     id: environment
     attributes:
       label: 開發環境
-      description: 請列出作業系統、Python 或 Node 版本、架構及使用的命令。
+      description: 請列出作業系統、Python 或 Node 版本、架構及相依環境。
       placeholder: |
         OS: Windows 11 24H2
         Python: 3.10.x
         Architecture: x64
-        Command: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: command
+    attributes:
+      label: 執行命令
+      description: 提供觸發問題的完整最小命令；請先移除權杖、憑證或其他秘密值。
+      placeholder: python -m unittest ...
     validations:
       required: true
 
