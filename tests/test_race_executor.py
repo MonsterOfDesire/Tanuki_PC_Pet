@@ -29,8 +29,14 @@ class FakeAssetManager:
         forbidden=None,
         mood_score=None,
         ordered_preferences=False,
+        excluded_variants=(),
     ):
-        self.calls.append((context, mood_score))
+        exclusion_tuple = tuple(excluded_variants)
+        self.calls.append(
+            (context, mood_score, exclusion_tuple)
+            if exclusion_tuple
+            else (context, mood_score)
+        )
         return ([f"{context}-frame"], "move", "manifest-action", "manifest-mood")
 
 
@@ -196,6 +202,45 @@ class RaceExecutorTests(unittest.TestCase):
         self.assertEqual(self.rudolf.activity_state.phase, RACE_READY_PHASE)
         self.update(16.1)
         self.assertEqual(self.rudolf.activity_state.phase, RACE_RUNNING_PHASE)
+
+    def test_rudolf_lie_recovery_is_excluded_only_when_left_of_opponent(self):
+        activity = SimpleNamespace(
+            phase=SimpleNamespace(name=RACE_RECOVERY_PHASE),
+            metadata={
+                "challenger_name": self.rudolf.name,
+                "opponent_name": self.teio.name,
+                "challenger_form": "base",
+                "opponent_form": "base",
+            },
+        )
+
+        self.rudolf._x = 100.0
+        self.teio._x = 350.0
+        self.assertEqual(
+            self.executor._apply_phase_animations(
+                activity,
+                {pet.name: pet for pet in self.pets},
+            ),
+            "",
+        )
+        self.assertEqual(
+            self.rudolf.asset_manager.calls[-1][2],
+            (("idle", "lie", "happy"),),
+        )
+
+        self.rudolf._x = 500.0
+        self.teio._x = 200.0
+        self.assertEqual(
+            self.executor._apply_phase_animations(
+                activity,
+                {pet.name: pet for pet in self.pets},
+            ),
+            "",
+        )
+        self.assertEqual(
+            self.rudolf.asset_manager.calls[-1],
+            ("activity_race_recovery", 60.0),
+        )
 
     def test_complete_race_uses_manifest_phases_and_records_one_event(self):
         self.advance_to_running()

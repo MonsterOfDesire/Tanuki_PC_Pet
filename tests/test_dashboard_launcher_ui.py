@@ -1,5 +1,7 @@
 import os
 import unittest
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -110,7 +112,6 @@ class DashboardLauncherPanelTests(unittest.TestCase):
     def test_primary_and_secondary_actions_delegate_to_binding(self):
         self.panel.information_center_button.click()
         self.panel.offer_tray_button.click()
-        self.panel.settings_button.click()
         self.panel.shutdown_button.click()
 
         self.assertEqual(
@@ -118,7 +119,6 @@ class DashboardLauncherPanelTests(unittest.TestCase):
             [
                 ("information_center",),
                 ("offer_tray",),
-                ("status_settings",),
                 ("shutdown",),
             ],
         )
@@ -170,11 +170,36 @@ class DashboardLauncherPanelTests(unittest.TestCase):
             self.panel.collapsed_information_button.accessibleName(),
             "開啟資訊中心",
         )
-        self.assertEqual(
-            self.panel.collapsed_settings_button.toolTip(),
-            "開啟狀態設定",
-        )
+        self.assertFalse(hasattr(self.panel, "collapsed_settings_button"))
         self.assertIn("黃金傳說", self.panel.collapsed_status_dots.toolTip())
+
+    def test_information_and_offer_actions_only_highlight_while_open(self):
+        self.assertFalse(
+            self.panel.information_center_button.property("primary")
+        )
+        self.assertFalse(self.panel.offer_tray_button.property("primary"))
+
+        self.binding.value = DashboardLauncherSnapshot(
+            world_mode_key="golden_legend",
+            world_mode_label="黃金傳說",
+            time_scale_label="4x",
+            care_enabled=True,
+            care_label="照護中",
+            information_center_open=True,
+            offer_tray_open=True,
+        )
+        self.panel.refresh_from_binding()
+
+        self.assertTrue(
+            self.panel.information_center_button.property("primary")
+        )
+        self.assertTrue(
+            self.panel.collapsed_information_button.property("primary")
+        )
+        self.assertTrue(self.panel.offer_tray_button.property("primary"))
+        self.assertTrue(
+            self.panel.collapsed_offer_button.property("primary")
+        )
 
     def test_dashboard_uses_launcher_as_the_only_visible_shell_surface(self):
         dashboard = Dashboard(
@@ -213,6 +238,51 @@ class DashboardLauncherPanelTests(unittest.TestCase):
             )
         finally:
             dashboard.update_timer.stop()
+            dashboard.close()
+            dashboard.deleteLater()
+            self.app.processEvents()
+
+    def test_launcher_buttons_toggle_windows_and_refresh_highlights(self):
+        dashboard = Dashboard(
+            QRect(0, 0, 1280, 720),
+            {},
+            AssetManager.get_resource_path,
+        )
+        try:
+            dashboard.show()
+            dashboard.launcher_panel.information_center_button.click()
+            dashboard.launcher_panel.offer_tray_button.click()
+            self.app.processEvents()
+
+            self.assertTrue(
+                dashboard.launcher_panel.information_center_button.property(
+                    "primary"
+                )
+            )
+            self.assertTrue(
+                dashboard.launcher_panel.offer_tray_button.property("primary")
+            )
+
+            dashboard.launcher_panel.information_center_button.click()
+            dashboard.launcher_panel.offer_tray_button.click()
+            self.app.processEvents()
+
+            self.assertFalse(dashboard.information_center_window.isVisible())
+            self.assertFalse(dashboard.offer_tray_window.isVisible())
+            self.assertFalse(
+                dashboard.launcher_panel.information_center_button.property(
+                    "primary"
+                )
+            )
+            self.assertFalse(
+                dashboard.launcher_panel.offer_tray_button.property("primary")
+            )
+        finally:
+            dashboard.update_timer.stop()
+            if dashboard.information_center_window is not None:
+                dashboard.information_center_window.close()
+            if dashboard.offer_tray_window is not None:
+                dashboard.offer_tray_window.close()
             dashboard.close()
             dashboard.deleteLater()
             self.app.processEvents()
@@ -341,6 +411,8 @@ class DashboardLauncherBindingTests(unittest.TestCase):
                 self.world_mode = "sandbox"
                 self.care_feature_enabled = False
                 self.calls = []
+                self.information_center_window = None
+                self.offer_tray_window = None
 
             def get_time_scale(self):
                 return 2.0
@@ -366,6 +438,26 @@ class DashboardLauncherBindingTests(unittest.TestCase):
         self.assertEqual(snapshot.world_mode_label, "沙盒")
         self.assertEqual(snapshot.time_scale_label, "2x")
         self.assertEqual(snapshot.care_label, "照護關閉")
+        self.assertFalse(snapshot.information_center_open)
+        self.assertFalse(snapshot.offer_tray_open)
+
+        dashboard.information_center_window = SimpleNamespace(
+            isVisible=lambda: True,
+            close=Mock(),
+        )
+        dashboard.offer_tray_window = SimpleNamespace(
+            isVisible=lambda: True,
+            close=Mock(),
+        )
+        visible_snapshot = binding.snapshot()
+        self.assertTrue(visible_snapshot.information_center_open)
+        self.assertTrue(visible_snapshot.offer_tray_open)
+
+        binding.open_information_center()
+        binding.open_offer_tray()
+
+        dashboard.information_center_window.close.assert_called_once_with()
+        dashboard.offer_tray_window.close.assert_called_once_with()
         self.assertEqual(
             dashboard.calls,
             [

@@ -92,6 +92,7 @@ TEST_SUITE_MEMBERS = {
         "test_pet_widget_runtime",
     },
     "runtime": {
+        "test_autonomous_offer_rules",
         "test_activity_runtime_controller",
         "test_activity_interaction_rules",
         "test_achievement_runtime_coordinator",

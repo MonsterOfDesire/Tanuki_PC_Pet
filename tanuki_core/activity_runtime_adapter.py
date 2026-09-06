@@ -162,12 +162,14 @@ class ActivityRuntimeAdapter:
         binding: ActivityAnimationBinding,
         *,
         band_override: str = "",
+        excluded_variants=(),
     ) -> ManifestAnimationApplyResult:
         result = self.animation_resolver.apply(
             pet,
             binding.build_request(
                 float(getattr(pet, "mood_score", 60.0)),
                 band_override=band_override,
+                excluded_variants=excluded_variants,
             ),
         )
         if result.applied and result.selection is not None:

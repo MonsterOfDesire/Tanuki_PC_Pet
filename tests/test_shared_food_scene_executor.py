@@ -184,6 +184,23 @@ class SharedFoodSceneExecutorTests(unittest.TestCase):
         self.assertEqual(scene.stage_ends_at, 11.2)
         self.assertEqual(scene.scene_ends_at, 11.2)
 
+    def test_consume_animation_seconds_are_tripled_without_extending_transitions(self):
+        profile = SimpleNamespace(shared_duration_seconds=5.0)
+
+        share_both_seconds = self.executor.get_shared_food_consume_stage_seconds(
+            None,
+            profile,
+            "share_both",
+        )
+        single_consumer_seconds = self.executor.get_shared_food_consume_stage_seconds(
+            None,
+            profile,
+            "holder_keeps",
+        )
+
+        self.assertAlmostEqual(share_both_seconds, 5.85)
+        self.assertAlmostEqual(single_consumer_seconds, 13.05)
+
 
 if __name__ == "__main__":
     unittest.main()

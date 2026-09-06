@@ -1,6 +1,6 @@
 import os
 
-from PyQt6.QtCore import QPoint, QTimer, Qt
+from PyQt6.QtCore import QPoint, QTimer, Qt, pyqtSignal
 from PyQt6.QtGui import QGuiApplication, QPixmap
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
@@ -164,6 +164,8 @@ class OfferItemBadge(QFrame):
 
 
 class OfferTrayWindow(QWidget):
+    visibility_changed = pyqtSignal(bool)
+
     def __init__(
         self,
         drop_handler=None,
@@ -313,8 +315,13 @@ class OfferTrayWindow(QWidget):
 
     def showEvent(self, event):
         super().showEvent(event)
+        self.visibility_changed.emit(True)
         if hasattr(self, "window_chrome"):
             QTimer.singleShot(0, self._update_chrome_geometry)
+
+    def hideEvent(self, event):
+        super().hideEvent(event)
+        self.visibility_changed.emit(False)
 
     def _update_chrome_geometry(self):
         scene = self.skin_frame.scene_geometry()

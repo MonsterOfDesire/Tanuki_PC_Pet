@@ -119,8 +119,8 @@ class DirectHoverSceneExecutorTests(unittest.TestCase):
             actor_name=target_pet.name,
             target_name=target_pet.name,
             stage="accept",
-            stage_ends_at=11.8,
-            scene_ends_at=11.8,
+            stage_ends_at=15.4,
+            scene_ends_at=15.4,
             source="ground",
             direct_accept_purpose_order=("idle", "move"),
         )
@@ -131,6 +131,29 @@ class DirectHoverSceneExecutorTests(unittest.TestCase):
             target_pet.name,
             "direct_accept",
             source="ground",
+        )
+
+    def test_direct_bottle_keeps_existing_duration(self):
+        target_pet = SimpleNamespace(name="Tsurumaru Tsuyoshi")
+        coordinator = Mock()
+        coordinator.start_scene.return_value = SimpleNamespace(started=True)
+        runtime = SimpleNamespace(
+            item_scene_coordinator=coordinator,
+            apply_offer_mood_reward=Mock(),
+            record_offer_event=Mock(),
+        )
+
+        self.executor.start_direct_offer_scene(
+            runtime,
+            "bottle",
+            target_pet,
+            now=10.0,
+            roll=0.25,
+        )
+
+        self.assertEqual(
+            coordinator.start_scene.call_args.kwargs["scene_ends_at"],
+            11.8,
         )
 
     @patch("tanuki_core.direct_hover_scene_executor.get_direct_offer_accept_context", return_value="offer_accept_tea")

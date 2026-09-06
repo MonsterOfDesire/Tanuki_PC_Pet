@@ -90,6 +90,15 @@ class OverlayWindowTests(unittest.TestCase):
             windows_flags & Qt.WindowType.WindowType_Mask,
             Qt.WindowType.Tool,
         )
+        self.assertTrue(
+            bool(mac_flags & Qt.WindowType.WindowCloseButtonHint)
+        )
+        self.assertFalse(
+            bool(mac_flags & Qt.WindowType.WindowMinimizeButtonHint)
+        )
+        self.assertFalse(
+            bool(mac_flags & Qt.WindowType.WindowMaximizeButtonHint)
+        )
 
 
 if __name__ == "__main__":

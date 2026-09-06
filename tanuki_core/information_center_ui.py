@@ -134,6 +134,7 @@ class InformationCenterWindow(QWidget):
     page_changed = pyqtSignal(str)
     size_preset_applied = pyqtSignal(str)
     state_changed = pyqtSignal()
+    visibility_changed = pyqtSignal(bool)
 
     def __init__(
         self,
@@ -497,6 +498,14 @@ class InformationCenterWindow(QWidget):
             return
         self._activate_visible_window()
         QTimer.singleShot(0, self._activate_visible_window)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.visibility_changed.emit(True)
+
+    def hideEvent(self, event):
+        super().hideEvent(event)
+        self.visibility_changed.emit(False)
 
     def ensure_reachable_on_screen(self):
         screens = tuple(QGuiApplication.screens())

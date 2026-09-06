@@ -493,6 +493,36 @@ class SleepExecutorTests(unittest.TestCase):
             0,
         )
 
+    def test_stuck_sleep_join_is_canceled_and_retried(self):
+        observer = FakePet("Tokai Teio")
+        observer._x = 350.0
+        pets = (self.pet, observer)
+        self.update(0.0, pets=pets)
+        self.executor.schedules[observer.name].next_proposal_at = 1000.0
+        self.executor.schedules[observer.name].next_social_probe_at = 123.0
+        self.update(120.0, pets=pets)
+        self.update(123.0, pets=pets)
+
+        observer.move_toward_x = lambda *_args, **_kwargs: False
+        self.executor.update_join_behavior(
+            observer,
+            pets,
+            now=126.0,
+            world_mode="sandbox",
+        )
+        handled = self.executor.update_join_behavior(
+            observer,
+            pets,
+            now=131.0,
+            world_mode="sandbox",
+        )
+
+        self.assertFalse(handled)
+        self.assertNotIn(observer.name, self.executor.join_attempts)
+        self.assertGreater(
+            self.executor.schedules[observer.name].next_social_probe_at,
+            131.0,
+        )
     def test_activity_ownership_defers_sleep_without_overwriting_activity(self):
         self.update(0.0)
         snapshot = self.executor.runtime_adapter.build_participant_snapshot(

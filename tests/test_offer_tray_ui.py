@@ -53,6 +53,9 @@ class OfferTrayWindowTests(unittest.TestCase):
         )
         self.assertGreater(self.window.chrome_drag_zone.geometry().width(), 0)
         self.assertGreater(self.window.window_chrome.controls.geometry().width(), 0)
+        self.assertFalse(
+            hasattr(self.window.window_chrome.controls, "minimize_button")
+        )
         self.assertLess(
             self.window.window_chrome.controls.geometry().right(),
             self.window.width(),

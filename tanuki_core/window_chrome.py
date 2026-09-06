@@ -7,7 +7,6 @@ from .platform_capabilities import get_platform_capabilities
 
 
 CHROME_PIN = "pin"
-CHROME_MINIMIZE = "minimize"
 CHROME_CLOSE = "close"
 
 
@@ -48,8 +47,6 @@ def _create_chrome_icon(action, color, size=16):
         path.lineTo(6, 7)
         path.closeSubpath()
         painter.fillPath(path, QColor(color))
-    elif action == CHROME_MINIMIZE:
-        painter.drawLine(3, 11, 13, 11)
     else:
         painter.drawLine(4, 4, 12, 12)
         painter.drawLine(12, 4, 4, 12)
@@ -75,21 +72,14 @@ class WindowChromeControls(QFrame):
             icon_color,
             checkable=True,
         )
-        self.minimize_button = self._create_button(
-            CHROME_MINIMIZE,
-            "最小化",
-            icon_color,
-        )
         self.close_button = self._create_button(
             CHROME_CLOSE,
             "關閉",
             icon_color,
         )
         layout.addWidget(self.pin_button)
-        layout.addWidget(self.minimize_button)
         layout.addWidget(self.close_button)
         self.pin_button.toggled.connect(self._set_pinned)
-        self.minimize_button.clicked.connect(target_window.showMinimized)
         self.close_button.clicked.connect(target_window.close)
         self.retranslate_ui()
         self.adjustSize()
@@ -99,10 +89,6 @@ class WindowChromeControls(QFrame):
             self.pin_button: translate_ui(
                 "window_chrome.pin",
                 default="視窗置頂",
-            ),
-            self.minimize_button: translate_ui(
-                "window_chrome.minimize",
-                default="最小化",
             ),
             self.close_button: translate_ui(
                 "window_chrome.close",

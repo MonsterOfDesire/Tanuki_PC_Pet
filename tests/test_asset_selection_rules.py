@@ -270,6 +270,38 @@ class AssetSelectionRuleTests(unittest.TestCase):
 
         self.assertEqual(result, (["get:happy"], "get", "happy"))
 
+    def test_contextual_selection_can_exclude_one_spatially_unsafe_variant(self):
+        asset_records = {
+            "idle": {
+                "lie": {
+                    "happy": make_record(
+                        "lie",
+                        "happy",
+                        contexts=["activity_race_recovery"],
+                        weight=10.0,
+                    ),
+                },
+                "sit": {
+                    "happy": make_record(
+                        "sit",
+                        "happy",
+                        contexts=["activity_race_recovery"],
+                        weight=1.0,
+                    ),
+                },
+            },
+        }
+
+        result = select_contextual_result_for_purposes(
+            asset_records,
+            ("idle", "move"),
+            context="activity_race_recovery",
+            excluded_variants=(("idle", "lie", "happy"),),
+            rng=FirstChoiceRng(),
+        )
+
+        self.assertEqual(result, (["sit:happy"], "idle", "sit", "happy"))
+
     def test_select_contextual_result_for_purposes_reports_selected_purpose(self):
         asset_records = {
             "idle": {

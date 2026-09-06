@@ -4,6 +4,25 @@ import random
 import time
 from dataclasses import dataclass
 
+from PyQt6.QtCore import QPoint
+
+from .autonomous_offer_rules import (
+    AUTONOMOUS_GROUND_SOURCE,
+    AUTONOMOUS_OFFER_COOLDOWN_MAX_SECONDS,
+    AUTONOMOUS_OFFER_COOLDOWN_MIN_SECONDS,
+    AUTONOMOUS_OFFER_INITIAL_MAX_SECONDS,
+    AUTONOMOUS_OFFER_INITIAL_MIN_SECONDS,
+    AUTONOMOUS_OFFER_PREVIEW_MAX_SECONDS,
+    AUTONOMOUS_OFFER_PREVIEW_MIN_SECONDS,
+    AUTONOMOUS_OFFER_RETRY_MAX_SECONDS,
+    AUTONOMOUS_OFFER_RETRY_MIN_SECONDS,
+    AUTONOMOUS_OFFER_SOURCE,
+    AutonomousOfferOpportunity,
+    AutonomousOfferPreviewState,
+    AutonomousOfferScheduleState,
+    choose_autonomous_offer_opportunity,
+)
+
 from .bottle_honey_scene_executor import BottleHoneySceneExecutor
 from .direct_hover_scene_executor import DirectHoverSceneExecutor
 from .ground_item_coordinator import GroundItemCoordinator
@@ -11,7 +30,11 @@ from .item_scene_coordinator import ItemSceneCoordinator
 from .offer_interaction_rules import (
     ITEM_BOTTLE,
     ITEM_HONEY,
+    ITEM_LOLLIPOP,
+    ITEM_RAMEN,
+    ITEM_TEA,
     get_direct_offer_accept_candidates,
+    get_ground_pickup_pet_names,
 )
 from .offer_scene_execution_port import OfferSceneExecutionPort
 from .runtime import app_now
@@ -97,6 +120,7 @@ class OfferItemSceneRuntimeController:
         performance_now_provider=time.perf_counter,
         random_provider=random.random,
         random_choice_provider=random.choice,
+        uniform_provider=random.uniform,
         shared_food_profile_provider=get_shared_food_profile_for_holder,
     ):
         self.pets_list = pets
@@ -129,6 +153,7 @@ class OfferItemSceneRuntimeController:
         self.performance_now_provider = performance_now_provider
         self.random_provider = random_provider
         self.random_choice_provider = random_choice_provider
+        self.uniform_provider = uniform_provider
         self.shared_food_profile_provider = shared_food_profile_provider
         self.offer_scene = None
         self.offer_hover_item_kind = ""
@@ -136,6 +161,8 @@ class OfferItemSceneRuntimeController:
         self.offer_hover_global_x = 0.0
         self.offer_hover_global_y = 0.0
         self.offer_hover_started_at = 0.0
+        self.autonomous_offer_schedule = AutonomousOfferScheduleState()
+        self.autonomous_offer_preview = None
         self.offer_scene_execution_port = OfferSceneExecutionPort.from_host(
             self
         )
@@ -458,6 +485,9 @@ class OfferItemSceneRuntimeController:
                 self.clear_pet_held_item(pet)
                 handled = True
                 continue
+            if self._is_autonomous_offer_preview_holder(pet):
+                handled = self.apply_held_item_behavior(pet, now) or handled
+                continue
             if (
                 pet.held_item_kind == ITEM_BOTTLE
                 and float(
@@ -675,18 +705,21 @@ class OfferItemSceneRuntimeController:
         held_item_handled = self.update_pet_held_items(now)
         ground_handled = self.update_ground_offer_items(now)
         scene_canceled = self.cancel_offer_scene_if_hidden_participants()
+        autonomous_handled = self.update_autonomous_offer_proposal(now)
         if self.offer_scene is None and self.offer_hover_target_name:
             result = bool(
                 self.update_offer_hover_preview(now)
                 or scene_canceled
                 or held_item_handled
                 or ground_handled
+                or autonomous_handled
             )
             self._record_update_duration(profiler_started_at)
             return result
         if self.offer_scene is None:
             result = bool(
                 scene_canceled or held_item_handled or ground_handled
+                or autonomous_handled
             )
             self._record_update_duration(profiler_started_at)
             return result
@@ -710,9 +743,251 @@ class OfferItemSceneRuntimeController:
             or scene_canceled
             or held_item_handled
             or ground_handled
+            or autonomous_handled
         )
         self._record_update_duration(profiler_started_at)
         return result
+
+    def update_autonomous_offer_proposal(self, now):
+        now = float(now)
+        if self.autonomous_offer_preview is not None:
+            return self._update_autonomous_offer_preview(now)
+        schedule = self.autonomous_offer_schedule
+        if schedule.next_proposal_at <= 0.0:
+            self._schedule_autonomous_offer(
+                now,
+                AUTONOMOUS_OFFER_INITIAL_MIN_SECONDS,
+                AUTONOMOUS_OFFER_INITIAL_MAX_SECONDS,
+            )
+            return False
+        if now < schedule.next_proposal_at:
+            return False
+        if (
+            self.offer_scene is not None
+            or bool(self.offer_hover_target_name)
+            or bool(self.ground_offer_items)
+            or any(
+                getattr(pet, "held_item_kind", "")
+                for pet in self.pets_list
+            )
+        ):
+            self._schedule_autonomous_offer(
+                now,
+                AUTONOMOUS_OFFER_RETRY_MIN_SECONDS,
+                AUTONOMOUS_OFFER_RETRY_MAX_SECONDS,
+            )
+            return False
+
+        opportunities = self._autonomous_offer_opportunities(now)
+        selected = choose_autonomous_offer_opportunity(
+            opportunities,
+            roll=self.random_provider(),
+        )
+        if selected is None:
+            self._schedule_autonomous_offer(
+                now,
+                AUTONOMOUS_OFFER_RETRY_MIN_SECONDS,
+                AUTONOMOUS_OFFER_RETRY_MAX_SECONDS,
+            )
+            return False
+        actor = self.find_pet_by_name(
+            selected.actor_name,
+            visible_only=True,
+        )
+        if selected.delivery_kind == "ground":
+            started = self._drop_autonomous_honey_for_child(actor)
+        else:
+            return bool(self._start_autonomous_offer_preview(
+                selected,
+                actor,
+                now,
+            ))
+        if started:
+            self._schedule_autonomous_offer(
+                now,
+                AUTONOMOUS_OFFER_COOLDOWN_MIN_SECONDS,
+                AUTONOMOUS_OFFER_COOLDOWN_MAX_SECONDS,
+            )
+        else:
+            self._schedule_autonomous_offer(
+                now,
+                AUTONOMOUS_OFFER_RETRY_MIN_SECONDS,
+                AUTONOMOUS_OFFER_RETRY_MAX_SECONDS,
+            )
+        return bool(started)
+
+    def _start_autonomous_offer_preview(self, selected, actor, now):
+        if actor is None:
+            return False
+        widget = self._ensure_pet_held_item(
+            actor,
+            selected.item_kind,
+            source=AUTONOMOUS_OFFER_SOURCE,
+        )
+        if widget is None:
+            return False
+        duration = self.uniform_provider(
+            AUTONOMOUS_OFFER_PREVIEW_MIN_SECONDS,
+            AUTONOMOUS_OFFER_PREVIEW_MAX_SECONDS,
+        )
+        self.autonomous_offer_preview = AutonomousOfferPreviewState(
+            item_kind=selected.item_kind,
+            actor_name=selected.actor_name,
+            started_at=float(now),
+            ends_at=float(now) + float(duration),
+        )
+        self.apply_held_item_behavior(actor, now)
+        return True
+
+    def _update_autonomous_offer_preview(self, now):
+        preview = self.autonomous_offer_preview
+        if preview is None:
+            return False
+        actor = self.find_pet_by_name(
+            preview.actor_name,
+            visible_only=False,
+        )
+        preview_is_valid = bool(
+            actor is not None
+            and actor.isVisible()
+            and not bool(getattr(actor, "dragging", False))
+            and getattr(actor, "held_item_kind", "") == preview.item_kind
+            and getattr(actor, "held_item_widget", None) is not None
+            and self.offer_scene is None
+        )
+        if not preview_is_valid:
+            if actor is not None and getattr(actor, "held_item_kind", ""):
+                self.clear_pet_held_item(actor)
+            self.autonomous_offer_preview = None
+            self._schedule_autonomous_offer(
+                now,
+                AUTONOMOUS_OFFER_RETRY_MIN_SECONDS,
+                AUTONOMOUS_OFFER_RETRY_MAX_SECONDS,
+            )
+            return False
+        if now < preview.ends_at:
+            return bool(self.apply_held_item_behavior(actor, now))
+
+        self.autonomous_offer_preview = None
+        self.clear_pet_held_item(actor)
+        started = self.start_offer_interaction_for_target(
+            preview.item_kind,
+            actor,
+            source=AUTONOMOUS_OFFER_SOURCE,
+        )
+        if started:
+            self._schedule_autonomous_offer(
+                now,
+                AUTONOMOUS_OFFER_COOLDOWN_MIN_SECONDS,
+                AUTONOMOUS_OFFER_COOLDOWN_MAX_SECONDS,
+            )
+        else:
+            self._schedule_autonomous_offer(
+                now,
+                AUTONOMOUS_OFFER_RETRY_MIN_SECONDS,
+                AUTONOMOUS_OFFER_RETRY_MAX_SECONDS,
+            )
+        return bool(started)
+
+    def _is_autonomous_offer_preview_holder(self, pet):
+        preview = self.autonomous_offer_preview
+        return bool(
+            preview is not None
+            and pet is not None
+            and getattr(pet, "name", "") == preview.actor_name
+        )
+
+    def _autonomous_offer_opportunities(self, now):
+        opportunities = []
+        item_weights = {
+            ITEM_RAMEN: 1.0,
+            ITEM_TEA: 1.0,
+            ITEM_LOLLIPOP: 0.9,
+            ITEM_HONEY: 0.8,
+            ITEM_BOTTLE: 0.9,
+        }
+        for item_kind in (
+            ITEM_RAMEN,
+            ITEM_TEA,
+            ITEM_LOLLIPOP,
+            ITEM_HONEY,
+            ITEM_BOTTLE,
+        ):
+            for pet_name in get_ground_pickup_pet_names(item_kind):
+                if (
+                    pet_name == "Tsurumaru Tsuyoshi"
+                    and item_kind in {ITEM_HONEY, ITEM_BOTTLE}
+                ):
+                    continue
+                pet = self.find_pet_by_name(pet_name, visible_only=True)
+                if not self._pet_allows_autonomous_offer(
+                    pet,
+                    item_kind,
+                    now,
+                ):
+                    continue
+                if (
+                    item_kind == ITEM_BOTTLE
+                    and self.choose_bottle_feed_child_for_holder(
+                        pet,
+                        now=now,
+                    )
+                    is None
+                ):
+                    continue
+                opportunities.append(
+                    AutonomousOfferOpportunity(
+                        item_kind=item_kind,
+                        actor_name=pet_name,
+                        weight=item_weights[item_kind],
+                    )
+                )
+
+        child = self.find_pet_by_name(
+            "Tsurumaru Tsuyoshi",
+            visible_only=True,
+        )
+        if (
+            self._pet_allows_autonomous_offer(child, ITEM_HONEY, now)
+            and self.choose_honey_guardian_for_child(child)
+        ):
+            opportunities.append(
+                AutonomousOfferOpportunity(
+                    item_kind=ITEM_HONEY,
+                    actor_name="Tsurumaru Tsuyoshi",
+                    delivery_kind="ground",
+                    weight=0.8,
+                )
+            )
+        return tuple(opportunities)
+
+    def _pet_allows_autonomous_offer(self, pet, item_kind, now):
+        if pet is None or not pet.isVisible():
+            return False
+        if self.pet_is_busy_for_offer_interaction(pet, now):
+            return False
+        is_offer_locked = getattr(pet, "is_offer_locked", None)
+        if callable(is_offer_locked) and is_offer_locked(now):
+            return False
+        return self.pet_can_interact_with_offer_item(pet, item_kind)
+
+    def _drop_autonomous_honey_for_child(self, child):
+        if child is None:
+            return False
+        center_x = float(child.x()) + (float(child.width()) / 2.0)
+        bottom_y = float(child.y()) + float(child.height())
+        return self.ground_item_coordinator.drop_item(
+            ITEM_HONEY,
+            QPoint(int(round(center_x)), int(round(bottom_y))),
+            build_widget=self.build_offer_item_widget,
+            source=AUTONOMOUS_GROUND_SOURCE,
+            preferred_pickup_name="Tsurumaru Tsuyoshi",
+        )
+
+    def _schedule_autonomous_offer(self, now, minimum, maximum):
+        self.autonomous_offer_schedule.next_proposal_at = float(now) + float(
+            self.uniform_provider(float(minimum), float(maximum))
+        )
 
     def _record_update_duration(self, started_at):
         self.profiler.record_section(
@@ -946,10 +1221,12 @@ class OfferItemSceneRuntimeController:
 
     def shutdown(self):
         self.clear_offer_hover(apply_miss=False)
+        self.autonomous_offer_preview = None
         self.clear_offer_scene()
         self.clear_ground_offer_items()
         for pet in self.pets_list:
             self.clear_pet_held_item(pet)
+        self.autonomous_offer_schedule = AutonomousOfferScheduleState()
 
     # Explicit support port forwarded to app-owned animation/selection helpers.
     def apply_offer_hover_miss(self, pet, item_kind):

@@ -42,6 +42,7 @@ from .sleep_rules import (
     SLEEP_INTERRUPTED_COOLDOWN_MIN_SECONDS,
     SLEEP_JOIN_ARRIVAL_DISTANCE,
     SLEEP_JOIN_MOVE_SPEED_SCALE,
+    SLEEP_JOIN_STUCK_TIMEOUT_SECONDS,
     SLEEP_MAX_CONCURRENT,
     SLEEP_NATURAL_COMPLETION_MOOD_CEILING,
     SLEEP_NATURAL_COMPLETION_MOOD_REWARD,
@@ -322,7 +323,19 @@ class SleepExecutor:
                     retry=True,
                 )
                 return False
-            plan = self._build_group_join_plan(target_activity)
+            anchor_name = str(
+                target_activity.metadata.get("sleep_anchor_name", "") or ""
+            ) or target_activity.participants[0].name
+            anchor_pet = pets_by_name.get(anchor_name) or target_pet
+            preferred_direction = (
+                -1
+                if self._pet_center_x(pet) < self._pet_center_x(anchor_pet)
+                else 1
+            )
+            plan = self._build_group_join_plan(
+                target_activity,
+                preferred_direction=preferred_direction,
+            )
             if not plan.allowed:
                 self._cancel_join_attempt(
                     participant_name,
@@ -379,6 +392,10 @@ class SleepExecutor:
                 retry=True,
             )
             return False
+        distance_before = abs(float(self._pet_x(pet)) - float(target_x))
+        if attempt.approach_last_progress_at <= 0.0:
+            attempt.approach_last_progress_at = now
+            attempt.approach_last_distance = distance_before
         arrived = bool(
             mover(
                 target_x,
@@ -388,6 +405,21 @@ class SleepExecutor:
             SLEEP_JOIN_ARRIVAL_DISTANCE
         )
         if not arrived:
+            distance_after = abs(float(self._pet_x(pet)) - float(target_x))
+            if distance_after < attempt.approach_last_distance - 0.5:
+                attempt.approach_last_distance = distance_after
+                attempt.approach_last_progress_at = now
+            elif (
+                now - attempt.approach_last_progress_at
+                >= SLEEP_JOIN_STUCK_TIMEOUT_SECONDS
+            ):
+                self._cancel_join_attempt(
+                    participant_name,
+                    pet=pet,
+                    now=now,
+                    retry=True,
+                )
+                return False
             return True
 
         current_target_activity = self._sleeping_activity_for_pet(target_pet)
@@ -1235,7 +1267,12 @@ class SleepExecutor:
         )
         return decision.should_join
 
-    def _build_group_join_plan(self, target_activity):
+    def _build_group_join_plan(
+        self,
+        target_activity,
+        *,
+        preferred_direction=0,
+    ):
         group_id = str(
             target_activity.metadata.get("sleep_group_id", "") or ""
         )
@@ -1262,6 +1299,7 @@ class SleepExecutor:
                 target_activity.metadata.get("sleep_anchor_name", "") or ""
             ),
             occupied_slots=tuple(occupied_slots),
+            preferred_direction=preferred_direction,
         )
 
     def _promote_sleep_group(
@@ -1465,6 +1503,9 @@ class SleepExecutor:
         if callable(clamp):
             target_x = clamp(target_x, joiner_width)
         return float(target_x)
+
+    def _pet_center_x(self, pet) -> float:
+        return float(self._pet_x(pet)) + (self._pet_width(pet) / 2.0)
 
     def _face_pet(self, pet, target_pet):
         if pet is not None and target_pet is not None:

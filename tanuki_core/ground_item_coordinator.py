@@ -33,6 +33,8 @@ class GroundOfferItem:
     vy: float = 0.0
     dropped_at: float = 0.0
     expires_at: float = 0.0
+    source: str = "ground_pickup"
+    preferred_pickup_name: str = ""
 
 
 @dataclass
@@ -115,7 +117,15 @@ class GroundItemCoordinator:
                 return dropped_item
         return None
 
-    def drop_item(self, item_kind, global_pos, *, build_widget) -> bool:
+    def drop_item(
+        self,
+        item_kind,
+        global_pos,
+        *,
+        build_widget,
+        source="ground_pickup",
+        preferred_pickup_name="",
+    ) -> bool:
         widget = build_widget(item_kind, draggable=True)
         if widget is None:
             return False
@@ -142,6 +152,8 @@ class GroundItemCoordinator:
             vy=0.0,
             dropped_at=dropped_at,
             expires_at=dropped_at + GROUND_ITEM_LIFETIME_SECONDS,
+            source=str(source or "ground_pickup"),
+            preferred_pickup_name=str(preferred_pickup_name or ""),
         )
         self.ground_items.append(dropped_item)
         self.place_item(dropped_item, global_pos)
@@ -220,7 +232,12 @@ class GroundItemCoordinator:
     ) -> bool:
         item_center_x = float(dropped_item.x) + (dropped_item.widget.width() / 2.0)
         pickup_candidates = []
-        for pet_name in get_ground_pickup_pet_names(dropped_item.item_kind):
+        pickup_names = (
+            (dropped_item.preferred_pickup_name,)
+            if dropped_item.preferred_pickup_name
+            else tuple(get_ground_pickup_pet_names(dropped_item.item_kind))
+        )
+        for pet_name in pickup_names:
             pet = find_pet_by_name(pet_name, visible_only=True)
             if (
                 pet is None
@@ -247,5 +264,5 @@ class GroundItemCoordinator:
         return start_interaction(
             dropped_item.item_kind,
             target_pet,
-            source="ground_pickup",
+            source=str(dropped_item.source or "ground_pickup"),
         )

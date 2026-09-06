@@ -34,6 +34,8 @@ DIRECT_OFFER_STATIONARY_ACCEPT_PURPOSE_ORDER = ("idle", "move")
 DIRECT_OFFER_MOBILE_ACCEPT_CHANCE = 0.5
 DIRECT_OFFER_MOBILE_MOVE_SPEED_SCALE = 0.75
 DIRECT_OFFER_MOBILE_MOVE_TARGET_OFFSET = 96.0
+DIRECT_OFFER_ACCEPT_BASE_SECONDS = 1.8
+FOOD_CONSUME_DURATION_MULTIPLIER = 3.0
 
 
 @dataclass(frozen=True)
@@ -506,6 +508,15 @@ def get_direct_offer_accept_purpose_order(item_kind, pet_name, roll=None):
     if roll is not None and float(roll) >= DIRECT_OFFER_MOBILE_ACCEPT_CHANCE:
         return list(DIRECT_OFFER_STATIONARY_ACCEPT_PURPOSE_ORDER)
     return list(DIRECT_OFFER_ACCEPT_PURPOSE_ORDER)
+
+
+def get_direct_offer_accept_duration_seconds(item_kind):
+    multiplier = (
+        1.0
+        if item_kind == ITEM_BOTTLE
+        else FOOD_CONSUME_DURATION_MULTIPLIER
+    )
+    return float(DIRECT_OFFER_ACCEPT_BASE_SECONDS * multiplier)
 
 
 def get_direct_offer_mobile_move_speed_scale(item_kind, pet_name):

@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 from tanuki_core.offer_event_adapter import OfferEventAdapter
+from tanuki_core.autonomous_offer_rules import AUTONOMOUS_OFFER_SOURCE
 from tanuki_core.shared_food_profiles import (
     SHARED_FOOD_OUTCOME_SHARE_BOTH,
 )
@@ -121,6 +122,22 @@ class OfferEventAdapterTests(unittest.TestCase):
         self.assertEqual(pet.offer_hover_reaction_cooldown_until, 0.0)
         pet.clear_negative_afterglow.assert_called_once_with()
         pet.pop_heart.assert_called_once_with()
+
+    def test_autonomous_bottle_feed_is_an_item_event_not_player_offer(self):
+        adapter, _, recorder = self.build_adapter()
+
+        adapter.record_offer_event(
+            "bottle",
+            "Tokai Teio",
+            "Tsurumaru Tsuyoshi",
+            "bottle_feed",
+            source=AUTONOMOUS_OFFER_SOURCE,
+        )
+
+        payload = recorder.call_args.kwargs
+        self.assertEqual(payload["category"], "item")
+        self.assertEqual(payload["event_type"], "offer_bottle_feed")
+        self.assertIn("主動拿來奶瓶", payload["summary"])
 
 
 if __name__ == "__main__":

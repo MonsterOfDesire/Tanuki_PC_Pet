@@ -2,6 +2,7 @@ import random
 
 from .item_scene_coordinator import SharedFoodSceneState
 from .offer_interaction_rules import (
+    FOOD_CONSUME_DURATION_MULTIPLIER,
     get_direct_offer_accept_candidates,
     get_direct_offer_accept_context,
 )
@@ -513,8 +514,13 @@ class SharedFoodSceneExecutor:
         shared_seconds = max(2.0, float(profile.shared_duration_seconds))
         if outcome_key == SHARED_FOOD_OUTCOME_SHARE_BOTH:
             remaining = shared_seconds - SHARED_FOOD_TRANSITION_SECONDS - SHARED_FOOD_FINISH_SECONDS
-            return max(0.75, remaining / 2.0)
-        return max(1.0, shared_seconds - SHARED_FOOD_FINISH_SECONDS)
+            base_seconds = max(0.75, remaining / 2.0)
+        else:
+            base_seconds = max(
+                1.0,
+                shared_seconds - SHARED_FOOD_FINISH_SECONDS,
+            )
+        return base_seconds * FOOD_CONSUME_DURATION_MULTIPLIER
 
     def apply_shared_food_stage_animations(
         self,

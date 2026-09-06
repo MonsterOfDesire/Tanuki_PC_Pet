@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from .autonomous_offer_rules import (
+    AUTONOMOUS_GROUND_SOURCE,
+    AUTONOMOUS_OFFER_SOURCE,
+)
 from .offer_interaction_rules import (
     ITEM_BOTTLE,
     ITEM_HONEY,
@@ -41,6 +45,22 @@ class OfferEventAdapter:
             "scene_kind": scene_kind,
         }
 
+    @staticmethod
+    def _source_kind(source):
+        source = str(source or "offer_tray")
+        if source == "offer_tray":
+            return "player"
+        if source in {AUTONOMOUS_OFFER_SOURCE, AUTONOMOUS_GROUND_SOURCE}:
+            return "autonomous"
+        return "ground"
+
+    def _event_category(self, source):
+        return (
+            "player_offer"
+            if self._source_kind(source) == "player"
+            else "item"
+        )
+
     def record_offer_event(
         self,
         item_kind,
@@ -54,22 +74,28 @@ class OfferEventAdapter:
             item_kind=item_kind,
             scene_kind=scene_kind,
         )
+        source_kind = self._source_kind(source)
+        event_category = self._event_category(source)
         if item_kind == ITEM_BOTTLE and scene_kind == "direct_accept":
             self.record_household_event(
                 occurred_at=self.now_provider(),
-                category="player_offer",
+                category=event_category,
                 event_type=(
                     "offer_bottle_success"
-                    if source == "offer_tray"
+                    if source_kind != "ground"
                     else "ground_bottle_pickup"
                 ),
                 summary=(
                     "鶴寶接過奶瓶，安靜地喝了起來。"
-                    if source == "offer_tray"
-                    else "鶴寶路過時撿起地上的奶瓶，乖乖地喝了起來。"
+                    if source_kind == "player"
+                    else (
+                        "鶴寶自己拿起奶瓶，安靜地喝了起來。"
+                        if source_kind == "autonomous"
+                        else "鶴寶路過時撿起地上的奶瓶，乖乖地喝了起來。"
+                    )
                 ),
                 actor_name=(
-                    "Player" if source == "offer_tray" else target_name
+                    "Player" if source_kind == "player" else target_name
                 ),
                 target_name=target_name,
                 household_pressure_delta=-3.0,
@@ -79,16 +105,20 @@ class OfferEventAdapter:
         if item_kind == ITEM_BOTTLE and scene_kind == "bottle_feed":
             self.record_household_event(
                 occurred_at=self.now_provider(),
-                category="player_offer",
+                category=event_category,
                 event_type=(
                     "offer_bottle_feed"
-                    if source == "offer_tray"
+                    if source_kind != "ground"
                     else "ground_bottle_feed"
                 ),
                 summary=(
                     f"{actor_name} 拿著奶瓶陪在一旁，看著鶴寶乖乖喝了幾口。"
-                    if source == "offer_tray"
-                    else f"{actor_name} 撿起地上的奶瓶後陪在一旁，讓鶴寶安心喝了幾口。"
+                    if source_kind == "player"
+                    else (
+                        f"{actor_name} 主動拿來奶瓶陪在一旁，讓鶴寶安心喝了幾口。"
+                        if source_kind == "autonomous"
+                        else f"{actor_name} 撿起地上的奶瓶後陪在一旁，讓鶴寶安心喝了幾口。"
+                    )
                 ),
                 actor_name=actor_name,
                 target_name=target_name,
@@ -97,29 +127,35 @@ class OfferEventAdapter:
             )
             return
         if item_kind == ITEM_HONEY and scene_kind == "direct_accept":
-            if source == "offer_tray":
+            if source_kind == "player":
                 summary = (
                     "天狼星接過蜂蜜，神情明顯放鬆了些。"
                     if target_name == "Sirius Symboli"
                     else "帝寶接過蜂蜜，露出心滿意足的表情。"
                 )
-            else:
+            elif source_kind == "ground":
                 summary = (
                     "天狼星路過時撿起地上的蜂蜜，神情明顯放鬆了些。"
                     if target_name == "Sirius Symboli"
                     else "帝寶路過時撿起地上的蜂蜜，露出心滿意足的表情。"
                 )
+            else:
+                summary = (
+                    "天狼星自己拿出蜂蜜，神情明顯放鬆了些。"
+                    if target_name == "Sirius Symboli"
+                    else "帝寶自己找來蜂蜜，露出心滿意足的表情。"
+                )
             self.record_household_event(
                 occurred_at=self.now_provider(),
-                category="player_offer",
+                category=event_category,
                 event_type=(
                     "offer_honey_success"
-                    if source == "offer_tray"
+                    if source_kind != "ground"
                     else "ground_honey_pickup"
                 ),
                 summary=summary,
                 actor_name=(
-                    "Player" if source == "offer_tray" else target_name
+                    "Player" if source_kind == "player" else target_name
                 ),
                 target_name=target_name,
                 household_pressure_delta=-1.0,
@@ -135,19 +171,23 @@ class OfferEventAdapter:
             )
             self.record_household_event(
                 occurred_at=self.now_provider(),
-                category="player_offer",
+                category=event_category,
                 event_type=(
                     f"offer_{item_kind}_success"
-                    if source == "offer_tray"
+                    if source_kind != "ground"
                     else f"ground_{item_kind}_pickup"
                 ),
                 summary=(
                     f"{target_name} 接過了{item_label}，看起來相當滿足。"
-                    if source == "offer_tray"
-                    else f"{target_name} 路過時撿起地上的{item_label}，看起來相當滿足。"
+                    if source_kind == "player"
+                    else (
+                        f"{target_name} 自己拿出{item_label}享用，看起來相當滿足。"
+                        if source_kind == "autonomous"
+                        else f"{target_name} 路過時撿起地上的{item_label}，看起來相當滿足。"
+                    )
                 ),
                 actor_name=(
-                    "Player" if source == "offer_tray" else target_name
+                    "Player" if source_kind == "player" else target_name
                 ),
                 target_name=target_name,
                 household_pressure_delta=-1.0,
@@ -174,7 +214,7 @@ class OfferEventAdapter:
             )
             self.record_household_event(
                 occurred_at=occurred_at,
-                category="player_offer",
+                category=event_category,
                 event_type="offer_honey_guarded",
                 summary=f"{actor_name} 趕緊把鶴寶手邊的蜂蜜拿走，免得她誤食。",
                 actor_name=actor_name,
@@ -191,11 +231,11 @@ class OfferEventAdapter:
         if item_kind == ITEM_HONEY and scene_kind == "deny_only":
             self.record_household_event(
                 occurred_at=self.now_provider(),
-                category="player_offer",
+                category=event_category,
                 event_type="offer_honey_denied",
                 summary="鶴寶眼巴巴地看著蜂蜜，最後還是沒能拿到。",
                 actor_name=(
-                    "Player" if source == "offer_tray" else target_name
+                    "Player" if source_kind == "player" else target_name
                 ),
                 target_name=target_name,
                 household_pressure_delta=2.0,
@@ -284,7 +324,7 @@ class OfferEventAdapter:
         )
         self.record_household_event(
             occurred_at=now,
-            category="player_offer",
+            category=self._event_category(source),
             event_type=profile.success_event_type,
             summary=summary,
             actor_name=shared_state.holder_name,

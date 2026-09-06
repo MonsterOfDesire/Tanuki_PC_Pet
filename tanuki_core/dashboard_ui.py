@@ -1482,6 +1482,15 @@ class Dashboard(QWidget):
                     None,
                 ),
             )
+            visibility_changed = getattr(
+                self.offer_tray_window,
+                "visibility_changed",
+                None,
+            )
+            if visibility_changed is not None:
+                visibility_changed.connect(
+                    lambda _visible: self.refresh_launcher_panel()
+                )
         if not self.offer_tray_window.user_position_locked:
             self.offer_tray_window.move_near_anchor(self.x() + self.width() + 16, max(40, self.y() + 160))
         self.offer_tray_window.show()
@@ -1506,6 +1515,15 @@ class Dashboard(QWidget):
             self.information_center_window.state_changed.connect(
                 self._handle_information_center_state_changed
             )
+            visibility_changed = getattr(
+                self.information_center_window,
+                "visibility_changed",
+                None,
+            )
+            if visibility_changed is not None:
+                visibility_changed.connect(
+                    lambda _visible: self.refresh_launcher_panel()
+                )
             self.information_center_window.restore_config_state(
                 self.information_center_config_state
             )

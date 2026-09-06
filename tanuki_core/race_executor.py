@@ -694,6 +694,7 @@ class RaceExecutor:
                         bool(activity.metadata.get("accepted", False))
                     ),
                     "",
+                    (),
                 ),
             )
         elif phase in {
@@ -753,17 +754,32 @@ class RaceExecutor:
                     )
                 else:
                     binding, band_override = RACE_PROFILE.recovery_animation, ""
-                targets.append((pet, binding, band_override))
+                excluded_variants = ()
+                if (
+                    phase == RACE_RECOVERY_PHASE
+                    and self._pet_name(pet) == "Symboli Rudolf"
+                ):
+                    other_pet = pets_by_name.get(other_name)
+                    if (
+                        other_pet is not None
+                        and self._pet_center_x(pet)
+                        < self._pet_center_x(other_pet)
+                    ):
+                        excluded_variants = (("idle", "lie", "happy"),)
+                targets.append(
+                    (pet, binding, band_override, excluded_variants)
+                )
             targets = tuple(targets)
         else:
             return ""
-        for pet, binding, band_override in targets:
+        for pet, binding, band_override, excluded_variants in targets:
             if pet is None:
                 return "participant_missing"
             result = self.runtime_adapter.apply_phase_animation(
                 pet,
                 binding,
                 band_override=band_override,
+                excluded_variants=excluded_variants,
             )
             if not result.applied:
                 return self._pet_name(pet) or result.reason
@@ -1473,11 +1489,15 @@ class RaceExecutor:
         return max(0.0, float(getattr(pet, "radius", 50.0) or 0.0))
 
     @classmethod
+    def _pet_center_x(cls, pet):
+        return cls._pet_x(pet) + (cls._pet_width(pet) / 2.0)
+
+    @classmethod
     def _pet_center_distance(cls, first, second):
         if first is None or second is None:
             return float("inf")
-        first_center = cls._pet_x(first) + (cls._pet_width(first) / 2.0)
-        second_center = cls._pet_x(second) + (cls._pet_width(second) / 2.0)
+        first_center = cls._pet_center_x(first)
+        second_center = cls._pet_center_x(second)
         return abs(first_center - second_center)
 
     @classmethod

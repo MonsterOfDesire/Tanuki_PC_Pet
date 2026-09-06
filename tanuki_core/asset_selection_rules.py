@@ -220,6 +220,7 @@ def _select_contextual_candidate(
     forbidden=None,
     mood_score=None,
     ordered_preferences=False,
+    excluded_variants=(),
     rng=None,
 ):
     if rng is None:
@@ -227,11 +228,21 @@ def _select_contextual_candidate(
     preferred_moods = tuple(preferred_moods or ())
     preferred_set = set(preferred_moods)
     forbidden = set(forbidden or ())
+    normalized_exclusions = []
+    for variant in excluded_variants or ():
+        normalized = tuple(
+            str(value or "").strip() for value in variant
+        )
+        if len(normalized) == 3:
+            normalized_exclusions.append(normalized)
+    excluded_variants = set(normalized_exclusions)
     preferred_results = []
     fallback_results = []
     for purpose, asset_records_for_purpose in purpose_records:
         for action_type, mood_map in asset_records_for_purpose.items():
             for mood_tag, record in mood_map.items():
+                if (purpose, action_type, mood_tag) in excluded_variants:
+                    continue
                 if mood_tag in forbidden:
                     continue
                 if not is_record_eligible(record, mood_score=mood_score, context=context):
@@ -285,6 +296,7 @@ def select_contextual_result(
     forbidden=None,
     mood_score=None,
     ordered_preferences=False,
+    excluded_variants=(),
     rng=None,
 ):
     if not asset_records_for_purpose:
@@ -296,6 +308,7 @@ def select_contextual_result(
         forbidden=forbidden,
         mood_score=mood_score,
         ordered_preferences=ordered_preferences,
+        excluded_variants=excluded_variants,
         rng=rng,
     )
     if not result:
@@ -313,6 +326,7 @@ def select_contextual_result_for_purposes(
     forbidden=None,
     mood_score=None,
     ordered_preferences=False,
+    excluded_variants=(),
     rng=None,
 ):
     purpose_records = tuple(
@@ -329,6 +343,7 @@ def select_contextual_result_for_purposes(
         forbidden=forbidden,
         mood_score=mood_score,
         ordered_preferences=ordered_preferences,
+        excluded_variants=excluded_variants,
         rng=rng,
     )
     if not result:
@@ -346,6 +361,7 @@ def select_contextual_result_for_candidates(
     forbidden=None,
     mood_score=None,
     ordered_preferences=False,
+    excluded_variants=(),
     rng=None,
 ):
     """Select only from explicit purpose/action candidates as one weighted pool."""
@@ -365,6 +381,7 @@ def select_contextual_result_for_candidates(
         forbidden=forbidden,
         mood_score=mood_score,
         ordered_preferences=ordered_preferences,
+        excluded_variants=excluded_variants,
         rng=rng,
     )
     if not result:

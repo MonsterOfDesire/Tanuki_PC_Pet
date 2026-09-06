@@ -152,6 +152,20 @@ class DashboardLauncherPanel(QWidget):
         self.notice_label.setVisible(
             snapshot.show_status and bool(snapshot.status_text)
         )
+        self._set_action_active(
+            (
+                self.information_center_button,
+                self.collapsed_information_button,
+            ),
+            snapshot.information_center_open,
+        )
+        self._set_action_active(
+            (
+                self.offer_tray_button,
+                self.collapsed_offer_button,
+            ),
+            snapshot.offer_tray_open,
+        )
 
     def set_expanded(self, expanded, emit_signal=True):
         expanded = bool(expanded)
@@ -263,7 +277,6 @@ class DashboardLauncherPanel(QWidget):
         self.information_center_button = self._create_tile_button(
             "資訊中心",
             "all",
-            primary=True,
         )
         self.information_center_button.clicked.connect(
             lambda checked=False: self._invoke("open_information_center")
@@ -309,20 +322,6 @@ class DashboardLauncherPanel(QWidget):
         self.notice_label.hide()
         layout.addWidget(self.notice_label)
 
-        self.settings_button = QPushButton("狀態設定")
-        self.settings_button.setIcon(
-            create_ui_icon("system", color="#fffaf2", size=22)
-        )
-        self.settings_button.setIconSize(QSize(22, 22))
-        self.settings_button.setProperty(
-            "tanukiRole",
-            "launcherAction",
-        )
-        self.settings_button.clicked.connect(
-            lambda checked=False: self._invoke("open_status_settings")
-        )
-        layout.addWidget(self.settings_button)
-
         layout.addStretch(1)
 
         self.shutdown_button = QPushButton("關閉系統")
@@ -342,7 +341,6 @@ class DashboardLauncherPanel(QWidget):
         self._action_buttons = [
             self.information_center_button,
             self.offer_tray_button,
-            self.settings_button,
             self.shutdown_button,
         ]
         return page
@@ -386,7 +384,6 @@ class DashboardLauncherPanel(QWidget):
         self.collapsed_information_button = self._create_rail_button(
             "all",
             "開啟資訊中心",
-            primary=True,
         )
         self.collapsed_information_button.clicked.connect(
             lambda checked=False: self._invoke("open_information_center")
@@ -411,14 +408,6 @@ class DashboardLauncherPanel(QWidget):
         )
         layout.addWidget(self.collapsed_status_dots)
 
-        self.collapsed_settings_button = self._create_rail_button(
-            "system",
-            "開啟狀態設定",
-        )
-        self.collapsed_settings_button.clicked.connect(
-            lambda checked=False: self._invoke("open_status_settings")
-        )
-        layout.addWidget(self.collapsed_settings_button)
         layout.addStretch(1)
 
         self.collapsed_shutdown_button = self._create_rail_button(
@@ -434,7 +423,6 @@ class DashboardLauncherPanel(QWidget):
             [
                 self.collapsed_information_button,
                 self.collapsed_offer_button,
-                self.collapsed_settings_button,
                 self.collapsed_shutdown_button,
             ]
         )
@@ -511,6 +499,13 @@ class DashboardLauncherPanel(QWidget):
         getattr(self.binding, method_name)()
         self.refresh_from_binding()
 
+    @staticmethod
+    def _set_action_active(buttons, active):
+        for button in buttons:
+            button.setProperty("primary", bool(active))
+            button.style().unpolish(button)
+            button.style().polish(button)
+
     def retranslate_ui(self):
         self.title_label.setText(
             translate_ui("launcher.title", default="狸貓控制中心")
@@ -532,9 +527,6 @@ class DashboardLauncherPanel(QWidget):
         )
         self.status_caption.setText(
             translate_ui("launcher.current_status", default="目前狀態")
-        )
-        self.settings_button.setText(
-            translate_ui("launcher.status_settings", default="狀態設定")
         )
         self.shutdown_button.setText(
             translate_ui("launcher.shutdown", default="關閉系統")
@@ -564,13 +556,6 @@ class DashboardLauncherPanel(QWidget):
                 translate_ui(
                     "launcher.open_offer_tray",
                     default="開啟飲食餐盤",
-                ),
-            ),
-            (
-                self.collapsed_settings_button,
-                translate_ui(
-                    "launcher.open_status_settings",
-                    default="開啟狀態設定",
                 ),
             ),
             (

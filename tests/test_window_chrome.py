@@ -42,6 +42,7 @@ class SkinnedToolWindowChromeTests(unittest.TestCase):
         self.assertEqual(len(self.chrome.resize_handles), 8)
         self.assertTrue(all(handle.width() > 0 for handle in self.chrome.resize_handles.values()))
         self.assertFalse(self.chrome.controls.close_button.icon().isNull())
+        self.assertFalse(hasattr(self.chrome.controls, "minimize_button"))
         self.assertEqual(self.chrome.controls.pin_button.accessibleName(), "視窗置頂")
 
     def test_pin_button_preserves_frameless_flag_and_toggles_topmost(self):

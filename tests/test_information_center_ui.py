@@ -292,6 +292,9 @@ class InformationCenterWindowTests(unittest.TestCase):
             self.window.window_chrome.controls.close_button.toolTip(),
             "關閉",
         )
+        self.assertFalse(
+            hasattr(self.window.window_chrome.controls, "minimize_button")
+        )
 
     def test_macos_uses_native_title_bar_with_only_the_pin_control(self):
         mac_window = InformationCenterWindow(
@@ -512,6 +515,12 @@ class InformationCenterWindowTests(unittest.TestCase):
         self.assertEqual(
             detached_window.window_chrome.controls.close_button.toolTip(),
             "關閉並歸回資訊中心",
+        )
+        self.assertFalse(
+            hasattr(
+                detached_window.window_chrome.controls,
+                "minimize_button",
+            )
         )
         self.assertTrue(self.window.is_page_detached(PAGE_FAMILY_STATUS))
         self.assertEqual(self.window.page_stack.count(), 5)

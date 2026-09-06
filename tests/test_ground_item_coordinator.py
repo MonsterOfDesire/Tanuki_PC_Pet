@@ -193,6 +193,44 @@ class GroundItemCoordinatorTests(unittest.TestCase):
         self.assertEqual(starts, [("tea", "Air Groove", "ground_pickup")])
         self.assertEqual(coordinator.ground_items, [])
 
+    def test_reserved_autonomous_ground_item_only_routes_to_named_pet(self):
+        widget = FakeWidget()
+        dropped = GroundOfferItem(
+            "honey",
+            widget,
+            190,
+            100,
+            100,
+            source="autonomous_ground",
+            preferred_pickup_name="Tsurumaru Tsuyoshi",
+        )
+        coordinator = self.build_coordinator([dropped])
+        child = FakePet("Tsurumaru Tsuyoshi", x=120)
+        nearby_teio = FakePet("Tokai Teio", x=120)
+        pets = {child.name: child, nearby_teio.name: nearby_teio}
+        starts = []
+
+        picked_up = coordinator.try_pickup_item(
+            dropped,
+            find_pet_by_name=lambda name, visible_only=False: pets.get(name),
+            pet_is_busy=lambda _pet: False,
+            start_interaction=lambda item_kind, pet, source: (
+                starts.append((item_kind, pet.name, source)) or True
+            ),
+        )
+
+        self.assertTrue(picked_up)
+        self.assertEqual(
+            starts,
+            [
+                (
+                    "honey",
+                    "Tsurumaru Tsuyoshi",
+                    "autonomous_ground",
+                )
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

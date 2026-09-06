@@ -69,6 +69,15 @@ class PetOverlayRendererTests(unittest.TestCase):
         self.assertEqual(spec.x, 99)
         self.assertEqual(spec.y, 112)
 
+    def test_chorus_music_icon_stays_inside_tall_character_canvas(self):
+        spec = compute_chorus_music_draw_spec(
+            widget_width=240,
+            draw_y=8,
+            overlay_scale=1.0,
+        )
+
+        self.assertEqual(spec.y, 4)
+
     def test_music_indicator_only_marks_chorus_performers(self):
         performer = SimpleNamespace(
             active=True,

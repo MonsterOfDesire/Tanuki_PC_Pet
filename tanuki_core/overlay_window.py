@@ -36,7 +36,6 @@ def build_utility_window_flags(capabilities=None):
             Qt.WindowType.Window
             | Qt.WindowType.WindowTitleHint
             | Qt.WindowType.WindowSystemMenuHint
-            | Qt.WindowType.WindowMinMaxButtonsHint
             | Qt.WindowType.WindowCloseButtonHint
         )
     return Qt.WindowType.Tool

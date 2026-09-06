@@ -18,6 +18,8 @@ class SleepJoinAttemptState:
     anchor_name: str = ""
     slot: int = 0
     animation_applied: bool = False
+    approach_last_distance: float = 0.0
+    approach_last_progress_at: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -29,8 +31,17 @@ class SleepGroupJoinPlan:
     slot: int = 0
 
 
-def choose_sleep_group_slot(occupied_slots) -> int:
+def choose_sleep_group_slot(occupied_slots, preferred_direction=0) -> int:
     occupied = {int(slot) for slot in occupied_slots or ()}
+    preferred_direction = int(preferred_direction or 0)
+    if preferred_direction:
+        direction = 1 if preferred_direction > 0 else -1
+        distance = 1
+        while True:
+            slot = direction * distance
+            if slot not in occupied:
+                return slot
+            distance += 1
     distance = 1
     while True:
         for slot in (distance, -distance):
@@ -46,12 +57,16 @@ def build_sleep_group_join_plan(
     existing_group_id: str = "",
     existing_anchor_name: str = "",
     occupied_slots=(),
+    preferred_direction: int = 0,
 ) -> SleepGroupJoinPlan:
     target_activity_id = str(target_activity_id or "").strip()
     target_name = str(target_name or "").strip()
     if not target_activity_id or not target_name:
         return SleepGroupJoinPlan(False, "missing_sleep_target")
-    slot = choose_sleep_group_slot(occupied_slots)
+    slot = choose_sleep_group_slot(
+        occupied_slots,
+        preferred_direction=preferred_direction,
+    )
     return SleepGroupJoinPlan(
         True,
         group_id=(

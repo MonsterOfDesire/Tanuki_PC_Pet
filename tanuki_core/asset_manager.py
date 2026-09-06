@@ -226,6 +226,7 @@ class AssetManager:
         forbidden=None,
         mood_score=None,
         ordered_preferences=False,
+        excluded_variants=(),
     ):
         self.ensure_context_assets(context)
         return select_contextual_result_for_purposes(
@@ -236,6 +237,7 @@ class AssetManager:
             forbidden=forbidden,
             mood_score=mood_score,
             ordered_preferences=ordered_preferences,
+            excluded_variants=excluded_variants,
             rng=random,
         )
 

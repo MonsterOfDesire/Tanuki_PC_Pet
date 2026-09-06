@@ -456,7 +456,7 @@ class AchievementGameplayBridge:
             activity_id=str(scene_id or ""),
             world_mode=self._world_mode(),
             source=str(source or "offer_tray"),
-            execution_mode="player_gameplay",
+            execution_mode=self._offer_execution_mode(source),
             started_at=float(started_at),
         )
 
@@ -487,7 +487,7 @@ class AchievementGameplayBridge:
                 (target_name, "child"),
             ),
             source=str(source or "offer_tray"),
-            execution_mode="player_gameplay",
+            execution_mode=self._offer_execution_mode(source),
             world_mode=self._world_mode(),
             phase="snatch",
             started_at=float(started_at),
@@ -525,7 +525,7 @@ class AchievementGameplayBridge:
                 (partner_name, "partner"),
             ),
             source=str(source or "offer_tray"),
-            execution_mode="player_gameplay",
+            execution_mode=self._offer_execution_mode(source),
             world_mode=self._world_mode(),
             phase="finish",
             started_at=float(started_at),
@@ -545,6 +545,14 @@ class AchievementGameplayBridge:
         return str(
             metadata.get("start_world_mode", self._world_mode())
             or self._world_mode()
+        )
+
+    @staticmethod
+    def _offer_execution_mode(source: str) -> str:
+        return (
+            "autonomous"
+            if str(source or "").startswith("autonomous_")
+            else "player_gameplay"
         )
 
     def _world_mode(self) -> str:

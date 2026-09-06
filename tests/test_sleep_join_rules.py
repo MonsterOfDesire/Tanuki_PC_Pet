@@ -60,6 +60,23 @@ class SleepJoinRuleTests(unittest.TestCase):
         )
         self.assertGreater(farther_right, right)
 
+    def test_join_slot_prefers_the_observers_existing_side(self):
+        left = build_sleep_group_join_plan(
+            target_activity_id="activity-1",
+            target_name="Symboli Rudolf",
+            occupied_slots=(0,),
+            preferred_direction=-1,
+        )
+        another_left = build_sleep_group_join_plan(
+            target_activity_id="activity-1",
+            target_name="Symboli Rudolf",
+            occupied_slots=(0, -1),
+            preferred_direction=-1,
+        )
+
+        self.assertEqual(left.slot, -1)
+        self.assertEqual(another_left.slot, -2)
+
 
 if __name__ == "__main__":
     unittest.main()
