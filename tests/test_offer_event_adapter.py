@@ -139,6 +139,39 @@ class OfferEventAdapterTests(unittest.TestCase):
         self.assertEqual(payload["event_type"], "offer_bottle_feed")
         self.assertIn("主動拿來奶瓶", payload["summary"])
 
+    def test_traditional_item_summaries_do_not_space_after_character_names(self):
+        adapter, achievement, recorder = self.build_adapter(
+            scene=SimpleNamespace(started_at=20.0),
+        )
+        achievement.build_honey_guard_metadata.return_value = {}
+
+        adapter.record_offer_event(
+            "bottle",
+            "Tokai Teio",
+            "Tsurumaru Tsuyoshi",
+            "bottle_feed",
+        )
+        adapter.record_offer_event(
+            "tea",
+            "Symboli Rudolf",
+            "Symboli Rudolf",
+            "direct_accept",
+        )
+        adapter.record_offer_event(
+            "honey",
+            "Sirius Symboli",
+            "Tsurumaru Tsuyoshi",
+            "honey_guard",
+        )
+
+        summaries = [
+            call.kwargs["summary"]
+            for call in recorder.call_args_list
+        ]
+        self.assertTrue(summaries[0].startswith("Tokai Teio拿著奶瓶"))
+        self.assertTrue(summaries[1].startswith("Symboli Rudolf接過了茶"))
+        self.assertTrue(summaries[2].startswith("Sirius Symboli趕緊"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -112,12 +112,12 @@ class OfferEventAdapter:
                     else "ground_bottle_feed"
                 ),
                 summary=(
-                    f"{actor_name} 拿著奶瓶陪在一旁，看著鶴寶乖乖喝了幾口。"
+                    f"{actor_name}拿著奶瓶陪在一旁，看著鶴寶乖乖喝了幾口。"
                     if source_kind == "player"
                     else (
-                        f"{actor_name} 主動拿來奶瓶陪在一旁，讓鶴寶安心喝了幾口。"
+                        f"{actor_name}主動拿來奶瓶陪在一旁，讓鶴寶安心喝了幾口。"
                         if source_kind == "autonomous"
-                        else f"{actor_name} 撿起地上的奶瓶後陪在一旁，讓鶴寶安心喝了幾口。"
+                        else f"{actor_name}撿起地上的奶瓶後陪在一旁，讓鶴寶安心喝了幾口。"
                     )
                 ),
                 actor_name=actor_name,
@@ -178,12 +178,12 @@ class OfferEventAdapter:
                     else f"ground_{item_kind}_pickup"
                 ),
                 summary=(
-                    f"{target_name} 接過了{item_label}，看起來相當滿足。"
+                    f"{target_name}接過了{item_label}，看起來相當滿足。"
                     if source_kind == "player"
                     else (
-                        f"{target_name} 自己拿出{item_label}享用，看起來相當滿足。"
+                        f"{target_name}自己拿出{item_label}享用，看起來相當滿足。"
                         if source_kind == "autonomous"
-                        else f"{target_name} 路過時撿起地上的{item_label}，看起來相當滿足。"
+                        else f"{target_name}路過時撿起地上的{item_label}，看起來相當滿足。"
                     )
                 ),
                 actor_name=(
@@ -216,7 +216,7 @@ class OfferEventAdapter:
                 occurred_at=occurred_at,
                 category=event_category,
                 event_type="offer_honey_guarded",
-                summary=f"{actor_name} 趕緊把鶴寶手邊的蜂蜜拿走，免得她誤食。",
+                summary=f"{actor_name}趕緊把鶴寶手邊的蜂蜜拿走，免得她誤食。",
                 actor_name=actor_name,
                 target_name=target_name,
                 relation_delta={
@@ -254,7 +254,7 @@ class OfferEventAdapter:
                 category="player_offer",
                 event_type="offer_hover_timeout",
                 summary=(
-                    f"{target_name} 等了太久都沒拿到{item_label}，明顯鬧起了情緒。"
+                    f"{target_name}等了太久都沒拿到{item_label}，明顯鬧起了情緒。"
                 ),
                 actor_name="Player",
                 target_name=target_name,
@@ -302,18 +302,18 @@ class OfferEventAdapter:
             summary = profile.success_summary_by_holder.get(
                 shared_state.holder_name,
                 (
-                    f"{shared_state.holder_name} 和 "
-                    f"{shared_state.partner_name} 分享了{item_label}。"
+                    f"{shared_state.holder_name}和"
+                    f"{shared_state.partner_name}分享了{item_label}。"
                 ),
             )
         elif shared_state.outcome_key == SHARED_FOOD_OUTCOME_HOLDER_KEEPS:
             summary = (
-                f"{shared_state.partner_name} 靠過來看了看，"
-                f"{shared_state.holder_name} 最後還是自己享用了{item_label}。"
+                f"{shared_state.partner_name}靠過來看了看，"
+                f"{shared_state.holder_name}最後還是自己享用了{item_label}。"
             )
         else:
             summary = (
-                f"{shared_state.holder_name} 把{item_label}讓給了"
+                f"{shared_state.holder_name}把{item_label}讓給了"
                 f"{shared_state.partner_name}。"
             )
         metadata = self.build_shared_food_achievement_metadata(
