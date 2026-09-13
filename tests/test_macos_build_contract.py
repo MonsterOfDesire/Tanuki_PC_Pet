@@ -23,6 +23,7 @@ class MacOSBuildContractTests(unittest.TestCase):
         self.assertEqual(values["LSMinimumSystemVersion"], "13.0")
         self.assertTrue(values["LSUIElement"])
         self.assertTrue(values["NSHighResolutionCapable"])
+        self.assertTrue(values["NSScreenCaptureUsageDescription"])
 
     def test_iconset_generator_produces_all_apple_icon_slots(self):
         with tempfile.TemporaryDirectory() as temporary_directory:

@@ -32,6 +32,8 @@ def pet_is_safe_for_floor_reconcile(pet):
         return False
     if bool(getattr(pet, "drag_press_pending", False)):
         return False
+    if bool(getattr(pet, "throw_active", False)):
+        return False
     if float(getattr(pet, "vy", 0.0) or 0.0) != 0.0:
         return False
     if str(getattr(pet, "flight_mode", "none") or "none") != "none":

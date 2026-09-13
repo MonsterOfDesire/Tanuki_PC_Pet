@@ -36,6 +36,7 @@ PET_STATE_PROXY_FIELDS = {
         "dragging",
         "drag_press_pending",
         "drag_start_time",
+        "drag_motion_samples",
         "click_count",
         "is_angry_locked",
         "user_visible",
@@ -56,6 +57,9 @@ PET_STATE_PROXY_FIELDS = {
         "last_x",
         "stuck_count",
         "vy",
+        "throw_active",
+        "throw_velocity_x",
+        "throw_remainder_x",
         "collision_displaced_until",
         "fall_origin_y",
         "gravity",
@@ -186,6 +190,7 @@ class PetInteractionState:
     dragging: bool = False
     drag_press_pending: bool = False
     drag_start_time: float = 0.0
+    drag_motion_samples: tuple = ()
     click_count: int = 0
     is_angry_locked: bool = False
     user_visible: bool = True
@@ -208,6 +213,9 @@ class PetMotionState:
     last_x: int = 0
     stuck_count: int = 0
     vy: float = 0.0
+    throw_active: bool = False
+    throw_velocity_x: float = 0.0
+    throw_remainder_x: float = 0.0
     collision_displaced_until: float = 0.0
     fall_origin_y: int | None = None
     gravity: float = 1.2

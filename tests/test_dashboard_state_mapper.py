@@ -85,6 +85,7 @@ class DashboardStateMapperTests(unittest.TestCase):
             chorus_frequency="occasional",
             mood_climate="expressive",
             ui_locale="ja_JP",
+            achievement_capture_enabled=True,
         )
 
         apply_dashboard_config_to_settings(settings, state)
@@ -101,6 +102,7 @@ class DashboardStateMapperTests(unittest.TestCase):
         self.assertEqual(settings.chorus_frequency, "occasional")
         self.assertEqual(settings.mood_climate, "expressive")
         self.assertEqual(settings.ui_locale, "ja_JP")
+        self.assertTrue(settings.achievement_capture_enabled)
 
     def test_dashboard_payload_round_trip_uses_expected_shape(self):
         state = build_dashboard_config_state(
@@ -139,6 +141,7 @@ class DashboardStateMapperTests(unittest.TestCase):
                 "chorus_frequency": "normal",
                 "mood_climate": "cheerful",
                 "ui_locale": "zh_TW",
+                "achievement_capture_enabled": False,
                 "information_center": {
                     "x": 120,
                     "y": 80,

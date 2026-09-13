@@ -69,6 +69,7 @@ class OfferAnimationSupport:
             or pet_has_sleep_join_intent(pet)
             or getattr(pet, "dragging", False)
             or getattr(pet, "drag_press_pending", False)
+            or getattr(pet, "throw_active", False)
             or getattr(pet, "flight_mode", "none") != "none"
             or getattr(pet, "care_mode", "none") != "none"
             or getattr(pet, "care_partner", None) is not None
@@ -413,6 +414,7 @@ class OfferAnimationSupport:
             return None
         if (
             child_pet.dragging
+            or bool(getattr(child_pet, "throw_active", False))
             or child_pet.is_offer_locked(now)
             or self.pet_is_busy_for_offer_interaction(child_pet, now)
         ):

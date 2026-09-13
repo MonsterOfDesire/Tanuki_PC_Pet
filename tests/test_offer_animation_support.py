@@ -33,6 +33,25 @@ class OfferAnimationSupportTests(unittest.TestCase):
             self.build_support().pet_is_busy_for_offer_interaction(pet)
         )
 
+    def test_inertial_throw_blocks_offer_interaction(self):
+        pet = SimpleNamespace(
+            transformation_state=None,
+            activity_state=None,
+            intent_kind="none",
+            dragging=False,
+            drag_press_pending=False,
+            throw_active=True,
+            flight_mode="none",
+            care_mode="none",
+            care_partner=None,
+            is_hugging=False,
+            is_under_care=lambda now: False,
+        )
+
+        self.assertTrue(
+            self.build_support().pet_is_busy_for_offer_interaction(pet)
+        )
+
     def test_scene_context_delegates_manifest_selection_to_pet(self):
         changer = Mock(return_value=True)
         pet = SimpleNamespace(

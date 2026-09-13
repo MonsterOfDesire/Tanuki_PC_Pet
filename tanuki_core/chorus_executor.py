@@ -555,6 +555,7 @@ class ChorusExecutor:
                 or activity is None
                 or not self._pet_is_visible(pet)
                 or bool(getattr(pet, "dragging", False))
+                or bool(getattr(pet, "throw_active", False))
                 or pet_is_transforming(pet)
             ):
                 self._remove_participant(

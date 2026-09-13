@@ -110,7 +110,7 @@
     "row": "  -> {target}: 好感度 {affinity:5.2f} | 親しさ {familiarity:5.2f} / 信頼 {trust:5.2f} / 愛着 {attachment:5.2f} / 緊張 {tension:5.2f} | イベント {event_count}"
   },
   "achievements": {
-    "modes": {"sandbox": "サンドボックス", "golden_legend": "黄金伝説"}, "mode_tabs": {"sandbox": "サンドボックス実績", "golden_legend": "黄金伝説実績"}, "progress": "取得済み {unlocked} / {total}", "summary_recent": "{progress}｜最新：{title}", "summary_empty": "{progress}｜取得済み実績なし", "acquisition_record": "取得記録", "hover_unlocked": "取得済みトロフィーにカーソルを合わせると取得条件を表示します。", "unlocked_at": "取得日時：{time}", "locked_accessible": "未取得の{tier}トロフィー", "unlocked_accessible": "取得済み{tier}実績：{title}", "notification": {"single": "新しい実績を取得", "multiple": "実績を{count}件同時取得", "more": " など計{count}件"},
+    "modes": {"sandbox": "サンドボックス", "golden_legend": "黄金伝説"}, "mode_tabs": {"sandbox": "サンドボックス実績", "golden_legend": "黄金伝説実績"}, "progress": "取得済み {unlocked} / {total}", "summary_recent": "{progress}｜最新：{title}", "summary_empty": "{progress}｜取得済み実績なし", "acquisition_record": "取得記録", "hover_unlocked": "取得済みトロフィーにカーソルを合わせると取得条件を表示します。", "unlocked_at": "取得日時：{time}", "memory_capture": "実績解除時の画面を自動保存", "memory_capture_tooltip": "オフの場合は画面を保存しません。macOSでは初回に画面収録の許可を求められる場合があります。", "memory_saved": "解除時の画面を保存しました。", "memory_missing": "この実績のスクリーンショットはありません。", "memory_open": "元画像を開く", "locked_accessible": "未取得の{tier}トロフィー", "unlocked_accessible": "取得済み{tier}実績：{title}", "notification": {"single": "新しい実績を取得", "multiple": "実績を{count}件同時取得", "more": " など計{count}件"},
     "definitions": {
       "race": {
         "first_natural_finish": {"title": "初めての疾走", "description": "全行程1xで、テストではないレースが初めて自然完走するところを見届ける。"},

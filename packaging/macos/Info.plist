@@ -18,6 +18,8 @@
     <true/>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>NSScreenCaptureUsageDescription</key>
+    <string>Save an optional screenshot when an achievement is unlocked.</string>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright © 2026 Tanuki PC Pet contributors</string>
 </dict>

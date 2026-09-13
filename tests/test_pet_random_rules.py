@@ -13,6 +13,7 @@ from tanuki_core.pet_random_rules import (
     is_side_ready_followup_eligible,
     is_visible_side_ready_followup,
     resolve_random_stuck_behavior,
+    should_force_side_ready_idle_resolution,
     should_refresh_severe_random_state,
 )
 
@@ -141,20 +142,42 @@ class PetRandomRuleTests(unittest.TestCase):
             )
         )
 
-    def test_side_ready_followup_uses_ten_percent_boundary(self):
+    def test_side_ready_followup_uses_fifty_percent_boundary(self):
         self.assertEqual(
             choose_idle_animation_context(
                 side_ready_followup_armed=True,
-                roll=0.099999,
+                roll=0.499999,
             ),
             SIDE_READY_FOLLOWUP_CONTEXT,
         )
         self.assertEqual(
             choose_idle_animation_context(
                 side_ready_followup_armed=True,
-                roll=0.10,
+                roll=0.50,
             ),
             RANDOM_CONTEXT,
+        )
+
+    def test_expired_visible_side_ready_forces_one_idle_resolution(self):
+        self.assertTrue(
+            should_force_side_ready_idle_resolution(
+                "Tsurumaru Tsuyoshi",
+                state_timer=0,
+                allow_reselect=True,
+                side_ready_followup_armed=True,
+                current_action_tag="side_ready",
+                current_frames=["ready"],
+            )
+        )
+        self.assertFalse(
+            should_force_side_ready_idle_resolution(
+                "Tsurumaru Tsuyoshi",
+                state_timer=1,
+                allow_reselect=True,
+                side_ready_followup_armed=True,
+                current_action_tag="side_ready",
+                current_frames=["ready"],
+            )
         )
 
     def test_unarmed_idle_does_not_enter_followup_context(self):

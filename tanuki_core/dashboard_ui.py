@@ -40,7 +40,9 @@ from .dashboard_state_mapper import (
 from .dashboard_tools_actions import DashboardToolsActions
 from .achievement_cabinet_ui import AchievementUnlockToast
 from .achievement_binding import DashboardAchievementBinding
+from .achievement_memory_capture import AchievementMemoryCaptureService
 from .achievement_presenter import build_achievement_unlock_notification
+from .app_paths import get_user_data_directory
 from .information_center_ui import InformationCenterWindow
 from .information_center_state import InformationCenterConfigState
 from .information_center_spec import (
@@ -439,6 +441,13 @@ class Dashboard(QWidget):
         self.ui_locale = str(
             getattr(self.settings_provider, "ui_locale", "zh_TW")
         )
+        self.achievement_capture_enabled = bool(
+            getattr(
+                self.settings_provider,
+                "achievement_capture_enabled",
+                False,
+            )
+        )
         set_ui_locale(self.ui_locale)
         self.update_check_coordinator = UpdateCheckCoordinator(parent=self)
         self.update_check_coordinator.status_changed.connect(
@@ -478,6 +487,11 @@ class Dashboard(QWidget):
         self.offer_tray_window = None
         self.information_center_window = None
         self.achievement_unlock_toast = None
+        self.achievement_memory_capture = AchievementMemoryCaptureService(
+            get_user_data_directory(
+                platform=self.platform_capabilities.platform_key
+            )
+        )
         self.launcher_shutdown_text = "關閉系統"
         self.launcher_shutdown_enabled = True
         self.launcher_status_text = ""
@@ -789,6 +803,7 @@ class Dashboard(QWidget):
             chorus_frequency=self.chorus_frequency,
             mood_climate=self.mood_climate,
             ui_locale=self.ui_locale,
+            achievement_capture_enabled=self.achievement_capture_enabled,
             information_center=(
                 self.information_center_window.capture_config_state()
                 if self.information_center_window is not None
@@ -817,6 +832,9 @@ class Dashboard(QWidget):
         self.chorus_frequency = str(state.chorus_frequency)
         self.mood_climate = str(state.mood_climate)
         self.ui_locale = str(state.ui_locale)
+        self.achievement_capture_enabled = bool(
+            state.achievement_capture_enabled
+        )
         set_ui_locale(self.ui_locale)
         self.information_center_config_state = state.information_center
         if self.information_center_window is not None:
@@ -1319,10 +1337,41 @@ class Dashboard(QWidget):
             self.achievement_unlock_toast = AchievementUnlockToast(
                 self.resource_resolver
             )
-        return self.achievement_unlock_toast.show_notification(
+        shown = self.achievement_unlock_toast.show_notification(
             notification,
             anchor_rect=self.target_rect,
         )
+        if shown and self.achievement_capture_enabled:
+            QTimer.singleShot(
+                250,
+                lambda ids=achievement_ids, mode=self.world_mode: (
+                    self.capture_achievement_memories(ids, mode)
+                ),
+            )
+        return shown
+
+    def capture_achievement_memories(self, achievement_ids, world_mode):
+        saved = self.achievement_memory_capture.capture(
+            achievement_ids,
+            world_mode=world_mode,
+        )
+        if saved and self.information_center_window is not None:
+            self.information_center_window.refresh_achievement_cabinet()
+        return saved
+
+    def get_achievement_memory_path(self, world_mode, achievement_id):
+        return self.achievement_memory_capture.latest_capture_path(
+            world_mode,
+            achievement_id,
+        )
+
+    def set_achievement_capture_enabled(self, enabled, save=True):
+        self.controller.set_achievement_capture_enabled(
+            self,
+            enabled,
+            save=save,
+        )
+        return self.achievement_capture_enabled
 
     def get_social_log_filter_mode(self):
         if self.social_log_window is not None:

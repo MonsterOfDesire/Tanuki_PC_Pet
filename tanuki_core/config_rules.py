@@ -7,7 +7,7 @@ from .information_center_state import (
 from .settings_provider import RuntimeSettings
 
 
-CONFIG_SCHEMA_VERSION = 8
+CONFIG_SCHEMA_VERSION = 9
 
 DEFAULT_INFORMATION_CENTER_STATE = information_center_config_state_to_payload(
     InformationCenterConfigState()
@@ -26,6 +26,7 @@ DEFAULT_DASHBOARD_STATE = {
     "chorus_frequency": "normal",
     "mood_climate": "cheerful",
     "ui_locale": RuntimeSettings.UI_LOCALE_OPTIONS[0],
+    "achievement_capture_enabled": False,
     "information_center": DEFAULT_INFORMATION_CENTER_STATE,
 }
 
@@ -162,6 +163,17 @@ def migrate_config_state(raw):
             migrated["dashboard"] = dashboard
         schema_version = 8
 
+    if schema_version < 9:
+        dashboard = migrated.get("dashboard", {})
+        if isinstance(dashboard, dict):
+            dashboard = dict(dashboard)
+            dashboard.setdefault(
+                "achievement_capture_enabled",
+                DEFAULT_DASHBOARD_STATE["achievement_capture_enabled"],
+            )
+            migrated["dashboard"] = dashboard
+        schema_version = 9
+
     migrated["schema_version"] = CONFIG_SCHEMA_VERSION
     if original_schema_version != CONFIG_SCHEMA_VERSION:
         warnings.append(f"config schema {original_schema_version} 已升級到 {CONFIG_SCHEMA_VERSION}")
@@ -248,6 +260,14 @@ def normalize_config_state(raw):
                 if dashboard.get("ui_locale")
                 in RuntimeSettings.UI_LOCALE_OPTIONS
                 else DEFAULT_DASHBOARD_STATE["ui_locale"]
+            ),
+            "achievement_capture_enabled": bool(
+                dashboard.get(
+                    "achievement_capture_enabled",
+                    DEFAULT_DASHBOARD_STATE[
+                        "achievement_capture_enabled"
+                    ],
+                )
             ),
             "information_center": normalized_information_center,
         },

@@ -117,7 +117,7 @@
   },
   "achievements": {
     "modes": {"sandbox": "Sandbox", "golden_legend": "Golden Legend"}, "mode_tabs": {"sandbox": "Sandbox Achievements", "golden_legend": "Golden Legend Achievements"},
-    "progress": "Unlocked {unlocked} / {total}", "summary_recent": "{progress} | Latest: {title}", "summary_empty": "{progress} | No achievements yet", "acquisition_record": "Unlock Record", "hover_unlocked": "Hover over an unlocked trophy to see how it was earned.", "unlocked_at": "Unlocked: {time}",
+    "progress": "Unlocked {unlocked} / {total}", "summary_recent": "{progress} | Latest: {title}", "summary_empty": "{progress} | No achievements yet", "acquisition_record": "Unlock Record", "hover_unlocked": "Hover over an unlocked trophy to see how it was earned.", "unlocked_at": "Unlocked: {time}", "memory_capture": "Auto-save achievement screenshots", "memory_capture_tooltip": "No screen is captured while off. macOS may request Screen Recording permission the first time.", "memory_saved": "The unlock screenshot was saved.", "memory_missing": "No screenshot was saved for this achievement.", "memory_open": "Open full image",
     "locked_accessible": "Locked {tier} trophy", "unlocked_accessible": "Unlocked {tier} achievement: {title}", "notification": {"single": "New achievement unlocked", "multiple": "{count} achievements unlocked", "more": " and {count} total"},
     "definitions": {
       "race": {

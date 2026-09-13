@@ -40,6 +40,7 @@ TEST_SUITE_MEMBERS = {
     },
     "dashboard": {
         "test_achievement_cabinet_ui",
+        "test_achievement_memory_capture",
         "test_achievement_presenter",
         "test_dashboard_actions",
         "test_dashboard_controller",
@@ -89,6 +90,7 @@ TEST_SUITE_MEMBERS = {
         "test_pet_social_log_rules",
         "test_pet_social_rules",
         "test_pet_tick_coordinator",
+        "test_pet_throw_rules",
         "test_pet_widget_runtime",
     },
     "runtime": {

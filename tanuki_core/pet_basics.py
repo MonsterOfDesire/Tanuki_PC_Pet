@@ -261,7 +261,7 @@ class PetBasicsMixin:
     def refresh_movement_state(self, surface=None):
         if surface is None:
             surface = self.get_surface_snapshot()
-        if self.vy != 0:
+        if self.vy != 0 or bool(getattr(self, "throw_active", False)):
             intent = "falling"
             locomotion = "airborne"
             anchor = "air"

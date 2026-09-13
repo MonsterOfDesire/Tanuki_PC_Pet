@@ -168,7 +168,10 @@ class PetSocialCareMixin:
             mood_state=self.mood_state,
             current_mood_tag=self.current_mood_tag,
             current_purpose=self.current_purpose,
-            dragging=self.dragging,
+            dragging=(
+                self.dragging
+                or bool(getattr(self, "throw_active", False))
+            ),
             mood_score=self.mood_score,
             distress_ready_at=getattr(self, "distress_ready_at", 0.0),
             now=app_now(),
@@ -189,6 +192,7 @@ class PetSocialCareMixin:
                 is_busy=(
                     pet_is_transforming(pet) or
                     pet.dragging or
+                    bool(getattr(pet, "throw_active", False)) or
                     pet.care_mode != "none" or
                     pet.is_under_care(app_now()) or
                     pet.is_angry_locked or
@@ -264,6 +268,7 @@ class PetSocialCareMixin:
         )
         return (
             self.dragging or
+            bool(getattr(self, "throw_active", False)) or
             self.vy != 0 or
             not self.isVisible() or
             self.flight_mode != "none" or
@@ -750,6 +755,7 @@ class PetSocialCareMixin:
         if (
             not self.isVisible() or
             getattr(self, "dragging", False) or
+            getattr(self, "throw_active", False) or
             getattr(self, "flight_mode", "none") != "none" or
             getattr(self, "social_mode", "none") != "none" or
             getattr(self, "care_mode", "none") != "none" or
@@ -1055,6 +1061,7 @@ class PetSocialCareMixin:
             target_is_under_care = bool(is_under_care(now))
         return bool(
             getattr(target_pet, "dragging", False) or
+            getattr(target_pet, "throw_active", False) or
             getattr(target_pet, "is_angry_locked", False) or
             getattr(target_pet, "is_recovering", False) or
             getattr(target_pet, "flight_mode", "none") != "none" or
@@ -1833,6 +1840,7 @@ class PetSocialCareMixin:
                     pet.name == "Symboli Rudolf"
                     and pet.isVisible()
                     and not pet_is_transforming(pet)
+                    and not bool(getattr(pet, "throw_active", False))
                     and not pet_has_active_activity(pet)
                     and not pet_has_sleep_join_intent(pet)
                 )

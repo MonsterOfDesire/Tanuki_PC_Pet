@@ -110,6 +110,14 @@ class TransformationExecutor:
                 perched=bool(getattr(pet, "perched_window_hwnd", 0)),
             )
         )
+        if bool(getattr(pet, "throw_active", False)):
+            return TransformationRuntimeResult(
+                False,
+                "airborne",
+                character_name=name,
+                current_form=state.current_form,
+                target_form=decision.target_form,
+            )
         if not decision.allowed:
             return TransformationRuntimeResult(
                 False,

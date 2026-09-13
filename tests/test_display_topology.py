@@ -31,6 +31,7 @@ class FakePet:
         self._geometry = QRect(geometry)
         self.dragging = False
         self.drag_press_pending = False
+        self.throw_active = False
         self.vy = 0.0
         self.flight_mode = "none"
         self.perched_window_hwnd = 0
@@ -112,6 +113,15 @@ class DisplayTopologyTests(unittest.TestCase):
             reconcile_pet_floor_position(pet, [self.main, self.left])
         )
         self.assertEqual(pet.geometry(), QRect(-2100, 120, 240, 240))
+
+    def test_thrown_pet_is_not_reconciled_mid_flight(self):
+        pet = FakePet(QRect(-2100, 120, 240, 240))
+        pet.throw_active = True
+
+        self.assertFalse(pet_is_safe_for_floor_reconcile(pet))
+        self.assertFalse(
+            reconcile_pet_floor_position(pet, [self.main, self.left])
+        )
 
 
 if __name__ == "__main__":

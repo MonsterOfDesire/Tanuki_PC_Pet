@@ -7,7 +7,7 @@ RANDOM_STUCK_REVERSE_THRESHOLD = 60
 RANDOM_MOVE_PURPOSE_SPEED_THRESHOLD = 0.8
 RANDOM_CONTEXT = "random"
 SIDE_READY_FOLLOWUP_CONTEXT = "side_ready_followup"
-SIDE_READY_FOLLOWUP_CHANCE = 0.10
+SIDE_READY_FOLLOWUP_CHANCE = 0.50
 SIDE_READY_FOLLOWUP_MIN_HOLD_STEPS = 60
 SIDE_READY_FOLLOWUP_ACTIONS = frozenset({
     "side_stand",
@@ -108,6 +108,34 @@ def is_side_ready_followup_eligible(
         and bool(side_ready_followup_armed)
         and str(current_action_tag or "") == "side_ready"
         and bool(current_frames)
+    )
+
+
+def should_force_side_ready_idle_resolution(
+    name,
+    *,
+    state_timer,
+    allow_reselect,
+    side_ready_followup_armed,
+    current_action_tag,
+    current_frames,
+):
+    """Keep the 50% roll adjacent to the visible side-ready pose.
+
+    The normal random state selector may otherwise choose ``move`` first,
+    silently multiplying the follow-up chance by the idle/move split.  A ready
+    pose whose timer just expired therefore receives exactly one idle resolver
+    before ordinary roaming resumes.
+    """
+    return (
+        bool(allow_reselect)
+        and int(state_timer) <= 0
+        and is_side_ready_followup_eligible(
+            name,
+            side_ready_followup_armed=side_ready_followup_armed,
+            current_action_tag=current_action_tag,
+            current_frames=current_frames,
+        )
     )
 
 

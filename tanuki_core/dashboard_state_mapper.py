@@ -26,6 +26,7 @@ class DashboardConfigState:
     chorus_frequency: str = "normal"
     mood_climate: str = "cheerful"
     ui_locale: str = "zh_TW"
+    achievement_capture_enabled: bool = False
     information_center: InformationCenterConfigState = field(
         default_factory=InformationCenterConfigState
     )
@@ -85,6 +86,7 @@ def build_dashboard_config_state(
     chorus_frequency="normal",
     mood_climate="cheerful",
     ui_locale="zh_TW",
+    achievement_capture_enabled=False,
     information_center=None,
 ):
     return DashboardConfigState(
@@ -116,6 +118,7 @@ def build_dashboard_config_state(
             RuntimeSettings.UI_LOCALE_OPTIONS[0],
             RuntimeSettings.UI_LOCALE_OPTIONS,
         ),
+        achievement_capture_enabled=bool(achievement_capture_enabled),
         information_center=(
             information_center
             if isinstance(information_center, InformationCenterConfigState)
@@ -192,6 +195,12 @@ def normalize_dashboard_config_state(raw_state, defaults, option_bounds):
             getattr(defaults, "ui_locale", "zh_TW"),
             RuntimeSettings.UI_LOCALE_OPTIONS,
         ),
+        achievement_capture_enabled=bool(
+            raw_state.get(
+                "achievement_capture_enabled",
+                getattr(defaults, "achievement_capture_enabled", False),
+            )
+        ),
         information_center=normalize_information_center_config_state(
             raw_state.get("information_center", {}),
             defaults=default_information_center,
@@ -219,6 +228,9 @@ def dashboard_config_state_to_payload(state):
             getattr(state, "mood_climate", "cheerful")
         ),
         "ui_locale": str(getattr(state, "ui_locale", "zh_TW")),
+        "achievement_capture_enabled": bool(
+            getattr(state, "achievement_capture_enabled", False)
+        ),
         "information_center": information_center_config_state_to_payload(
             getattr(
                 state,
@@ -262,6 +274,9 @@ def apply_dashboard_config_to_settings(settings_provider, state):
         getattr(state, "ui_locale", "zh_TW"),
         "zh_TW",
         RuntimeSettings.UI_LOCALE_OPTIONS,
+    )
+    settings_provider.achievement_capture_enabled = bool(
+        getattr(state, "achievement_capture_enabled", False)
     )
 
 

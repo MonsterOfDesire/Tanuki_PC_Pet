@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import os
 
-from PyQt6.QtCore import QEvent, QSize, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QColor, QPainter, QPixmap, QRegion
+from PyQt6.QtCore import QEvent, QSignalBlocker, QSize, Qt, QTimer, QUrl, pyqtSignal
+from PyQt6.QtGui import QColor, QDesktopServices, QPainter, QPixmap, QRegion
 from PyQt6.QtWidgets import (
     QButtonGroup,
     QFrame,
@@ -23,6 +23,7 @@ from .achievement_presenter import (
     AchievementUnlockNotificationSnapshot,
 )
 from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
+from .ui_controls import ToggleSwitch
 from .overlay_window import (
     WINDOW_ROLE_PERSISTENT_OVERLAY,
     apply_platform_tool_window_attributes,
@@ -154,6 +155,31 @@ class AchievementCabinetPanel(QWidget):
         filter_row.addWidget(self.progress_label)
         root_layout.addLayout(filter_row)
 
+        memory_row = QHBoxLayout()
+        memory_row.setSpacing(theme.spacing_xs)
+        self.capture_toggle = ToggleSwitch()
+        self.capture_toggle.setAccessibleName("自動保存成就截圖")
+        self.capture_toggle.toggled.connect(
+            self._handle_capture_toggled
+        )
+        memory_row.addWidget(self.capture_toggle)
+        self.capture_label = QLabel("自動保存成就截圖")
+        self.capture_label.setProperty(
+            "tanukiRole",
+            "achievementProgress",
+        )
+        memory_row.addWidget(self.capture_label)
+        self.capture_help_label = QLabel(
+            "關閉時不會擷取畫面；macOS 首次使用可能要求螢幕錄製權限。"
+        )
+        self.capture_help_label.setWordWrap(True)
+        self.capture_help_label.setProperty(
+            "tanukiRole",
+            "achievementProgress",
+        )
+        memory_row.addWidget(self.capture_help_label, stretch=1)
+        root_layout.addLayout(memory_row)
+
         body_row = QHBoxLayout()
         body_row.setSpacing(theme.spacing_sm)
         self.scroll_area = QScrollArea()
@@ -204,6 +230,30 @@ class AchievementCabinetPanel(QWidget):
         self.detail_time_label.setWordWrap(True)
         self.detail_time_label.setProperty("tanukiRole", "achievementDetailTime")
         detail_layout.addWidget(self.detail_time_label)
+        self.memory_preview_label = QLabel("")
+        self.memory_preview_label.setFixedSize(188, 112)
+        self.memory_preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.memory_preview_label.setProperty(
+            "tanukiRole",
+            "achievementMemoryPreview",
+        )
+        self.memory_preview_label.hide()
+        detail_layout.addWidget(self.memory_preview_label)
+        self.memory_status_label = QLabel("")
+        self.memory_status_label.setWordWrap(True)
+        self.memory_status_label.setProperty(
+            "tanukiRole",
+            "achievementDetailTime",
+        )
+        self.memory_status_label.hide()
+        detail_layout.addWidget(self.memory_status_label)
+        self.memory_open_button = QPushButton("開啟原圖")
+        self.memory_open_button.clicked.connect(
+            self._open_current_memory
+        )
+        self.memory_open_button.hide()
+        detail_layout.addWidget(self.memory_open_button)
+        self._current_memory_path = None
         detail_layout.addStretch(1)
         body_row.addWidget(self.detail_frame)
         root_layout.addLayout(body_row, stretch=1)
@@ -218,6 +268,21 @@ class AchievementCabinetPanel(QWidget):
         self.detail_heading.setText(translate_ui(
             "achievements.acquisition_record",
             default="取得紀錄",
+        ))
+        self.capture_label.setText(translate_ui(
+            "achievements.memory_capture",
+            default="自動保存成就截圖",
+        ))
+        self.capture_toggle.setAccessibleName(self.capture_label.text())
+        self.capture_help_label.setText(translate_ui(
+            "achievements.memory_capture_tooltip",
+            default=(
+                "關閉時不會擷取畫面；macOS 首次使用可能要求螢幕錄製權限。"
+            ),
+        ))
+        self.memory_open_button.setText(translate_ui(
+            "achievements.memory_open",
+            default="開啟原圖",
         ))
         if self.binding is not None:
             self.refresh_from_binding()
@@ -244,7 +309,21 @@ class AchievementCabinetPanel(QWidget):
             if callable(world_mode_provider):
                 initial_world_mode = world_mode_provider()
         self.set_snapshot(snapshot, initial_world_mode)
+        enabled_provider = getattr(
+            self.binding,
+            "capture_enabled",
+            None,
+        )
+        if callable(enabled_provider):
+            blocker = QSignalBlocker(self.capture_toggle)
+            self.capture_toggle.setChecked(bool(enabled_provider()))
+            del blocker
         return True
+
+    def _handle_capture_toggled(self, enabled):
+        setter = getattr(self.binding, "set_capture_enabled", None)
+        if callable(setter):
+            setter(bool(enabled))
 
     def set_snapshot(self, snapshot, initial_world_mode=None):
         self.snapshot = snapshot or AchievementCabinetSnapshot(modes=())
@@ -285,6 +364,11 @@ class AchievementCabinetPanel(QWidget):
             )
         )
         self.detail_time_label.setText("")
+        self._current_memory_path = None
+        self.memory_preview_label.clear()
+        self.memory_preview_label.hide()
+        self.memory_status_label.hide()
+        self.memory_open_button.hide()
 
     def show_card_detail(self, card):
         if not isinstance(card, AchievementCardSnapshot) or not card.unlocked:
@@ -301,6 +385,46 @@ class AchievementCabinetPanel(QWidget):
             if card.unlocked_at_text else
             ""
         )
+        memory_provider = getattr(
+            self.binding,
+            "latest_memory_path",
+            None,
+        )
+        memory_path = (
+            memory_provider(self.current_world_mode, card.slot_key)
+            if callable(memory_provider)
+            else None
+        )
+        if memory_path:
+            memory_pixmap = QPixmap(os.path.normpath(str(memory_path)))
+            if not memory_pixmap.isNull():
+                self._current_memory_path = memory_path
+                self.memory_preview_label.setPixmap(
+                    memory_pixmap.scaled(
+                        self.memory_preview_label.size(),
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation,
+                    )
+                )
+                self.memory_preview_label.show()
+                self.memory_status_label.setText(translate_ui(
+                    "achievements.memory_saved",
+                    default="已保存解鎖時的畫面。",
+                ))
+                self.memory_status_label.show()
+                self.memory_open_button.show()
+                return
+        self.memory_status_label.setText(translate_ui(
+            "achievements.memory_missing",
+            default="此成就沒有保存截圖。",
+        ))
+        self.memory_status_label.show()
+
+    def _open_current_memory(self):
+        if self._current_memory_path:
+            QDesktopServices.openUrl(
+                QUrl.fromLocalFile(str(self._current_memory_path))
+            )
 
     def eventFilter(self, watched, event):
         if watched is self.scroll_area.viewport() and event.type() in {

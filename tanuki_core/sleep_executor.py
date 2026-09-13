@@ -976,7 +976,10 @@ class SleepExecutor:
                 now=now,
                 reason="participant_hidden",
             )
-        if bool(getattr(pet, "dragging", False)):
+        if bool(
+            getattr(pet, "dragging", False)
+            or getattr(pet, "throw_active", False)
+        ):
             return self._interrupt(
                 activity_id,
                 pet=pet,
@@ -1418,7 +1421,10 @@ class SleepExecutor:
             CAPABILITY_SLEEP,
         ):
             return False
-        if bool(getattr(pet, "dragging", False)):
+        if bool(
+            getattr(pet, "dragging", False)
+            or getattr(pet, "throw_active", False)
+        ):
             return False
         if bool(getattr(pet, "is_angry_locked", False)):
             return False

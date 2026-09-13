@@ -160,6 +160,17 @@ class DashboardController:
         if save:
             dashboard.schedule_save()
 
+    def set_achievement_capture_enabled(
+        self,
+        dashboard,
+        enabled,
+        save=True,
+    ):
+        dashboard.achievement_capture_enabled = bool(enabled)
+        dashboard.sync_settings_provider()
+        if save:
+            dashboard.schedule_save()
+
     def apply_display_scale(self, dashboard, save=True):
         self.actions.apply_display_scale(dashboard.pets_dict, dashboard.get_display_scale_multiplier())
         if save:

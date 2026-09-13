@@ -19,6 +19,7 @@ class RuntimeSettings:
     chorus_frequency: str = "normal"
     mood_climate: str = "cheerful"
     ui_locale: str = DEFAULT_UI_LOCALE
+    achievement_capture_enabled: bool = False
 
     WORLD_MODE_OPTIONS = ("golden_legend", "sandbox")
     TIME_SCALE_OPTIONS = (1, 2, 4, 8)

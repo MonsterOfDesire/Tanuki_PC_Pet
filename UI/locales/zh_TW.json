@@ -128,6 +128,7 @@
     "modes": {"sandbox": "沙盒", "golden_legend": "黃金傳說"}, "mode_tabs": {"sandbox": "沙盒成就", "golden_legend": "黃金傳說成就"},
     "progress": "已取得 {unlocked} / {total}", "summary_recent": "{progress}｜最近：{title}", "summary_empty": "{progress}｜尚無完成成就",
     "acquisition_record": "取得紀錄", "hover_unlocked": "將游標移到已取得的獎盃上，即可查看取得方式。", "unlocked_at": "取得時間：{time}",
+    "memory_capture": "自動保存成就截圖", "memory_capture_tooltip": "關閉時不會擷取畫面；macOS 首次使用可能要求螢幕錄製權限。", "memory_saved": "已保存解鎖時的畫面。", "memory_missing": "此成就沒有保存截圖。", "memory_open": "開啟原圖",
     "locked_accessible": "未取得的 {tier} 獎盃", "unlocked_accessible": "已取得 {tier} 成就：{title}",
     "notification": {"single": "獲得新成就", "multiple": "一次獲得 {count} 項成就", "more": " 等 {count} 項"}
   },

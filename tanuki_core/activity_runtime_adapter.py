@@ -58,6 +58,8 @@ class ActivityRuntimeAdapter:
             or getattr(pet, "drag_press_pending", False)
         ):
             busy_reasons.append("drag")
+        if bool(getattr(pet, "throw_active", False)):
+            busy_reasons.append("airborne")
         if bool(getattr(pet, "is_angry_locked", False)):
             busy_reasons.append("angry")
         if bool(getattr(pet, "is_recovering", False)):
@@ -82,7 +84,10 @@ class ActivityRuntimeAdapter:
             busy_reasons.append("flight")
         if bool(getattr(pet, "perched_window_hwnd", 0)):
             busy_reasons.append("window_perch")
-        if float(getattr(pet, "vy", 0.0) or 0.0) != 0.0:
+        if (
+            float(getattr(pet, "vy", 0.0) or 0.0) != 0.0
+            and "airborne" not in busy_reasons
+        ):
             busy_reasons.append("airborne")
         is_offer_locked = getattr(pet, "is_offer_locked", None)
         if (

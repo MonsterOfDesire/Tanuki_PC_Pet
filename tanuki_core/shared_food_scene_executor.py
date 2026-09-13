@@ -235,7 +235,10 @@ class SharedFoodSceneExecutor:
                 port.pets.is_busy(pet, now)
                 or getattr(pet, "is_angry_locked", False)
             ),
-            dragging=bool(getattr(pet, "dragging", False)),
+            dragging=bool(
+                getattr(pet, "dragging", False)
+                or getattr(pet, "throw_active", False)
+            ),
             recovering=bool(getattr(pet, "is_recovering", False)),
             social_mode=str(getattr(pet, "social_mode", "none") or "none"),
             perched=bool(getattr(pet, "perched_window_hwnd", 0)),
@@ -249,6 +252,7 @@ class SharedFoodSceneExecutor:
             or port.pets.is_busy(pet, now)
             or getattr(pet, "is_angry_locked", False)
             or getattr(pet, "dragging", False)
+            or getattr(pet, "throw_active", False)
             or getattr(pet, "is_recovering", False)
             or getattr(pet, "social_mode", "none") != "none"
             or getattr(pet, "flight_mode", "none") != "none"

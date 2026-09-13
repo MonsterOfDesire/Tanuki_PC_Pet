@@ -242,6 +242,7 @@ class GroundItemCoordinator:
             if (
                 pet is None
                 or pet.dragging
+                or bool(getattr(pet, "throw_active", False))
                 or pet.is_offer_locked(self.now_provider())
                 or pet_is_busy(pet)
             ):

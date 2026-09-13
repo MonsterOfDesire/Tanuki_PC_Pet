@@ -39,6 +39,7 @@ class FakePet:
         self.mood_score = 90.0
         self.dragging = False
         self.drag_press_pending = False
+        self.throw_active = False
         self.is_angry_locked = False
         self.is_recovering = False
         self.care_mode = "none"
@@ -117,6 +118,18 @@ class ActivityRuntimeAdapterTests(unittest.TestCase):
         )
 
         self.assertEqual(snapshot.busy_reasons, ("drag",))
+
+    def test_snapshot_treats_inertial_throw_as_airborne(self):
+        pet = FakePet()
+        pet.throw_active = True
+
+        snapshot = ActivityRuntimeAdapter().build_participant_snapshot(
+            pet,
+            role="worker",
+            now=10.0,
+        )
+
+        self.assertEqual(snapshot.busy_reasons, ("airborne",))
 
     def test_projection_and_expected_release_update_pet_activity_state(self):
         pet = FakePet()

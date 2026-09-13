@@ -38,7 +38,13 @@ from .pet_random_rules import (
     is_side_ready_followup_eligible,
     is_visible_side_ready_followup,
     resolve_random_stuck_behavior,
+    should_force_side_ready_idle_resolution,
     should_refresh_severe_random_state,
+)
+from .pet_throw_rules import (
+    advance_horizontal_throw,
+    append_drag_motion_sample,
+    resolve_throw_launch,
 )
 from .pet_overlay_renderer import PetOverlayRenderer
 from .pet_runtime_state import PET_STATE_PROXY_FIELDS, build_pet_runtime_state
@@ -551,8 +557,9 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         window_perch_handled = False
         window_flight_handled = False
         pointer_engaged = bool(self.dragging or self.drag_press_pending)
+        throw_active = bool(getattr(self, "throw_active", False))
         tick_window_plan = self.tick_coordinator.build_tick_window_plan(
-            pointer_engaged
+            pointer_engaged or throw_active
         )
         if tick_window_plan.try_window_perch:
             window_perch_handled = self.update_window_perch(all_pets)
@@ -564,6 +571,7 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             window_perch_handled=window_perch_handled,
             window_flight_handled=window_flight_handled,
             vertical_velocity=self.vy,
+            throw_active=throw_active,
         )
         if tick_plan.should_refresh_and_return:
             self.refresh_behavior_layers(all_pets, now=now)
@@ -597,11 +605,30 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
 
     def apply_gravity(self):
         surface = self.get_surface_snapshot()
+        throw_was_active = bool(getattr(self, "throw_active", False))
+        current_x = self.x()
         current_y = self.y()
         current_vy = self.vy
+        throw_velocity_x = float(
+            getattr(self, "throw_velocity_x", 0.0) or 0.0
+        )
+        throw_remainder_x = float(
+            getattr(self, "throw_remainder_x", 0.0) or 0.0
+        )
         fall_origin_y = self.fall_origin_y
         total_mood_penalty = 0.0
         for _ in range(get_pet_logic_step_count(self)):
+            if throw_was_active:
+                horizontal_step = advance_horizontal_throw(
+                    current_x=current_x,
+                    velocity_x=throw_velocity_x,
+                    remainder_x=throw_remainder_x,
+                    left_bound=surface.left_bound,
+                    right_bound=surface.right_bound,
+                )
+                current_x = horizontal_step.x
+                throw_velocity_x = horizontal_step.velocity_x
+                throw_remainder_x = horizontal_step.remainder_x
             gravity_step = compute_gravity_step(
                 current_y=current_y,
                 current_vy=current_vy,
@@ -618,11 +645,28 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             total_mood_penalty += float(gravity_step.mood_penalty)
         self.fall_origin_y = fall_origin_y
         self.vy = current_vy
-        if self.y() != current_y:
-            self.move(self.x(), current_y)
+        self.throw_velocity_x = throw_velocity_x
+        self.throw_remainder_x = throw_remainder_x
+        self.throw_active = bool(
+            throw_was_active
+            and (
+                abs(throw_velocity_x) > 0.0
+                or abs(current_vy) > 0.0
+                or current_y < surface.floor_top_y
+            )
+        )
+        if self.x() != current_x or self.y() != current_y:
+            self.move(current_x, current_y)
         if total_mood_penalty > 0:
             self.mood_score = max(0.0, self.mood_score - total_mood_penalty)
             self.apply_hard_landing_animation()
+        elif throw_was_active and not self.throw_active:
+            self.state = "idle"
+            if not self.change_state_for_context_with_preferences(
+                "idle",
+                RANDOM_CONTEXT,
+            ):
+                self.apply_random_idle_animation()
         self.refresh_movement_state()
 
     def update_star_animation(self):
@@ -724,9 +768,25 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
 
         self.last_x = self.x()
         self.state_timer -= get_pet_logic_step_count(self)
+        force_side_ready_idle = should_force_side_ready_idle_resolution(
+            getattr(self, "name", ""),
+            state_timer=self.state_timer,
+            allow_reselect=allow_reselect,
+            side_ready_followup_armed=getattr(
+                self,
+                "idle_side_stand_armed",
+                False,
+            ),
+            current_action_tag=getattr(self, "current_action_tag", ""),
+            current_frames=getattr(self, "current_frames", ()),
+        )
         if self.state_timer <= 0 and allow_reselect:
             transition = build_random_state_transition(
-                next_state=random.choice(["idle", "move"]),
+                next_state=(
+                    "idle"
+                    if force_side_ready_idle
+                    else random.choice(["idle", "move"])
+                ),
                 next_state_timer=random.randint(100, 150),
                 flip_roll=random.random(),
                 flip_threshold=NORMAL_RANDOM_DIRECTION_FLIP_CHANCE,
@@ -1231,6 +1291,12 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         self.drag_press_pending = True
         self.drag_start_time = time.time()
         self.drag_pos = global_point - self.pos()
+        self.drag_motion_samples = append_drag_motion_sample(
+            (),
+            timestamp=time.perf_counter(),
+            x=global_point.x(),
+            y=global_point.y(),
+        )
         self.drag_hold_timer.start(self.DRAG_HOLD_THRESHOLD_MS)
 
     def _cancel_pending_drag_press(self):
@@ -1277,6 +1343,9 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         self._cancel_pending_drag_press()
         if self.flight_mode != "none":
             self.stop_window_flight(apply_cooldown=False)
+        self.throw_active = False
+        self.throw_velocity_x = 0.0
+        self.throw_remainder_x = 0.0
         self.dragging = True
         self.vy = 0
         self.fall_origin_y = None
@@ -1325,6 +1394,13 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             target_pos = event.globalPosition().toPoint() - self.drag_pos
             clamped_x, clamped_y = DesktopGeometry.clamp_drag_position(self, target_pos.x(), target_pos.y())
             self.move(clamped_x, clamped_y)
+            global_point = event.globalPosition().toPoint()
+            self.drag_motion_samples = append_drag_motion_sample(
+                getattr(self, "drag_motion_samples", ()),
+                timestamp=time.perf_counter(),
+                x=global_point.x(),
+                y=global_point.y(),
+            )
             self.refresh_movement_state()
 
     def mouseReleaseEvent(self, event):
@@ -1333,6 +1409,7 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         if pet_is_transforming(self):
             self._cancel_pending_drag_press()
             self.dragging = False
+            self.drag_motion_samples = ()
             return
         duration = time.time() - self.drag_start_time
         if self.drag_press_pending:
@@ -1340,6 +1417,7 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
                 self._begin_drag_after_hold()
             if not self.dragging:
                 self._cancel_pending_drag_press()
+                self.drag_motion_samples = ()
                 if (
                     self.is_angry_locked
                     or self.care_mode != "none"
@@ -1354,9 +1432,29 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             return
         if self.is_activity_locked() or self.is_angry_locked or self.care_mode != "none" or self.is_under_care(app_now()) or self.is_offer_locked(app_now()):
             self.dragging = False
+            self.drag_motion_samples = ()
             self.refresh_movement_state()
             return
+        release_point = event.globalPosition().toPoint()
+        self.drag_motion_samples = append_drag_motion_sample(
+            getattr(self, "drag_motion_samples", ()),
+            timestamp=time.perf_counter(),
+            x=release_point.x(),
+            y=release_point.y(),
+        )
+        throw_launch = resolve_throw_launch(self.drag_motion_samples)
+        self.drag_motion_samples = ()
         self.dragging = False
+        if throw_launch.active:
+            self.throw_active = True
+            self.throw_velocity_x = throw_launch.velocity_x
+            self.throw_remainder_x = 0.0
+            self.vy = throw_launch.velocity_y
+            self.fall_origin_y = None
+            if abs(throw_launch.velocity_x) > 0.0:
+                self.direction = 1 if throw_launch.velocity_x > 0 else -1
+            self.refresh_movement_state()
+            return
         if self.try_snap_to_window_surface():
             self.refresh_movement_state()
             return
@@ -1390,7 +1488,10 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
     def is_scene_animation_locked(self, now=None):
         now = app_now() if now is None else float(now)
         activity_state = getattr(self, "activity_state", None)
-        if pet_is_transforming(self):
+        if (
+            pet_is_transforming(self)
+            or bool(getattr(self, "throw_active", False))
+        ):
             return True
         if (
             activity_state is not None

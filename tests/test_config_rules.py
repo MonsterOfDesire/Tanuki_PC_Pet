@@ -262,6 +262,21 @@ class ConfigRuleTests(unittest.TestCase):
             any("config schema 7 已升級" in warning for warning in warnings)
         )
 
+    def test_schema_eight_config_disables_achievement_capture_by_default(self):
+        normalized, warnings = normalize_config_state(
+            {
+                "schema_version": 8,
+                "dashboard": {"world_mode": "sandbox"},
+            }
+        )
+
+        self.assertFalse(
+            normalized["dashboard"]["achievement_capture_enabled"]
+        )
+        self.assertTrue(
+            any("config schema 8 已升級" in warning for warning in warnings)
+        )
+
     def test_invalid_locale_falls_back_to_traditional_chinese(self):
         normalized, _warnings = normalize_config_state(
             {

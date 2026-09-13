@@ -56,6 +56,34 @@ class AchievementCabinetUiTests(unittest.TestCase):
         self.assertEqual(panel.current_tier, "G3")
         panel.deleteLater()
 
+    def test_capture_toggle_uses_binding_and_defaults_off(self):
+        class Binding:
+            def __init__(self, snapshot):
+                self._snapshot = snapshot
+                self.enabled = False
+
+            def snapshot(self):
+                return self._snapshot
+
+            def capture_enabled(self):
+                return self.enabled
+
+            def set_capture_enabled(self, enabled):
+                self.enabled = bool(enabled)
+                return self.enabled
+
+        binding = Binding(self.snapshot)
+        panel = AchievementCabinetPanel(
+            AssetManager.get_resource_path,
+            binding=binding,
+        )
+
+        self.assertFalse(panel.capture_toggle.isChecked())
+        panel.capture_toggle.setChecked(True)
+
+        self.assertTrue(binding.enabled)
+        panel.deleteLater()
+
     def test_locked_card_does_not_reveal_title_method_or_progress(self):
         panel = AchievementCabinetPanel(AssetManager.get_resource_path)
         panel.set_snapshot(self.snapshot, "sandbox")
