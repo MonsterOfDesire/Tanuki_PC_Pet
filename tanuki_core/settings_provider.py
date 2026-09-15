@@ -20,6 +20,8 @@ class RuntimeSettings:
     mood_climate: str = "cheerful"
     ui_locale: str = DEFAULT_UI_LOCALE
     achievement_capture_enabled: bool = False
+    memory_album_mode: str = "off"
+    memory_album_capacity: int = 20
 
     WORLD_MODE_OPTIONS = ("golden_legend", "sandbox")
     TIME_SCALE_OPTIONS = (1, 2, 4, 8)
@@ -30,6 +32,8 @@ class RuntimeSettings:
     CHORUS_FREQUENCY_OPTIONS = ("frequent", "normal", "occasional")
     MOOD_CLIMATE_OPTIONS = ("cheerful", "balanced", "expressive")
     UI_LOCALE_OPTIONS = SUPPORTED_UI_LOCALES
+    MEMORY_ALBUM_MODE_OPTIONS = ("off", "events", "random")
+    MEMORY_ALBUM_CAPACITY_OPTIONS = (20, 50, 100)
 
     def get_time_scale(self):
         return float(self.TIME_SCALE_OPTIONS[int(self.time_scale_idx)])

@@ -21,6 +21,7 @@ class SharedFoodSceneState:
     consumer_names: tuple[str, ...] = ()
     holder_animation: AnimationSignature = ()
     partner_animation: AnimationSignature = ()
+    approach_target_x: float | None = None
     item_hidden: bool = False
     effects_applied: bool = False
 

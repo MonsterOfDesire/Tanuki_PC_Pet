@@ -33,6 +33,7 @@
       "event_log": {"navigation": "Event Log", "title": "Event Log", "placeholder": "Event filters, the event list, and detailed records appear here."},
       "family_status": {"navigation": "Family Summary", "title": "Family Status Summary", "placeholder": "Living fund, household pressure, member cards, and recent events appear here."},
       "achievements": {"navigation": "Trophy Cabinet", "title": "Trophy Cabinet", "placeholder": "Sandbox and Golden Legend achievement trophies appear here."},
+      "memory_album": {"navigation": "Memory Album", "title": "Memory Album", "placeholder": "Browse photographs from interactions and everyday life."},
       "status_settings": {"navigation": "Status Settings", "title": "Status Settings", "placeholder": "General settings, social cooldowns, and advanced developer tools appear here."}
     },
     "sizes": {
@@ -117,7 +118,7 @@
   },
   "achievements": {
     "modes": {"sandbox": "Sandbox", "golden_legend": "Golden Legend"}, "mode_tabs": {"sandbox": "Sandbox Achievements", "golden_legend": "Golden Legend Achievements"},
-    "progress": "Unlocked {unlocked} / {total}", "summary_recent": "{progress} | Latest: {title}", "summary_empty": "{progress} | No achievements yet", "acquisition_record": "Unlock Record", "hover_unlocked": "Hover over an unlocked trophy to see how it was earned.", "unlocked_at": "Unlocked: {time}", "memory_capture": "Auto-save achievement screenshots", "memory_capture_tooltip": "No screen is captured while off. macOS may request Screen Recording permission the first time.", "memory_saved": "The unlock screenshot was saved.", "memory_missing": "No screenshot was saved for this achievement.", "memory_open": "Open full image",
+    "progress": "Unlocked {unlocked} / {total}", "summary_recent": "{progress} | Latest: {title}", "summary_empty": "{progress} | No achievements yet", "acquisition_record": "Unlock Record", "hover_unlocked": "Hover over an unlocked trophy to see how it was earned.", "unlocked_at": "Unlocked: {time}", "memory_capture": "Auto-save achievement screenshots", "memory_capture_tooltip": "Screenshots are captured only at 1x. No screen is captured while off. macOS may request Screen Recording permission the first time.", "memory_saved": "The unlock screenshot was saved.", "memory_missing": "No screenshot was saved for this achievement.", "memory_open": "Open full image", "reset": "Reset achievement", "reset_confirm": "Click again to confirm", "reset_tooltip": "The first click only arms confirmation; click again to clear this achievement and its saved screenshot.",
     "locked_accessible": "Locked {tier} trophy", "unlocked_accessible": "Unlocked {tier} achievement: {title}", "notification": {"single": "New achievement unlocked", "multiple": "{count} achievements unlocked", "more": " and {count} total"},
     "definitions": {
       "race": {
@@ -162,6 +163,11 @@
       },
       "ambient": {"tsuyoshi_rare_stand": {"title": "Tsuyoshi Stood Up!", "description": "In a 1x Sandbox session, witness Tsurumaru Tsuyoshi rarely follow side-ready by standing up."}}
     }
+  },
+  "memory_album": {
+    "mode": {"label": "Photo mode", "off": "Off", "events": "Interactions", "random": "Random photos"},
+    "capacity": "Photo limit", "open_folder": "Open photo folder", "open_photo": "Open this photo",
+    "status": {"normal": "Saved {count}/{capacity} photos. Photos are taken only at 1x and are never deleted automatically.", "near_full": "The album is nearly full ({count}/{capacity}). Capture stops at the limit.", "full": "The album is full ({count}/{capacity}). No new photos will be taken and existing photos will not be deleted."}
   },
   "events": {
     "unnamed": "Unnamed event", "types": {"opening_note": "Opening note", "fund_snapshot": "Fund snapshot", "pressure_snapshot": "Pressure snapshot", "player_donate_fund": "Fund donation", "teio_drink_expense": "Drink expense", "rudolf_collectible_expense": "Collectible expense", "rudolf_work_completed": "Work completed", "transformation_started": "Transformation started", "transformation_ended": "Transformation ended", "observe_social_log": "Quiet observation", "post_observe_social_log": "Everyday conversation", "race_completed": "Race completed", "race_declined": "Race declined", "chorus_completed": "Performance completed", "chorus_interrupted": "Performance interrupted", "offer_bottle_success": "Bottle received", "ground_bottle_pickup": "Bottle picked up", "offer_bottle_feed": "Bottle feeding", "ground_bottle_feed": "Bottle feeding", "offer_honey_success": "Honey received", "ground_honey_pickup": "Honey picked up", "offer_honey_guarded": "Honey protected", "offer_honey_denied": "Honey denied", "offer_hover_timeout": "Item interaction timed out", "shared_ramen": "Ramen shared", "shared_tea_chat": "Tea shared", "shared_honey": "Honey shared"}, "deltas": {"living_fund": "Living fund {amount:+,d}", "pressure": "Pressure {amount:+.1f}", "mood": "Mood {amount:+.1f}", "relationship": "Relationship {details}"},

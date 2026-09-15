@@ -33,6 +33,7 @@
       "event_log": {"navigation": "イベントログ", "title": "イベントログ", "placeholder": "イベントの絞り込み、一覧、詳細記録を表示します。"},
       "family_status": {"navigation": "家族概要", "title": "家族ステータス概要", "placeholder": "生活費、家族ストレス、メンバーカード、最近のイベントを表示します。"},
       "achievements": {"navigation": "トロフィー棚", "title": "トロフィー棚", "placeholder": "サンドボックスと黄金伝説の実績トロフィーを表示します。"},
+      "memory_album": {"navigation": "思い出アルバム", "title": "思い出アルバム", "placeholder": "交流イベントや日常の写真を閲覧します。"},
       "status_settings": {"navigation": "状態設定", "title": "状態設定", "placeholder": "一般設定、交流クールダウン、開発用ツールを表示します。"}
     },
     "sizes": {
@@ -110,7 +111,7 @@
     "row": "  -> {target}: 好感度 {affinity:5.2f} | 親しさ {familiarity:5.2f} / 信頼 {trust:5.2f} / 愛着 {attachment:5.2f} / 緊張 {tension:5.2f} | イベント {event_count}"
   },
   "achievements": {
-    "modes": {"sandbox": "サンドボックス", "golden_legend": "黄金伝説"}, "mode_tabs": {"sandbox": "サンドボックス実績", "golden_legend": "黄金伝説実績"}, "progress": "取得済み {unlocked} / {total}", "summary_recent": "{progress}｜最新：{title}", "summary_empty": "{progress}｜取得済み実績なし", "acquisition_record": "取得記録", "hover_unlocked": "取得済みトロフィーにカーソルを合わせると取得条件を表示します。", "unlocked_at": "取得日時：{time}", "memory_capture": "実績解除時の画面を自動保存", "memory_capture_tooltip": "オフの場合は画面を保存しません。macOSでは初回に画面収録の許可を求められる場合があります。", "memory_saved": "解除時の画面を保存しました。", "memory_missing": "この実績のスクリーンショットはありません。", "memory_open": "元画像を開く", "locked_accessible": "未取得の{tier}トロフィー", "unlocked_accessible": "取得済み{tier}実績：{title}", "notification": {"single": "新しい実績を取得", "multiple": "実績を{count}件同時取得", "more": " など計{count}件"},
+    "modes": {"sandbox": "サンドボックス", "golden_legend": "黄金伝説"}, "mode_tabs": {"sandbox": "サンドボックス実績", "golden_legend": "黄金伝説実績"}, "progress": "取得済み {unlocked} / {total}", "summary_recent": "{progress}｜最新：{title}", "summary_empty": "{progress}｜取得済み実績なし", "acquisition_record": "取得記録", "hover_unlocked": "取得済みトロフィーにカーソルを合わせると取得条件を表示します。", "unlocked_at": "取得日時：{time}", "memory_capture": "実績解除時の画面を自動保存", "memory_capture_tooltip": "1x時のみ撮影します。オフの場合は保存しません。macOSでは初回に画面収録の許可を求められる場合があります。", "memory_saved": "解除時の画面を保存しました。", "memory_missing": "この実績のスクリーンショットはありません。", "memory_open": "元画像を開く", "reset": "実績をリセット", "reset_confirm": "もう一度押して確認", "reset_tooltip": "最初のクリックでは確認状態になるだけです。もう一度クリックすると、この実績と保存済みスクリーンショットをリセットします。", "locked_accessible": "未取得の{tier}トロフィー", "unlocked_accessible": "取得済み{tier}実績：{title}", "notification": {"single": "新しい実績を取得", "multiple": "実績を{count}件同時取得", "more": " など計{count}件"},
     "definitions": {
       "race": {
         "first_natural_finish": {"title": "初めての疾走", "description": "全行程1xで、テストではないレースが初めて自然完走するところを見届ける。"},
@@ -154,6 +155,11 @@
       },
       "ambient": {"tsuyoshi_rare_stand": {"title": "ツヨシが立った！", "description": "1xのサンドボックスで、ツルマルツヨシがside-readyからまれに立ち上がるところを見る。"}}
     }
+  },
+  "memory_album": {
+    "mode": {"label": "撮影モード", "off": "オフ", "events": "交流イベント", "random": "ランダム撮影"},
+    "capacity": "写真上限", "open_folder": "写真フォルダーを開く", "open_photo": "この写真を開く",
+    "status": {"normal": "{count}/{capacity} 枚を保存済み。撮影は1x時のみで、写真は自動削除されません。", "near_full": "アルバムの空きが少なくなっています（{count}/{capacity}）。上限で撮影を停止します。", "full": "アルバムが満杯です（{count}/{capacity}）。新しい写真は撮影されず、既存の写真も自動削除されません。"}
   },
   "events": {
     "unnamed": "名称未設定のイベント", "types": {"opening_note": "一日の始まり", "fund_snapshot": "生活費スナップショット", "pressure_snapshot": "家族ストレスの記録", "player_donate_fund": "生活費の寄付", "teio_drink_expense": "飲み物の支出", "rudolf_collectible_expense": "コレクションの支出", "rudolf_work_completed": "仕事完了", "transformation_started": "変身開始", "transformation_ended": "変身終了", "observe_social_log": "静かな見守り", "post_observe_social_log": "日常の会話", "race_completed": "レース完走", "race_declined": "レース辞退", "chorus_completed": "演奏完了", "chorus_interrupted": "演奏中断", "offer_bottle_success": "哺乳瓶を受け取った", "ground_bottle_pickup": "哺乳瓶を拾った", "offer_bottle_feed": "哺乳瓶でお世話", "ground_bottle_feed": "哺乳瓶でお世話", "offer_honey_success": "ハチミツを受け取った", "ground_honey_pickup": "ハチミツを拾った", "offer_honey_guarded": "ハチミツ保護", "offer_honey_denied": "ハチミツ阻止", "offer_hover_timeout": "アイテム待機終了", "shared_ramen": "ラーメンを共有", "shared_tea_chat": "お茶を共有", "shared_honey": "ハチミツを共有"}, "deltas": {"living_fund": "生活費 {amount:+,d}", "pressure": "ストレス {amount:+.1f}", "mood": "気分 {amount:+.1f}", "relationship": "関係 {details}"},

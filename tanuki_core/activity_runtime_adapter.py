@@ -98,6 +98,16 @@ class ActivityRuntimeAdapter:
             busy_reasons.append("offer")
         if str(getattr(pet, "held_item_kind", "") or ""):
             busy_reasons.append("held_item")
+        is_side_ready_followup_locked = getattr(
+            pet,
+            "is_side_ready_followup_locked",
+            None,
+        )
+        if (
+            callable(is_side_ready_followup_locked)
+            and bool(is_side_ready_followup_locked(now))
+        ):
+            busy_reasons.append("rare_pose")
 
         state = getattr(pet, "activity_state", None)
         active_activity_id = (

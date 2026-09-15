@@ -125,6 +125,9 @@ class FakePet:
     def width(self):
         return 100
 
+    def clamp_x_to_virtual_geometry(self, x, _width, padding=0):
+        return max(float(padding), min(500.0 - float(padding), float(x)))
+
     def distance_to(self, other):
         return abs(self.x() - other.x())
 
@@ -305,6 +308,7 @@ class SleepExecutorTests(unittest.TestCase):
 
     def test_multiple_pets_can_auto_sleep_independently(self):
         second_pet = FakePet("Tokai Teio")
+        second_pet._x = 300.0
         pets = (self.pet, second_pet)
         self.update(0.0, pets=pets)
 
@@ -322,6 +326,8 @@ class SleepExecutorTests(unittest.TestCase):
 
     def test_every_visible_pet_can_sleep_without_fixed_global_limit(self):
         pets = tuple(FakePet(f"Pet {index}") for index in range(5))
+        for index, pet in enumerate(pets):
+            pet._x = float(index * 100)
         self.update(0.0, pets=pets)
 
         results = self.update(120.0, pets=pets)
@@ -329,11 +335,30 @@ class SleepExecutorTests(unittest.TestCase):
         self.assertEqual(sum(result.started for result in results), 5)
         self.assertTrue(all(pet.activity_state.active for pet in pets))
 
+    def test_overlapping_due_pet_defers_autonomous_sleep(self):
+        second_pet = FakePet("Tokai Teio")
+        pets = (self.pet, second_pet)
+        self.update(0.0, pets=pets)
+
+        results = self.update(120.0, pets=pets)
+
+        self.assertEqual(sum(result.started for result in results), 1)
+        self.assertTrue(self.pet.activity_state.active)
+        self.assertFalse(second_pet.activity_state.active)
+        self.assertGreater(
+            self.executor.schedules[second_pet.name].next_proposal_at,
+            120.0,
+        )
+
     def test_distressed_child_wakes_shallow_sleeping_sirius_first(self):
         sirius = FakePet("Sirius Symboli", is_adult=True)
         rudolf = FakePet("Symboli Rudolf", is_adult=True)
         air = FakePet("Air Groove", is_adult=True)
         child = FakePet("Tokai Teio")
+        sirius._x = 0.0
+        rudolf._x = 100.0
+        air._x = 200.0
+        child._x = 300.0
         pets = (sirius, rudolf, air, child)
         self.update(0.0, pets=pets)
         self.executor.schedules[child.name].next_proposal_at = 1000.0
@@ -491,6 +516,73 @@ class SleepExecutorTests(unittest.TestCase):
         self.assertEqual(
             remaining_activity.metadata["sleep_group_slot"],
             0,
+        )
+
+    def test_joiner_uses_open_side_when_preferred_slot_clamps_onto_anchor(self):
+        observer = FakePet("Tokai Teio")
+        self.pet._x = 0.0
+        observer._x = -10.0
+        pets = (self.pet, observer)
+        self.update(0.0, pets=pets)
+        self.executor.schedules[observer.name].next_proposal_at = 1000.0
+        self.executor.schedules[observer.name].next_social_probe_at = 123.0
+
+        self.update(120.0, pets=pets)
+        self.update(123.0, pets=pets)
+        self.executor.update_join_behavior(
+            observer,
+            pets,
+            now=123.0,
+            world_mode="sandbox",
+        )
+        self.executor.update_join_behavior(
+            observer,
+            pets,
+            now=126.0,
+            world_mode="sandbox",
+        )
+
+        attempt = self.executor.join_attempts.get(observer.name)
+        if attempt is not None:
+            slot = attempt.slot
+        else:
+            slot = self.coordinator.get_activity_for_participant(
+                observer.name
+            ).metadata["sleep_group_slot"]
+        self.assertEqual(slot, 1)
+
+    def test_reanchor_preserves_existing_physical_slot_relationships(self):
+        anchor = FakePet("Symboli Rudolf")
+        right = FakePet("Tokai Teio")
+        left = FakePet("Tsurumaru Tsuyoshi")
+        activities = []
+        for started_at, pet in enumerate((anchor, right, left), start=1):
+            result = self.executor._start_sleep(
+                pet,
+                now=float(started_at),
+                world_mode="sandbox",
+                trigger_kind="autonomous",
+            )
+            self.assertTrue(result.started)
+            activities.append(self.coordinator.get_activity(result.activity_id))
+        for activity, slot in zip(activities, (0, 1, -1)):
+            activity.metadata["sleep_group_id"] = "sleep-group:test"
+            activity.metadata["sleep_anchor_name"] = anchor.name
+            activity.metadata["sleep_group_slot"] = slot
+
+        self.coordinator.interrupt(
+            activities[0].activity_id,
+            now=10.0,
+            reason="test_anchor_left",
+            force=True,
+        )
+        self.executor._reanchor_sleep_group("sleep-group:test")
+
+        self.assertEqual(activities[1].metadata["sleep_group_slot"], 0)
+        self.assertEqual(activities[2].metadata["sleep_group_slot"], -2)
+        self.assertEqual(
+            activities[2].metadata["sleep_anchor_name"],
+            right.name,
         )
 
     def test_stuck_sleep_join_is_canceled_and_retried(self):

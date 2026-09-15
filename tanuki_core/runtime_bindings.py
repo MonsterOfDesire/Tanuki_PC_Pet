@@ -62,6 +62,14 @@ def bind_dashboard_runtime_providers(runtime):
                 runtime.achievement_runtime_coordinator.build_cabinet_snapshot()
             )
         ),
+        achievement_reset_provider=(
+            lambda world_mode, achievement_id, runtime=runtime: (
+                runtime.achievement_runtime_coordinator.reset_achievement(
+                    world_mode,
+                    achievement_id,
+                )
+            )
+        ),
     )
     dashboard.set_household_action_providers(
         household_donate_provider=(

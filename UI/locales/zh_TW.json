@@ -33,6 +33,7 @@
       "event_log": {"navigation": "事件日誌", "title": "事件日誌"},
       "family_status": {"navigation": "家庭摘要", "title": "家庭狀態摘要"},
       "achievements": {"navigation": "獎盃蒐集櫃", "title": "獎盃蒐集櫃"},
+      "memory_album": {"navigation": "回憶相簿", "title": "回憶相簿", "placeholder": "瀏覽互動事件與日常生活留下的照片。"},
       "status_settings": {"navigation": "狀態設定", "title": "狀態設定"}
     },
     "sizes": {
@@ -128,9 +129,14 @@
     "modes": {"sandbox": "沙盒", "golden_legend": "黃金傳說"}, "mode_tabs": {"sandbox": "沙盒成就", "golden_legend": "黃金傳說成就"},
     "progress": "已取得 {unlocked} / {total}", "summary_recent": "{progress}｜最近：{title}", "summary_empty": "{progress}｜尚無完成成就",
     "acquisition_record": "取得紀錄", "hover_unlocked": "將游標移到已取得的獎盃上，即可查看取得方式。", "unlocked_at": "取得時間：{time}",
-    "memory_capture": "自動保存成就截圖", "memory_capture_tooltip": "關閉時不會擷取畫面；macOS 首次使用可能要求螢幕錄製權限。", "memory_saved": "已保存解鎖時的畫面。", "memory_missing": "此成就沒有保存截圖。", "memory_open": "開啟原圖",
+    "memory_capture": "自動保存成就截圖", "memory_capture_tooltip": "只在 1x 擷取；關閉時不會擷取畫面。macOS 首次使用可能要求螢幕錄製權限。", "memory_saved": "已保存解鎖時的畫面。", "memory_missing": "此成就沒有保存截圖。", "memory_open": "開啟原圖", "reset": "重製成就", "reset_confirm": "再次點擊確認重製", "reset_tooltip": "第一次點擊只會進入確認狀態；再次點擊才會清除此成就及其成就截圖。",
     "locked_accessible": "未取得的 {tier} 獎盃", "unlocked_accessible": "已取得 {tier} 成就：{title}",
     "notification": {"single": "獲得新成就", "multiple": "一次獲得 {count} 項成就", "more": " 等 {count} 項"}
+  },
+  "memory_album": {
+    "mode": {"label": "拍照模式", "off": "不開啟", "events": "互動事件", "random": "隨機拍照"},
+    "capacity": "照片上限", "open_folder": "開啟照片資料夾", "open_photo": "開啟這張照片",
+    "status": {"normal": "已保存 {count}/{capacity} 張；只在 1x 拍攝，系統不會自動刪除照片。", "near_full": "相簿即將滿載（{count}/{capacity}）；抵達上限後將停止拍攝。", "full": "相簿已滿（{count}/{capacity}）；將不再拍攝新照片，既有照片不會自動刪除。"}
   },
   "settings": {
     "language_and_updates": "語言與更新", "interface_language": "介面語言", "unavailable": "狀態設定尚未連接執行中的 Dashboard。",

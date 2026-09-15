@@ -8,7 +8,7 @@ RANDOM_MOVE_PURPOSE_SPEED_THRESHOLD = 0.8
 RANDOM_CONTEXT = "random"
 SIDE_READY_FOLLOWUP_CONTEXT = "side_ready_followup"
 SIDE_READY_FOLLOWUP_CHANCE = 0.50
-SIDE_READY_FOLLOWUP_MIN_HOLD_STEPS = 60
+SIDE_READY_FOLLOWUP_HOLD_SECONDS = 5.5
 SIDE_READY_FOLLOWUP_ACTIONS = frozenset({
     "side_stand",
     "side_stand_cheer",
@@ -92,6 +92,27 @@ def is_visible_side_ready_followup(purpose, action_tag):
     return (
         str(purpose or "") == "idle"
         and str(action_tag or "") in SIDE_READY_FOLLOWUP_ACTIONS
+    )
+
+
+def is_side_ready_followup_lock_active(
+    name,
+    *,
+    lock_until,
+    now,
+    current_purpose,
+    current_action_tag,
+    current_frames,
+):
+    """Protect Tsuyoshi's rare standing pose only while it is still visible."""
+    return (
+        str(name or "") == "Tsurumaru Tsuyoshi"
+        and float(lock_until or 0.0) > float(now)
+        and bool(current_frames)
+        and is_visible_side_ready_followup(
+            current_purpose,
+            current_action_tag,
+        )
     )
 
 

@@ -40,7 +40,17 @@ from .dashboard_state_mapper import (
 from .dashboard_tools_actions import DashboardToolsActions
 from .achievement_cabinet_ui import AchievementUnlockToast
 from .achievement_binding import DashboardAchievementBinding
-from .achievement_memory_capture import AchievementMemoryCaptureService
+from .achievement_memory_capture import (
+    AchievementMemoryCaptureService,
+    capture_pet_scene_image,
+)
+from .memory_album import (
+    MemoryAlbumService,
+    normalize_memory_album_capacity,
+    normalize_memory_album_mode,
+)
+from .memory_album_binding import DashboardMemoryAlbumBinding
+from .memory_capture_runtime import MemoryCaptureRuntime
 from .achievement_presenter import build_achievement_unlock_notification
 from .app_paths import get_user_data_directory
 from .information_center_ui import InformationCenterWindow
@@ -49,6 +59,7 @@ from .information_center_spec import (
     PAGE_ACHIEVEMENTS,
     PAGE_EVENT_LOG,
     PAGE_FAMILY_STATUS,
+    PAGE_MEMORY_ALBUM,
     PAGE_RELATION_SUMMON,
 )
 from .family_summary_binding import DashboardFamilySummaryBinding
@@ -448,6 +459,12 @@ class Dashboard(QWidget):
                 False,
             )
         )
+        self.memory_album_mode = normalize_memory_album_mode(
+            getattr(self.settings_provider, "memory_album_mode", "off")
+        )
+        self.memory_album_capacity = normalize_memory_album_capacity(
+            getattr(self.settings_provider, "memory_album_capacity", 20)
+        )
         set_ui_locale(self.ui_locale)
         self.update_check_coordinator = UpdateCheckCoordinator(parent=self)
         self.update_check_coordinator.status_changed.connect(
@@ -477,6 +494,7 @@ class Dashboard(QWidget):
         self.world_mode_change_provider = None
         self.achievement_time_scale_provider = None
         self.achievement_snapshot_provider = None
+        self.achievement_reset_provider = None
         self.offer_drop_provider = None
         self.offer_hover_provider = None
         self.offer_hover_clear_provider = None
@@ -492,6 +510,11 @@ class Dashboard(QWidget):
                 platform=self.platform_capabilities.platform_key
             )
         )
+        self.memory_album = MemoryAlbumService(
+            get_user_data_directory(
+                platform=self.platform_capabilities.platform_key
+            )
+        )
         self.launcher_shutdown_text = "關閉系統"
         self.launcher_shutdown_enabled = True
         self.launcher_status_text = ""
@@ -500,8 +523,15 @@ class Dashboard(QWidget):
         self.status_settings_binding = DashboardStatusSettingsBinding(self)
         self.family_summary_binding = DashboardFamilySummaryBinding(self)
         self.achievement_binding = DashboardAchievementBinding(self)
+        self.memory_album_binding = DashboardMemoryAlbumBinding(self)
         self.event_log_binding = DashboardEventLogBinding(self)
         self.relation_summon_binding = DashboardRelationSummonBinding(self)
+        self.memory_capture_runtime = MemoryCaptureRuntime(
+            achievement_service=self.achievement_memory_capture,
+            album_service=self.memory_album,
+            album_settings_provider=self._memory_album_runtime_settings,
+            album_changed=self.refresh_memory_album_if_open,
+        )
         self.setWindowFlags(
             build_overlay_window_flags(self.platform_capabilities)
         )
@@ -645,6 +675,12 @@ class Dashboard(QWidget):
         self.update_timer = QTimer(self)
         self.update_timer.timeout.connect(self.refresh_mood_bars)
         self.update_timer.start(500)
+        self.memory_capture_timer = QTimer(self)
+        self.memory_capture_timer.setInterval(500)
+        self.memory_capture_timer.timeout.connect(
+            self.update_memory_capture_runtime
+        )
+        self.memory_capture_timer.start()
 
         self.btn_exit = QPushButton("關閉系統")
         self.btn_exit.clicked.connect(self.begin_shutdown)
@@ -804,6 +840,8 @@ class Dashboard(QWidget):
             mood_climate=self.mood_climate,
             ui_locale=self.ui_locale,
             achievement_capture_enabled=self.achievement_capture_enabled,
+            memory_album_mode=self.memory_album_mode,
+            memory_album_capacity=self.memory_album_capacity,
             information_center=(
                 self.information_center_window.capture_config_state()
                 if self.information_center_window is not None
@@ -835,6 +873,12 @@ class Dashboard(QWidget):
         self.achievement_capture_enabled = bool(
             state.achievement_capture_enabled
         )
+        self.memory_album_mode = normalize_memory_album_mode(
+            state.memory_album_mode
+        )
+        self.memory_album_capacity = normalize_memory_album_capacity(
+            state.memory_album_capacity
+        )
         set_ui_locale(self.ui_locale)
         self.information_center_config_state = state.information_center
         if self.information_center_window is not None:
@@ -857,6 +901,11 @@ class Dashboard(QWidget):
     def refresh_mood_bars(self):
         for info in self.pets_dict.values():
             info["mood_bar"].setValue(int(info["pet"].mood_score))
+
+    def update_memory_capture_runtime(self):
+        self.memory_capture_runtime.tick(
+            tuple(info.get("pet") for info in self.pets_dict.values())
+        )
 
     def make_section_label(self, text):
         label = QLabel(text)
@@ -1105,13 +1154,29 @@ class Dashboard(QWidget):
     def set_achievement_data_provider(
         self,
         achievement_snapshot_provider=None,
+        achievement_reset_provider=None,
     ):
         self.achievement_snapshot_provider = achievement_snapshot_provider
+        self.achievement_reset_provider = achievement_reset_provider
 
     def get_achievement_cabinet_snapshot(self):
         if callable(self.achievement_snapshot_provider):
             return self.achievement_snapshot_provider()
         return None
+
+    def reset_achievement(self, world_mode, achievement_id):
+        if not callable(self.achievement_reset_provider):
+            return False
+        reset = bool(
+            self.achievement_reset_provider(world_mode, achievement_id)
+        )
+        if reset:
+            self.achievement_memory_capture.clear_capture(
+                world_mode,
+                achievement_id,
+            )
+            self.refresh_household_summary_if_open()
+        return reset
 
     def set_household_action_providers(self, household_donate_provider=None):
         self.household_donate_provider = household_donate_provider
@@ -1296,6 +1361,16 @@ class Dashboard(QWidget):
         return False
 
     def apply_achievement_time_scale_transition(self, time_scale):
+        capture_runtime = getattr(self, "memory_capture_runtime", None)
+        if capture_runtime is not None:
+            capture_runtime.observe_time_scale(
+                float(time_scale),
+                (
+                    info.get("pet")
+                    for info in self.pets_dict.values()
+                    if info.get("pet") is not None
+                ),
+            )
         if callable(self.achievement_time_scale_provider):
             return self.achievement_time_scale_provider(float(time_scale))
         return ()
@@ -1319,7 +1394,11 @@ class Dashboard(QWidget):
             )
         return True
 
-    def handle_achievement_unlocks(self, achievement_ids):
+    def handle_achievement_unlocks(
+        self,
+        achievement_ids,
+        capture_context=None,
+    ):
         achievement_ids = tuple(achievement_ids or ())
         snapshot = self.get_achievement_cabinet_snapshot()
         if snapshot is None:
@@ -1342,18 +1421,52 @@ class Dashboard(QWidget):
             anchor_rect=self.target_rect,
         )
         if shown and self.achievement_capture_enabled:
-            QTimer.singleShot(
-                250,
-                lambda ids=achievement_ids, mode=self.world_mode: (
-                    self.capture_achievement_memories(ids, mode)
-                ),
+            self.capture_achievement_memories(
+                achievement_ids,
+                self.world_mode,
+                capture_context=capture_context,
             )
         return shown
 
-    def capture_achievement_memories(self, achievement_ids, world_mode):
+    def capture_achievement_memories(
+        self,
+        achievement_ids,
+        world_mode,
+        *,
+        capture_context=None,
+    ):
+        if abs(float(self.get_time_scale()) - 1.0) > 1e-6:
+            return ()
+        target_names = set(
+            self.achievement_memory_capture.capture_target_names(
+                capture_context
+            )
+        )
+        joined_ids = " ".join(str(item or "") for item in achievement_ids)
+        if "transformation.teio" in joined_ids:
+            target_names.add("Tokai Teio")
+        if "transformation.rudolf" in joined_ids:
+            target_names.add("Symboli Rudolf")
+        if "transformation.both" in joined_ids:
+            target_names.update(("Tokai Teio", "Symboli Rudolf"))
+        if "ambient.tsuyoshi" in joined_ids:
+            target_names.add("Tsurumaru Tsuyoshi")
+        target_pets = tuple(
+            info.get("pet")
+            for info in self.pets_dict.values()
+            if info.get("pet") is not None
+            and (
+                not target_names
+                or str(getattr(info.get("pet"), "name", "") or "")
+                in target_names
+            )
+        )
+        fallback_image = capture_pet_scene_image(target_pets)
         saved = self.achievement_memory_capture.capture(
             achievement_ids,
             world_mode=world_mode,
+            fallback_image=fallback_image,
+            capture_context=capture_context,
         )
         if saved and self.information_center_window is not None:
             self.information_center_window.refresh_achievement_cabinet()
@@ -1364,6 +1477,58 @@ class Dashboard(QWidget):
             world_mode,
             achievement_id,
         )
+
+    def _memory_album_runtime_settings(self):
+        return {
+            "mode": self.memory_album_mode,
+            "capacity": self.memory_album_capacity,
+            "achievement_enabled": self.achievement_capture_enabled,
+            "time_scale": self.get_time_scale(),
+        }
+
+    def get_memory_album_snapshot(self):
+        return self.memory_album.snapshot(
+            mode=self.memory_album_mode,
+            capacity=self.memory_album_capacity,
+        )
+
+    def set_memory_album_mode(self, mode, save=True):
+        normalized = normalize_memory_album_mode(mode)
+        changed = self.memory_album_mode != normalized
+        self.memory_album_mode = normalized
+        if changed and normalized == "random":
+            self.memory_capture_runtime.reset_random_schedule()
+        self.sync_settings_provider()
+        if save and changed:
+            self.schedule_save()
+        self.refresh_memory_album_if_open()
+        return True
+
+    def set_memory_album_capacity(self, capacity, save=True):
+        normalized = normalize_memory_album_capacity(capacity)
+        changed = self.memory_album_capacity != normalized
+        self.memory_album_capacity = normalized
+        self.sync_settings_provider()
+        if save and changed:
+            self.schedule_save()
+        self.refresh_memory_album_if_open()
+        return True
+
+    def open_memory_album_folder(self):
+        try:
+            self.memory_album.root.mkdir(parents=True, exist_ok=True)
+            return bool(
+                QDesktopServices.openUrl(
+                    QUrl.fromLocalFile(str(self.memory_album.root))
+                )
+            )
+        except Exception:
+            return False
+
+    def refresh_memory_album_if_open(self):
+        window = self.information_center_window
+        if window is not None and window.is_page_visible(PAGE_MEMORY_ALBUM):
+            window.refresh_memory_album()
 
     def set_achievement_capture_enabled(self, enabled, save=True):
         self.controller.set_achievement_capture_enabled(
@@ -1555,6 +1720,11 @@ class Dashboard(QWidget):
                 event_log_binding=self.event_log_binding,
                 relation_summon_binding=self.relation_summon_binding,
                 achievement_binding=self.achievement_binding,
+                memory_album_binding=getattr(
+                    self,
+                    "memory_album_binding",
+                    None,
+                ),
                 platform_capabilities=getattr(
                     self,
                     "platform_capabilities",

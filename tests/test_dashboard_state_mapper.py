@@ -142,6 +142,8 @@ class DashboardStateMapperTests(unittest.TestCase):
                 "mood_climate": "cheerful",
                 "ui_locale": "zh_TW",
                 "achievement_capture_enabled": False,
+                "memory_album_mode": "off",
+                "memory_album_capacity": 20,
                 "information_center": {
                     "x": 120,
                     "y": 80,

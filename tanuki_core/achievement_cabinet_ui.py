@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import time
 
 from PyQt6.QtCore import QEvent, QSignalBlocker, QSize, Qt, QTimer, QUrl, pyqtSignal
 from PyQt6.QtGui import QColor, QDesktopServices, QPainter, QPixmap, QRegion
@@ -40,6 +41,7 @@ MODE_BUTTON_LABELS = {
 class AchievementTrophyCard(QFrame):
     highlighted = pyqtSignal(object)
     cleared = pyqtSignal()
+    reset_requested = pyqtSignal(object)
 
     def __init__(self, snapshot, pixmap, parent=None):
         super().__init__(parent)
@@ -48,7 +50,14 @@ class AchievementTrophyCard(QFrame):
         self.setProperty("unlocked", bool(snapshot.unlocked))
         self.setAccessibleName(snapshot.accessible_name)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.setMinimumSize(140, 164)
+        self.setMinimumSize(140, 198)
+        self._reset_armed_at = 0.0
+        self._reset_confirmation_timer = QTimer(self)
+        self._reset_confirmation_timer.setSingleShot(True)
+        self._reset_confirmation_timer.setInterval(8000)
+        self._reset_confirmation_timer.timeout.connect(
+            self.clear_reset_confirmation
+        )
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
@@ -77,6 +86,57 @@ class AchievementTrophyCard(QFrame):
             True,
         )
         layout.addWidget(self.title_label)
+        self.reset_button = None
+        if snapshot.unlocked:
+            self.reset_button = QPushButton(
+                translate_ui(
+                    "achievements.reset",
+                    default="重製成就",
+                )
+            )
+            self.reset_button.setToolTip(
+                translate_ui(
+                    "achievements.reset_tooltip",
+                    default=(
+                        "第一次點擊只會進入確認狀態；"
+                        "再次點擊才會清除此成就及其成就截圖。"
+                    ),
+                )
+            )
+            self.reset_button.clicked.connect(self._handle_reset_clicked)
+            layout.addWidget(self.reset_button)
+
+    def _handle_reset_clicked(self):
+        if self.reset_button is None:
+            return False
+        now = time.monotonic()
+        if self._reset_armed_at <= 0.0:
+            self._reset_armed_at = now
+            self.reset_button.setText(
+                translate_ui(
+                    "achievements.reset_confirm",
+                    default="再次點擊確認重製",
+                )
+            )
+            self._reset_confirmation_timer.start()
+            return False
+        # Ignore the second half of an accidental double click.  The user must
+        # see the confirmation state before a later click can clear progress.
+        if now - self._reset_armed_at < 0.35:
+            return False
+        self._reset_confirmation_timer.stop()
+        self.reset_requested.emit(self.snapshot)
+        return True
+
+    def clear_reset_confirmation(self):
+        self._reset_armed_at = 0.0
+        if self.reset_button is not None:
+            self.reset_button.setText(
+                translate_ui(
+                    "achievements.reset",
+                    default="重製成就",
+                )
+            )
 
     def enterEvent(self, event):
         self.highlighted.emit(self.snapshot)
@@ -468,10 +528,29 @@ class AchievementCabinetPanel(QWidget):
             widget = AchievementTrophyCard(card, pixmap)
             widget.highlighted.connect(self.show_card_detail)
             widget.cleared.connect(self.clear_detail)
+            widget.reset_requested.connect(
+                self._handle_reset_achievement
+            )
             self.card_widgets.append(widget)
         self.clear_detail()
         self._last_grid_columns = 0
         self._reflow_cards()
+
+    def _handle_reset_achievement(self, card):
+        if not isinstance(card, AchievementCardSnapshot) or not card.unlocked:
+            return False
+        resetter = getattr(self.binding, "reset_achievement", None)
+        reset = bool(
+            resetter(self.current_world_mode, card.slot_key)
+        ) if callable(resetter) else False
+        if reset:
+            self.refresh_from_binding()
+            return True
+        for widget in self.card_widgets:
+            if widget.snapshot.slot_key == card.slot_key:
+                widget.clear_reset_confirmation()
+                break
+        return False
 
     def _reflow_cards(self):
         if not self.card_widgets:

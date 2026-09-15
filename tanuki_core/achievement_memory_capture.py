@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
 import re
@@ -14,6 +16,15 @@ ACHIEVEMENT_MEMORY_DIRECTORY = "achievement_memories"
 CAPTURE_FILENAME = "capture.png"
 METADATA_FILENAME = "metadata.json"
 MAX_CAPTURE_PIXELS = 16_000_000
+SCENE_CAPTURE_MARGIN_PX = 120
+MAX_PERFORMING_CANDIDATES = 96
+MAX_PARTICIPANT_MATCH_AGE_SECONDS = 30.0
+
+
+@dataclass(frozen=True)
+class VirtualDesktopCapture:
+    image: QImage
+    virtual_rect: QRect
 
 
 def _safe_path_component(value):
@@ -21,7 +32,7 @@ def _safe_path_component(value):
     return value.strip("._") or "unknown"
 
 
-def capture_virtual_desktop_image(*, screens=None):
+def capture_virtual_desktop_frame(*, screens=None):
     """Capture and compose all Qt screens in logical desktop coordinates."""
     screens = tuple(QApplication.screens() if screens is None else screens)
     if not screens:
@@ -65,7 +76,68 @@ def capture_virtual_desktop_image(*, screens=None):
             Qt.AspectRatioMode.KeepAspectRatio,
             Qt.TransformationMode.SmoothTransformation,
         )
-    return image
+    return VirtualDesktopCapture(image=image, virtual_rect=virtual_rect)
+
+
+def capture_virtual_desktop_image(*, screens=None):
+    frame = capture_virtual_desktop_frame(screens=screens)
+    return frame.image if frame is not None else None
+
+
+def visible_pet_rect(pet):
+    frames = tuple(getattr(pet, "current_frames", ()) or ())
+    if not frames:
+        return QRect(int(pet.x()), int(pet.y()), int(pet.width()), int(pet.height()))
+    frame = frames[int(getattr(pet, "frame_index", 0)) % len(frames)]
+    draw_x = (int(pet.width()) - int(frame.width())) // 2
+    draw_y = int(pet.height()) - int(frame.height())
+    return QRect(
+        int(pet.x()) + draw_x,
+        int(pet.y()) + draw_y,
+        int(frame.width()),
+        int(frame.height()),
+    )
+
+
+def crop_virtual_desktop_frame(frame, pets, *, margin=SCENE_CAPTURE_MARGIN_PX):
+    if frame is None:
+        return None
+    rects = []
+    for pet in pets or ():
+        if pet is None or not bool(getattr(pet, "user_visible", True)):
+            continue
+        try:
+            if not pet.isVisible():
+                continue
+        except Exception:
+            pass
+        rects.append(visible_pet_rect(pet))
+    if not rects:
+        return frame.image
+    scene_rect = QRect(rects[0])
+    for rect in rects[1:]:
+        scene_rect = scene_rect.united(rect)
+    scene_rect.adjust(-int(margin), -int(margin), int(margin), int(margin))
+    scene_rect = scene_rect.intersected(frame.virtual_rect)
+    if scene_rect.isEmpty():
+        return frame.image
+    scale_x = frame.image.width() / float(max(1, frame.virtual_rect.width()))
+    scale_y = frame.image.height() / float(max(1, frame.virtual_rect.height()))
+    image_rect = QRect(
+        int(round((scene_rect.x() - frame.virtual_rect.x()) * scale_x)),
+        int(round((scene_rect.y() - frame.virtual_rect.y()) * scale_y)),
+        max(1, int(round(scene_rect.width() * scale_x))),
+        max(1, int(round(scene_rect.height() * scale_y))),
+    ).intersected(frame.image.rect())
+    return frame.image.copy(image_rect)
+
+
+def capture_pet_scene_image(pets, *, screens=None, margin=SCENE_CAPTURE_MARGIN_PX):
+    return crop_virtual_desktop_frame(
+        capture_virtual_desktop_frame(screens=screens),
+        pets,
+        margin=margin,
+    )
 
 
 class AchievementMemoryCaptureService:
@@ -83,8 +155,72 @@ class AchievementMemoryCaptureService:
         self.now_provider = now_provider or (
             lambda: datetime.now(timezone.utc)
         )
+        self._performing_candidates = {}
+        self._latest_performing_candidates = {}
+        self._latest_performing_candidate = None
 
-    def capture(self, achievement_ids, *, world_mode):
+    def stage_performing_candidate(self, kind, image, *, metadata=None):
+        kind = str(kind or "").strip()
+        if (
+            not kind
+            or image is None
+            or bool(getattr(image, "isNull", lambda: True)())
+        ):
+            return False
+        metadata = dict(metadata or {})
+        candidate = (
+            image.copy() if hasattr(image, "copy") else image,
+            metadata,
+        )
+        capture_key = _candidate_capture_key(metadata)
+        storage_key = (kind, capture_key)
+        self._performing_candidates.pop(storage_key, None)
+        self._performing_candidates[storage_key] = candidate
+        while len(self._performing_candidates) > MAX_PERFORMING_CANDIDATES:
+            self._performing_candidates.pop(next(iter(self._performing_candidates)))
+        self._latest_performing_candidates[kind] = candidate
+        self._latest_performing_candidate = candidate
+        return True
+
+    def discard_performing_candidates(self):
+        """Forget frames that may belong to a speed-ineligible scene."""
+        self._performing_candidates.clear()
+        self._latest_performing_candidates.clear()
+        self._latest_performing_candidate = None
+
+    @staticmethod
+    def capture_target_names(capture_context):
+        details = _capture_context_details(capture_context)
+        return (
+            details["participant_names"]
+            if details is not None
+            else frozenset()
+        )
+
+    @staticmethod
+    def _candidate_kind_for_achievement(achievement_id):
+        prefix = str(achievement_id or "").partition(".")[0]
+        return {
+            "race": "race",
+            "chorus": "chorus",
+            "sleep": "sleep",
+            "transformation": "transformation",
+            "care": "care",
+            "honey": "honey_guard",
+            "food": "food",
+            "work": "work",
+            "ambient": "ambient",
+            "activity": "activity",
+        }.get(prefix, "")
+
+    def capture(
+        self,
+        achievement_ids,
+        *,
+        world_mode,
+        fallback_image=None,
+        capture_context=None,
+    ):
         pending = []
         for achievement_id in dict.fromkeys(
             str(item or "").strip() for item in (achievement_ids or ())
@@ -96,20 +232,35 @@ class AchievementMemoryCaptureService:
                 pending.append((achievement_id, path))
         if not pending:
             return ()
-        try:
-            image = self.image_provider()
-        except Exception:
-            return ()
-        if image is None or bool(getattr(image, "isNull", lambda: True)()):
-            return ()
-
         captured_at = self.now_provider()
         if isinstance(captured_at, datetime):
             captured_at_text = captured_at.astimezone(timezone.utc).isoformat()
         else:
             captured_at_text = str(captured_at)
         saved = []
+        unlock_image = fallback_image
+        unlock_image_loaded = fallback_image is not None
         for achievement_id, path in pending:
+            candidate_kind = self._candidate_kind_for_achievement(
+                achievement_id
+            )
+            candidate = self._candidate_for_context(
+                candidate_kind,
+                capture_context,
+            )
+            if candidate is None:
+                if not unlock_image_loaded:
+                    try:
+                        unlock_image = self.image_provider()
+                    except Exception:
+                        continue
+                    unlock_image_loaded = True
+                image = unlock_image
+                candidate_metadata = {}
+            else:
+                image, candidate_metadata = candidate
+            if image is None or bool(getattr(image, "isNull", lambda: True)()):
+                continue
             try:
                 path.parent.mkdir(parents=True, exist_ok=True)
                 if not bool(image.save(str(path), "PNG")):
@@ -119,6 +270,10 @@ class AchievementMemoryCaptureService:
                     "world_mode": str(world_mode or "sandbox"),
                     "captured_at": captured_at_text,
                     "image": CAPTURE_FILENAME,
+                    "capture_moment": (
+                        "performing" if candidate is not None else "unlock"
+                    ),
+                    "scene": dict(candidate_metadata),
                 }
                 (path.parent / METADATA_FILENAME).write_text(
                     json.dumps(metadata, ensure_ascii=False, indent=2),
@@ -128,6 +283,49 @@ class AchievementMemoryCaptureService:
             except Exception:
                 continue
         return tuple(saved)
+
+    def _candidate_for_context(self, candidate_kind, capture_context):
+        details = _capture_context_details(capture_context)
+        if details is None:
+            if candidate_kind == "activity":
+                return self._latest_performing_candidate
+            return self._latest_performing_candidates.get(candidate_kind)
+
+        event_kind = _candidate_kind_for_event(details["event_name"])
+        if candidate_kind == "activity" and event_kind:
+            candidate_kind = event_kind
+        activity_id = details["activity_id"]
+        if activity_id:
+            candidate = self._performing_candidates.get(
+                (candidate_kind, activity_id)
+            )
+            if candidate is not None:
+                return candidate
+
+        participant_names = details["participant_names"]
+        if not participant_names:
+            return None
+        for (kind, _capture_key), candidate in reversed(
+            tuple(self._performing_candidates.items())
+        ):
+            if kind != candidate_kind:
+                continue
+            candidate_names = frozenset(
+                str(name or "").strip()
+                for name in candidate[1].get("participants", ())
+                if str(name or "").strip()
+            )
+            captured_at = _safe_float(candidate[1].get("captured_at"), 0.0)
+            occurred_at = details["occurred_at"]
+            recent_enough = (
+                captured_at <= 0.0
+                or occurred_at <= 0.0
+                or abs(occurred_at - captured_at)
+                <= MAX_PARTICIPANT_MATCH_AGE_SECONDS
+            )
+            if candidate_names == participant_names and recent_enough:
+                return candidate
+        return None
 
     def capture_path(self, world_mode, achievement_id):
         return (
@@ -140,3 +338,127 @@ class AchievementMemoryCaptureService:
     def latest_capture_path(self, world_mode, achievement_id):
         path = self.capture_path(world_mode, achievement_id)
         return path if path.is_file() else None
+
+    def clear_capture(self, world_mode, achievement_id):
+        """Remove only the known screenshot files for one achievement."""
+        capture_path = self.capture_path(world_mode, achievement_id)
+        directory = capture_path.parent
+        removed = False
+        for path in (
+            capture_path,
+            directory / METADATA_FILENAME,
+        ):
+            try:
+                if path.is_file():
+                    path.unlink()
+                    removed = True
+            except OSError:
+                continue
+        try:
+            directory.rmdir()
+        except OSError:
+            pass
+        return removed
+
+
+def _candidate_capture_key(metadata):
+    activity_id = str(metadata.get("activity_id", "") or "").strip()
+    if activity_id:
+        return activity_id
+    scene_key = str(metadata.get("scene_key", "") or "").strip()
+    if scene_key:
+        return scene_key
+    participants = tuple(
+        sorted(
+            str(name or "").strip()
+            for name in metadata.get("participants", ())
+            if str(name or "").strip()
+        )
+    )
+    return "participants:" + "|".join(participants)
+
+
+def _capture_context_details(capture_context):
+    if capture_context is None:
+        return None
+    if isinstance(capture_context, Mapping):
+        event_name = str(capture_context.get("event_name", "") or "")
+        payload = capture_context.get("payload", capture_context)
+        participants = capture_context.get("participants", ())
+        occurred_at = _safe_float(capture_context.get("occurred_at"), 0.0)
+    else:
+        event_name = str(getattr(capture_context, "event_name", "") or "")
+        payload = getattr(capture_context, "payload", {})
+        participants = getattr(capture_context, "participants", ())
+        occurred_at = _safe_float(
+            getattr(capture_context, "occurred_at", 0.0),
+            0.0,
+        )
+    payload = dict(payload or {}) if isinstance(payload, Mapping) else {}
+    if not participants:
+        participants = payload.get("activity_participants", ())
+    participant_names = {
+        str(participant.get("name", "") or "").strip()
+        for participant in (participants or ())
+        if isinstance(participant, Mapping)
+        and str(participant.get("name", "") or "").strip()
+    }
+    for field_name in (
+        "character_name",
+        "caregiver_name",
+        "target_name",
+        "challenger_name",
+        "opponent_name",
+    ):
+        name = str(payload.get(field_name, "") or "").strip()
+        if name:
+            participant_names.add(name)
+    for field_name in (
+        "naturally_sleeping_character_names",
+        "performer_names",
+        "audience_names",
+    ):
+        values = payload.get(field_name, ())
+        if not isinstance(values, (list, tuple, set, frozenset)):
+            continue
+        participant_names.update(
+            str(name or "").strip()
+            for name in values
+            if str(name or "").strip()
+        )
+    return {
+        "event_name": event_name,
+        "activity_id": str(payload.get("activity_id", "") or "").strip(),
+        "participant_names": frozenset(participant_names),
+        "occurred_at": occurred_at,
+    }
+
+
+def _candidate_kind_for_event(event_name):
+    event_name = str(event_name or "")
+    if event_name.startswith("activity.race."):
+        return "race"
+    if event_name.startswith("activity.chorus."):
+        return "chorus"
+    if event_name.startswith("activity.sleep."):
+        return "sleep"
+    if event_name.startswith("activity.work."):
+        return "work"
+    if event_name.startswith("activity.transformation."):
+        return "transformation"
+    if event_name.startswith("interaction.care."):
+        return "care"
+    if event_name.startswith("interaction.honey_guard."):
+        return "honey_guard"
+    if event_name.startswith("interaction.food_share."):
+        return "food"
+    if event_name.startswith("ambient."):
+        return "ambient"
+    return ""
+
+
+def _safe_float(value, default=0.0):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)

@@ -84,6 +84,73 @@ class AchievementCabinetUiTests(unittest.TestCase):
         self.assertTrue(binding.enabled)
         panel.deleteLater()
 
+    def test_unlocked_card_requires_two_stage_reset_confirmation(self):
+        definition = self.catalog.get("race.first_natural_finish")
+        self.state.progress_for(
+            definition.world_mode,
+            definition.achievement_id,
+        ).unlock(1_700_000_000.0)
+
+        class Binding:
+            def __init__(self, catalog, state):
+                self.catalog = catalog
+                self.state = state
+                self.reset_calls = []
+
+            def snapshot(self):
+                return build_achievement_cabinet_snapshot(
+                    self.catalog,
+                    self.state,
+                )
+
+            def capture_enabled(self):
+                return False
+
+            def reset_achievement(self, world_mode, achievement_id):
+                self.reset_calls.append((world_mode, achievement_id))
+                return self.state.reset_achievement(
+                    world_mode,
+                    achievement_id,
+                )
+
+        binding = Binding(self.catalog, self.state)
+        panel = AchievementCabinetPanel(
+            AssetManager.get_resource_path,
+            binding=binding,
+        )
+        panel.select_mode(definition.world_mode)
+        panel.select_tier(definition.tier)
+        card = next(
+            widget
+            for widget in panel.card_widgets
+            if widget.snapshot.slot_key == definition.achievement_id
+        )
+
+        self.assertIsNotNone(card.reset_button)
+        self.assertFalse(card._handle_reset_clicked())
+        self.assertEqual(binding.reset_calls, [])
+        self.assertIn("再次", card.reset_button.text())
+
+        card._reset_armed_at -= 1.0
+        self.assertTrue(card._handle_reset_clicked())
+        self.assertEqual(
+            binding.reset_calls,
+            [(definition.world_mode, definition.achievement_id)],
+        )
+        self.assertFalse(
+            self.state.is_unlocked(
+                definition.world_mode,
+                definition.achievement_id,
+            )
+        )
+        replacement = next(
+            widget
+            for widget in panel.card_widgets
+            if widget.snapshot.slot_key == definition.achievement_id
+        )
+        self.assertIsNone(replacement.reset_button)
+        panel.deleteLater()
+
     def test_locked_card_does_not_reveal_title_method_or_progress(self):
         panel = AchievementCabinetPanel(AssetManager.get_resource_path)
         panel.set_snapshot(self.snapshot, "sandbox")

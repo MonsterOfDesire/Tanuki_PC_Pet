@@ -209,9 +209,9 @@ class InformationCenterWindowTests(unittest.TestCase):
         self.window.deleteLater()
         self.app.processEvents()
 
-    def test_window_builds_five_navigation_pages(self):
-        self.assertEqual(len(self.window.navigation_buttons), 5)
-        self.assertEqual(len(self.window.pages), 5)
+    def test_window_builds_six_navigation_pages(self):
+        self.assertEqual(len(self.window.navigation_buttons), 6)
+        self.assertEqual(len(self.window.pages), 6)
         self.assertEqual(
             tuple(self.window.navigation_buttons),
             tuple(page.page_id for page in INFORMATION_CENTER_PAGE_SPECS),
@@ -523,7 +523,7 @@ class InformationCenterWindowTests(unittest.TestCase):
             )
         )
         self.assertTrue(self.window.is_page_detached(PAGE_FAMILY_STATUS))
-        self.assertEqual(self.window.page_stack.count(), 5)
+        self.assertEqual(self.window.page_stack.count(), 6)
         self.assertEqual(self.window.page_indexes, original_indexes)
         self.assertEqual(
             self.window.current_page_id,

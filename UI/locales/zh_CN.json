@@ -33,6 +33,7 @@
       "event_log": {"navigation": "事件日志", "title": "事件日志", "placeholder": "正在加载事件日志…"},
       "family_status": {"navigation": "家庭摘要", "title": "家庭状态摘要", "placeholder": "正在加载家庭摘要…"},
       "achievements": {"navigation": "奖杯收集柜", "title": "奖杯收集柜", "placeholder": "正在加载奖杯收集柜…"},
+      "memory_album": {"navigation": "回忆相册", "title": "回忆相册", "placeholder": "浏览互动事件与日常生活留下的照片。"},
       "status_settings": {"navigation": "状态设置", "title": "状态设置", "placeholder": "正在加载状态设置…"}
     },
     "sizes": {
@@ -254,7 +255,7 @@
     "modes": {"sandbox": "沙盒", "golden_legend": "黄金传说"}, "mode_tabs": {"sandbox": "沙盒成就", "golden_legend": "黄金传说成就"},
     "progress": "已取得 {unlocked} / {total}", "summary_recent": "{progress}｜最近：{title}", "summary_empty": "{progress}｜尚无完成成就",
     "acquisition_record": "取得记录", "hover_unlocked": "将鼠标指针移到已取得的奖杯上，即可查看取得方式。", "unlocked_at": "取得时间：{time}",
-    "memory_capture": "自动保存成就截图", "memory_capture_tooltip": "关闭时不会截取画面；macOS 首次使用可能要求屏幕录制权限。", "memory_saved": "已保存解锁时的画面。", "memory_missing": "此成就没有保存截图。", "memory_open": "打开原图",
+    "memory_capture": "自动保存成就截图", "memory_capture_tooltip": "仅在 1x 截取；关闭时不会截取画面。macOS 首次使用可能要求屏幕录制权限。", "memory_saved": "已保存解锁时的画面。", "memory_missing": "此成就没有保存截图。", "memory_open": "打开原图", "reset": "重置成就", "reset_confirm": "再次点击确认重置", "reset_tooltip": "第一次点击只会进入确认状态；再次点击才会清除此成就及其成就截图。",
     "locked_accessible": "未取得的 {tier} 奖杯", "unlocked_accessible": "已取得 {tier} 成就：{title}",
     "notification": {"single": "获得新成就", "multiple": "一次获得 {count} 项成就", "more": " 等 {count} 项"},
     "definitions": {
@@ -367,6 +368,11 @@
         "description": "完成指定的竞赛、合奏、睡眠、变身与照护高阶收集成就。"
       }
     }
+  },
+  "memory_album": {
+    "mode": {"label": "拍照模式", "off": "不开启", "events": "互动事件", "random": "随机拍照"},
+    "capacity": "照片上限", "open_folder": "打开照片文件夹", "open_photo": "打开这张照片",
+    "status": {"normal": "已保存 {count}/{capacity} 张；仅在 1x 拍摄，系统不会自动删除照片。", "near_full": "相册即将满载（{count}/{capacity}）；达到上限后将停止拍摄。", "full": "相册已满（{count}/{capacity}）；将不再拍摄新照片，已有照片不会自动删除。"}
   },
   "settings": {
     "language_and_updates": "语言与更新", "interface_language": "界面语言", "unavailable": "状态设置尚未连接执行中的 Dashboard。",

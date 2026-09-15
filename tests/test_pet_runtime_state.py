@@ -41,6 +41,7 @@ class PetRuntimeStateTests(unittest.TestCase):
         self.assertEqual(state.crowding_event_cooldown_until, 0.0)
         self.assertEqual(state.offer_miss_event_cooldown_until, 0.0)
         self.assertFalse(state.idle_side_stand_armed)
+        self.assertEqual(state.side_ready_followup_lock_until, 0.0)
         self.assertEqual(state.behavior_layer_refresh_skip_counter, 0)
         self.assertEqual(state.behavior_layer_refresh_divisor, 1)
         self.assertEqual(state.high_level_ai_refresh_skip_counter, 0)
@@ -53,6 +54,9 @@ class PetRuntimeStateTests(unittest.TestCase):
         self.assertFalse(state.drag_press_pending)
         self.assertEqual(state.drag_start_time, 0.0)
         self.assertEqual(state.drag_motion_samples, ())
+        self.assertFalse(state.drag_follow_active)
+        self.assertEqual(state.drag_follow_velocity_x, 0.0)
+        self.assertEqual(state.drag_follow_velocity_y, 0.0)
         self.assertEqual(state.click_count, 0)
         self.assertFalse(state.is_angry_locked)
         self.assertTrue(state.user_visible)
@@ -171,6 +175,10 @@ class PetRuntimeStateTests(unittest.TestCase):
         self.assertIn("crowding_event_cooldown_until", PET_STATE_PROXY_FIELDS["behavior_state"])
         self.assertIn("offer_miss_event_cooldown_until", PET_STATE_PROXY_FIELDS["behavior_state"])
         self.assertIn("idle_side_stand_armed", PET_STATE_PROXY_FIELDS["behavior_state"])
+        self.assertIn(
+            "side_ready_followup_lock_until",
+            PET_STATE_PROXY_FIELDS["behavior_state"],
+        )
         self.assertIn("ambient_low_mood_tag", PET_STATE_PROXY_FIELDS["behavior_state"])
         self.assertIn("ambient_low_mood_streak", PET_STATE_PROXY_FIELDS["behavior_state"])
         self.assertIn("visual_band_afterglow", PET_STATE_PROXY_FIELDS["behavior_state"])
@@ -186,6 +194,8 @@ class PetRuntimeStateTests(unittest.TestCase):
         self.assertIn("collision_displaced_until", PET_STATE_PROXY_FIELDS["motion_state"])
         self.assertIn("throw_active", PET_STATE_PROXY_FIELDS["motion_state"])
         self.assertIn("drag_motion_samples", PET_STATE_PROXY_FIELDS["interaction_state"])
+        self.assertIn("drag_follow_active", PET_STATE_PROXY_FIELDS["interaction_state"])
+        self.assertIn("drag_target_x", PET_STATE_PROXY_FIELDS["interaction_state"])
         self.assertIn("intent_kind", PET_STATE_PROXY_FIELDS["intent_state"])
         self.assertIn("observe_blocked_target_name", PET_STATE_PROXY_FIELDS["intent_state"])
         self.assertIn("observe_streak_target_name", PET_STATE_PROXY_FIELDS["intent_state"])

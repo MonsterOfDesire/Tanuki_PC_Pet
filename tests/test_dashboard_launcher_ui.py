@@ -1,7 +1,7 @@
 import os
 import unittest
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -222,6 +222,8 @@ class DashboardLauncherPanelTests(unittest.TestCase):
                 dashboard.launcher_panel,
             )
             self.assertTrue(dashboard.title_label.isHidden())
+            self.assertFalse(dashboard.update_timer.isActive())
+            self.assertTrue(dashboard.memory_capture_timer.isActive())
 
             dashboard.time_scale_idx = 2
             dashboard.care_feature_enabled = False
@@ -238,6 +240,7 @@ class DashboardLauncherPanelTests(unittest.TestCase):
             )
         finally:
             dashboard.update_timer.stop()
+            dashboard.memory_capture_timer.stop()
             dashboard.close()
             dashboard.deleteLater()
             self.app.processEvents()
@@ -467,6 +470,134 @@ class DashboardLauncherBindingTests(unittest.TestCase):
                 ("shutdown",),
             ],
         )
+
+
+class DashboardAchievementResetTests(unittest.TestCase):
+    def test_unlock_saves_memory_in_the_same_one_x_callback(self):
+        toast = SimpleNamespace(show_notification=Mock(return_value=True))
+        dashboard = SimpleNamespace(
+            get_achievement_cabinet_snapshot=lambda: object(),
+            information_center_window=None,
+            achievement_unlock_toast=toast,
+            achievement_capture_enabled=True,
+            resource_resolver=Mock(),
+            target_rect=QRect(0, 0, 1280, 720),
+            world_mode="sandbox",
+            capture_achievement_memories=Mock(return_value=("capture.png",)),
+        )
+
+        with patch(
+            "tanuki_core.dashboard_ui.build_achievement_unlock_notification",
+            return_value=object(),
+        ):
+            shown = Dashboard.handle_achievement_unlocks(
+                dashboard,
+                ("race.first_natural_finish",),
+            )
+
+        self.assertTrue(shown)
+        dashboard.capture_achievement_memories.assert_called_once_with(
+            ("race.first_natural_finish",),
+            "sandbox",
+            capture_context=None,
+        )
+
+    def test_achievement_memory_capture_is_blocked_outside_one_x(self):
+        dashboard = SimpleNamespace(
+            get_time_scale=lambda: 8.0,
+            pets_dict={},
+            achievement_memory_capture=SimpleNamespace(capture=Mock()),
+            information_center_window=None,
+        )
+
+        saved = Dashboard.capture_achievement_memories(
+            dashboard,
+            ("race.first_natural_finish",),
+            "sandbox",
+        )
+
+        self.assertEqual(saved, ())
+        dashboard.achievement_memory_capture.capture.assert_not_called()
+
+    def test_capture_context_crops_to_triggering_character(self):
+        sirius = SimpleNamespace(name="Sirius Symboli")
+        tsuyoshi = SimpleNamespace(name="Tsurumaru Tsuyoshi")
+        context = SimpleNamespace(event_name="activity.sleep.completed")
+        capture_service = SimpleNamespace(
+            capture_target_names=Mock(return_value={"Sirius Symboli"}),
+            capture=Mock(return_value=("capture.png",)),
+        )
+        dashboard = SimpleNamespace(
+            get_time_scale=lambda: 1.0,
+            pets_dict={
+                "sirius": {"pet": sirius},
+                "tsuyoshi": {"pet": tsuyoshi},
+            },
+            achievement_memory_capture=capture_service,
+            information_center_window=None,
+        )
+        image = object()
+
+        with patch(
+            "tanuki_core.dashboard_ui.capture_pet_scene_image",
+            return_value=image,
+        ) as capture_scene:
+            saved = Dashboard.capture_achievement_memories(
+                dashboard,
+                ("sleep.first_natural_finish",),
+                "sandbox",
+                capture_context=context,
+            )
+
+        self.assertEqual(saved, ("capture.png",))
+        capture_scene.assert_called_once_with((sirius,))
+        capture_service.capture.assert_called_once_with(
+            ("sleep.first_natural_finish",),
+            world_mode="sandbox",
+            fallback_image=image,
+            capture_context=context,
+        )
+
+    def test_successful_reset_also_clears_the_matching_capture(self):
+        dashboard = SimpleNamespace(
+            achievement_reset_provider=Mock(return_value=True),
+            achievement_memory_capture=SimpleNamespace(
+                clear_capture=Mock(return_value=True),
+            ),
+            refresh_household_summary_if_open=Mock(),
+        )
+
+        reset = Dashboard.reset_achievement(
+            dashboard,
+            "sandbox",
+            "race.first_natural_finish",
+        )
+
+        self.assertTrue(reset)
+        dashboard.achievement_memory_capture.clear_capture.assert_called_once_with(
+            "sandbox",
+            "race.first_natural_finish",
+        )
+        dashboard.refresh_household_summary_if_open.assert_called_once_with()
+
+    def test_failed_reset_preserves_the_capture(self):
+        dashboard = SimpleNamespace(
+            achievement_reset_provider=Mock(return_value=False),
+            achievement_memory_capture=SimpleNamespace(
+                clear_capture=Mock(),
+            ),
+            refresh_household_summary_if_open=Mock(),
+        )
+
+        reset = Dashboard.reset_achievement(
+            dashboard,
+            "sandbox",
+            "unknown",
+        )
+
+        self.assertFalse(reset)
+        dashboard.achievement_memory_capture.clear_capture.assert_not_called()
+        dashboard.refresh_household_summary_if_open.assert_not_called()
 
 
 if __name__ == "__main__":

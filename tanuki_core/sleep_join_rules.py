@@ -89,13 +89,23 @@ def resolve_sleep_join_target_x(
 ) -> float:
     normalized_slot = int(slot) or 1
     direction = 1 if normalized_slot >= 0 else -1
-    center_spacing = max(
-        48.0,
-        (max(1.0, float(anchor_width)) + max(1.0, float(joiner_width)))
-        * 0.35,
+    center_spacing = resolve_sleep_join_center_spacing(
+        anchor_width,
+        joiner_width,
     )
     anchor_center = float(anchor_x) + (float(anchor_width) / 2.0)
     joiner_center = anchor_center + (
         direction * center_spacing * abs(normalized_slot)
     )
     return joiner_center - (float(joiner_width) / 2.0)
+
+
+def resolve_sleep_join_center_spacing(
+    anchor_width: float,
+    joiner_width: float,
+) -> float:
+    return max(
+        48.0,
+        (max(1.0, float(anchor_width)) + max(1.0, float(joiner_width)))
+        * 0.35,
+    )

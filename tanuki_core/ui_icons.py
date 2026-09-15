@@ -224,6 +224,12 @@ def create_ui_pixmap(name, color="#fffaf2", size=18):
         painter.drawLine(QPointF(10.0, 11.0), QPointF(10.0, 15.0))
         painter.drawLine(QPointF(6.5, 18.0), QPointF(13.5, 18.0))
         painter.drawRoundedRect(QRectF(7.0, 15.0, 6.0, 2.5), 0.8, 0.8)
+    elif normalized_name == "memory":
+        painter.drawRoundedRect(QRectF(2.5, 4.5, 15.0, 12.5), 1.8, 1.8)
+        painter.drawEllipse(QRectF(7.0, 7.0, 6.0, 6.0))
+        painter.drawRoundedRect(QRectF(5.0, 2.5, 5.0, 3.0), 0.8, 0.8)
+        painter.setBrush(QBrush(icon_color))
+        painter.drawEllipse(QPointF(15.0, 7.0), 1.0, 1.0)
     elif normalized_name == "power":
         painter.drawArc(
             QRectF(3.0, 3.0, 14.0, 14.0),

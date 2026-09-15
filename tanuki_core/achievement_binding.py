@@ -39,3 +39,13 @@ class DashboardAchievementBinding:
             if callable(provider)
             else None
         )
+
+    def reset_achievement(self, world_mode, achievement_id):
+        resetter = getattr(
+            self.dashboard,
+            "reset_achievement",
+            None,
+        )
+        return bool(
+            resetter(world_mode, achievement_id)
+        ) if callable(resetter) else False

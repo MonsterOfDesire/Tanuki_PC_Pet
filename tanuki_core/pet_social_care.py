@@ -1059,6 +1059,15 @@ class PetSocialCareMixin:
         is_under_care = getattr(target_pet, "is_under_care", None)
         if callable(is_under_care):
             target_is_under_care = bool(is_under_care(now))
+        side_ready_lock_checker = getattr(
+            target_pet,
+            "is_side_ready_followup_locked",
+            None,
+        )
+        side_ready_locked = bool(
+            callable(side_ready_lock_checker)
+            and side_ready_lock_checker(now)
+        )
         return bool(
             getattr(target_pet, "dragging", False) or
             getattr(target_pet, "throw_active", False) or
@@ -1072,6 +1081,7 @@ class PetSocialCareMixin:
             getattr(target_pet, "offer_scene_kind", "none") != "none" or
             pet_has_active_activity(target_pet) or
             pet_has_sleep_join_intent(target_pet) or
+            side_ready_locked or
             getattr(target_pet, "intent_kind", "") in {INTENT_OBSERVE, INTENT_POST_OBSERVE_INTERACTION}
         )
 

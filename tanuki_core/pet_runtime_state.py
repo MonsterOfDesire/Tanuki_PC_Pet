@@ -15,6 +15,7 @@ PET_STATE_PROXY_FIELDS = {
         "crowding_event_cooldown_until",
         "offer_miss_event_cooldown_until",
         "idle_side_stand_armed",
+        "side_ready_followup_lock_until",
         "state",
         "state_timer",
         "current_purpose",
@@ -37,6 +38,14 @@ PET_STATE_PROXY_FIELDS = {
         "drag_press_pending",
         "drag_start_time",
         "drag_motion_samples",
+        "drag_target_x",
+        "drag_target_y",
+        "drag_follow_x",
+        "drag_follow_y",
+        "drag_follow_velocity_x",
+        "drag_follow_velocity_y",
+        "drag_follow_last_at",
+        "drag_follow_active",
         "click_count",
         "is_angry_locked",
         "user_visible",
@@ -167,6 +176,7 @@ class PetBehaviorState:
     crowding_event_cooldown_until: float = 0.0
     offer_miss_event_cooldown_until: float = 0.0
     idle_side_stand_armed: bool = False
+    side_ready_followup_lock_until: float = 0.0
     state: str = "idle"
     state_timer: int = 0
     current_purpose: str = ""
@@ -191,6 +201,14 @@ class PetInteractionState:
     drag_press_pending: bool = False
     drag_start_time: float = 0.0
     drag_motion_samples: tuple = ()
+    drag_target_x: float = 0.0
+    drag_target_y: float = 0.0
+    drag_follow_x: float = 0.0
+    drag_follow_y: float = 0.0
+    drag_follow_velocity_x: float = 0.0
+    drag_follow_velocity_y: float = 0.0
+    drag_follow_last_at: float = 0.0
+    drag_follow_active: bool = False
     click_count: int = 0
     is_angry_locked: bool = False
     user_visible: bool = True

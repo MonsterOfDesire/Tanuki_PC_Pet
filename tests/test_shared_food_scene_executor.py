@@ -6,7 +6,10 @@ try:
     from tanuki_core.item_scene_coordinator import SharedFoodSceneState
     from tanuki_core.shared_food_partner_rules import SharedFoodPartnerEligibility
     from tanuki_core.shared_food_profiles import SharedFoodCharacterCapabilities
-    from tanuki_core.shared_food_scene_executor import SharedFoodSceneExecutor
+    from tanuki_core.shared_food_scene_executor import (
+        SharedFoodSceneExecutor,
+        resolve_shared_food_approach_target_x,
+    )
 except (ImportError, ModuleNotFoundError) as exc:
     SharedFoodSceneExecutor = None
     IMPORT_ERROR = exc
@@ -18,6 +21,64 @@ else:
 class SharedFoodSceneExecutorTests(unittest.TestCase):
     def setUp(self):
         self.executor = SharedFoodSceneExecutor()
+
+    def test_approach_target_moves_an_overlapping_partner_to_a_visible_gap(self):
+        class Frame:
+            def width(self):
+                return 240
+
+        class Pet:
+            def __init__(self, x):
+                self._x = x
+                self.current_frames = (Frame(),)
+                self.frame_index = 0
+
+            def x(self):
+                return self._x
+
+            def width(self):
+                return 600
+
+            def clamp_x_to_virtual_geometry(self, x, _width):
+                return max(0.0, min(1300.0, float(x)))
+
+        holder = Pet(500.0)
+        partner = Pet(500.0)
+
+        target_x = resolve_shared_food_approach_target_x(
+            holder,
+            partner,
+            approach_distance=120.0,
+        )
+
+        self.assertGreaterEqual(abs(target_x - holder.x()), 170.0)
+
+    def test_approach_target_uses_the_open_side_at_a_screen_edge(self):
+        class Pet:
+            current_frames = ()
+
+            def __init__(self, x):
+                self._x = x
+
+            def x(self):
+                return self._x
+
+            def width(self):
+                return 600
+
+            def clamp_x_to_virtual_geometry(self, x, _width):
+                return max(0.0, min(1300.0, float(x)))
+
+        holder = Pet(0.0)
+        partner = Pet(-10.0)
+
+        target_x = resolve_shared_food_approach_target_x(
+            holder,
+            partner,
+            approach_distance=120.0,
+        )
+
+        self.assertGreater(target_x, holder.x())
 
     def test_eligibility_reports_missing_participant_before_distance_checks(self):
         runtime = SimpleNamespace(build_shared_food_participant_state=Mock())

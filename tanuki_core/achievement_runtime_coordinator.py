@@ -79,13 +79,27 @@ class AchievementRuntimeCoordinator:
             getattr(result, "unlocked_achievement_ids", ()) or ()
         )
         if unlocked_ids and callable(self.unlock_callback):
-            self.unlock_callback(unlocked_ids)
+            self.unlock_callback(
+                unlocked_ids,
+                getattr(result, "source_event", None),
+            )
 
     def build_cabinet_snapshot(self):
         return build_achievement_cabinet_snapshot(
             self.service.catalog,
             self.state,
         )
+
+    def reset_achievement(self, world_mode, achievement_id):
+        world_mode = str(world_mode or "").strip()
+        achievement_id = str(achievement_id or "").strip()
+        definition = self.service.catalog.get(achievement_id)
+        if definition is None or definition.world_mode != world_mode:
+            return False
+        reset = self.state.reset_achievement(world_mode, achievement_id)
+        if reset and callable(self.save_callback):
+            self.save_callback()
+        return reset
 
     def consume_entry(self, entry):
         return self.consume_payload(getattr(entry, "metadata", None))

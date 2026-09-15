@@ -8,6 +8,7 @@ from tanuki_core.information_center_spec import (
     PAGE_RELATION_SUMMON,
     PAGE_STATUS_SETTINGS,
     PAGE_ACHIEVEMENTS,
+    PAGE_MEMORY_ALBUM,
     get_information_center_page_spec,
 )
 
@@ -21,6 +22,7 @@ class InformationCenterSpecTests(unittest.TestCase):
                 PAGE_EVENT_LOG,
                 PAGE_FAMILY_STATUS,
                 PAGE_ACHIEVEMENTS,
+                PAGE_MEMORY_ALBUM,
                 PAGE_STATUS_SETTINGS,
             ),
         )

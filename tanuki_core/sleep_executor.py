@@ -22,6 +22,7 @@ from .sleep_join_rules import (
     SLEEP_JOIN_PHASE_OBSERVING,
     SleepJoinAttemptState,
     build_sleep_group_join_plan,
+    resolve_sleep_join_center_spacing,
     resolve_sleep_join_target_x,
 )
 from .sleep_profiles import (
@@ -188,6 +189,12 @@ class SleepExecutor:
             if not decision.allowed:
                 self._schedule_retry(participant_name, now=now)
                 continue
+            if self._has_sleep_position_conflict(
+                pet,
+                pets_by_name=pets_by_name,
+            ):
+                self._schedule_retry(participant_name, now=now)
+                continue
             result = self._start_sleep(
                 pet,
                 now=now,
@@ -344,6 +351,40 @@ class SleepExecutor:
                     retry=True,
                 )
                 return False
+            preferred_raw_x = self._resolve_join_target_x(
+                pet,
+                anchor_pet,
+                slot=plan.slot,
+                clamp_to_geometry=False,
+            )
+            preferred_x = self._resolve_join_target_x(
+                pet,
+                anchor_pet,
+                slot=plan.slot,
+            )
+            preferred_clamp_loss = abs(preferred_raw_x - preferred_x)
+            if preferred_clamp_loss > max(
+                24.0,
+                abs(preferred_raw_x - self._pet_x(anchor_pet)) * 0.25,
+            ):
+                alternate = self._build_group_join_plan(
+                    target_activity,
+                    preferred_direction=-preferred_direction,
+                )
+                if alternate.allowed:
+                    alternate_raw_x = self._resolve_join_target_x(
+                        pet,
+                        anchor_pet,
+                        slot=alternate.slot,
+                        clamp_to_geometry=False,
+                    )
+                    alternate_x = self._resolve_join_target_x(
+                        pet,
+                        anchor_pet,
+                        slot=alternate.slot,
+                    )
+                    if abs(alternate_raw_x - alternate_x) < preferred_clamp_loss:
+                        plan = alternate
             attempt.phase = SLEEP_JOIN_PHASE_APPROACHING
             attempt.phase_ends_at = 0.0
             attempt.group_id = plan.group_id
@@ -1347,14 +1388,17 @@ class SleepExecutor:
             return
         members.sort(key=lambda activity: activity.started_at)
         anchor_name = members[0].participants[0].name
-        slots = [0]
-        distance = 1
-        while len(slots) < len(members):
-            slots.extend((distance, -distance))
-            distance += 1
-        for index, activity in enumerate(members):
+        anchor_slot = int(
+            members[0].metadata.get("sleep_group_slot", 0) or 0
+        )
+        for activity in members:
+            previous_slot = int(
+                activity.metadata.get("sleep_group_slot", 0) or 0
+            )
             activity.metadata["sleep_anchor_name"] = anchor_name
-            activity.metadata["sleep_group_slot"] = slots[index]
+            activity.metadata["sleep_group_slot"] = (
+                previous_slot - anchor_slot
+            )
 
     def _sleep_group_members(self, target_activity):
         group_id = str(
@@ -1375,6 +1419,30 @@ class SleepExecutor:
 
     def _sleep_group_size(self, target_activity) -> int:
         return len(self._sleep_group_members(target_activity))
+
+    def _has_sleep_position_conflict(
+        self,
+        pet,
+        *,
+        pets_by_name: dict[str, object],
+    ) -> bool:
+        pet_name = self._pet_name(pet)
+        for activity in self.coordinator.get_active_activities():
+            if activity.spec.kind != SLEEP_ACTIVITY_KIND:
+                continue
+            sleeper_name = activity.participants[0].name
+            if sleeper_name == pet_name:
+                continue
+            sleeper = pets_by_name.get(sleeper_name)
+            if sleeper is None or not self._pet_is_visible(sleeper):
+                continue
+            minimum_spacing = resolve_sleep_join_center_spacing(
+                self._pet_width(sleeper),
+                self._pet_width(pet),
+            )
+            if self._distance(pet, sleeper) < minimum_spacing * 0.85:
+                return True
+        return False
 
     def _reserved_joiner_count(self, target_activity) -> int:
         target_group_id = str(
@@ -1497,7 +1565,14 @@ class SleepExecutor:
         if retry and participant_name:
             self._schedule_social_retry(participant_name, now=now)
 
-    def _resolve_join_target_x(self, pet, anchor_pet, *, slot: int) -> float:
+    def _resolve_join_target_x(
+        self,
+        pet,
+        anchor_pet,
+        *,
+        slot: int,
+        clamp_to_geometry: bool = True,
+    ) -> float:
         joiner_width = self._pet_width(pet)
         target_x = resolve_sleep_join_target_x(
             anchor_x=self._pet_x(anchor_pet),
@@ -1506,7 +1581,7 @@ class SleepExecutor:
             slot=slot,
         )
         clamp = getattr(pet, "clamp_x_to_virtual_geometry", None)
-        if callable(clamp):
+        if clamp_to_geometry and callable(clamp):
             target_x = clamp(target_x, joiner_width)
         return float(target_x)
 

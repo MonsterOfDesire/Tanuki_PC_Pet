@@ -21,6 +21,7 @@ from .information_center_spec import (
     PAGE_FAMILY_STATUS,
     PAGE_EVENT_LOG,
     PAGE_ACHIEVEMENTS,
+    PAGE_MEMORY_ALBUM,
     get_information_center_page_spec,
 )
 from .skinned_window_frame import SkinnedWindowFrame
@@ -52,6 +53,7 @@ from .family_summary_ui import FamilySummaryPanel
 from .event_log_ui import EventLogPanel
 from .relation_summon_ui import RelationSummonPanel
 from .achievement_cabinet_ui import AchievementCabinetPanel
+from .memory_album_ui import MemoryAlbumPanel
 
 
 COMPACT_NAVIGATION_WIDTH = 900
@@ -63,6 +65,7 @@ NAVIGATION_ICON_NAMES = {
     PAGE_FAMILY_STATUS: "participants",
     PAGE_STATUS_SETTINGS: "system",
     PAGE_ACHIEVEMENTS: "achievement",
+    PAGE_MEMORY_ALBUM: "memory",
 }
 
 
@@ -147,6 +150,7 @@ class InformationCenterWindow(QWidget):
         event_log_binding=None,
         relation_summon_binding=None,
         achievement_binding=None,
+        memory_album_binding=None,
         platform_capabilities=None,
     ):
         self.platform_capabilities = (
@@ -185,6 +189,7 @@ class InformationCenterWindow(QWidget):
         self.event_log_panel = None
         self.relation_summon_panel = None
         self.achievement_cabinet_panel = None
+        self.memory_album_panel = None
         self._navigation_compact = None
         self._page_bindings = {
             PAGE_STATUS_SETTINGS: status_settings_binding,
@@ -192,6 +197,7 @@ class InformationCenterWindow(QWidget):
             PAGE_EVENT_LOG: event_log_binding,
             PAGE_RELATION_SUMMON: relation_summon_binding,
             PAGE_ACHIEVEMENTS: achievement_binding,
+            PAGE_MEMORY_ALBUM: memory_album_binding,
         }
         self._pending_page_id = ""
         self._page_load_timer = QTimer(self)
@@ -290,7 +296,7 @@ class InformationCenterWindow(QWidget):
                     theme.spacing_sm,
                     theme.spacing_sm,
                 )
-            elif page_spec.page_id == PAGE_ACHIEVEMENTS:
+            elif page_spec.page_id in {PAGE_ACHIEVEMENTS, PAGE_MEMORY_ALBUM}:
                 page.set_content_margins(
                     theme.spacing_sm,
                     theme.spacing_sm,
@@ -460,6 +466,7 @@ class InformationCenterWindow(QWidget):
             PAGE_EVENT_LOG,
             PAGE_FAMILY_STATUS,
             PAGE_ACHIEVEMENTS,
+            PAGE_MEMORY_ALBUM,
             PAGE_STATUS_SETTINGS,
         ):
             panel = self._page_panel(page_id)
@@ -564,7 +571,7 @@ class InformationCenterWindow(QWidget):
     def detach_page(self, page_id):
         page_spec = get_information_center_page_spec(page_id)
         page_id = page_spec.page_id
-        if page_id == PAGE_ACHIEVEMENTS:
+        if page_id in {PAGE_ACHIEVEMENTS, PAGE_MEMORY_ALBUM}:
             return None
         if page_id in self.detached_page_windows:
             self._activate_detached_page(page_id)
@@ -803,10 +810,15 @@ class InformationCenterWindow(QWidget):
                 theme=self.theme,
             )
             self.achievement_cabinet_panel = panel
+        elif page_id == PAGE_MEMORY_ALBUM:
+            panel = MemoryAlbumPanel(binding)
+            self.memory_album_panel = panel
         else:
             return False
         page.set_content_widget(panel)
         if page_id == PAGE_ACHIEVEMENTS:
+            panel.refresh_from_binding()
+        elif page_id == PAGE_MEMORY_ALBUM:
             panel.refresh_from_binding()
         return True
 
@@ -817,6 +829,7 @@ class InformationCenterWindow(QWidget):
             PAGE_FAMILY_STATUS: self.family_summary_panel,
             PAGE_EVENT_LOG: self.event_log_panel,
             PAGE_ACHIEVEMENTS: self.achievement_cabinet_panel,
+            PAGE_MEMORY_ALBUM: self.memory_album_panel,
         }.get(page_id)
 
     def _refresh_page(self, page_id):
@@ -830,6 +843,8 @@ class InformationCenterWindow(QWidget):
             self.refresh_event_log()
         elif page_id == PAGE_ACHIEVEMENTS:
             self.refresh_achievement_cabinet()
+        elif page_id == PAGE_MEMORY_ALBUM:
+            self.refresh_memory_album()
 
     def apply_size_preset(self, preset_id):
         preset = get_information_center_size_preset(preset_id)
@@ -1002,6 +1017,19 @@ class InformationCenterWindow(QWidget):
             )
         return False
 
+    def set_memory_album_binding(self, binding):
+        self._page_bindings[PAGE_MEMORY_ALBUM] = binding
+        if (
+            self.memory_album_panel is not None
+            and self.memory_album_panel.binding is not binding
+        ):
+            self.memory_album_panel.set_binding(binding)
+
+    def refresh_memory_album(self):
+        if self.memory_album_panel is not None:
+            return self.memory_album_panel.refresh_from_binding()
+        return False
+
     def move_near_anchor(self, x, y):
         self._moving_programmatically = True
         try:
@@ -1088,7 +1116,7 @@ class InformationCenterWindow(QWidget):
         self.detach_button.setEnabled(
             bool(self.current_page_id)
             and not current_is_detached
-            and self.current_page_id != PAGE_ACHIEVEMENTS
+            and self.current_page_id not in {PAGE_ACHIEVEMENTS, PAGE_MEMORY_ALBUM}
         )
         self.detach_button.setText(
             ""

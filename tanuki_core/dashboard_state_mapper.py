@@ -27,6 +27,8 @@ class DashboardConfigState:
     mood_climate: str = "cheerful"
     ui_locale: str = "zh_TW"
     achievement_capture_enabled: bool = False
+    memory_album_mode: str = "off"
+    memory_album_capacity: int = 20
     information_center: InformationCenterConfigState = field(
         default_factory=InformationCenterConfigState
     )
@@ -87,6 +89,8 @@ def build_dashboard_config_state(
     mood_climate="cheerful",
     ui_locale="zh_TW",
     achievement_capture_enabled=False,
+    memory_album_mode="off",
+    memory_album_capacity=20,
     information_center=None,
 ):
     return DashboardConfigState(
@@ -119,6 +123,16 @@ def build_dashboard_config_state(
             RuntimeSettings.UI_LOCALE_OPTIONS,
         ),
         achievement_capture_enabled=bool(achievement_capture_enabled),
+        memory_album_mode=safe_option(
+            memory_album_mode,
+            "off",
+            RuntimeSettings.MEMORY_ALBUM_MODE_OPTIONS,
+        ),
+        memory_album_capacity=(
+            int(memory_album_capacity)
+            if memory_album_capacity in RuntimeSettings.MEMORY_ALBUM_CAPACITY_OPTIONS
+            else 20
+        ),
         information_center=(
             information_center
             if isinstance(information_center, InformationCenterConfigState)
@@ -201,6 +215,25 @@ def normalize_dashboard_config_state(raw_state, defaults, option_bounds):
                 getattr(defaults, "achievement_capture_enabled", False),
             )
         ),
+        memory_album_mode=safe_option(
+            raw_state.get(
+                "memory_album_mode",
+                getattr(defaults, "memory_album_mode", "off"),
+            ),
+            getattr(defaults, "memory_album_mode", "off"),
+            RuntimeSettings.MEMORY_ALBUM_MODE_OPTIONS,
+        ),
+        memory_album_capacity=(
+            int(raw_state.get(
+                "memory_album_capacity",
+                getattr(defaults, "memory_album_capacity", 20),
+            ))
+            if raw_state.get(
+                "memory_album_capacity",
+                getattr(defaults, "memory_album_capacity", 20),
+            ) in RuntimeSettings.MEMORY_ALBUM_CAPACITY_OPTIONS
+            else int(getattr(defaults, "memory_album_capacity", 20))
+        ),
         information_center=normalize_information_center_config_state(
             raw_state.get("information_center", {}),
             defaults=default_information_center,
@@ -231,6 +264,8 @@ def dashboard_config_state_to_payload(state):
         "achievement_capture_enabled": bool(
             getattr(state, "achievement_capture_enabled", False)
         ),
+        "memory_album_mode": str(getattr(state, "memory_album_mode", "off")),
+        "memory_album_capacity": int(getattr(state, "memory_album_capacity", 20)),
         "information_center": information_center_config_state_to_payload(
             getattr(
                 state,
@@ -277,6 +312,17 @@ def apply_dashboard_config_to_settings(settings_provider, state):
     )
     settings_provider.achievement_capture_enabled = bool(
         getattr(state, "achievement_capture_enabled", False)
+    )
+    settings_provider.memory_album_mode = safe_option(
+        getattr(state, "memory_album_mode", "off"),
+        "off",
+        RuntimeSettings.MEMORY_ALBUM_MODE_OPTIONS,
+    )
+    settings_provider.memory_album_capacity = (
+        int(getattr(state, "memory_album_capacity", 20))
+        if getattr(state, "memory_album_capacity", 20)
+        in RuntimeSettings.MEMORY_ALBUM_CAPACITY_OPTIONS
+        else 20
     )
 
 

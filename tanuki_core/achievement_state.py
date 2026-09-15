@@ -85,6 +85,25 @@ class AchievementState:
             raise ValueError("event_id is required")
         self.processed_event_ids.setdefault(world_mode, set()).add(event_id)
 
+    def reset_achievement(
+        self,
+        world_mode: str,
+        achievement_id: str,
+    ) -> bool:
+        world_mode = _require_world_mode(world_mode)
+        achievement_id = str(achievement_id or "").strip()
+        if not achievement_id:
+            return False
+        progress_by_id = self.progress_by_world_mode.setdefault(
+            world_mode,
+            {},
+        )
+        progress = progress_by_id.get(achievement_id)
+        if progress is None or not progress.unlocked:
+            return False
+        del progress_by_id[achievement_id]
+        return True
+
     def clear(self) -> None:
         self.progress_by_world_mode = {
             mode: {} for mode in sorted(ACHIEVEMENT_WORLD_MODES)

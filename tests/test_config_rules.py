@@ -66,6 +66,8 @@ class ConfigRuleTests(unittest.TestCase):
         self.assertEqual(normalized["dashboard"]["chorus_frequency"], "normal")
         self.assertEqual(normalized["dashboard"]["mood_climate"], "cheerful")
         self.assertEqual(normalized["dashboard"]["ui_locale"], "zh_TW")
+        self.assertEqual(normalized["dashboard"]["memory_album_mode"], "off")
+        self.assertEqual(normalized["dashboard"]["memory_album_capacity"], 20)
         self.assertEqual(normalized["pets"]["Tokai Teio"]["x"], 10)
         self.assertEqual(normalized["household"], {})
         self.assertTrue(any("config schema 1 已升級" in warning for warning in warnings))
@@ -235,6 +237,19 @@ class ConfigRuleTests(unittest.TestCase):
         self.assertEqual(normalized["dashboard"]["race_frequency"], "normal")
         self.assertEqual(normalized["dashboard"]["chorus_frequency"], "normal")
         self.assertEqual(normalized["dashboard"]["mood_climate"], "cheerful")
+
+    def test_memory_album_options_are_normalized_without_deleting_state(self):
+        normalized, _warnings = normalize_config_state(
+            {
+                "schema_version": CONFIG_SCHEMA_VERSION,
+                "dashboard": {
+                    "memory_album_mode": "random",
+                    "memory_album_capacity": 100,
+                },
+            }
+        )
+        self.assertEqual(normalized["dashboard"]["memory_album_mode"], "random")
+        self.assertEqual(normalized["dashboard"]["memory_album_capacity"], 100)
 
     def test_schema_six_config_receives_chorus_frequency_default(self):
         normalized, warnings = normalize_config_state(
