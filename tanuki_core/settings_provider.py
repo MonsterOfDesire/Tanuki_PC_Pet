@@ -22,6 +22,7 @@ class RuntimeSettings:
     achievement_capture_enabled: bool = False
     memory_album_mode: str = "off"
     memory_album_capacity: int = 20
+    play_calendar_started_on: str = ""
 
     WORLD_MODE_OPTIONS = ("golden_legend", "sandbox")
     TIME_SCALE_OPTIONS = (1, 2, 4, 8)

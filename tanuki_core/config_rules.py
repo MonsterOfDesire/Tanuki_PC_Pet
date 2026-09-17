@@ -7,7 +7,7 @@ from .information_center_state import (
 from .settings_provider import RuntimeSettings
 
 
-CONFIG_SCHEMA_VERSION = 10
+CONFIG_SCHEMA_VERSION = 11
 
 DEFAULT_INFORMATION_CENTER_STATE = information_center_config_state_to_payload(
     InformationCenterConfigState()
@@ -29,6 +29,7 @@ DEFAULT_DASHBOARD_STATE = {
     "achievement_capture_enabled": False,
     "memory_album_mode": "off",
     "memory_album_capacity": 20,
+    "play_calendar_started_on": "",
     "information_center": DEFAULT_INFORMATION_CENTER_STATE,
 }
 
@@ -185,6 +186,14 @@ def migrate_config_state(raw):
             migrated["dashboard"] = dashboard
         schema_version = 10
 
+    if schema_version < 11:
+        dashboard = migrated.get("dashboard", {})
+        if isinstance(dashboard, dict):
+            dashboard = dict(dashboard)
+            dashboard.setdefault("play_calendar_started_on", "")
+            migrated["dashboard"] = dashboard
+        schema_version = 11
+
     migrated["schema_version"] = CONFIG_SCHEMA_VERSION
     if original_schema_version != CONFIG_SCHEMA_VERSION:
         warnings.append(f"config schema {original_schema_version} 已升級到 {CONFIG_SCHEMA_VERSION}")
@@ -291,6 +300,9 @@ def normalize_config_state(raw):
                 if dashboard.get("memory_album_capacity")
                 in RuntimeSettings.MEMORY_ALBUM_CAPACITY_OPTIONS
                 else 20
+            ),
+            "play_calendar_started_on": str(
+                dashboard.get("play_calendar_started_on", "") or ""
             ),
             "information_center": normalized_information_center,
         },

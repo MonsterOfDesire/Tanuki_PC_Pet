@@ -68,6 +68,7 @@ class ConfigRuleTests(unittest.TestCase):
         self.assertEqual(normalized["dashboard"]["ui_locale"], "zh_TW")
         self.assertEqual(normalized["dashboard"]["memory_album_mode"], "off")
         self.assertEqual(normalized["dashboard"]["memory_album_capacity"], 20)
+        self.assertEqual(normalized["dashboard"]["play_calendar_started_on"], "")
         self.assertEqual(normalized["pets"]["Tokai Teio"]["x"], 10)
         self.assertEqual(normalized["household"], {})
         self.assertTrue(any("config schema 1 已升級" in warning for warning in warnings))

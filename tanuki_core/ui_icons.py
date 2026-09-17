@@ -224,12 +224,39 @@ def create_ui_pixmap(name, color="#fffaf2", size=18):
         painter.drawLine(QPointF(10.0, 11.0), QPointF(10.0, 15.0))
         painter.drawLine(QPointF(6.5, 18.0), QPointF(13.5, 18.0))
         painter.drawRoundedRect(QRectF(7.0, 15.0, 6.0, 2.5), 0.8, 0.8)
-    elif normalized_name == "memory":
+    elif normalized_name in {"memory", "camera"}:
         painter.drawRoundedRect(QRectF(2.5, 4.5, 15.0, 12.5), 1.8, 1.8)
         painter.drawEllipse(QRectF(7.0, 7.0, 6.0, 6.0))
         painter.drawRoundedRect(QRectF(5.0, 2.5, 5.0, 3.0), 0.8, 0.8)
         painter.setBrush(QBrush(icon_color))
         painter.drawEllipse(QPointF(15.0, 7.0), 1.0, 1.0)
+    elif normalized_name == "folder":
+        path = QPainterPath()
+        path.moveTo(2.5, 5.0)
+        path.lineTo(8.0, 5.0)
+        path.lineTo(10.0, 7.2)
+        path.lineTo(17.5, 7.2)
+        path.lineTo(17.5, 16.5)
+        path.lineTo(2.5, 16.5)
+        path.closeSubpath()
+        painter.drawPath(path)
+        painter.drawLine(QPointF(3.0, 9.0), QPointF(17.0, 9.0))
+    elif normalized_name == "reset":
+        painter.drawArc(
+            QRectF(3.0, 3.0, 14.0, 14.0),
+            35 * 16,
+            286 * 16,
+        )
+        painter.setBrush(QBrush(icon_color))
+        painter.drawPolygon(
+            QPolygonF(
+                (
+                    QPointF(2.3, 4.0),
+                    QPointF(7.8, 3.2),
+                    QPointF(5.1, 8.0),
+                )
+            )
+        )
     elif normalized_name == "power":
         painter.drawArc(
             QRectF(3.0, 3.0, 14.0, 14.0),

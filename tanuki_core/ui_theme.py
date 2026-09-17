@@ -75,6 +75,77 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         color: #fff8e8;
         border-color: rgba(244, 214, 132, 180);
     }}
+    QFrame#tanukiSkinContentSurface[surfaceRole="memory_album"] {{
+        background: transparent;
+        border: none;
+    }}
+    QWidget#tanukiMemoryAlbum {{
+        background: transparent;
+    }}
+    QWidget[tanukiRole="memoryHeader"] {{
+        background: transparent;
+        border: none;
+    }}
+    QPushButton[tanukiRole="memoryFolder"] {{
+        min-height: 28px;
+        padding: 0 {tokens.spacing_md}px;
+        color: #3f4d37;
+        background: rgba(227, 236, 214, 230);
+        border: 1px solid rgba(80, 111, 73, 125);
+        border-radius: 14px;
+        font-size: 11px;
+        font-weight: 800;
+    }}
+    QPushButton[tanukiRole="memoryFolder"]:hover {{
+        background: rgba(211, 231, 198, 245);
+        border-color: #4f785d;
+    }}
+    QLabel[tanukiRole="memoryStatus"] {{
+        min-height: 22px;
+        padding: 2px {tokens.spacing_md}px;
+        color: #594b3e;
+        background: rgba(255, 252, 240, 230);
+        border: 1px solid rgba(130, 104, 69, 85);
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 750;
+    }}
+    QLabel[tanukiRole="memoryStatus"][albumState="near_full"] {{
+        color: #7b551a;
+        background: rgba(255, 238, 188, 235);
+        border-color: rgba(181, 128, 37, 135);
+    }}
+    QLabel[tanukiRole="memoryStatus"][albumState="full"] {{
+        color: #7d322b;
+        background: rgba(255, 222, 211, 238);
+        border-color: rgba(163, 79, 69, 150);
+    }}
+    QLabel[tanukiRole="memoryEmpty"] {{
+        min-height: 120px;
+        color: rgba(82, 68, 55, 165);
+        font-size: 14px;
+        font-weight: 750;
+    }}
+    QScrollArea#tanukiMemoryAlbumScroll,
+    QScrollArea#tanukiMemoryAlbumScroll > QWidget > QWidget,
+    QWidget#tanukiMemoryAlbumGallery {{
+        background: transparent;
+        border: none;
+    }}
+    QScrollArea#tanukiMemoryAlbumScroll QScrollBar:vertical {{
+        width: 8px;
+        margin: 4px 0;
+        background: transparent;
+    }}
+    QScrollArea#tanukiMemoryAlbumScroll QScrollBar::handle:vertical {{
+        min-height: 32px;
+        background: rgba(79, 120, 93, 145);
+        border-radius: 4px;
+    }}
+    QScrollArea#tanukiMemoryAlbumScroll QScrollBar::add-line:vertical,
+    QScrollArea#tanukiMemoryAlbumScroll QScrollBar::sub-line:vertical {{
+        height: 0;
+    }}
     QWidget#tanukiOfferTray {{
         background: #fffdf7;
         border: 1px solid rgba(82, 59, 34, 175);
@@ -361,6 +432,16 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
     }}
     QLabel[tanukiRole="launcherSection"] {{
         color: rgba(229, 215, 194, 210);
+        font-size: 11px;
+        font-weight: 800;
+    }}
+    QLabel[tanukiRole="launcherDayChip"] {{
+        min-height: 22px;
+        padding: 0 {tokens.spacing_sm}px;
+        color: #fff1cc;
+        background: rgba(105, 83, 53, 190);
+        border: 1px solid rgba(242, 191, 93, 105);
+        border-radius: 11px;
         font-size: 11px;
         font-weight: 800;
     }}
@@ -713,6 +794,28 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
     QLabel[tanukiRole="achievementCardTitle"] {{
         color: #3b2c1e;
         font-size: 12px;
+        font-weight: 900;
+    }}
+    QPushButton[tanukiRole="achievementReset"] {{
+        min-height: 22px;
+        max-height: 24px;
+        padding: 0 {tokens.spacing_sm}px;
+        color: #765f4e;
+        background: rgba(238, 224, 196, 120);
+        border: 1px solid rgba(135, 105, 75, 80);
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 750;
+    }}
+    QPushButton[tanukiRole="achievementReset"]:hover {{
+        color: #8b3f38;
+        background: rgba(245, 218, 202, 205);
+        border-color: rgba(163, 79, 69, 145);
+    }}
+    QPushButton[tanukiRole="achievementReset"][confirming="true"] {{
+        color: #fff4e5;
+        background: #a34f45;
+        border-color: #74352f;
         font-weight: 900;
     }}
     QFrame[tanukiRole="achievementDetail"] {{

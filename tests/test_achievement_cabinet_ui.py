@@ -127,9 +127,16 @@ class AchievementCabinetUiTests(unittest.TestCase):
         )
 
         self.assertIsNotNone(card.reset_button)
+        self.assertEqual(
+            card.reset_button.property("tanukiRole"),
+            "achievementReset",
+        )
+        self.assertFalse(card.reset_button.property("confirming"))
+        self.assertFalse(card.reset_button.icon().isNull())
         self.assertFalse(card._handle_reset_clicked())
         self.assertEqual(binding.reset_calls, [])
         self.assertIn("再次", card.reset_button.text())
+        self.assertTrue(card.reset_button.property("confirming"))
 
         card._reset_armed_at -= 1.0
         self.assertTrue(card._handle_reset_clicked())

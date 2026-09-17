@@ -11,6 +11,10 @@ from tanuki_core.information_center_spec import (
     PAGE_MEMORY_ALBUM,
     get_information_center_page_spec,
 )
+from tanuki_core.ui_skin_spec import (
+    SKIN_ACHIEVEMENT_CABINET,
+    SKIN_MEMORY_ALBUM,
+)
 
 
 class InformationCenterSpecTests(unittest.TestCase):
@@ -34,6 +38,16 @@ class InformationCenterSpecTests(unittest.TestCase):
     def test_unknown_page_is_rejected(self):
         with self.assertRaises(ValueError):
             get_information_center_page_spec("missing")
+
+    def test_memory_album_no_longer_reuses_trophy_cabinet_skin(self):
+        self.assertEqual(
+            get_information_center_page_spec(PAGE_ACHIEVEMENTS).skin_key,
+            SKIN_ACHIEVEMENT_CABINET,
+        )
+        self.assertEqual(
+            get_information_center_page_spec(PAGE_MEMORY_ALBUM).skin_key,
+            SKIN_MEMORY_ALBUM,
+        )
 
 
 if __name__ == "__main__":

@@ -18,12 +18,21 @@ class _ScaledAssetLayer(QWidget):
         self._pixmap = None
         self._movie = None
         self._frame_offsets = ()
+        self._mirrored = False
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
 
     @property
     def movie(self):
         return self._movie
+
+    @property
+    def mirrored(self):
+        return self._mirrored
+
+    def set_mirrored(self, mirrored):
+        self._mirrored = bool(mirrored)
+        self.update()
 
     def clear(self):
         if self._movie is not None:
@@ -60,6 +69,9 @@ class _ScaledAssetLayer(QWidget):
             return
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
+        if self._mirrored:
+            painter.translate(self.width(), 0)
+            painter.scale(-1.0, 1.0)
         target_rect = self.rect()
         if self._movie is not None and self._frame_offsets:
             frame_number = self._movie.currentFrameNumber()
@@ -114,6 +126,7 @@ class SkinnedWindowFrame(QWidget):
         )
         self.content_layout.setSpacing(theme.spacing_md)
         self.foreground_layer = _ScaledAssetLayer(self.scene_viewport)
+        self.additional_foreground_layers = []
         self.setStyleSheet(build_ui_stylesheet(theme))
         if defer_skin:
             self._prepare_deferred_skin(skin_key)
@@ -146,6 +159,7 @@ class SkinnedWindowFrame(QWidget):
 
     def set_skin(self, skin_key):
         self._disconnect_foreground_frame_sync()
+        self._clear_additional_foreground_layers()
         spec = self.assets.get_skin_spec(skin_key)
         self.skin_spec = spec
         self.setMinimumSize(*spec.minimum_window_size)
@@ -186,6 +200,20 @@ class SkinnedWindowFrame(QWidget):
             self.foreground_layer.clear()
             self.foreground_layer.hide()
 
+        for layer_spec in spec.additional_foregrounds:
+            layer = _ScaledAssetLayer(self.scene_viewport)
+            layer.set_mirrored(layer_spec.mirrored)
+            asset_spec = self.assets.get_asset_spec(layer_spec.asset_key)
+            if asset_spec.animated:
+                layer.set_movie(
+                    self.assets.create_movie(layer_spec.asset_key, parent=self),
+                    frame_offsets=asset_spec.frame_offsets,
+                )
+            else:
+                layer.set_pixmap(self.assets.load_pixmap(layer_spec.asset_key))
+            layer.show()
+            self.additional_foreground_layers.append((layer_spec, layer))
+
         self._connect_foreground_frame_sync()
 
         self._pending_skin_key = None
@@ -217,6 +245,9 @@ class SkinnedWindowFrame(QWidget):
         layers = [self.background_layer]
         if not self.skin_spec.foreground_frame_map:
             layers.append(self.foreground_layer)
+        layers.extend(
+            layer for _layer_spec, layer in self.additional_foreground_layers
+        )
         for layer in layers:
             movie = layer.movie
             if movie is None:
@@ -284,10 +315,22 @@ class SkinnedWindowFrame(QWidget):
             foreground_rect = project_normalized_rect(self.skin_spec.foreground_rect, viewport_rect)
             self.foreground_layer.setGeometry(QRect(*foreground_rect.rounded()))
 
+        for layer_spec, layer in self.additional_foreground_layers:
+            layer_rect = project_normalized_rect(layer_spec.rect, viewport_rect)
+            layer.setGeometry(QRect(*layer_rect.rounded()))
+
         self.background_layer.lower()
         self.occlusion_surface.raise_()
         self.content_surface.raise_()
         self.foreground_layer.raise_()
+        for _layer_spec, layer in self.additional_foreground_layers:
+            layer.raise_()
+
+    def _clear_additional_foreground_layers(self):
+        for _layer_spec, layer in self.additional_foreground_layers:
+            layer.clear()
+            layer.deleteLater()
+        self.additional_foreground_layers = []
 
     def _connect_foreground_frame_sync(self):
         if not self.skin_spec.foreground_frame_map:

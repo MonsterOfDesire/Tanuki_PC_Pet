@@ -155,6 +155,14 @@ class FakeStatusSettingsBinding:
         self.calls.append(("mood_climate", value))
         self.state = replace(self.state, mood_climate=value)
 
+    def set_memory_album_mode(self, value):
+        self.calls.append(("memory_album_mode", value))
+        self.state = replace(self.state, memory_album_mode=value)
+
+    def set_memory_album_capacity(self, value):
+        self.calls.append(("memory_album_capacity", value))
+        self.state = replace(self.state, memory_album_capacity=value)
+
     def set_ui_locale(self, value):
         self.calls.append(("ui_locale", value))
         self.state = replace(self.state, ui_locale=value)
@@ -266,6 +274,8 @@ class FakeDashboardForBinding:
             race_frequency="normal",
             chorus_frequency="normal",
             mood_climate="cheerful",
+            memory_album_mode="events",
+            memory_album_capacity=50,
         )
 
     def set_debug_enabled(self, value):
@@ -297,6 +307,14 @@ class FakeDashboardForBinding:
 
     def set_mood_climate(self, value):
         self.calls.append(("mood_climate", value))
+
+    def set_memory_album_mode(self, value):
+        self.calls.append(("memory_album_mode", value))
+        return True
+
+    def set_memory_album_capacity(self, value):
+        self.calls.append(("memory_album_capacity", value))
+        return True
 
     def run_validation_checks(self):
         self.calls.append(("validate",))
@@ -378,6 +396,8 @@ class StatusSettingsPanelTests(unittest.TestCase):
         self.assertTrue(self.panel.display_scale_buttons[1].isChecked())
         self.assertTrue(self.panel.teio_duration_buttons[2].isChecked())
         self.assertTrue(self.panel.tsuyoshi_duration_buttons[3].isChecked())
+        self.assertTrue(self.panel.memory_album_mode_buttons[0].isChecked())
+        self.assertTrue(self.panel.memory_album_capacity_buttons[0].isChecked())
 
     def test_language_selector_updates_resource_backed_controls(self):
         self.panel.ui_locale_buttons[3].click()
@@ -510,6 +530,8 @@ class StatusSettingsPanelTests(unittest.TestCase):
                     + compact_panel.race_frequency_buttons
                     + compact_panel.chorus_frequency_buttons
                     + compact_panel.mood_climate_buttons
+                    + compact_panel.memory_album_mode_buttons
+                    + compact_panel.memory_album_capacity_buttons
                 )
             )
         )
@@ -538,6 +560,13 @@ class StatusSettingsPanelTests(unittest.TestCase):
                     compact_panel.race_frequency_buttons,
                     compact_panel.chorus_frequency_buttons,
                     compact_panel.mood_climate_buttons,
+                ),
+            ),
+            (
+                compact_panel.memory_group,
+                (
+                    compact_panel.memory_album_mode_buttons,
+                    compact_panel.memory_album_capacity_buttons,
                 ),
             ),
         ):
@@ -576,8 +605,9 @@ class StatusSettingsPanelTests(unittest.TestCase):
             wide_panel.timing_group: (1, 0, 1, 1),
             wide_panel.social_group: (2, 0, 1, 1),
             wide_panel.rhythm_group: (3, 0, 1, 1),
-            wide_panel.locale_update_group: (4, 0, 1, 1),
-            wide_panel.developer_group: (0, 1, 5, 1),
+            wide_panel.memory_group: (4, 0, 1, 1),
+            wide_panel.locale_update_group: (5, 0, 1, 1),
+            wide_panel.developer_group: (0, 1, 6, 1),
         }
         actual_positions = {}
         for index in range(wide_panel.grid_layout.count()):
@@ -680,6 +710,8 @@ class StatusSettingsPanelTests(unittest.TestCase):
         self.panel.race_frequency_buttons[0].click()
         self.panel.chorus_frequency_buttons[2].click()
         self.panel.mood_climate_buttons[2].click()
+        self.panel.memory_album_mode_buttons[2].click()
+        self.panel.memory_album_capacity_buttons[1].click()
 
         self.assertEqual(
             self.binding.calls,
@@ -695,6 +727,8 @@ class StatusSettingsPanelTests(unittest.TestCase):
                 ("race_frequency", "frequent"),
                 ("chorus_frequency", "occasional"),
                 ("mood_climate", "expressive"),
+                ("memory_album_mode", "random"),
+                ("memory_album_capacity", 50),
             ],
         )
 
@@ -1059,6 +1093,8 @@ class DashboardStatusSettingsBindingTests(unittest.TestCase):
         self.assertEqual(snapshot.race_frequency, "normal")
         self.assertEqual(snapshot.chorus_frequency, "normal")
         self.assertEqual(snapshot.mood_climate, "cheerful")
+        self.assertEqual(snapshot.memory_album_mode, "events")
+        self.assertEqual(snapshot.memory_album_capacity, 50)
 
     def test_actions_delegate_to_existing_dashboard_controller_entry_points(self):
         dashboard = FakeDashboardForBinding()
@@ -1074,6 +1110,8 @@ class DashboardStatusSettingsBindingTests(unittest.TestCase):
         binding.set_race_frequency("occasional")
         binding.set_chorus_frequency("frequent")
         binding.set_mood_climate("balanced")
+        binding.set_memory_album_mode("random")
+        binding.set_memory_album_capacity(100)
         binding.run_validation_checks()
         preview_result = binding.preview_rudolf_work()
         preview_active = binding.is_rudolf_work_preview_active()
@@ -1119,6 +1157,8 @@ class DashboardStatusSettingsBindingTests(unittest.TestCase):
                 ("race_frequency", "occasional"),
                 ("chorus_frequency", "frequent"),
                 ("mood_climate", "balanced"),
+                ("memory_album_mode", "random"),
+                ("memory_album_capacity", 100),
                 ("validate",),
                 ("preview_rudolf_work",),
                 ("preview_active",),

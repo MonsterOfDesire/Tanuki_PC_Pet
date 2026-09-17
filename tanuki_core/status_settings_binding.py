@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from .memory_album import MEMORY_ALBUM_CAPACITIES, MEMORY_ALBUM_MODES
 from .update_runtime_controller import UpdateStatusSnapshot
 
 
@@ -18,6 +19,10 @@ class StatusSettingsSnapshot:
     teio_duration_index: int
     tsuyoshi_duration_options: tuple[int, ...]
     tsuyoshi_duration_index: int
+    memory_album_mode: str = "off"
+    memory_album_mode_options: tuple[str, ...] = MEMORY_ALBUM_MODES
+    memory_album_capacity: int = 20
+    memory_album_capacity_options: tuple[int, ...] = MEMORY_ALBUM_CAPACITIES
     race_frequency: str = "normal"
     race_frequency_options: tuple[str, ...] = (
         "frequent",
@@ -90,6 +95,16 @@ class DashboardStatusSettingsBinding:
             teio_duration_index=int(state.teio_dur_idx),
             tsuyoshi_duration_options=tuple(int(value) for value in self.dashboard.tsuyoshi_dur_list),
             tsuyoshi_duration_index=int(state.tsuyoshi_dur_idx),
+            memory_album_mode=str(
+                getattr(state, "memory_album_mode", "off")
+            ),
+            memory_album_mode_options=tuple(MEMORY_ALBUM_MODES),
+            memory_album_capacity=int(
+                getattr(state, "memory_album_capacity", 20)
+            ),
+            memory_album_capacity_options=tuple(
+                MEMORY_ALBUM_CAPACITIES
+            ),
             race_frequency=str(state.race_frequency),
             race_frequency_options=tuple(
                 str(value)
@@ -169,6 +184,12 @@ class DashboardStatusSettingsBinding:
 
     def set_mood_climate(self, value):
         self.dashboard.set_mood_climate(str(value))
+
+    def set_memory_album_mode(self, value):
+        return self.dashboard.set_memory_album_mode(str(value))
+
+    def set_memory_album_capacity(self, value):
+        return self.dashboard.set_memory_album_capacity(int(value))
 
     def set_ui_locale(self, value):
         self.dashboard.set_ui_locale(str(value))

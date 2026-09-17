@@ -99,6 +99,8 @@ class DashboardLauncherPanel(QWidget):
             self.time_status_button.setText("● --")
             self.care_status_button.setText("● --")
             self.notice_label.hide()
+            self.play_day_label.hide()
+            self._update_camera_tooltips(False, "unavailable")
             return
 
         snapshot = self.binding.snapshot()
@@ -152,6 +154,26 @@ class DashboardLauncherPanel(QWidget):
         self.notice_label.setVisible(
             snapshot.show_status and bool(snapshot.status_text)
         )
+        play_day_number = snapshot.play_day_number
+        self.play_day_label.setText(
+            translate_ui(
+                "launcher.play_day",
+                default="第 {day} 天",
+                day=play_day_number,
+            )
+            if play_day_number is not None
+            else ""
+        )
+        self.play_day_label.setVisible(play_day_number is not None)
+        self.play_day_label.setToolTip(
+            translate_ui(
+                "launcher.play_day_tooltip",
+                default="從 {date} 起計算本地曆日。",
+                date=snapshot.play_started_on,
+            )
+            if play_day_number is not None
+            else ""
+        )
         self._set_action_active(
             (
                 self.information_center_button,
@@ -165,6 +187,23 @@ class DashboardLauncherPanel(QWidget):
                 self.collapsed_offer_button,
             ),
             snapshot.offer_tray_open,
+        )
+        camera_available = bool(snapshot.manual_camera_available)
+        for button in (
+            self.manual_camera_button,
+            self.collapsed_manual_camera_button,
+        ):
+            button.setEnabled(camera_available)
+        self._set_action_active(
+            (
+                self.manual_camera_button,
+                self.collapsed_manual_camera_button,
+            ),
+            camera_available and snapshot.manual_camera_active,
+        )
+        self._update_camera_tooltips(
+            camera_available,
+            snapshot.manual_camera_reason,
         )
 
     def set_expanded(self, expanded, emit_signal=True):
@@ -292,9 +331,32 @@ class DashboardLauncherPanel(QWidget):
         tile_row.addWidget(self.offer_tray_button, stretch=1)
         layout.addLayout(tile_row)
 
+        self.manual_camera_button = QPushButton("手動拍照")
+        self.manual_camera_button.setIcon(
+            create_ui_icon("camera", color="#fffaf2", size=22)
+        )
+        self.manual_camera_button.setIconSize(QSize(22, 22))
+        self.manual_camera_button.setProperty("tanukiRole", "launcherAction")
+        self.manual_camera_button.clicked.connect(
+            lambda checked=False: self._invoke("toggle_manual_camera")
+        )
+        layout.addWidget(self.manual_camera_button)
+
+        status_header = QHBoxLayout()
+        status_header.setContentsMargins(0, 0, 0, 0)
+        status_header.setSpacing(self.theme.spacing_sm)
         self.status_caption = QLabel("目前狀態")
         self.status_caption.setProperty("tanukiRole", "launcherSection")
-        layout.addWidget(self.status_caption)
+        status_header.addWidget(self.status_caption)
+        status_header.addStretch(1)
+        self.play_day_label = QLabel("")
+        self.play_day_label.setProperty("tanukiRole", "launcherDayChip")
+        self.play_day_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+        self.play_day_label.hide()
+        status_header.addWidget(self.play_day_label)
+        layout.addLayout(status_header)
         status_frame = QFrame()
         status_frame.setProperty("tanukiRole", "launcherStatusPanel")
         status_layout = QHBoxLayout(status_frame)
@@ -341,6 +403,7 @@ class DashboardLauncherPanel(QWidget):
         self._action_buttons = [
             self.information_center_button,
             self.offer_tray_button,
+            self.manual_camera_button,
             self.shutdown_button,
         ]
         return page
@@ -397,6 +460,14 @@ class DashboardLauncherPanel(QWidget):
             lambda checked=False: self._invoke("open_offer_tray")
         )
         layout.addWidget(self.collapsed_offer_button)
+        self.collapsed_manual_camera_button = self._create_rail_button(
+            "camera",
+            "開啟手動相機",
+        )
+        self.collapsed_manual_camera_button.clicked.connect(
+            lambda checked=False: self._invoke("toggle_manual_camera")
+        )
+        layout.addWidget(self.collapsed_manual_camera_button)
 
         self.collapsed_status_dots = QLabel("● ● ●")
         self.collapsed_status_dots.setAlignment(
@@ -423,6 +494,7 @@ class DashboardLauncherPanel(QWidget):
             [
                 self.collapsed_information_button,
                 self.collapsed_offer_button,
+                self.collapsed_manual_camera_button,
                 self.collapsed_shutdown_button,
             ]
         )
@@ -499,6 +571,34 @@ class DashboardLauncherPanel(QWidget):
         getattr(self.binding, method_name)()
         self.refresh_from_binding()
 
+    def _update_camera_tooltips(self, available, reason=""):
+        tooltip = translate_ui(
+            "launcher.manual_camera_controls",
+            default="開啟手動相機；Tab 切換比例、Enter 拍照、Esc 取消",
+        )
+        if not available:
+            if reason == "speed":
+                tooltip = translate_ui(
+                    "launcher.manual_camera_1x_only",
+                    default="請切換至 1x 後再使用手動相機。",
+                )
+            elif reason == "full":
+                tooltip = translate_ui(
+                    "launcher.manual_camera_full",
+                    default="回憶相簿已滿，無法拍攝新照片。",
+                )
+            else:
+                tooltip = translate_ui(
+                    "launcher.manual_camera_unavailable",
+                    default="手動相機目前無法使用",
+                )
+        for button in (
+            self.manual_camera_button,
+            self.collapsed_manual_camera_button,
+        ):
+            button.setToolTip(tooltip)
+            button.setAccessibleName(tooltip)
+
     @staticmethod
     def _set_action_active(buttons, active):
         for button in buttons:
@@ -525,6 +625,9 @@ class DashboardLauncherPanel(QWidget):
         self.offer_tray_button.setText(
             translate_ui("launcher.offer_tray", default="飲食餐盤")
         )
+        self.manual_camera_button.setText(
+            translate_ui("launcher.manual_camera", default="手動拍照")
+        )
         self.status_caption.setText(
             translate_ui("launcher.current_status", default="目前狀態")
         )
@@ -542,7 +645,28 @@ class DashboardLauncherPanel(QWidget):
         )
         self.collapse_button.setAccessibleName(collapse_accessible)
         self.collapse_button.setToolTip(collapse_accessible)
+        expand_accessible = translate_ui(
+            "launcher.expand_sidebar",
+            default="展開側邊欄",
+        )
+        self.expand_button.setToolTip(expand_accessible)
+        self.expand_button.setAccessibleName(expand_accessible)
         self.set_pinned(self._pinned, emit_signal=False)
+        self.information_center_button.setToolTip(
+            translate_ui(
+                "launcher.open_information_center",
+                default="開啟資訊中心",
+            )
+        )
+        self.offer_tray_button.setToolTip(
+            translate_ui(
+                "launcher.open_offer_tray",
+                default="開啟飲食餐盤",
+            )
+        )
+        self.shutdown_button.setToolTip(
+            translate_ui("launcher.shutdown", default="關閉系統")
+        )
         tooltips = (
             (
                 self.collapsed_information_button,
@@ -556,6 +680,13 @@ class DashboardLauncherPanel(QWidget):
                 translate_ui(
                     "launcher.open_offer_tray",
                     default="開啟飲食餐盤",
+                ),
+            ),
+            (
+                self.collapsed_manual_camera_button,
+                translate_ui(
+                    "launcher.open_manual_camera",
+                    default="開啟手動相機",
                 ),
             ),
             (

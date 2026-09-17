@@ -14,6 +14,7 @@ SKIN_EVENT_LOG = "event_log"
 SKIN_FAMILY_STATUS = "family_status"
 SKIN_STATUS_SETTINGS = "status_settings"
 SKIN_ACHIEVEMENT_CABINET = "achievement_cabinet"
+SKIN_MEMORY_ALBUM = "memory_album"
 
 ASSET_DIET_BACKGROUND = "diet_background"
 ASSET_DIET_CHARACTER = "diet_character"
@@ -27,6 +28,10 @@ ASSET_SETTINGS_BACKGROUND = "settings_background"
 ASSET_SETTINGS_CHARACTER = "settings_character"
 ASSET_ACHIEVEMENT_BACKGROUND = "achievement_background"
 ASSET_ACHIEVEMENT_CHARACTER = "achievement_character"
+ASSET_MEMORY_ALBUM_BACKGROUND = "memory_album_background"
+ASSET_MEMORY_ALBUM_CHARACTER = "memory_album_character"
+ASSET_MEMORY_ALBUM_PARTNER_1 = "memory_album_partner_1"
+ASSET_MEMORY_ALBUM_PARTNER_2 = "memory_album_partner_2"
 ASSET_DASHBOARD_SIDE_ICON = "dashboard_side_icon"
 
 
@@ -96,6 +101,7 @@ class UiAssetSpec:
     animated: bool = False
     first_frame_only: bool = False
     frame_offsets: tuple[tuple[int, int], ...] = ()
+    playback_speed_percent: int = 100
 
     def __post_init__(self):
         relative_path = str(self.relative_path).replace("\\", "/")
@@ -107,6 +113,19 @@ class UiAssetSpec:
             raise ValueError("UI assets must declare a positive source size")
         if any(len(offset) != 2 for offset in self.frame_offsets):
             raise ValueError("frame offsets must contain x/y pairs")
+        if int(self.playback_speed_percent) <= 0:
+            raise ValueError("animation playback speed must be positive")
+
+
+@dataclass(frozen=True)
+class UiForegroundLayerSpec:
+    asset_key: str
+    rect: NormalizedRect | NormalizedLayerRect
+    mirrored: bool = False
+
+    def __post_init__(self):
+        if not str(self.asset_key or ""):
+            raise ValueError("foreground layer asset key cannot be empty")
 
 
 @dataclass(frozen=True)
@@ -122,6 +141,7 @@ class UiSkinSpec:
     foreground_asset_key: str = ""
     foreground_rect: NormalizedRect | NormalizedLayerRect | None = None
     foreground_frame_map: tuple[int, ...] = ()
+    additional_foregrounds: tuple[UiForegroundLayerSpec, ...] = ()
     occlusion_rects: tuple[NormalizedRect, ...] = ()
     occlusion_role: str = ""
     occlusion_mask_mode: str = OCCLUSION_SOLID
@@ -390,6 +410,30 @@ UI_ASSET_SPECS = MappingProxyType(
             (500, 500),
             animated=True,
         ),
+        ASSET_MEMORY_ALBUM_BACKGROUND: UiAssetSpec(
+            ASSET_MEMORY_ALBUM_BACKGROUND,
+            "UI/memory_album.png",
+            (1600, 900),
+        ),
+        ASSET_MEMORY_ALBUM_CHARACTER: UiAssetSpec(
+            ASSET_MEMORY_ALBUM_CHARACTER,
+            "UI/memory_album_char.gif",
+            (500, 500),
+            animated=True,
+            playback_speed_percent=300,
+        ),
+        ASSET_MEMORY_ALBUM_PARTNER_1: UiAssetSpec(
+            ASSET_MEMORY_ALBUM_PARTNER_1,
+            "UI/memory_album_parner1.gif",
+            (500, 500),
+            animated=True,
+        ),
+        ASSET_MEMORY_ALBUM_PARTNER_2: UiAssetSpec(
+            ASSET_MEMORY_ALBUM_PARTNER_2,
+            "UI/memory_album_parner2.gif",
+            (500, 500),
+            animated=True,
+        ),
         ASSET_DASHBOARD_SIDE_ICON: UiAssetSpec(
             ASSET_DASHBOARD_SIDE_ICON,
             "UI/side.png",
@@ -489,7 +533,7 @@ UI_SKIN_SPECS = MappingProxyType(
             surface_role="frosted",
             fit_mode=FIT_CONTAIN,
             foreground_asset_key=ASSET_FAMILY_CHARACTER,
-            foreground_rect=NormalizedLayerRect(0.575, 0.490, 0.300, 0.500),
+            foreground_rect=NormalizedLayerRect(0.665, 0.490, 0.300, 0.500),
         ),
         SKIN_STATUS_SETTINGS: UiSkinSpec(
             key=SKIN_STATUS_SETTINGS,
@@ -518,6 +562,33 @@ UI_SKIN_SPECS = MappingProxyType(
                 0.465,
                 0.310,
                 0.525,
+            ),
+        ),
+        SKIN_MEMORY_ALBUM: UiSkinSpec(
+            key=SKIN_MEMORY_ALBUM,
+            background_asset_key=ASSET_MEMORY_ALBUM_BACKGROUND,
+            content_rect=NormalizedRect(0.255, 0.145, 0.610, 0.710),
+            minimum_frame_size=(1066, 600),
+            minimum_window_size=(760, 430),
+            minimum_content_size=(680, 390),
+            surface_role="memory_album",
+            fit_mode=FIT_CONTAIN,
+            foreground_asset_key=ASSET_MEMORY_ALBUM_CHARACTER,
+            # The album cast deliberately overlaps the book edges.  Keep the
+            # main character on the right and both partners grouped on the
+            # left so the centre spread remains the primary reading area.
+            foreground_rect=NormalizedLayerRect(0.774, 0.500, 0.276, 0.490),
+            additional_foregrounds=(
+                UiForegroundLayerSpec(
+                    ASSET_MEMORY_ALBUM_PARTNER_1,
+                    NormalizedLayerRect(0.135, 0.500, 0.285, 0.495),
+                    mirrored=True,
+                ),
+                UiForegroundLayerSpec(
+                    ASSET_MEMORY_ALBUM_PARTNER_2,
+                    NormalizedLayerRect(-0.020, 0.525, 0.270, 0.470),
+                    mirrored=True,
+                ),
             ),
         ),
     }

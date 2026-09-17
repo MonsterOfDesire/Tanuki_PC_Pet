@@ -47,11 +47,14 @@
     "title": "たぬきコントロールセンター", "subtitle": "デスクトップ生活ショートカット",
     "main_actions": "主な機能", "information_center": "情報センター",
     "open_information_center": "情報センターを開く", "offer_tray": "フードトレイ",
-    "open_offer_tray": "フードトレイを開く", "current_status": "現在の状態",
+    "open_offer_tray": "フードトレイを開く", "manual_camera": "手動撮影",
+    "open_manual_camera": "手動カメラを開く", "manual_camera_unavailable": "手動カメラは現在利用できません",
+    "manual_camera_controls": "左クリックで撮影・Tabで4:3／16:9切替・Escでキャンセル", "manual_camera_1x_only": "手動カメラは1xに切り替えてから使用してください。", "manual_camera_full": "手動カメラは利用できません：思い出アルバムが満杯です。", "manual_camera_saved": "写真を思い出アルバムに保存しました。", "manual_camera_failed": "画面を取得できません。画面収録の権限を確認してください。",
+    "current_status": "現在の状態", "play_day": "{day} 日目", "play_day_tooltip": "{date}からローカル暦日で数えます。",
     "status_settings": "状態設定", "open_status_settings": "状態設定を開く", "shutdown": "システムを終了",
     "disconnected": "未接続", "care_on": "お世話：オン", "care_off": "お世話：オフ",
     "world_golden_legend": "黄金伝説", "world_sandbox": "サンドボックス",
-    "pin_sidebar": "サイドバーを固定", "collapse_sidebar": "サイドバーを折りたたむ", "pinned_tooltip": "固定中です。クリックすると自動折りたたみを許可します", "unpinned_tooltip": "固定されていません。クリックすると展開したままにします"
+    "pin_sidebar": "サイドバーを固定", "collapse_sidebar": "サイドバーを折りたたむ", "expand_sidebar": "サイドバーを展開", "pinned_tooltip": "固定中です。クリックすると自動折りたたみを許可します", "unpinned_tooltip": "固定されていません。クリックすると展開したままにします"
   },
   "updates": {
     "checking": "アップデートを確認しています…",
@@ -158,8 +161,8 @@
   },
   "memory_album": {
     "mode": {"label": "撮影モード", "off": "オフ", "events": "交流イベント", "random": "ランダム撮影"},
-    "capacity": "写真上限", "open_folder": "写真フォルダーを開く", "open_photo": "この写真を開く",
-    "status": {"normal": "{count}/{capacity} 枚を保存済み。撮影は1x時のみで、写真は自動削除されません。", "near_full": "アルバムの空きが少なくなっています（{count}/{capacity}）。上限で撮影を停止します。", "full": "アルバムが満杯です（{count}/{capacity}）。新しい写真は撮影されず、既存の写真も自動削除されません。"}
+    "capacity": "写真上限", "folder_short": "写真フォルダー", "open_folder": "写真フォルダーを開く", "open_photo": "この写真を開く", "empty": "まだ写真がありません。交流の思い出がここに表示されます。", "settings_note": "自動撮影は1x時のみです。上限に達すると撮影を停止し、既存の写真は自動削除されません。",
+    "status": {"normal": "{count}/{capacity} 枚を保存済み。撮影は1x時のみで、写真は自動削除されません。", "near_full": "アルバムの空きが少なくなっています（{count}/{capacity}）。上限で撮影を停止します。", "full": "アルバムが満杯です（{count}/{capacity}）。新しい写真は撮影されず、既存の写真も自動削除されません。", "compact_normal": "{count}/{capacity} 枚を保存済み", "compact_near_full": "残りわずか {count}/{capacity}", "compact_full": "満杯 {count}/{capacity}"}
   },
   "events": {
     "unnamed": "名称未設定のイベント", "types": {"opening_note": "一日の始まり", "fund_snapshot": "生活費スナップショット", "pressure_snapshot": "家族ストレスの記録", "player_donate_fund": "生活費の寄付", "teio_drink_expense": "飲み物の支出", "rudolf_collectible_expense": "コレクションの支出", "rudolf_work_completed": "仕事完了", "transformation_started": "変身開始", "transformation_ended": "変身終了", "observe_social_log": "静かな見守り", "post_observe_social_log": "日常の会話", "race_completed": "レース完走", "race_declined": "レース辞退", "chorus_completed": "演奏完了", "chorus_interrupted": "演奏中断", "offer_bottle_success": "哺乳瓶を受け取った", "ground_bottle_pickup": "哺乳瓶を拾った", "offer_bottle_feed": "哺乳瓶でお世話", "ground_bottle_feed": "哺乳瓶でお世話", "offer_honey_success": "ハチミツを受け取った", "ground_honey_pickup": "ハチミツを拾った", "offer_honey_guarded": "ハチミツ保護", "offer_honey_denied": "ハチミツ阻止", "offer_hover_timeout": "アイテム待機終了", "shared_ramen": "ラーメンを共有", "shared_tea_chat": "お茶を共有", "shared_honey": "ハチミツを共有"}, "deltas": {"living_fund": "生活費 {amount:+,d}", "pressure": "ストレス {amount:+.1f}", "mood": "気分 {amount:+.1f}", "relationship": "関係 {details}"},
@@ -232,7 +235,7 @@
     }
   },
   "settings": {
-    "language_and_updates": "言語とアップデート", "interface_language": "表示言語", "unavailable": "状態設定が実行中の Dashboard に接続されていません。", "groups": {"runtime": "実行モード", "timing": "時間と表示", "social_cooldown": "交流クールダウン", "life_rhythm": "生活リズム", "developer": "開発ツール"},
+    "language_and_updates": "言語とアップデート", "interface_language": "表示言語", "unavailable": "状態設定が実行中の Dashboard に接続されていません。", "groups": {"runtime": "実行モード", "timing": "時間と表示", "social_cooldown": "交流クールダウン", "life_rhythm": "生活リズム", "memory_album": "思い出アルバム", "developer": "開発ツール"},
     "world_mode": "ワールドモード", "time_scale": "時間速度", "display_scale": "表示倍率", "enable_care": "キャラクターのお世話を有効化", "enable_care_tooltip": "気分が低い時のお世話と家族の関連行動を許可します。", "race_frequency": "レース頻度", "race_frequency_tooltip": "自律レースの待機・クールダウン時間を調整します。参加資格・距離・承諾判定は省略しません。", "chorus_frequency": "演奏頻度", "chorus_frequency_tooltip": "自律演奏の待機・再試行・クールダウン時間を調整します。参加資格・距離・反応判定は省略しません。", "mood_climate": "感情傾向", "mood_climate_tooltip": "自然な気分変化はシミュレーション速度に従います。目標値は設けず、頻度・方向・変化量だけを調整します。",
     "show_debug": "キャラクターのデバッグ情報を表示", "show_debug_tooltip": "キャラクターとパフォーマンスの詳細診断を表示します。", "show_social_status": "交流状態ラベルを表示", "show_social_status_tooltip": "random、relation_watch などのテスト用ラベルをキャラクターの上に表示します。", "preview_work": "ルドルフの仕事をプレビュー", "preview_race": "ルドルフ対テイオーをプレビュー", "preview_chorus": "今すぐ演奏をプレビュー", "transformation_control": "サンドボックス形態操作", "sleep_control": "サンドボックス睡眠操作", "validate_config_manifest": "Config / Manifest をチェック",
     "preview_work_idle": "仕事と休憩のアニメーションのみ再生し、金銭・ストレス・気分の精算は行いません。", "preview_race_idle": "ルドルフとテイオーのレースを再生し、イベント記録や数値変化は行いません。", "preview_chorus_idle": "自律反応を使って演奏を開始し、イベントや報酬は適用しません。", "preview_work_active": "ルドルフの仕事プレビューを開始しました。今回は精算を適用しません。", "preview_race_active": "ルドルフ対テイオーのレースプレビューを開始しました。正式イベントや数値変化はありません。", "preview_chorus_active": "演奏プレビューを開始しました。イベント・気分・関係報酬は適用しません。", "sleep_control_idle": "キャラクターを眠らせるか、既存の waking フローで起こします。サンドボックス限定です。", "preview_work_tooltip": "manifest の仕事・休憩を正式な精算なしでプレビューします。", "preview_work_sandbox_only": "仕事プレビューはサンドボックスでのみ利用できます。", "preview_race_tooltip": "manifest contexts のレース全工程をイベントや数値変化なしで再生します。", "preview_race_sandbox_only": "レースプレビューはサンドボックスでのみ利用できます。", "preview_chorus_tooltip": "自律的な参加・観覧反応を使い、イベントや報酬なしで演奏を開始します。", "preview_chorus_sandbox_only": "演奏プレビューはサンドボックスでのみ利用できます。",

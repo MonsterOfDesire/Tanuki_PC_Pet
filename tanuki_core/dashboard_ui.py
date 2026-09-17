@@ -51,6 +51,10 @@ from .memory_album import (
 )
 from .memory_album_binding import DashboardMemoryAlbumBinding
 from .memory_capture_runtime import MemoryCaptureRuntime
+from .manual_camera import ManualCameraController
+from .play_calendar import normalize_local_date, play_day_number
+from .pet_window_layer import restore_pet_group_topmost
+from .windows_foreground_watcher import WindowsForegroundWatcher
 from .achievement_presenter import build_achievement_unlock_notification
 from .app_paths import get_user_data_directory
 from .information_center_ui import InformationCenterWindow
@@ -74,6 +78,7 @@ from .ui_localization import (
     character_display_name,
     localize_character_names_in_text,
     set_ui_locale,
+    translate_ui,
 )
 from .update_runtime_controller import UpdateCheckCoordinator
 from .app_version import GITHUB_RELEASES_URL
@@ -465,6 +470,13 @@ class Dashboard(QWidget):
         self.memory_album_capacity = normalize_memory_album_capacity(
             getattr(self.settings_provider, "memory_album_capacity", 20)
         )
+        self.play_calendar_started_on = normalize_local_date(
+            getattr(self.settings_provider, "play_calendar_started_on", "")
+        )
+        self.launcher_play_day_number = play_day_number(
+            self.play_calendar_started_on
+        )
+        self.launcher_play_started_on = self.play_calendar_started_on
         set_ui_locale(self.ui_locale)
         self.update_check_coordinator = UpdateCheckCoordinator(parent=self)
         self.update_check_coordinator.status_changed.connect(
@@ -514,6 +526,29 @@ class Dashboard(QWidget):
             get_user_data_directory(
                 platform=self.platform_capabilities.platform_key
             )
+        )
+        self.manual_camera_active = False
+        self.manual_camera_controller = ManualCameraController(
+            album_service=self.memory_album,
+            capacity_provider=lambda: self.memory_album_capacity,
+            time_scale_provider=self.get_time_scale,
+            hint_provider=self._manual_camera_hint_text,
+            parent=self,
+        )
+        self.manual_camera_controller.active_changed.connect(
+            self._handle_manual_camera_active_changed
+        )
+        self.manual_camera_controller.capture_finished.connect(
+            self._handle_manual_camera_capture_finished
+        )
+        self.manual_camera_controller.status_changed.connect(
+            self._handle_manual_camera_status
+        )
+        self.manual_camera_status_timer = QTimer(self)
+        self.manual_camera_status_timer.setSingleShot(True)
+        self.manual_camera_status_timer.setInterval(4500)
+        self.manual_camera_status_timer.timeout.connect(
+            self._clear_manual_camera_status
         )
         self.launcher_shutdown_text = "關閉系統"
         self.launcher_shutdown_enabled = True
@@ -681,6 +716,10 @@ class Dashboard(QWidget):
             self.update_memory_capture_runtime
         )
         self.memory_capture_timer.start()
+        self.play_calendar_timer = QTimer(self)
+        self.play_calendar_timer.setInterval(60_000)
+        self.play_calendar_timer.timeout.connect(self.refresh_play_calendar)
+        self.play_calendar_timer.start()
 
         self.btn_exit = QPushButton("關閉系統")
         self.btn_exit.clicked.connect(self.begin_shutdown)
@@ -711,6 +750,24 @@ class Dashboard(QWidget):
         self.update_care_button_text()
         self.update_debug_button_text()
         self.update_household_control_states()
+        app = QApplication.instance()
+        if app is not None:
+            app.applicationStateChanged.connect(
+                self._handle_application_state_changed
+            )
+        self.foreground_window_watcher = WindowsForegroundWatcher(
+            platform_key=self.platform_capabilities.platform_key,
+            parent=self,
+        )
+        self.foreground_window_watcher.foreground_changed.connect(
+            self._handle_external_foreground_changed
+        )
+        # Offscreen tests do not install a process-global WinEvent hook. The
+        # real Windows Qt backend starts one watcher owned by this Dashboard.
+        if QApplication.platformName().lower() == "windows":
+            self.foreground_window_watcher.start()
+        if app is not None:
+            app.aboutToQuit.connect(self.foreground_window_watcher.stop)
 
     def _activate_launcher_shell(self, target_rect):
         self._legacy_widgets = []
@@ -842,6 +899,7 @@ class Dashboard(QWidget):
             achievement_capture_enabled=self.achievement_capture_enabled,
             memory_album_mode=self.memory_album_mode,
             memory_album_capacity=self.memory_album_capacity,
+            play_calendar_started_on=self.play_calendar_started_on,
             information_center=(
                 self.information_center_window.capture_config_state()
                 if self.information_center_window is not None
@@ -879,6 +937,10 @@ class Dashboard(QWidget):
         self.memory_album_capacity = normalize_memory_album_capacity(
             state.memory_album_capacity
         )
+        self.play_calendar_started_on = normalize_local_date(
+            state.play_calendar_started_on
+        )
+        self.refresh_play_calendar()
         set_ui_locale(self.ui_locale)
         self.information_center_config_state = state.information_center
         if self.information_center_window is not None:
@@ -1058,6 +1120,12 @@ class Dashboard(QWidget):
             btn.setChecked(idx == self.time_scale_idx)
         self.refresh_information_center_settings()
         self.refresh_launcher_panel()
+        if (
+            self.get_time_scale() != 1.0
+            and getattr(self, "manual_camera_controller", None) is not None
+            and self.manual_camera_controller.active
+        ):
+            self.manual_camera_controller.cancel()
 
     def update_display_scale_buttons(self):
         for idx, btn in enumerate(self.display_scale_buttons):
@@ -1524,6 +1592,101 @@ class Dashboard(QWidget):
             )
         except Exception:
             return False
+
+    def get_manual_camera_availability(self):
+        controller = getattr(self, "manual_camera_controller", None)
+        if controller is None:
+            return False, "unavailable"
+        reason = controller.availability_reason()
+        return not bool(reason), reason
+
+    def toggle_manual_camera(self):
+        return self.manual_camera_controller.toggle()
+
+    def _manual_camera_hint_text(self):
+        return translate_ui(
+            "launcher.manual_camera_controls",
+            default="Tab 切換比例 · Enter 拍照 · Esc 取消",
+        )
+
+    def _handle_manual_camera_active_changed(self, active):
+        self.manual_camera_active = bool(active)
+        self.refresh_launcher_panel()
+
+    def _handle_manual_camera_capture_finished(self, path):
+        if path is not None:
+            self.refresh_memory_album_if_open()
+        self.refresh_launcher_panel()
+
+    def _handle_manual_camera_status(self, status):
+        messages = {
+            "speed": (
+                "launcher.manual_camera_1x_only",
+                "請切換至 1x 後再使用手動相機。",
+            ),
+            "full": (
+                "launcher.manual_camera_full",
+                "回憶相簿已滿，無法拍攝新照片。",
+            ),
+            "saved": (
+                "launcher.manual_camera_saved",
+                "照片已保存到回憶相簿。",
+            ),
+            "failed": (
+                "launcher.manual_camera_failed",
+                "無法擷取畫面；請確認螢幕錄製權限。",
+            ),
+        }
+        key, default = messages.get(str(status or ""), ("", ""))
+        if not key:
+            return
+        self.launcher_status_text = translate_ui(key, default=default)
+        self.launcher_show_status = True
+        self.manual_camera_status_timer.start()
+        self.refresh_launcher_panel()
+
+    def _clear_manual_camera_status(self):
+        self.launcher_status_text = ""
+        self.launcher_show_status = False
+        self.refresh_launcher_panel()
+
+    def refresh_play_calendar(self):
+        self.launcher_play_started_on = self.play_calendar_started_on
+        self.launcher_play_day_number = play_day_number(
+            self.play_calendar_started_on
+        )
+        self.refresh_launcher_panel()
+        return self.launcher_play_day_number
+
+    def _handle_application_state_changed(self, state):
+        if (
+            self.platform_capabilities.platform_key != "windows"
+            or state == Qt.ApplicationState.ApplicationActive
+        ):
+            return
+        # External media viewers can enter above the existing topmost band.
+        # Recover once after activation settles instead of polling every pet.
+        QTimer.singleShot(180, self.restore_pet_window_layers)
+        QTimer.singleShot(700, self.restore_pet_window_layers)
+
+    def _handle_external_foreground_changed(self, _hwnd):
+        # Unlike applicationStateChanged, this also fires when Tanuki is
+        # already inactive and the user opens a photo from File Explorer.
+        QTimer.singleShot(90, self.restore_pet_window_layers)
+        QTimer.singleShot(360, self.restore_pet_window_layers)
+
+    def restore_pet_window_layers(self):
+        return restore_pet_group_topmost(
+            (
+                self,
+                *(
+                    info.get("pet")
+                    for info in self.pets_dict.values()
+                    if info.get("pet") is not None
+                ),
+            ),
+            platform_key=self.platform_capabilities.platform_key,
+        )
 
     def refresh_memory_album_if_open(self):
         window = self.information_center_window

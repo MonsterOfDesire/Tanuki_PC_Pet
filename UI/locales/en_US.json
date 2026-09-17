@@ -47,11 +47,14 @@
     "title": "Tanuki Control Center", "subtitle": "Desktop life shortcuts",
     "main_actions": "Main actions", "information_center": "Information Center",
     "open_information_center": "Open Information Center", "offer_tray": "Food Tray",
-    "open_offer_tray": "Open Food Tray", "current_status": "Current status",
+    "open_offer_tray": "Open Food Tray", "manual_camera": "Take Photo",
+    "open_manual_camera": "Open manual camera", "manual_camera_unavailable": "The manual camera is currently unavailable",
+    "manual_camera_controls": "Left-click to take a photo; Tab switches 4:3/16:9, Esc cancels", "manual_camera_1x_only": "Switch to 1x before using the manual camera.", "manual_camera_full": "Manual camera unavailable: the Memory Album is full.", "manual_camera_saved": "Photo saved to the Memory Album.", "manual_camera_failed": "The screen could not be captured; check Screen Recording permission.",
+    "current_status": "Current status", "play_day": "Day {day}", "play_day_tooltip": "Counts local calendar days starting on {date}.",
     "status_settings": "Status Settings", "open_status_settings": "Open Status Settings", "shutdown": "Exit",
     "disconnected": "Disconnected", "care_on": "Care on", "care_off": "Care off",
     "world_golden_legend": "Golden Legend", "world_sandbox": "Sandbox",
-    "pin_sidebar": "Pin sidebar", "collapse_sidebar": "Collapse sidebar", "pinned_tooltip": "Pinned; click to allow automatic collapse", "unpinned_tooltip": "Not pinned; click to keep the sidebar open"
+    "pin_sidebar": "Pin sidebar", "collapse_sidebar": "Collapse sidebar", "expand_sidebar": "Expand sidebar", "pinned_tooltip": "Pinned; click to allow automatic collapse", "unpinned_tooltip": "Not pinned; click to keep the sidebar open"
   },
   "updates": {
     "checking": "Checking for updates…",
@@ -166,8 +169,8 @@
   },
   "memory_album": {
     "mode": {"label": "Photo mode", "off": "Off", "events": "Interactions", "random": "Random photos"},
-    "capacity": "Photo limit", "open_folder": "Open photo folder", "open_photo": "Open this photo",
-    "status": {"normal": "Saved {count}/{capacity} photos. Photos are taken only at 1x and are never deleted automatically.", "near_full": "The album is nearly full ({count}/{capacity}). Capture stops at the limit.", "full": "The album is full ({count}/{capacity}). No new photos will be taken and existing photos will not be deleted."}
+    "capacity": "Photo limit", "folder_short": "Photo folder", "open_folder": "Open photo folder", "open_photo": "Open this photo", "empty": "No photos yet. Memories from interactions will appear here.", "settings_note": "Automatic photos are taken only at 1x. Capture stops at the limit and existing photos are never deleted automatically.",
+    "status": {"normal": "Saved {count}/{capacity} photos. Photos are taken only at 1x and are never deleted automatically.", "near_full": "The album is nearly full ({count}/{capacity}). Capture stops at the limit.", "full": "The album is full ({count}/{capacity}). No new photos will be taken and existing photos will not be deleted.", "compact_normal": "Saved {count}/{capacity}", "compact_near_full": "Nearly full {count}/{capacity}", "compact_full": "Album full {count}/{capacity}"}
   },
   "events": {
     "unnamed": "Unnamed event", "types": {"opening_note": "Opening note", "fund_snapshot": "Fund snapshot", "pressure_snapshot": "Pressure snapshot", "player_donate_fund": "Fund donation", "teio_drink_expense": "Drink expense", "rudolf_collectible_expense": "Collectible expense", "rudolf_work_completed": "Work completed", "transformation_started": "Transformation started", "transformation_ended": "Transformation ended", "observe_social_log": "Quiet observation", "post_observe_social_log": "Everyday conversation", "race_completed": "Race completed", "race_declined": "Race declined", "chorus_completed": "Performance completed", "chorus_interrupted": "Performance interrupted", "offer_bottle_success": "Bottle received", "ground_bottle_pickup": "Bottle picked up", "offer_bottle_feed": "Bottle feeding", "ground_bottle_feed": "Bottle feeding", "offer_honey_success": "Honey received", "ground_honey_pickup": "Honey picked up", "offer_honey_guarded": "Honey protected", "offer_honey_denied": "Honey denied", "offer_hover_timeout": "Item interaction timed out", "shared_ramen": "Ramen shared", "shared_tea_chat": "Tea shared", "shared_honey": "Honey shared"}, "deltas": {"living_fund": "Living fund {amount:+,d}", "pressure": "Pressure {amount:+.1f}", "mood": "Mood {amount:+.1f}", "relationship": "Relationship {details}"},
@@ -244,7 +247,7 @@
   },
   "settings": {
     "language_and_updates": "Language and updates", "interface_language": "Interface language", "unavailable": "Status Settings is not connected to a running Dashboard.",
-    "groups": {"runtime": "Runtime Mode", "timing": "Time and Display", "social_cooldown": "Social Cooldown", "life_rhythm": "Life Rhythm", "developer": "Developer Tools"},
+    "groups": {"runtime": "Runtime Mode", "timing": "Time and Display", "social_cooldown": "Social Cooldown", "life_rhythm": "Life Rhythm", "memory_album": "Memory Album", "developer": "Developer Tools"},
     "world_mode": "World mode", "time_scale": "Time speed", "display_scale": "Display scale", "enable_care": "Enable character care", "enable_care_tooltip": "Allow care for low moods and related family interactions.",
     "race_frequency": "Race frequency", "race_frequency_tooltip": "Adjust autonomous race wait and cooldown times. Eligibility, distance, and acceptance checks still apply.", "chorus_frequency": "Performance frequency", "chorus_frequency_tooltip": "Adjust autonomous performance wait, retry, and cooldown times. Eligibility, distance, and response checks still apply.",
     "mood_climate": "Mood climate", "mood_climate_tooltip": "Natural mood changes follow simulation speed. The climate adjusts frequency, direction, and magnitude without imposing a target mood.",

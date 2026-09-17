@@ -17,6 +17,7 @@ from tanuki_core.dashboard_launcher_binding import (
 from tanuki_core.dashboard_launcher_ui import (
     COLLAPSED_LAUNCHER_WIDTH,
     EXPANDED_LAUNCHER_WIDTH,
+    LAUNCHER_MINIMUM_HEIGHT,
     DashboardLauncherPanel,
 )
 from tanuki_core.information_center_spec import PAGE_STATUS_SETTINGS
@@ -32,6 +33,9 @@ class FakeLauncherBinding:
             time_scale_label="4x",
             care_enabled=True,
             care_label="照護中",
+            manual_camera_available=True,
+            play_day_number=12,
+            play_started_on="2026-09-06",
         )
 
     def snapshot(self):
@@ -42,6 +46,9 @@ class FakeLauncherBinding:
 
     def open_offer_tray(self):
         self.calls.append(("offer_tray",))
+
+    def toggle_manual_camera(self):
+        self.calls.append(("manual_camera",))
 
     def open_status_settings(self):
         self.calls.append(("status_settings",))
@@ -108,10 +115,26 @@ class DashboardLauncherPanelTests(unittest.TestCase):
             self.panel.care_status_button.property("statusState"),
             "enabled",
         )
+        self.assertEqual(self.panel.play_day_label.text(), "第 12 天")
+        self.assertTrue(self.panel.play_day_label.isVisible())
+        self.assertIn("2026-09-06", self.panel.play_day_label.toolTip())
+
+    def test_play_day_slot_hides_until_runtime_exposes_a_valid_day(self):
+        self.binding.value = DashboardLauncherSnapshot(
+            world_mode_key="sandbox",
+            world_mode_label="沙盒",
+            time_scale_label="1x",
+            care_enabled=True,
+            care_label="照護中",
+        )
+        self.panel.refresh_from_binding()
+
+        self.assertFalse(self.panel.play_day_label.isVisible())
 
     def test_primary_and_secondary_actions_delegate_to_binding(self):
         self.panel.information_center_button.click()
         self.panel.offer_tray_button.click()
+        self.panel.manual_camera_button.click()
         self.panel.shutdown_button.click()
 
         self.assertEqual(
@@ -119,6 +142,7 @@ class DashboardLauncherPanelTests(unittest.TestCase):
             [
                 ("information_center",),
                 ("offer_tray",),
+                ("manual_camera",),
                 ("shutdown",),
             ],
         )
@@ -170,8 +194,79 @@ class DashboardLauncherPanelTests(unittest.TestCase):
             self.panel.collapsed_information_button.accessibleName(),
             "開啟資訊中心",
         )
+        self.assertIn(
+            "Tab",
+            self.panel.collapsed_manual_camera_button.accessibleName(),
+        )
         self.assertFalse(hasattr(self.panel, "collapsed_settings_button"))
         self.assertIn("黃金傳說", self.panel.collapsed_status_dots.toolTip())
+
+    def test_manual_camera_entry_tracks_availability_and_active_state(self):
+        self.binding.value = DashboardLauncherSnapshot(
+            world_mode_key="sandbox",
+            world_mode_label="沙盒",
+            time_scale_label="1x",
+            care_enabled=True,
+            care_label="照護中",
+        )
+        self.panel.refresh_from_binding()
+
+        self.assertFalse(self.panel.manual_camera_button.isEnabled())
+        self.assertFalse(self.panel.collapsed_manual_camera_button.isEnabled())
+
+        self.binding.value = DashboardLauncherSnapshot(
+            world_mode_key="sandbox",
+            world_mode_label="沙盒",
+            time_scale_label="1x",
+            care_enabled=True,
+            care_label="照護中",
+            manual_camera_available=True,
+            manual_camera_active=True,
+        )
+        self.panel.refresh_from_binding()
+
+        self.assertTrue(self.panel.manual_camera_button.isEnabled())
+        self.assertTrue(self.panel.manual_camera_button.property("primary"))
+        self.assertTrue(
+            self.panel.collapsed_manual_camera_button.property("primary")
+        )
+
+    def test_manual_camera_disabled_reason_is_visible_in_tooltip(self):
+        self.binding.value = DashboardLauncherSnapshot(
+            world_mode_key="sandbox",
+            world_mode_label="沙盒",
+            time_scale_label="8x",
+            care_enabled=True,
+            care_label="照護中",
+            manual_camera_available=False,
+            manual_camera_reason="speed",
+        )
+
+        self.panel.refresh_from_binding()
+
+        self.assertIn("1x", self.panel.manual_camera_button.toolTip())
+        self.assertEqual(
+            self.panel.manual_camera_button.toolTip(),
+            self.panel.collapsed_manual_camera_button.toolTip(),
+        )
+
+    def test_manual_camera_entry_fits_both_minimum_height_layouts(self):
+        self.panel.resize(EXPANDED_LAUNCHER_WIDTH, LAUNCHER_MINIMUM_HEIGHT)
+        self.app.processEvents()
+
+        self.assertLess(
+            self.panel.manual_camera_button.geometry().bottom(),
+            self.panel.status_caption.geometry().top(),
+        )
+
+        self.panel.set_expanded(False)
+        self.panel.resize(COLLAPSED_LAUNCHER_WIDTH, LAUNCHER_MINIMUM_HEIGHT)
+        self.app.processEvents()
+
+        self.assertLess(
+            self.panel.collapsed_manual_camera_button.geometry().bottom(),
+            self.panel.collapsed_status_dots.geometry().top(),
+        )
 
     def test_information_and_offer_actions_only_highlight_while_open(self):
         self.assertFalse(
@@ -392,6 +487,14 @@ class DashboardLauncherPanelTests(unittest.TestCase):
                 dashboard.launcher_panel.title_label.text(),
                 "たぬきコントロールセンター",
             )
+            self.assertIn(
+                "手動カメラ",
+                dashboard.launcher_panel.manual_camera_button.toolTip(),
+            )
+            self.assertEqual(
+                dashboard.launcher_panel.expand_button.toolTip(),
+                "サイドバーを展開",
+            )
         finally:
             set_ui_locale("zh_TW")
             dashboard.update_timer.stop()
@@ -416,6 +519,8 @@ class DashboardLauncherBindingTests(unittest.TestCase):
                 self.calls = []
                 self.information_center_window = None
                 self.offer_tray_window = None
+                self.manual_camera_active = True
+                self.launcher_play_day_number = 8
 
             def get_time_scale(self):
                 return 2.0
@@ -426,6 +531,10 @@ class DashboardLauncherBindingTests(unittest.TestCase):
             def open_offer_tray(self):
                 self.calls.append(("offer_tray",))
 
+            def toggle_manual_camera(self):
+                self.calls.append(("manual_camera",))
+                return True
+
             def begin_shutdown(self):
                 self.calls.append(("shutdown",))
 
@@ -435,6 +544,7 @@ class DashboardLauncherBindingTests(unittest.TestCase):
         snapshot = binding.snapshot()
         binding.open_information_center()
         binding.open_offer_tray()
+        binding.toggle_manual_camera()
         binding.open_status_settings()
         binding.begin_shutdown()
 
@@ -443,6 +553,9 @@ class DashboardLauncherBindingTests(unittest.TestCase):
         self.assertEqual(snapshot.care_label, "照護關閉")
         self.assertFalse(snapshot.information_center_open)
         self.assertFalse(snapshot.offer_tray_open)
+        self.assertTrue(snapshot.manual_camera_available)
+        self.assertTrue(snapshot.manual_camera_active)
+        self.assertEqual(snapshot.play_day_number, 8)
 
         dashboard.information_center_window = SimpleNamespace(
             isVisible=lambda: True,
@@ -466,6 +579,7 @@ class DashboardLauncherBindingTests(unittest.TestCase):
             [
                 ("information_center", None),
                 ("offer_tray",),
+                ("manual_camera",),
                 ("information_center", "status_settings"),
                 ("shutdown",),
             ],

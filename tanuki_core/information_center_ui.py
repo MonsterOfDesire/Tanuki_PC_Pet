@@ -813,6 +813,7 @@ class InformationCenterWindow(QWidget):
         elif page_id == PAGE_MEMORY_ALBUM:
             panel = MemoryAlbumPanel(binding)
             self.memory_album_panel = panel
+            page.set_content_margins(4, 4, 4, 4)
         else:
             return False
         page.set_content_widget(panel)

@@ -47,11 +47,14 @@
     "title": "狸猫控制中心", "subtitle": "桌面生活捷径",
     "main_actions": "主要功能", "information_center": "信息中心",
     "open_information_center": "打开信息中心", "offer_tray": "饮食餐盘",
-    "open_offer_tray": "打开饮食餐盘", "current_status": "目前状态",
+    "open_offer_tray": "打开饮食餐盘", "manual_camera": "手动拍照",
+    "open_manual_camera": "打开手动相机", "manual_camera_unavailable": "手动相机目前无法使用",
+    "manual_camera_controls": "左键拍照；Tab 切换 4:3／16:9、Esc 取消", "manual_camera_1x_only": "请切换至 1x 后再使用手动相机。", "manual_camera_full": "手动相机暂停：回忆相册已满，无法拍摄新照片。", "manual_camera_saved": "照片已保存到回忆相册。", "manual_camera_failed": "无法截取屏幕；请确认屏幕录制权限。",
+    "current_status": "目前状态", "play_day": "第 {day} 天", "play_day_tooltip": "从 {date} 起按本地日历天数计算。",
     "status_settings": "状态设置", "open_status_settings": "打开状态设置", "shutdown": "关闭系统",
     "disconnected": "未连接", "care_on": "照护中", "care_off": "照护关闭",
     "world_golden_legend": "黄金传说", "world_sandbox": "沙盒",
-    "pin_sidebar": "固定侧边栏", "collapse_sidebar": "收合侧边栏", "pinned_tooltip": "已固定；点击后允许自动收合", "unpinned_tooltip": "未固定；点击后保持展开"
+    "pin_sidebar": "固定侧边栏", "collapse_sidebar": "收合侧边栏", "expand_sidebar": "展开侧边栏", "pinned_tooltip": "已固定；点击后允许自动收合", "unpinned_tooltip": "未固定；点击后保持展开"
   },
   "updates": {
     "checking": "正在检查更新…",
@@ -371,12 +374,12 @@
   },
   "memory_album": {
     "mode": {"label": "拍照模式", "off": "不开启", "events": "互动事件", "random": "随机拍照"},
-    "capacity": "照片上限", "open_folder": "打开照片文件夹", "open_photo": "打开这张照片",
-    "status": {"normal": "已保存 {count}/{capacity} 张；仅在 1x 拍摄，系统不会自动删除照片。", "near_full": "相册即将满载（{count}/{capacity}）；达到上限后将停止拍摄。", "full": "相册已满（{count}/{capacity}）；将不再拍摄新照片，已有照片不会自动删除。"}
+    "capacity": "照片上限", "folder_short": "照片文件夹", "open_folder": "打开照片文件夹", "open_photo": "打开这张照片", "empty": "还没有照片。互动留下的回忆会出现在这里。", "settings_note": "仅在 1x 自动拍摄；达到上限后停止拍摄，已有照片不会自动删除。",
+    "status": {"normal": "已保存 {count}/{capacity} 张；仅在 1x 拍摄，系统不会自动删除照片。", "near_full": "相册即将满载（{count}/{capacity}）；达到上限后将停止拍摄。", "full": "相册已满（{count}/{capacity}）；将不再拍摄新照片，已有照片不会自动删除。", "compact_normal": "已保存 {count}/{capacity} 张", "compact_near_full": "即将满载 {count}/{capacity}", "compact_full": "相册已满 {count}/{capacity}"}
   },
   "settings": {
     "language_and_updates": "语言与更新", "interface_language": "界面语言", "unavailable": "状态设置尚未连接执行中的 Dashboard。",
-    "groups": {"runtime": "执行模式", "timing": "时间与画面", "social_cooldown": "社交冷却", "life_rhythm": "生活节奏", "developer": "开发工具"},
+    "groups": {"runtime": "执行模式", "timing": "时间与画面", "social_cooldown": "社交冷却", "life_rhythm": "生活节奏", "memory_album": "回忆相册", "developer": "开发工具"},
     "world_mode": "世界模式", "time_scale": "时间流速", "display_scale": "显示比例", "enable_care": "启用角色照护功能", "enable_care_tooltip": "允许低心情照护与相关家庭互动。",
     "race_frequency": "竞赛频率", "race_frequency_tooltip": "调整自主竞赛的等待与冷却时间；不跳过资格、距离或接受判定。", "chorus_frequency": "合奏频率", "chorus_frequency_tooltip": "调整自主合奏的等待、重试与冷却时间；不跳过资格、距离或反应判定。",
     "mood_climate": "情绪气候", "mood_climate_tooltip": "自然心情会随模拟倍速更新；三种气候只调整发生率、正负倾向与幅度，不设置目标心情。",

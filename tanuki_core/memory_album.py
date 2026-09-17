@@ -77,6 +77,26 @@ class MemoryAlbumService:
         snapshot = self.snapshot(mode=mode, capacity=capacity)
         if snapshot.mode == "off" or snapshot.full:
             return None
+        return self._save_capture(
+            image,
+            snapshot=snapshot,
+            kind=kind,
+            participants=participants,
+        )
+
+    def capture_manual(self, image, *, capacity, kind="manual", participants=()):
+        """Save an explicit user photo even when automatic capture is off."""
+        snapshot = self.snapshot(mode="events", capacity=capacity)
+        if snapshot.full:
+            return None
+        return self._save_capture(
+            image,
+            snapshot=snapshot,
+            kind=kind,
+            participants=participants,
+        )
+
+    def _save_capture(self, image, *, snapshot, kind="", participants=()):
         if image is None or bool(getattr(image, "isNull", lambda: True)()):
             return None
         captured_at = self.now_provider()

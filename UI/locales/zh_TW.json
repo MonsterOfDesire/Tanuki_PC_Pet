@@ -47,11 +47,14 @@
     "title": "狸貓控制中心", "subtitle": "桌面生活捷徑",
     "main_actions": "主要功能", "information_center": "資訊中心",
     "open_information_center": "開啟資訊中心", "offer_tray": "飲食餐盤",
-    "open_offer_tray": "開啟飲食餐盤", "current_status": "目前狀態",
+    "open_offer_tray": "開啟飲食餐盤", "manual_camera": "手動拍照",
+    "open_manual_camera": "開啟手動相機", "manual_camera_unavailable": "手動相機目前無法使用",
+    "manual_camera_controls": "左鍵拍照；Tab 切換 4:3／16:9、Esc 取消", "manual_camera_1x_only": "請切換至 1x 後再使用手動相機。", "manual_camera_full": "手動相機暫停：回憶相簿已滿，無法拍攝新照片。", "manual_camera_saved": "照片已保存到回憶相簿。", "manual_camera_failed": "無法擷取畫面；請確認螢幕錄製權限。",
+    "current_status": "目前狀態", "play_day": "第 {day} 天", "play_day_tooltip": "從 {date} 起計算本地曆日。",
     "status_settings": "狀態設定", "open_status_settings": "開啟狀態設定", "shutdown": "關閉系統",
     "disconnected": "未連接", "care_on": "照護中", "care_off": "照護關閉",
     "world_golden_legend": "黃金傳說", "world_sandbox": "沙盒",
-    "pin_sidebar": "釘選側邊欄", "collapse_sidebar": "收合側邊欄", "pinned_tooltip": "已釘選；點擊後允許自動收合", "unpinned_tooltip": "未釘選；點擊後保持展開"
+    "pin_sidebar": "釘選側邊欄", "collapse_sidebar": "收合側邊欄", "expand_sidebar": "展開側邊欄", "pinned_tooltip": "已釘選；點擊後允許自動收合", "unpinned_tooltip": "未釘選；點擊後保持展開"
   },
   "updates": {
     "checking": "正在檢查更新…",
@@ -129,18 +132,18 @@
     "modes": {"sandbox": "沙盒", "golden_legend": "黃金傳說"}, "mode_tabs": {"sandbox": "沙盒成就", "golden_legend": "黃金傳說成就"},
     "progress": "已取得 {unlocked} / {total}", "summary_recent": "{progress}｜最近：{title}", "summary_empty": "{progress}｜尚無完成成就",
     "acquisition_record": "取得紀錄", "hover_unlocked": "將游標移到已取得的獎盃上，即可查看取得方式。", "unlocked_at": "取得時間：{time}",
-    "memory_capture": "自動保存成就截圖", "memory_capture_tooltip": "只在 1x 擷取；關閉時不會擷取畫面。macOS 首次使用可能要求螢幕錄製權限。", "memory_saved": "已保存解鎖時的畫面。", "memory_missing": "此成就沒有保存截圖。", "memory_open": "開啟原圖", "reset": "重製成就", "reset_confirm": "再次點擊確認重製", "reset_tooltip": "第一次點擊只會進入確認狀態；再次點擊才會清除此成就及其成就截圖。",
+    "memory_capture": "自動保存成就截圖", "memory_capture_tooltip": "只在 1x 擷取；關閉時不會擷取畫面。macOS 首次使用可能要求螢幕錄製權限。", "memory_saved": "已保存解鎖時的畫面。", "memory_missing": "此成就沒有保存截圖。", "memory_open": "開啟原圖", "reset": "重置成就", "reset_confirm": "再次點擊確認重置", "reset_tooltip": "第一次點擊只會進入確認狀態；再次點擊才會清除此成就及其成就截圖。",
     "locked_accessible": "未取得的 {tier} 獎盃", "unlocked_accessible": "已取得 {tier} 成就：{title}",
     "notification": {"single": "獲得新成就", "multiple": "一次獲得 {count} 項成就", "more": " 等 {count} 項"}
   },
   "memory_album": {
     "mode": {"label": "拍照模式", "off": "不開啟", "events": "互動事件", "random": "隨機拍照"},
-    "capacity": "照片上限", "open_folder": "開啟照片資料夾", "open_photo": "開啟這張照片",
-    "status": {"normal": "已保存 {count}/{capacity} 張；只在 1x 拍攝，系統不會自動刪除照片。", "near_full": "相簿即將滿載（{count}/{capacity}）；抵達上限後將停止拍攝。", "full": "相簿已滿（{count}/{capacity}）；將不再拍攝新照片，既有照片不會自動刪除。"}
+    "capacity": "照片上限", "folder_short": "照片資料夾", "open_folder": "開啟照片資料夾", "open_photo": "開啟這張照片", "empty": "還沒有照片。互動留下的回憶會出現在這裡。", "settings_note": "只在 1x 自動拍攝；達到上限後停止拍攝，既有照片不會自動刪除。",
+    "status": {"normal": "已保存 {count}/{capacity} 張；只在 1x 拍攝，系統不會自動刪除照片。", "near_full": "相簿即將滿載（{count}/{capacity}）；抵達上限後將停止拍攝。", "full": "相簿已滿（{count}/{capacity}）；將不再拍攝新照片，既有照片不會自動刪除。", "compact_normal": "已保存 {count}/{capacity} 張", "compact_near_full": "即將滿載 {count}/{capacity}", "compact_full": "相簿已滿 {count}/{capacity}"}
   },
   "settings": {
     "language_and_updates": "語言與更新", "interface_language": "介面語言", "unavailable": "狀態設定尚未連接執行中的 Dashboard。",
-    "groups": {"runtime": "執行模式", "timing": "時間與畫面", "social_cooldown": "社交冷卻", "life_rhythm": "生活節奏", "developer": "開發工具"},
+    "groups": {"runtime": "執行模式", "timing": "時間與畫面", "social_cooldown": "社交冷卻", "life_rhythm": "生活節奏", "memory_album": "回憶相簿", "developer": "開發工具"},
     "world_mode": "世界模式", "time_scale": "時間流速", "display_scale": "顯示比例", "enable_care": "啟用角色照護功能", "enable_care_tooltip": "允許低心情照護與相關家庭互動。",
     "race_frequency": "競賽頻率", "race_frequency_tooltip": "調整自主競賽的等待與冷卻時間；不略過資格、距離或接受判定。", "chorus_frequency": "合奏頻率", "chorus_frequency_tooltip": "調整自主合奏的等待、重試與冷卻時間；不略過資格、距離或反應判定。",
     "mood_climate": "情緒氣候", "mood_climate_tooltip": "自然心情會隨模擬倍速更新；三種氣候只調整發生率、正負傾向與幅度，不設定目標心情。",

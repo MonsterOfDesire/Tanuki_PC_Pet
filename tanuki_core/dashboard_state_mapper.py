@@ -6,6 +6,7 @@ from .information_center_state import (
     normalize_information_center_config_state,
 )
 from .settings_provider import RuntimeSettings
+from .play_calendar import normalize_local_date
 
 
 WORLD_MODE_OPTIONS = RuntimeSettings.WORLD_MODE_OPTIONS
@@ -29,6 +30,7 @@ class DashboardConfigState:
     achievement_capture_enabled: bool = False
     memory_album_mode: str = "off"
     memory_album_capacity: int = 20
+    play_calendar_started_on: str = ""
     information_center: InformationCenterConfigState = field(
         default_factory=InformationCenterConfigState
     )
@@ -91,6 +93,7 @@ def build_dashboard_config_state(
     achievement_capture_enabled=False,
     memory_album_mode="off",
     memory_album_capacity=20,
+    play_calendar_started_on="",
     information_center=None,
 ):
     return DashboardConfigState(
@@ -132,6 +135,9 @@ def build_dashboard_config_state(
             int(memory_album_capacity)
             if memory_album_capacity in RuntimeSettings.MEMORY_ALBUM_CAPACITY_OPTIONS
             else 20
+        ),
+        play_calendar_started_on=normalize_local_date(
+            play_calendar_started_on
         ),
         information_center=(
             information_center
@@ -234,6 +240,12 @@ def normalize_dashboard_config_state(raw_state, defaults, option_bounds):
             ) in RuntimeSettings.MEMORY_ALBUM_CAPACITY_OPTIONS
             else int(getattr(defaults, "memory_album_capacity", 20))
         ),
+        play_calendar_started_on=normalize_local_date(
+            raw_state.get(
+                "play_calendar_started_on",
+                getattr(defaults, "play_calendar_started_on", ""),
+            )
+        ),
         information_center=normalize_information_center_config_state(
             raw_state.get("information_center", {}),
             defaults=default_information_center,
@@ -266,6 +278,9 @@ def dashboard_config_state_to_payload(state):
         ),
         "memory_album_mode": str(getattr(state, "memory_album_mode", "off")),
         "memory_album_capacity": int(getattr(state, "memory_album_capacity", 20)),
+        "play_calendar_started_on": str(
+            getattr(state, "play_calendar_started_on", "")
+        ),
         "information_center": information_center_config_state_to_payload(
             getattr(
                 state,
@@ -323,6 +338,9 @@ def apply_dashboard_config_to_settings(settings_provider, state):
         if getattr(state, "memory_album_capacity", 20)
         in RuntimeSettings.MEMORY_ALBUM_CAPACITY_OPTIONS
         else 20
+    )
+    settings_provider.play_calendar_started_on = normalize_local_date(
+        getattr(state, "play_calendar_started_on", "")
     )
 
 

@@ -49,6 +49,10 @@ $uiSettingsPath = Join-Path $uiDir "status_setting.png"
 $uiSettingsCharacterPath = Join-Path $uiDir "status_setting_char.gif"
 $uiAchievementPath = Join-Path $uiDir "achievement.png"
 $uiAchievementCharacterPath = Join-Path $uiDir "achievement_char.gif"
+$uiMemoryAlbumPath = Join-Path $uiDir "memory_album.png"
+$uiMemoryAlbumCharacterPath = Join-Path $uiDir "memory_album_char.gif"
+$uiMemoryAlbumPartner1Path = Join-Path $uiDir "memory_album_parner1.gif"
+$uiMemoryAlbumPartner2Path = Join-Path $uiDir "memory_album_parner2.gif"
 $uiTrophiesDir = Join-Path $uiDir "trophies"
 $uiLocalesDir = Join-Path $uiDir "locales"
 $uiAchievementCatalogPath = Join-Path $uiTrophiesDir "achievement_catalog_draft.json"
@@ -88,6 +92,10 @@ $requiredPaths = @(
     @{ Label = "settings UI character"; Path = $uiSettingsCharacterPath },
     @{ Label = "achievement UI background"; Path = $uiAchievementPath },
     @{ Label = "achievement UI character"; Path = $uiAchievementCharacterPath },
+    @{ Label = "memory album UI background"; Path = $uiMemoryAlbumPath },
+    @{ Label = "memory album UI character"; Path = $uiMemoryAlbumCharacterPath },
+    @{ Label = "memory album UI partner 1"; Path = $uiMemoryAlbumPartner1Path },
+    @{ Label = "memory album UI partner 2"; Path = $uiMemoryAlbumPartner2Path },
     @{ Label = "achievement trophy directory"; Path = $uiTrophiesDir },
     @{ Label = "UI locale directory"; Path = $uiLocalesDir },
     @{ Label = "Traditional Chinese locale"; Path = (Join-Path $uiLocalesDir "zh_TW.json") },
@@ -166,6 +174,10 @@ if ($CheckOnly) {
   --add-data "${uiSettingsCharacterPath};UI" `
   --add-data "${uiAchievementPath};UI" `
   --add-data "${uiAchievementCharacterPath};UI" `
+  --add-data "${uiMemoryAlbumPath};UI" `
+  --add-data "${uiMemoryAlbumCharacterPath};UI" `
+  --add-data "${uiMemoryAlbumPartner1Path};UI" `
+  --add-data "${uiMemoryAlbumPartner2Path};UI" `
   --add-data "${uiTrophiesDir};UI/trophies" `
   --add-data "${uiLocalesDir};UI/locales" `
   --add-data "${uiDashboardSideIconPath};UI" `

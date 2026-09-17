@@ -68,10 +68,7 @@ from .overlay_window import (
 )
 from .pet_pointer_hit_test import visible_frame_pixel_hit
 from .pet_input_region import PetInputRegionController
-from .pet_window_layer import (
-    WINDOWS_PET_TOPMOST_REFRESH_SECONDS,
-    restore_pet_topmost,
-)
+from .pet_window_layer import restore_pet_topmost
 from .platform_capabilities import get_platform_capabilities
 from .runtime import SIM_CLOCK, app_now, get_pet_logic_step_count
 from .transformation_profiles import (
@@ -244,7 +241,6 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setMouseTracking(True)
-        self._next_topmost_refresh_at = 0.0
         self.anim_timer = QTimer(self)
         self.anim_timer.setTimerType(Qt.TimerType.PreciseTimer)
         self.anim_timer.timeout.connect(self.advance_animation_timer)
@@ -537,14 +533,6 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         return True
 
     def refresh_pet_window_layer(self, *, force=False):
-        now = time.monotonic()
-        if not force and now < float(
-            getattr(self, "_next_topmost_refresh_at", 0.0) or 0.0
-        ):
-            return False
-        self._next_topmost_refresh_at = (
-            now + WINDOWS_PET_TOPMOST_REFRESH_SECONDS
-        )
         return restore_pet_topmost(
             self,
             platform_key=getattr(
@@ -565,7 +553,6 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         profiler = getattr(self, "runtime_profiler", None)
         profiler_started_at = time.perf_counter() if profiler is not None else 0.0
         now = app_now()
-        self.refresh_pet_window_layer()
         if pet_is_transforming(self):
             self.check_boundary_stuck()
             self.refresh_movement_state()

@@ -81,6 +81,7 @@ class DashboardStateMapperTests(unittest.TestCase):
             display_scale_idx=3,
             debug_enabled=True,
             social_status_enabled=True,
+            play_calendar_started_on="2026-09-10",
             race_frequency="frequent",
             chorus_frequency="occasional",
             mood_climate="expressive",
@@ -103,6 +104,7 @@ class DashboardStateMapperTests(unittest.TestCase):
         self.assertEqual(settings.mood_climate, "expressive")
         self.assertEqual(settings.ui_locale, "ja_JP")
         self.assertTrue(settings.achievement_capture_enabled)
+        self.assertEqual(settings.play_calendar_started_on, "2026-09-10")
 
     def test_dashboard_payload_round_trip_uses_expected_shape(self):
         state = build_dashboard_config_state(
@@ -114,6 +116,7 @@ class DashboardStateMapperTests(unittest.TestCase):
             display_scale_idx=0,
             debug_enabled=False,
             social_status_enabled=True,
+            play_calendar_started_on="2026-09-10",
             information_center=build_information_center_config_state(
                 x=120,
                 y=80,
@@ -144,6 +147,7 @@ class DashboardStateMapperTests(unittest.TestCase):
                 "achievement_capture_enabled": False,
                 "memory_album_mode": "off",
                 "memory_album_capacity": 20,
+                "play_calendar_started_on": "2026-09-10",
                 "information_center": {
                     "x": 120,
                     "y": 80,

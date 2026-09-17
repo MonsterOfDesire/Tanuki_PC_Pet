@@ -6,6 +6,7 @@ from .ui_skin_spec import (
     SKIN_RELATION_SUMMON,
     SKIN_STATUS_SETTINGS,
     SKIN_ACHIEVEMENT_CABINET,
+    SKIN_MEMORY_ALBUM,
 )
 
 
@@ -61,7 +62,7 @@ INFORMATION_CENTER_PAGE_SPECS = (
         navigation_label="回憶相簿",
         title="回憶相簿",
         placeholder_text="瀏覽互動事件與日常生活留下的照片。",
-        skin_key=SKIN_ACHIEVEMENT_CABINET,
+        skin_key=SKIN_MEMORY_ALBUM,
     ),
     InformationCenterPageSpec(
         page_id=PAGE_STATUS_SETTINGS,

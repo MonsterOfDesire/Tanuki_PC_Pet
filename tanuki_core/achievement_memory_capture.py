@@ -7,7 +7,7 @@ import json
 import re
 from pathlib import Path
 
-from PyQt6.QtCore import QRect, Qt
+from PyQt6.QtCore import QRect, QSize, Qt
 from PyQt6.QtGui import QImage, QPainter
 from PyQt6.QtWidgets import QApplication
 
@@ -84,6 +84,40 @@ def capture_virtual_desktop_image(*, screens=None):
     return frame.image if frame is not None else None
 
 
+def crop_virtual_desktop_rect(frame, scene_rect):
+    if frame is None:
+        return None
+    scene_rect = QRect(scene_rect).intersected(frame.virtual_rect)
+    if scene_rect.isEmpty():
+        return None
+    scale_x = frame.image.width() / float(max(1, frame.virtual_rect.width()))
+    scale_y = frame.image.height() / float(max(1, frame.virtual_rect.height()))
+    image_rect = QRect(
+        int(round((scene_rect.x() - frame.virtual_rect.x()) * scale_x)),
+        int(round((scene_rect.y() - frame.virtual_rect.y()) * scale_y)),
+        max(1, int(round(scene_rect.width() * scale_x))),
+        max(1, int(round(scene_rect.height() * scale_y))),
+    ).intersected(frame.image.rect())
+    return frame.image.copy(image_rect) if not image_rect.isEmpty() else None
+
+
+def capture_virtual_desktop_rect_image(scene_rect, output_size=None, *, screens=None):
+    image = crop_virtual_desktop_rect(
+        capture_virtual_desktop_frame(screens=screens),
+        scene_rect,
+    )
+    if image is None or output_size is None:
+        return image
+    output_size = output_size if isinstance(output_size, QSize) else QSize(output_size)
+    if output_size.isEmpty() or image.size() == output_size:
+        return image
+    return image.scaled(
+        output_size,
+        Qt.AspectRatioMode.IgnoreAspectRatio,
+        Qt.TransformationMode.SmoothTransformation,
+    )
+
+
 def visible_pet_rect(pet):
     frames = tuple(getattr(pet, "current_frames", ()) or ())
     if not frames:
@@ -121,15 +155,7 @@ def crop_virtual_desktop_frame(frame, pets, *, margin=SCENE_CAPTURE_MARGIN_PX):
     scene_rect = scene_rect.intersected(frame.virtual_rect)
     if scene_rect.isEmpty():
         return frame.image
-    scale_x = frame.image.width() / float(max(1, frame.virtual_rect.width()))
-    scale_y = frame.image.height() / float(max(1, frame.virtual_rect.height()))
-    image_rect = QRect(
-        int(round((scene_rect.x() - frame.virtual_rect.x()) * scale_x)),
-        int(round((scene_rect.y() - frame.virtual_rect.y()) * scale_y)),
-        max(1, int(round(scene_rect.width() * scale_x))),
-        max(1, int(round(scene_rect.height() * scale_y))),
-    ).intersected(frame.image.rect())
-    return frame.image.copy(image_rect)
+    return crop_virtual_desktop_rect(frame, scene_rect)
 
 
 def capture_pet_scene_image(pets, *, screens=None, margin=SCENE_CAPTURE_MARGIN_PX):

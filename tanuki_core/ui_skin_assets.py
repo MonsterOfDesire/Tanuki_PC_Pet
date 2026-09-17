@@ -130,6 +130,7 @@ class UiSkinAssets:
             raise UiSkinAssetError(f"asset is not animated: {spec.relative_path}")
         movie = QMovie(self.resolve_asset_path(asset_key), parent=parent)
         movie.setCacheMode(QMovie.CacheMode.CacheAll)
+        movie.setSpeed(int(spec.playback_speed_percent))
         if not movie.isValid():
             movie.deleteLater()
             raise UiSkinAssetError(f"failed to load UI movie: {spec.relative_path}")

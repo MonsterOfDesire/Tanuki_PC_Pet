@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -83,6 +84,48 @@ class MemoryAlbumServiceTests(unittest.TestCase):
             self.assertEqual(path.name, "20260913-123456-789.png")
             self.assertTrue(service.index_path.is_file())
             self.assertEqual(service.snapshot(mode="events", capacity=20).count, 1)
+
+    def test_moved_photos_stop_counting_even_if_index_still_lists_them(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            service = MemoryAlbumService(temporary_directory)
+            service.root.mkdir(parents=True)
+            moved_photo = service.root / "20260913-120000-000.png"
+            kept_photo = service.root / "20260913-120001-000.png"
+            moved_photo.write_bytes(b"png")
+            kept_photo.write_bytes(b"png")
+            service.index_path.write_text(
+                json.dumps(
+                    [
+                        {"filename": moved_photo.name, "kind": "manual"},
+                        {"filename": kept_photo.name, "kind": "manual"},
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            archive = Path(temporary_directory) / "archive"
+            archive.mkdir()
+            moved_photo.replace(archive / moved_photo.name)
+            snapshot = service.snapshot(mode="events", capacity=20)
+
+            self.assertEqual(snapshot.count, 1)
+            self.assertEqual(snapshot.entries[0].path, kept_photo)
+
+    def test_manual_capture_works_while_automatic_mode_is_off(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            service = MemoryAlbumService(
+                temporary_directory,
+                now_provider=lambda: datetime(
+                    2026, 9, 13, 12, 0, tzinfo=timezone.utc
+                ),
+            )
+
+            path = service.capture_manual(FakeImage(), capacity=20)
+
+            self.assertIsNotNone(path)
+            snapshot = service.snapshot(mode="off", capacity=20)
+            self.assertEqual(snapshot.count, 1)
+            self.assertEqual(snapshot.entries[0].kind, "manual")
 
 
 if __name__ == "__main__":

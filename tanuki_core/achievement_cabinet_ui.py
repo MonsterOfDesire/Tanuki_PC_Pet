@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -30,6 +31,7 @@ from .overlay_window import (
     apply_platform_tool_window_attributes,
 )
 from .ui_localization import translate_ui
+from .ui_icons import create_ui_icon
 
 
 MODE_BUTTON_LABELS = {
@@ -91,8 +93,15 @@ class AchievementTrophyCard(QFrame):
             self.reset_button = QPushButton(
                 translate_ui(
                     "achievements.reset",
-                    default="重製成就",
+                    default="重置成就",
                 )
+            )
+            self.reset_button.setProperty("tanukiRole", "achievementReset")
+            self.reset_button.setProperty("confirming", False)
+            self.reset_button.setIconSize(QSize(15, 15))
+            self.reset_button.setSizePolicy(
+                QSizePolicy.Policy.Fixed,
+                QSizePolicy.Policy.Fixed,
             )
             self.reset_button.setToolTip(
                 translate_ui(
@@ -104,7 +113,11 @@ class AchievementTrophyCard(QFrame):
                 )
             )
             self.reset_button.clicked.connect(self._handle_reset_clicked)
-            layout.addWidget(self.reset_button)
+            self._apply_reset_presentation(confirming=False)
+            layout.addWidget(
+                self.reset_button,
+                alignment=Qt.AlignmentFlag.AlignHCenter,
+            )
 
     def _handle_reset_clicked(self):
         if self.reset_button is None:
@@ -115,9 +128,10 @@ class AchievementTrophyCard(QFrame):
             self.reset_button.setText(
                 translate_ui(
                     "achievements.reset_confirm",
-                    default="再次點擊確認重製",
+                    default="再次點擊確認重置",
                 )
             )
+            self._apply_reset_presentation(confirming=True)
             self._reset_confirmation_timer.start()
             return False
         # Ignore the second half of an accidental double click.  The user must
@@ -134,9 +148,25 @@ class AchievementTrophyCard(QFrame):
             self.reset_button.setText(
                 translate_ui(
                     "achievements.reset",
-                    default="重製成就",
+                    default="重置成就",
                 )
             )
+            self._apply_reset_presentation(confirming=False)
+
+    def _apply_reset_presentation(self, *, confirming):
+        if self.reset_button is None:
+            return
+        self.reset_button.setProperty("confirming", bool(confirming))
+        self.reset_button.setIcon(
+            create_ui_icon(
+                "reset",
+                color="#fff4e5" if confirming else "#765f4e",
+                size=15,
+            )
+        )
+        self.reset_button.setAccessibleName(self.reset_button.text())
+        self.reset_button.style().unpolish(self.reset_button)
+        self.reset_button.style().polish(self.reset_button)
 
     def enterEvent(self, event):
         self.highlighted.emit(self.snapshot)

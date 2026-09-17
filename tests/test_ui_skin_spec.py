@@ -2,6 +2,10 @@ import unittest
 
 from tanuki_core.ui_skin_spec import (
     ASSET_ACHIEVEMENT_CHARACTER,
+    ASSET_MEMORY_ALBUM_BACKGROUND,
+    ASSET_MEMORY_ALBUM_CHARACTER,
+    ASSET_MEMORY_ALBUM_PARTNER_1,
+    ASSET_MEMORY_ALBUM_PARTNER_2,
     ASSET_DASHBOARD_SIDE_ICON,
     FAMILY_AVATAR_SPECS,
     FIT_CONTAIN,
@@ -13,6 +17,7 @@ from tanuki_core.ui_skin_spec import (
     SKIN_RELATION_SUMMON,
     SKIN_STATUS_SETTINGS,
     SKIN_ACHIEVEMENT_CABINET,
+    SKIN_MEMORY_ALBUM,
     UI_ASSET_SPECS,
     UI_SKIN_SPECS,
     GeometryRect,
@@ -114,6 +119,7 @@ class UiSkinSpecTests(unittest.TestCase):
             SKIN_FAMILY_STATUS,
             SKIN_STATUS_SETTINGS,
             SKIN_ACHIEVEMENT_CABINET,
+            SKIN_MEMORY_ALBUM,
         ):
             with self.subTest(skin_key=skin_key):
                 skin = UI_SKIN_SPECS[skin_key]
@@ -150,6 +156,7 @@ class UiSkinSpecTests(unittest.TestCase):
             SKIN_FAMILY_STATUS: "family_character",
             SKIN_STATUS_SETTINGS: "settings_character",
             SKIN_ACHIEVEMENT_CABINET: ASSET_ACHIEVEMENT_CHARACTER,
+            SKIN_MEMORY_ALBUM: ASSET_MEMORY_ALBUM_CHARACTER,
         }
 
         for skin_key, foreground_asset_key in expected_foregrounds.items():
@@ -170,13 +177,56 @@ class UiSkinSpecTests(unittest.TestCase):
             skin.foreground_rect.x + 0.05,
         )
 
+    def test_memory_album_uses_clubroom_and_three_character_layers(self):
+        skin = UI_SKIN_SPECS[SKIN_MEMORY_ALBUM]
+
+        self.assertEqual(
+            skin.background_asset_key,
+            ASSET_MEMORY_ALBUM_BACKGROUND,
+        )
+        self.assertEqual(
+            skin.foreground_asset_key,
+            ASSET_MEMORY_ALBUM_CHARACTER,
+        )
+        self.assertEqual(
+            UI_ASSET_SPECS[ASSET_MEMORY_ALBUM_CHARACTER].playback_speed_percent,
+            300,
+        )
+        source_width, source_height = UI_ASSET_SPECS[
+            ASSET_MEMORY_ALBUM_CHARACTER
+        ].source_size
+        projected_ratio = (
+            skin.foreground_rect.width * 1600
+        ) / (skin.foreground_rect.height * 900)
+        self.assertAlmostEqual(
+            projected_ratio,
+            source_width / source_height,
+            places=2,
+        )
+        self.assertEqual(len(skin.additional_foregrounds), 2)
+        self.assertEqual(
+            tuple(layer.asset_key for layer in skin.additional_foregrounds),
+            (ASSET_MEMORY_ALBUM_PARTNER_1, ASSET_MEMORY_ALBUM_PARTNER_2),
+        )
+        self.assertTrue(all(layer.mirrored for layer in skin.additional_foregrounds))
+        self.assertGreater(skin.foreground_rect.x, 0.75)
+        self.assertGreater(skin.foreground_rect.y, 0.45)
+        self.assertLess(skin.additional_foregrounds[0].rect.x, 0.20)
+        self.assertLess(skin.additional_foregrounds[1].rect.x, 0.0)
+        self.assertTrue(
+            all(
+                layer.rect.x + layer.rect.width < 0.45
+                for layer in skin.additional_foregrounds
+            )
+        )
+
     def test_event_and_family_characters_use_requested_lower_corner_anchors(self):
         event_foreground = UI_SKIN_SPECS[SKIN_EVENT_LOG].foreground_rect
         family_foreground = UI_SKIN_SPECS[SKIN_FAMILY_STATUS].foreground_rect
 
         self.assertLess(event_foreground.x, 0.0)
         self.assertGreater(event_foreground.y, 0.40)
-        self.assertGreater(family_foreground.x, 0.55)
+        self.assertGreaterEqual(family_foreground.x, 0.65)
         self.assertGreater(family_foreground.y, 0.45)
 
     def test_foreground_layer_rect_can_overscan_scene_viewport(self):

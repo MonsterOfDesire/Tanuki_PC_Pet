@@ -120,6 +120,8 @@ class StatusSettingsPanel(QWidget):
         self.race_frequency_buttons = []
         self.chorus_frequency_buttons = []
         self.mood_climate_buttons = []
+        self.memory_album_mode_buttons = []
+        self.memory_album_capacity_buttons = []
         self.ui_locale_buttons = []
         self._button_groups = []
         self._compact_layout = None
@@ -295,6 +297,38 @@ class StatusSettingsPanel(QWidget):
         self.rhythm_layout.addWidget(self.mood_climate_label, 2, 0)
         self.mood_climate_row = QHBoxLayout()
         self.rhythm_layout.addLayout(self.mood_climate_row, 2, 1)
+
+        self.memory_group = self._create_group("回憶相簿")
+        self.memory_layout = QGridLayout(self.memory_group)
+        self.memory_layout.setHorizontalSpacing(theme.spacing_sm)
+        self.memory_layout.setVerticalSpacing(theme.spacing_sm)
+        self.memory_mode_label = self._create_label("拍照模式")
+        self.memory_layout.addWidget(self.memory_mode_label, 0, 0)
+        self.memory_album_mode_row = QHBoxLayout()
+        self.memory_layout.addLayout(self.memory_album_mode_row, 0, 1)
+        self.memory_capacity_label = self._create_label("照片上限")
+        self.memory_layout.addWidget(self.memory_capacity_label, 1, 0)
+        self.memory_album_capacity_row = QHBoxLayout()
+        self.memory_layout.addLayout(
+            self.memory_album_capacity_row,
+            1,
+            1,
+        )
+        self.memory_settings_note = QLabel(
+            "只在 1x 自動拍攝；達到上限後停止拍攝，既有照片不會自動刪除。"
+        )
+        self.memory_settings_note.setProperty(
+            "tanukiRole",
+            "settingsNotice",
+        )
+        self.memory_settings_note.setWordWrap(True)
+        self.memory_layout.addWidget(
+            self.memory_settings_note,
+            2,
+            0,
+            1,
+            2,
+        )
 
         self.developer_group = self._create_group("開發工具")
         self.developer_layout = QVBoxLayout(self.developer_group)
@@ -517,6 +551,8 @@ class StatusSettingsPanel(QWidget):
             snapshot.race_frequency_options,
             snapshot.chorus_frequency_options,
             snapshot.mood_climate_options,
+            snapshot.memory_album_mode_options,
+            snapshot.memory_album_capacity_options,
             snapshot.ui_locale_options,
         )
         if force_rebuild or signature != self._option_signature:
@@ -634,6 +670,20 @@ class StatusSettingsPanel(QWidget):
                 ),
             )
             self._set_checked(
+                self.memory_album_mode_buttons,
+                self._option_index(
+                    snapshot.memory_album_mode_options,
+                    snapshot.memory_album_mode,
+                ),
+            )
+            self._set_checked(
+                self.memory_album_capacity_buttons,
+                self._option_index(
+                    snapshot.memory_album_capacity_options,
+                    snapshot.memory_album_capacity,
+                ),
+            )
+            self._set_checked(
                 self.ui_locale_buttons,
                 self._option_index(
                     snapshot.ui_locale_options,
@@ -717,6 +767,29 @@ class StatusSettingsPanel(QWidget):
             ),
             lambda index: self._handle_mood_climate(
                 snapshot.mood_climate_options[index]
+            ),
+        )
+        self.memory_album_mode_buttons = self._populate_selector(
+            self.memory_album_mode_row,
+            snapshot.memory_album_mode_options,
+            lambda value: translate_ui(
+                f"memory_album.mode.{value}",
+                default={
+                    "off": "不開啟",
+                    "events": "互動事件",
+                    "random": "隨機拍照",
+                }.get(value, str(value)),
+            ),
+            lambda index: self._handle_memory_album_mode(
+                snapshot.memory_album_mode_options[index]
+            ),
+        )
+        self.memory_album_capacity_buttons = self._populate_selector(
+            self.memory_album_capacity_row,
+            snapshot.memory_album_capacity_options,
+            lambda value: str(value),
+            lambda index: self._handle_memory_album_capacity(
+                snapshot.memory_album_capacity_options[index]
             ),
         )
         self.ui_locale_buttons = self._populate_selector(
@@ -862,6 +935,7 @@ class StatusSettingsPanel(QWidget):
         self.runtime_layout.setHorizontalSpacing(horizontal_spacing)
         self.social_layout.setHorizontalSpacing(horizontal_spacing)
         self.rhythm_layout.setHorizontalSpacing(horizontal_spacing)
+        self.memory_layout.setHorizontalSpacing(horizontal_spacing)
         self.locale_update_layout.setHorizontalSpacing(
             horizontal_spacing
         )
@@ -874,6 +948,8 @@ class StatusSettingsPanel(QWidget):
             self.race_frequency_row,
             self.chorus_frequency_row,
             self.mood_climate_row,
+            self.memory_album_mode_row,
+            self.memory_album_capacity_row,
             self.ui_locale_row,
         ):
             selector_layout.setSpacing(horizontal_spacing)
@@ -886,6 +962,8 @@ class StatusSettingsPanel(QWidget):
             + self.race_frequency_buttons
             + self.chorus_frequency_buttons
             + self.mood_climate_buttons
+            + self.memory_album_mode_buttons
+            + self.memory_album_capacity_buttons
             + self.ui_locale_buttons
         ):
             button.setProperty("compact", compact)
@@ -909,6 +987,7 @@ class StatusSettingsPanel(QWidget):
             self.timing_group,
             self.social_group,
             self.rhythm_group,
+            self.memory_group,
             self.locale_update_group,
             self.developer_group,
         )
@@ -926,12 +1005,13 @@ class StatusSettingsPanel(QWidget):
         self.grid_layout.addWidget(self.timing_group, 1, 0)
         self.grid_layout.addWidget(self.social_group, 2, 0)
         self.grid_layout.addWidget(self.rhythm_group, 3, 0)
-        self.grid_layout.addWidget(self.locale_update_group, 4, 0)
+        self.grid_layout.addWidget(self.memory_group, 4, 0)
+        self.grid_layout.addWidget(self.locale_update_group, 5, 0)
         self.grid_layout.addWidget(
             self.developer_group,
             0,
             1,
-            5,
+            6,
             1,
         )
         self.grid_layout.setColumnStretch(0, 52)
@@ -1083,6 +1163,10 @@ class StatusSettingsPanel(QWidget):
             "settings.groups.life_rhythm",
             default="生活節奏",
         ))
+        self.memory_group.setTitle(translate_ui(
+            "settings.groups.memory_album",
+            default="回憶相簿",
+        ))
         self.developer_group.setTitle(translate_ui(
             "settings.groups.developer",
             default="開發工具",
@@ -1136,6 +1220,21 @@ class StatusSettingsPanel(QWidget):
         self.mood_climate_label.setToolTip(translate_ui(
             "settings.mood_climate_tooltip",
             default="自然心情會隨模擬倍速更新；三種氣候只調整發生率、正負傾向與幅度，不設定目標心情。",
+        ))
+        self.memory_mode_label.setText(translate_ui(
+            "memory_album.mode.label",
+            default="拍照模式",
+        ))
+        self.memory_capacity_label.setText(translate_ui(
+            "memory_album.capacity",
+            default="照片上限",
+        ))
+        self.memory_settings_note.setText(translate_ui(
+            "memory_album.settings_note",
+            default=(
+                "只在 1x 自動拍攝；達到上限後停止拍攝，"
+                "既有照片不會自動刪除。"
+            ),
         ))
         debug_text = translate_ui(
             "settings.show_debug",
@@ -1285,6 +1384,18 @@ class StatusSettingsPanel(QWidget):
                 f"settings.mood_climates.{value}",
                 default=MOOD_CLIMATE_LABELS.get(value, str(value)),
             ))
+        for value, button in zip(
+            snapshot.memory_album_mode_options,
+            self.memory_album_mode_buttons,
+        ):
+            button.setText(translate_ui(
+                f"memory_album.mode.{value}",
+                default={
+                    "off": "不開啟",
+                    "events": "互動事件",
+                    "random": "隨機拍照",
+                }.get(value, str(value)),
+            ))
             button.setToolTip(translate_ui(
                 f"settings.mood_climate_tooltips.{value}",
                 default=MOOD_CLIMATE_TOOLTIPS.get(value, ""),
@@ -1333,6 +1444,18 @@ class StatusSettingsPanel(QWidget):
         if self.binding is None:
             return
         self.binding.set_mood_climate(value)
+        self.refresh_from_binding()
+
+    def _handle_memory_album_mode(self, value):
+        if self.binding is None:
+            return
+        self.binding.set_memory_album_mode(value)
+        self.refresh_from_binding()
+
+    def _handle_memory_album_capacity(self, value):
+        if self.binding is None:
+            return
+        self.binding.set_memory_album_capacity(value)
         self.refresh_from_binding()
 
     def _handle_validation(self):

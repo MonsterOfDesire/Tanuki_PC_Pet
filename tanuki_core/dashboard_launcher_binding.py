@@ -17,6 +17,11 @@ class DashboardLauncherSnapshot:
     show_status: bool = False
     information_center_open: bool = False
     offer_tray_open: bool = False
+    manual_camera_available: bool = False
+    manual_camera_active: bool = False
+    manual_camera_reason: str = ""
+    play_day_number: int | None = None
+    play_started_on: str = ""
 
 
 class DashboardLauncherBinding:
@@ -31,6 +36,23 @@ class DashboardLauncherBinding:
         care_enabled = bool(
             getattr(self.dashboard, "care_feature_enabled", False)
         )
+        play_day_number = self._normalize_play_day(
+            getattr(self.dashboard, "launcher_play_day_number", None)
+        )
+        availability_provider = getattr(
+            self.dashboard,
+            "get_manual_camera_availability",
+            None,
+        )
+        if callable(availability_provider):
+            manual_camera_available, manual_camera_reason = (
+                availability_provider()
+            )
+        else:
+            manual_camera_available = callable(
+                getattr(self.dashboard, "toggle_manual_camera", None)
+            )
+            manual_camera_reason = "" if manual_camera_available else "unavailable"
         return DashboardLauncherSnapshot(
             world_mode_key=world_mode,
             world_mode_label=translate_ui(
@@ -79,7 +101,24 @@ class DashboardLauncherBinding:
                 "information_center_window"
             ),
             offer_tray_open=self._window_is_visible("offer_tray_window"),
+            manual_camera_available=bool(manual_camera_available),
+            manual_camera_active=bool(
+                getattr(self.dashboard, "manual_camera_active", False)
+            ),
+            manual_camera_reason=str(manual_camera_reason or ""),
+            play_day_number=play_day_number,
+            play_started_on=str(
+                getattr(self.dashboard, "launcher_play_started_on", "") or ""
+            ),
         )
+
+    @staticmethod
+    def _normalize_play_day(value):
+        try:
+            day_number = int(value)
+        except (TypeError, ValueError):
+            return None
+        return day_number if day_number >= 1 else None
 
     def _window_is_visible(self, attribute_name):
         window = getattr(self.dashboard, attribute_name, None)
@@ -95,6 +134,12 @@ class DashboardLauncherBinding:
         if self._close_visible_window("offer_tray_window"):
             return
         self.dashboard.open_offer_tray()
+
+    def toggle_manual_camera(self):
+        toggler = getattr(self.dashboard, "toggle_manual_camera", None)
+        if not callable(toggler):
+            return False
+        return toggler()
 
     def _close_visible_window(self, attribute_name):
         if not self._window_is_visible(attribute_name):
