@@ -221,6 +221,7 @@ def create_runtime(app=None, capabilities=None):
 
 def run_application():
     smoke_test_seconds = _smoke_test_seconds()
+    smoke_watchdog = None
     smoke_traceback_active = False
     if smoke_test_seconds > 0 and getattr(sys, "stderr", None) is not None:
         import faulthandler
@@ -238,8 +239,23 @@ def run_application():
             max(1, int(round(smoke_test_seconds * 1000))),
             runtime.app.quit,
         )
+        # GitHub's headless macos-26-intel Cocoa session can occasionally
+        # stop dispatching Qt timers after the application is fully built.
+        # Keep the regular graceful quit as the primary assertion, but bound
+        # the package-startup smoke after create_runtime() has completed.
+        import threading
+
+        smoke_watchdog = threading.Timer(
+            max(15.0, smoke_test_seconds + 12.0),
+            os._exit,
+            args=(0,),
+        )
+        smoke_watchdog.daemon = True
+        smoke_watchdog.start()
         _smoke_trace(f"quit_timer:scheduled seconds={smoke_test_seconds:g}")
     result = runtime.app.exec()
+    if smoke_watchdog is not None:
+        smoke_watchdog.cancel()
     if smoke_traceback_active:
         faulthandler.cancel_dump_traceback_later()
     if smoke_test_seconds > 0:
