@@ -29,6 +29,20 @@ from .settings_provider import RuntimeSettings
 from .window_tracker import WindowTracker
 
 
+def _smoke_test_seconds():
+    try:
+        return float(
+            os.environ.get("TANUKI_SMOKE_TEST_SECONDS", "0") or 0
+        )
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _smoke_trace(message):
+    if _smoke_test_seconds() > 0:
+        print(f"TANUKI_SMOKE {message}", file=sys.stderr, flush=True)
+
+
 def build_default_pet_specs():
     return DEFAULT_PET_SPECS
 
@@ -108,8 +122,10 @@ def ensure_visible_pets(pets_list):
 
 
 def create_runtime(app=None, capabilities=None):
+    _smoke_trace("create_runtime:start")
     app = app or QApplication(sys.argv)
     capabilities = capabilities or get_platform_capabilities()
+    _smoke_trace(f"application:ready platform={capabilities.platform_key}")
     settings_provider = RuntimeSettings()
     config_store = ConfigStore(
         config_path=get_runtime_config_path(
@@ -132,12 +148,14 @@ def create_runtime(app=None, capabilities=None):
         window_tracker,
         capabilities,
     )
+    _smoke_trace(f"pets:ready count={len(pets_list)}")
     dashboard, available_rect = build_dashboard(
         pets_dict,
         settings_provider,
         save_scheduler,
         capabilities,
     )
+    _smoke_trace("dashboard:ready")
     window_tracker.refresh()
 
     sensor = None
@@ -169,6 +187,7 @@ def create_runtime(app=None, capabilities=None):
         monitor=monitor,
         shell=DashboardShellLifecycle(sensor=sensor, monitor=monitor),
     )
+    _smoke_trace("runtime:ready")
     seed_default_household_events(
         runtime.household,
         runtime.household_event_log,
@@ -177,6 +196,7 @@ def create_runtime(app=None, capabilities=None):
     runtime.household_coordinator.reset_event_schedule(app_now())
     bind_runtime_providers(runtime)
     config_store.bind(dashboard, pets_dict)
+    _smoke_trace("bindings:ready")
     runtime.display_topology_coordinator = DisplayTopologyCoordinator(
         app=app,
         dashboard=dashboard,
@@ -188,30 +208,36 @@ def create_runtime(app=None, capabilities=None):
     if is_frozen_runtime() and capabilities.standalone_updater:
         record_current_installation(dashboard.ui_locale)
     runtime.timers = start_runtime_timers(runtime)
+    _smoke_trace("timers:ready")
     runtime.app.aboutToQuit.connect(runtime.shutdown)
     if is_frozen_runtime() and capabilities.standalone_updater:
         runtime.app.aboutToQuit.connect(
             mark_current_installation_stopped
         )
+    _smoke_trace("create_runtime:complete")
     return runtime
 
 
 def run_application():
+    smoke_test_seconds = _smoke_test_seconds()
+    if smoke_test_seconds > 0:
+        import faulthandler
+
+        faulthandler.dump_traceback_later(45, repeat=False)
     runtime = create_runtime()
     runtime.dashboard.show()
     if runtime.sensor is not None:
         runtime.sensor.show()
     QTimer.singleShot(0, lambda: ensure_visible_pets(runtime.pets_list))
     QTimer.singleShot(300, lambda: ensure_visible_pets(runtime.pets_list))
-    try:
-        smoke_test_seconds = float(
-            os.environ.get("TANUKI_SMOKE_TEST_SECONDS", "0") or 0
-        )
-    except (TypeError, ValueError):
-        smoke_test_seconds = 0.0
     if smoke_test_seconds > 0:
         QTimer.singleShot(
             max(1, int(round(smoke_test_seconds * 1000))),
             runtime.app.quit,
         )
-    return runtime.app.exec()
+        _smoke_trace(f"quit_timer:scheduled seconds={smoke_test_seconds:g}")
+    result = runtime.app.exec()
+    if smoke_test_seconds > 0:
+        faulthandler.cancel_dump_traceback_later()
+        _smoke_trace(f"event_loop:complete code={result}")
+    return result

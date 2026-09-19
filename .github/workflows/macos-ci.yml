@@ -66,6 +66,7 @@ jobs:
         run: bash ./build_macos.sh "$RUNNER_TEMP/tanuki-build"
 
       - name: Smoke test packaged application
+        timeout-minutes: 3
         env:
           QT_QPA_PLATFORM: cocoa
           PYTHONFAULTHANDLER: "1"
