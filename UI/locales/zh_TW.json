@@ -49,7 +49,7 @@
     "open_information_center": "開啟資訊中心", "offer_tray": "飲食餐盤",
     "open_offer_tray": "開啟飲食餐盤", "manual_camera": "手動拍照",
     "open_manual_camera": "開啟手動相機", "manual_camera_unavailable": "手動相機目前無法使用",
-    "manual_camera_controls": "左鍵拍照；Tab 切換 4:3／16:9、Esc 取消", "manual_camera_1x_only": "請切換至 1x 後再使用手動相機。", "manual_camera_full": "手動相機暫停：回憶相簿已滿，無法拍攝新照片。", "manual_camera_saved": "照片已保存到回憶相簿。", "manual_camera_failed": "無法擷取畫面；請確認螢幕錄製權限。",
+    "manual_camera_controls": "手動相機：左鍵拍照；Tab 切換 4:3／16:9、Esc 取消", "manual_camera_1x_only": "請切換至 1x 後再使用手動相機。", "manual_camera_full": "手動相機暫停：回憶相簿已滿，無法拍攝新照片。", "manual_camera_saved": "照片已保存到回憶相簿。", "manual_camera_failed": "無法擷取畫面；請確認螢幕錄製權限。",
     "current_status": "目前狀態", "play_day": "第 {day} 天", "play_day_tooltip": "從 {date} 起計算本地曆日。",
     "status_settings": "狀態設定", "open_status_settings": "開啟狀態設定", "shutdown": "關閉系統",
     "disconnected": "未連接", "care_on": "照護中", "care_off": "照護關閉",

@@ -49,7 +49,7 @@
     "open_information_center": "打开信息中心", "offer_tray": "饮食餐盘",
     "open_offer_tray": "打开饮食餐盘", "manual_camera": "手动拍照",
     "open_manual_camera": "打开手动相机", "manual_camera_unavailable": "手动相机目前无法使用",
-    "manual_camera_controls": "左键拍照；Tab 切换 4:3／16:9、Esc 取消", "manual_camera_1x_only": "请切换至 1x 后再使用手动相机。", "manual_camera_full": "手动相机暂停：回忆相册已满，无法拍摄新照片。", "manual_camera_saved": "照片已保存到回忆相册。", "manual_camera_failed": "无法截取屏幕；请确认屏幕录制权限。",
+    "manual_camera_controls": "手动相机：左键拍照；Tab 切换 4:3／16:9、Esc 取消", "manual_camera_1x_only": "请切换至 1x 后再使用手动相机。", "manual_camera_full": "手动相机暂停：回忆相册已满，无法拍摄新照片。", "manual_camera_saved": "照片已保存到回忆相册。", "manual_camera_failed": "无法截取屏幕；请确认屏幕录制权限。",
     "current_status": "目前状态", "play_day": "第 {day} 天", "play_day_tooltip": "从 {date} 起按本地日历天数计算。",
     "status_settings": "状态设置", "open_status_settings": "打开状态设置", "shutdown": "关闭系统",
     "disconnected": "未连接", "care_on": "照护中", "care_off": "照护关闭",

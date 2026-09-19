@@ -574,7 +574,7 @@ class DashboardLauncherPanel(QWidget):
     def _update_camera_tooltips(self, available, reason=""):
         tooltip = translate_ui(
             "launcher.manual_camera_controls",
-            default="開啟手動相機；Tab 切換比例、Enter 拍照、Esc 取消",
+            default="手動相機：左鍵拍照；Tab 切換比例、Esc 取消",
         )
         if not available:
             if reason == "speed":

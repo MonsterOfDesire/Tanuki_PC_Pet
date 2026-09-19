@@ -49,7 +49,7 @@
     "open_information_center": "Open Information Center", "offer_tray": "Food Tray",
     "open_offer_tray": "Open Food Tray", "manual_camera": "Take Photo",
     "open_manual_camera": "Open manual camera", "manual_camera_unavailable": "The manual camera is currently unavailable",
-    "manual_camera_controls": "Left-click to take a photo; Tab switches 4:3/16:9, Esc cancels", "manual_camera_1x_only": "Switch to 1x before using the manual camera.", "manual_camera_full": "Manual camera unavailable: the Memory Album is full.", "manual_camera_saved": "Photo saved to the Memory Album.", "manual_camera_failed": "The screen could not be captured; check Screen Recording permission.",
+    "manual_camera_controls": "Manual camera: left-click to take a photo; Tab switches 4:3/16:9, Esc cancels", "manual_camera_1x_only": "Switch to 1x before using the manual camera.", "manual_camera_full": "Manual camera unavailable: the Memory Album is full.", "manual_camera_saved": "Photo saved to the Memory Album.", "manual_camera_failed": "The screen could not be captured; check Screen Recording permission.",
     "current_status": "Current status", "play_day": "Day {day}", "play_day_tooltip": "Counts local calendar days starting on {date}.",
     "status_settings": "Status Settings", "open_status_settings": "Open Status Settings", "shutdown": "Exit",
     "disconnected": "Disconnected", "care_on": "Care on", "care_off": "Care off",

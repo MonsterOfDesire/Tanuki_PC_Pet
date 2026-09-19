@@ -49,7 +49,7 @@
     "open_information_center": "情報センターを開く", "offer_tray": "フードトレイ",
     "open_offer_tray": "フードトレイを開く", "manual_camera": "手動撮影",
     "open_manual_camera": "手動カメラを開く", "manual_camera_unavailable": "手動カメラは現在利用できません",
-    "manual_camera_controls": "左クリックで撮影・Tabで4:3／16:9切替・Escでキャンセル", "manual_camera_1x_only": "手動カメラは1xに切り替えてから使用してください。", "manual_camera_full": "手動カメラは利用できません：思い出アルバムが満杯です。", "manual_camera_saved": "写真を思い出アルバムに保存しました。", "manual_camera_failed": "画面を取得できません。画面収録の権限を確認してください。",
+    "manual_camera_controls": "手動カメラ：左クリックで撮影・Tabで4:3／16:9切替・Escでキャンセル", "manual_camera_1x_only": "手動カメラは1xに切り替えてから使用してください。", "manual_camera_full": "手動カメラは利用できません：思い出アルバムが満杯です。", "manual_camera_saved": "写真を思い出アルバムに保存しました。", "manual_camera_failed": "画面を取得できません。画面収録の権限を確認してください。",
     "current_status": "現在の状態", "play_day": "{day} 日目", "play_day_tooltip": "{date}からローカル暦日で数えます。",
     "status_settings": "状態設定", "open_status_settings": "状態設定を開く", "shutdown": "システムを終了",
     "disconnected": "未接続", "care_on": "お世話：オン", "care_off": "お世話：オフ",
