@@ -39,8 +39,9 @@ def _smoke_test_seconds():
 
 
 def _smoke_trace(message):
-    if _smoke_test_seconds() > 0:
-        print(f"TANUKI_SMOKE {message}", file=sys.stderr, flush=True)
+    stream = getattr(sys, "stderr", None)
+    if _smoke_test_seconds() > 0 and stream is not None:
+        print(f"TANUKI_SMOKE {message}", file=stream, flush=True)
 
 
 def build_default_pet_specs():
@@ -220,10 +221,12 @@ def create_runtime(app=None, capabilities=None):
 
 def run_application():
     smoke_test_seconds = _smoke_test_seconds()
-    if smoke_test_seconds > 0:
+    smoke_traceback_active = False
+    if smoke_test_seconds > 0 and getattr(sys, "stderr", None) is not None:
         import faulthandler
 
         faulthandler.dump_traceback_later(45, repeat=False)
+        smoke_traceback_active = True
     runtime = create_runtime()
     runtime.dashboard.show()
     if runtime.sensor is not None:
@@ -237,7 +240,8 @@ def run_application():
         )
         _smoke_trace(f"quit_timer:scheduled seconds={smoke_test_seconds:g}")
     result = runtime.app.exec()
-    if smoke_test_seconds > 0:
+    if smoke_traceback_active:
         faulthandler.cancel_dump_traceback_later()
+    if smoke_test_seconds > 0:
         _smoke_trace(f"event_loop:complete code={result}")
     return result
