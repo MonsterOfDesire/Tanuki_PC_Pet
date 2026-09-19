@@ -136,12 +136,27 @@ if (-not [string]::IsNullOrWhiteSpace($env:PYTHONPATH)) {
 }
 $env:PYTHONPATH = $pythonPathEntries -join [IO.Path]::PathSeparator
 
+# PyInstaller resolves transitive DLLs from PATH while analysing extensions.
+# Codex and other development tools may prepend their own Poppler/libheif
+# runtimes, whose ICU/UCRT DLLs are binary-incompatible with Qt.  Keep the
+# build environment reproducible and limited to Python plus Windows itself.
+$buildPathEntries = @(
+    $selectedPythonRoot,
+    (Join-Path $selectedPythonRoot "Scripts"),
+    (Join-Path $env:SystemRoot "System32"),
+    $env:SystemRoot
+) |
+    Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and (Test-Path -LiteralPath $_) } |
+    Select-Object -Unique
+$env:PATH = $buildPathEntries -join [IO.Path]::PathSeparator
+
 Write-Host "Using Python: $PythonExe"
 Write-Host "Repository root: $repoRoot"
 Write-Host "Output root: $OutputRoot"
 Write-Host "Script file: $scriptPath"
 Write-Host "Work dir: $workDir"
 Write-Host "Dist dir: $distDir"
+Write-Host "Sanitized build PATH: $env:PATH"
 Write-Host ""
 
 & $PythonExe -c "import PyInstaller, PyQt6, pynput, PIL" 2>$null
@@ -192,6 +207,14 @@ if ($CheckOnly) {
 
 if ($LASTEXITCODE -ne 0) {
     throw "Build failed with code $LASTEXITCODE."
+}
+
+$analysisTocPath = Join-Path (Join-Path $workDir $buildName) "Analysis-00.toc"
+if (
+    (Test-Path -LiteralPath $analysisTocPath) -and
+    (Select-String -LiteralPath $analysisTocPath -SimpleMatch "\.cache\codex-runtimes\" -Quiet)
+) {
+    throw "Build captured DLLs from the Codex runtime. Refusing to publish a contaminated package."
 }
 
 & $PythonExe -m PyInstaller `
