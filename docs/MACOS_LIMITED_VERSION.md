@@ -64,4 +64,4 @@ macOS 原生視窗增強屬於可降級能力：套用 all-Spaces 時必須先�
 
 ## Release 內容
 
-建議跨平台首版使用 `v0.9.0-beta`，同一個 Release 放置本版 Windows 套件、`TanukiUpdater.exe`、Windows 更新 manifest，以及兩個 macOS ZIP。macOS ZIP 不重複包入 Windows 內容；Release 頁則同時提供各平台下載選項。
+建議跨平台測試版使用 `v0.10.0-beta`，同一個 Release 放置本版 Windows 套件、`TanukiUpdater.exe`、Windows 更新 manifest，以及兩個 macOS ZIP。macOS ZIP 不重複包入 Windows 內容；Release 頁則同時提供各平台下載選項。
