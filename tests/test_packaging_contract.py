@@ -32,7 +32,7 @@ class PackagingContractTests(unittest.TestCase):
             "qsvg.dll",
         ):
             self.assertIn(binary_name, windows_script)
-        self.assertIn("unused_qt_binary_markers", macos_spec)
+        self.assertNotIn("unused_qt_binary_markers", macos_spec)
 
     def test_opengl_software_fallback_is_not_excluded(self):
         combined = "\n".join(
