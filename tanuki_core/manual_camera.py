@@ -15,6 +15,7 @@ from PyQt6.QtGui import QColor, QCursor, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import QApplication, QWidget
 
 from .achievement_memory_capture import capture_virtual_desktop_rect_image
+from .runtime_debug_log import log_suppressed_exception
 
 
 MANUAL_CAMERA_DEFAULT_ASPECT = "16:9"
@@ -205,8 +206,11 @@ class ManualCameraOverlay(QWidget):
         self._pointer_timer.stop()
         try:
             self.releaseKeyboard()
-        except Exception:
-            pass
+        except Exception as error:
+            log_suppressed_exception(
+                "manual_camera.release_keyboard",
+                error,
+            )
         super().closeEvent(event)
 
     def paintEvent(self, event):

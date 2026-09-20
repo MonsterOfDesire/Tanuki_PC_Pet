@@ -96,6 +96,9 @@ class RaceExecutor:
             == RACE_EXECUTION_SANDBOX_PREVIEW
         )
 
+    def is_active(self) -> bool:
+        return self._active_race() is not None
+
     def update(
         self,
         *,

@@ -3,9 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from .achievement_catalog import ACHIEVEMENT_WORLD_MODES
+from .bounded_key_set import BoundedKeySet
 
 
 ACHIEVEMENT_PERSISTENCE_SCHEMA_VERSION = 1
+MAX_PROCESSED_ACHIEVEMENT_EVENTS = 4096
 
 
 @dataclass
@@ -40,9 +42,10 @@ class AchievementState:
             mode: {} for mode in sorted(ACHIEVEMENT_WORLD_MODES)
         }
     )
-    processed_event_ids: dict[str, set[str]] = field(
+    processed_event_ids: dict[str, BoundedKeySet] = field(
         default_factory=lambda: {
-            mode: set() for mode in sorted(ACHIEVEMENT_WORLD_MODES)
+            mode: BoundedKeySet(max_entries=MAX_PROCESSED_ACHIEVEMENT_EVENTS)
+            for mode in sorted(ACHIEVEMENT_WORLD_MODES)
         }
     )
 
@@ -75,7 +78,7 @@ class AchievementState:
         world_mode = _require_world_mode(world_mode)
         return str(event_id or "").strip() in self.processed_event_ids.setdefault(
             world_mode,
-            set(),
+            BoundedKeySet(max_entries=MAX_PROCESSED_ACHIEVEMENT_EVENTS),
         )
 
     def mark_event_processed(self, world_mode: str, event_id: str) -> None:
@@ -83,7 +86,10 @@ class AchievementState:
         event_id = str(event_id or "").strip()
         if not event_id:
             raise ValueError("event_id is required")
-        self.processed_event_ids.setdefault(world_mode, set()).add(event_id)
+        self.processed_event_ids.setdefault(
+            world_mode,
+            BoundedKeySet(max_entries=MAX_PROCESSED_ACHIEVEMENT_EVENTS),
+        ).add(event_id)
 
     def reset_achievement(
         self,
@@ -109,7 +115,8 @@ class AchievementState:
             mode: {} for mode in sorted(ACHIEVEMENT_WORLD_MODES)
         }
         self.processed_event_ids = {
-            mode: set() for mode in sorted(ACHIEVEMENT_WORLD_MODES)
+            mode: BoundedKeySet(max_entries=MAX_PROCESSED_ACHIEVEMENT_EVENTS)
+            for mode in sorted(ACHIEVEMENT_WORLD_MODES)
         }
 
 
@@ -130,9 +137,10 @@ def capture_achievement_persistence_state(
             for world_mode in sorted(ACHIEVEMENT_WORLD_MODES)
         },
         "processed_event_ids": {
-            world_mode: sorted(
-                state.processed_event_ids.get(world_mode, set())
-            )
+            world_mode: list(state.processed_event_ids.get(
+                world_mode,
+                BoundedKeySet(max_entries=MAX_PROCESSED_ACHIEVEMENT_EVENTS),
+            ))
             for world_mode in sorted(ACHIEVEMENT_WORLD_MODES)
         },
     }

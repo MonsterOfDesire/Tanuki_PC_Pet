@@ -20,7 +20,10 @@ class SocialCareEffects:
         pet.social_target = target
         pet.social_started_at = now
         pet.social_timer_frames = pet.get_social_duration_frames(mode)
-        pet.star_timer.start(30)
+        if mode in {"following", "mimicking"}:
+            pet.star_timer.start(
+                int(getattr(pet, "STAR_BASE_INTERVAL_MS", 30))
+            )
 
     def stop_social_mode(self, pet, now, apply_cooldown=True):
         if apply_cooldown and pet.social_mode != "none":

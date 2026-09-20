@@ -1,4 +1,5 @@
 import time
+from dataclasses import dataclass
 
 from PyQt6.QtCore import Qt, QTimer
 
@@ -8,6 +9,33 @@ from .runtime import (
     resolve_timer_repeat_count,
     run_pet_physics_step,
 )
+
+
+@dataclass
+class IdleTimerCadence:
+    next_run_at: float = 0.0
+
+    def should_run(
+        self,
+        *,
+        now,
+        active,
+        base_interval_ms,
+        idle_interval_ms,
+        speed,
+    ):
+        if active:
+            self.next_run_at = 0.0
+            return True
+        now = float(now)
+        if self.next_run_at > now:
+            return False
+        effective_idle_ms = max(
+            float(base_interval_ms),
+            float(idle_interval_ms) / max(1.0, float(speed)),
+        )
+        self.next_run_at = now + effective_idle_ms / 1000.0
+        return True
 
 
 def register_runtime_timer(
@@ -20,14 +48,29 @@ def register_runtime_timer(
     timer_name="",
     repeat_count_provider=None,
     pass_step_delta=False,
+    active_provider=None,
+    idle_interval_ms=None,
+    cadence_time_provider=time.perf_counter,
 ):
     timer = QTimer(app)
     timer.setTimerType(Qt.TimerType.PreciseTimer)
     last_callback_started_at = 0.0
+    idle_cadence = IdleTimerCadence()
 
     def run_callback():
         nonlocal last_callback_started_at
         callback_started_at = time.perf_counter()
+        activity_is_active = None
+        if callable(active_provider) and idle_interval_ms is not None:
+            activity_is_active = bool(active_provider())
+            if not idle_cadence.should_run(
+                now=cadence_time_provider(),
+                active=activity_is_active,
+                base_interval_ms=interval_ms,
+                idle_interval_ms=idle_interval_ms,
+                speed=SIM_CLOCK.speed,
+            ):
+                return
         callback_interval_ms = 0.0
         if last_callback_started_at > 0.0:
             callback_interval_ms = (
@@ -35,7 +78,7 @@ def register_runtime_timer(
             ) * 1000.0
         last_callback_started_at = callback_started_at
         repeat_count = 1
-        if speed_scaled:
+        if speed_scaled and activity_is_active is not False:
             repeat_count = SIM_CLOCK.get_timer_repeat_count(
                 interval_ms,
                 minimum_interval_ms=minimum_interval_ms,
@@ -139,6 +182,10 @@ def start_runtime_timers(runtime):
             minimum_interval_ms=8,
             profiler=runtime.profiler,
             timer_name="offer",
+            active_provider=(
+                runtime.offer_item_scene_runtime_controller.is_active
+            ),
+            idle_interval_ms=240,
         ),
         "transformation": register_runtime_timer(
             runtime.app,
@@ -147,6 +194,10 @@ def start_runtime_timers(runtime):
             speed_scaled=False,
             profiler=runtime.profiler,
             timer_name="transformation",
+            active_provider=(
+                runtime.transformation_runtime_controller.is_active
+            ),
+            idle_interval_ms=240,
         ),
         "race": register_runtime_timer(
             runtime.app,
@@ -155,6 +206,8 @@ def start_runtime_timers(runtime):
             minimum_interval_ms=8,
             profiler=runtime.profiler,
             timer_name="race",
+            active_provider=runtime.race_executor.is_active,
+            idle_interval_ms=240,
         ),
         "chorus": register_runtime_timer(
             runtime.app,
@@ -163,6 +216,8 @@ def start_runtime_timers(runtime):
             minimum_interval_ms=12,
             profiler=runtime.profiler,
             timer_name="chorus",
+            active_provider=runtime.chorus_executor.is_active,
+            idle_interval_ms=480,
         ),
         "household": register_runtime_timer(
             runtime.app,

@@ -199,6 +199,9 @@ if ($CheckOnly) {
   --add-data "${uiFamilyIconsDir};UI/family_icon" `
   --add-data "${petOverlaysDir};UI/pet_overlays" `
   --collect-all pynput `
+  --exclude-module PyQt6.QtPdf `
+  --exclude-module PyQt6.QtNetwork `
+  --exclude-module PyQt6.QtSvg `
   --clean `
   --specpath $workDir `
   --workpath $workDir `
@@ -215,6 +218,27 @@ if (
     (Select-String -LiteralPath $analysisTocPath -SimpleMatch "\.cache\codex-runtimes\" -Quiet)
 ) {
     throw "Build captured DLLs from the Codex runtime. Refusing to publish a contaminated package."
+}
+
+$buildDir = Join-Path $distDir $buildName
+$unusedQtRelativePaths = @(
+    "_internal\Qt6Pdf.dll",
+    "_internal\Qt6Network.dll",
+    "_internal\Qt6Svg.dll",
+    "_internal\PyQt6\Qt6\plugins\generic\qtuiotouchplugin.dll",
+    "_internal\PyQt6\Qt6\plugins\iconengines\qsvgicon.dll",
+    "_internal\PyQt6\Qt6\plugins\imageformats\qpdf.dll",
+    "_internal\PyQt6\Qt6\plugins\imageformats\qsvg.dll"
+)
+foreach ($relativePath in $unusedQtRelativePaths) {
+    $unusedPath = Join-Path $buildDir $relativePath
+    if (Test-Path -LiteralPath $unusedPath) {
+        Remove-Item -LiteralPath $unusedPath -Force
+    }
+}
+$softwareOpenGlPath = Join-Path $buildDir "_internal\PyQt6\Qt6\bin\opengl32sw.dll"
+if (-not (Test-Path -LiteralPath $softwareOpenGlPath)) {
+    throw "Required software OpenGL fallback is missing: $softwareOpenGlPath"
 }
 
 & $PythonExe -m PyInstaller `
@@ -234,7 +258,6 @@ if ($LASTEXITCODE -ne 0) {
     throw "Updater build failed with code $LASTEXITCODE."
 }
 
-$buildDir = Join-Path $distDir $buildName
 $updaterPath = Join-Path $distDir "$updaterBuildName.exe"
 Write-Host ""
 Write-Host "Build complete."

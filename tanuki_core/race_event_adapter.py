@@ -5,6 +5,7 @@ from .activity_event_contract import (
     ACTIVITY_EVENT_RACE_DECLINED,
     build_activity_event_metadata,
 )
+from .bounded_key_set import BoundedKeySet
 from .race_rules import (
     RACE_RELATION_FAMILIARITY_REWARD,
     RACE_RELATION_TRUST_REWARD,
@@ -22,7 +23,7 @@ RACE_EVENT_DISPLAY_NAMES = {
 
 class RaceEventAdapter:
     def __init__(self):
-        self._processed_event_keys: set[str] = set()
+        self._processed_event_keys = BoundedKeySet(max_entries=4096)
 
     def apply(
         self,

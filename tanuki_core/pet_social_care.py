@@ -1663,110 +1663,126 @@ class PetSocialCareMixin:
             return False
 
         if self.care_mode != "none":
-            child = self.care_target
-            child_in_all_pets = child in all_pets if child else False
-            child_partner_ok = child.care_partner in (None, self) if child else False
-            child_visible = child.isVisible() if child else False
-            child_mood_score = child.mood_score if child else 0.0
-            child_is_distressed = child.is_distressed() if child else False
+            return self._update_active_care_behavior(now, all_pets)
+        return self._update_idle_care_behavior(now, all_pets)
 
-            moving_step = 0
-            moving_hits_edge = False
-            if child and self.care_mode == "moving_interaction":
-                moving_step = (
-                    max(1, int(round(self.get_distressed_move_speed()))) *
-                    get_pet_logic_step_count(self)
-                )
-                moving_hits_edge = self.should_finish_moving_interaction_at_edge(child, moving_step)
-
-            interaction_spec = None
-            if (
-                child and
-                self.care_mode not in {"interaction", "moving_interaction", "sit"} and
-                (child_is_distressed or child_mood_score < 55)
-            ):
-                interaction_spec = self.select_interaction_animation(child)
-
-            decision = SOCIAL_CARE_COORDINATOR.decide_active_care(ActiveCareContext(
-                has_child=child is not None,
-                child_in_all_pets=child_in_all_pets,
-                child_partner_ok=child_partner_ok,
-                child_visible=child_visible,
-                mode=self.care_mode,
-                now=now,
-                care_end_time=self.care_end_time,
-                child_mood_score=child_mood_score,
-                child_is_distressed=child_is_distressed,
-                care_plan=self.care_plan,
-                interaction_available=interaction_spec is not None,
-                adult_name=self.name,
-                adult_x=self.x(),
-                child_x=child.x() if child else 0,
-                distance_to_child=self.distance_to(child) if child else 0.0,
-                moving_interaction_hits_edge=moving_hits_edge,
-                roll=random.random(),
-            ))
-
-            if decision.action == CARE_DECISION_CANCEL:
-                self.cancel_care_mode()
-                return False
-
-            if decision.action == CARE_DECISION_FINISH_SUCCESS:
-                self.finish_care_mode(success=True)
-                return decision.handled
-
-            if decision.action == CARE_DECISION_FINISH_FAILURE:
-                self.finish_care_mode(success=False)
-                return decision.handled
-
-            if decision.action == CARE_DECISION_INTERACTION_TICK:
-                child.mood_score = min(100, child.mood_score + 0.18)
-                if hasattr(child, "sync_mood_state_with_score"):
-                    child.sync_mood_state_with_score()
-                return True
-
-            if decision.action == CARE_DECISION_MOVING_INTERACTION_TICK:
-                self.direction = self.care_move_direction or self.direction or 1
-                self.state = "move"
-                child.mood_score = min(100, child.mood_score + 0.18)
-                if hasattr(child, "sync_mood_state_with_score"):
-                    child.sync_mood_state_with_score()
-                self.move(self.x() + (moving_step * self.direction), self.y())
-                return True
-
-            if decision.action == CARE_DECISION_SIT_TICK:
-                self.direction = -1 if child.x() < self.x() else 1
-                child.direction = -1 if self.x() < child.x() else 1
-                self.apply_care_companion_animation()
-                child.ensure_candidate_animation(child.get_child_comfort_candidates())
-                child.mood_score = min(100, child.mood_score + 0.10)
-                if hasattr(child, "sync_mood_state_with_score"):
-                    child.sync_mood_state_with_score()
-                return True
-
-            if decision.action != CARE_DECISION_APPROACH_TICK:
-                return False
-
-            if decision.next_care_plan is not None:
-                self.care_plan = decision.next_care_plan
-            self.state = "move"
-            self.apply_care_approach_animation(child)
-            arrived = self.move_toward_x(
-                decision.target_x,
-                speed_scale=self.get_care_approach_speed_scale(),
-                min_speed=self.get_care_approach_speed(),
+    def _update_active_care_behavior(self, now, all_pets):
+        child = self.care_target
+        child_mood_score = child.mood_score if child else 0.0
+        child_is_distressed = child.is_distressed() if child else False
+        moving_step = 0
+        moving_hits_edge = False
+        if child and self.care_mode == "moving_interaction":
+            moving_step = (
+                max(1, int(round(self.get_distressed_move_speed()))) *
+                get_pet_logic_step_count(self)
             )
-            transition = SOCIAL_CARE_COORDINATOR.decide_approach_transition(
-                arrived=arrived,
-                distance_to_child=self.distance_to(child),
-                use_interaction=decision.use_interaction,
+            moving_hits_edge = self.should_finish_moving_interaction_at_edge(
+                child,
+                moving_step,
             )
-            if transition == CARE_TRANSITION_INTERACTION:
-                self.begin_hidden_interaction(child, interaction_spec, now)
-            elif transition == CARE_TRANSITION_COMPANION:
-                self.begin_companion_care(child, now)
+
+        interaction_spec = None
+        if (
+            child and
+            self.care_mode not in {"interaction", "moving_interaction", "sit"} and
+            (child_is_distressed or child_mood_score < 55)
+        ):
+            interaction_spec = self.select_interaction_animation(child)
+
+        decision = SOCIAL_CARE_COORDINATOR.decide_active_care(ActiveCareContext(
+            has_child=child is not None,
+            child_in_all_pets=child in all_pets if child else False,
+            child_partner_ok=(
+                child.care_partner in (None, self) if child else False
+            ),
+            child_visible=child.isVisible() if child else False,
+            mode=self.care_mode,
+            now=now,
+            care_end_time=self.care_end_time,
+            child_mood_score=child_mood_score,
+            child_is_distressed=child_is_distressed,
+            care_plan=self.care_plan,
+            interaction_available=interaction_spec is not None,
+            adult_name=self.name,
+            adult_x=self.x(),
+            child_x=child.x() if child else 0,
+            distance_to_child=self.distance_to(child) if child else 0.0,
+            moving_interaction_hits_edge=moving_hits_edge,
+            roll=random.random(),
+        ))
+        return self._apply_active_care_decision(
+            decision,
+            child=child,
+            interaction_spec=interaction_spec,
+            moving_step=moving_step,
+            now=now,
+        )
+
+    def _apply_active_care_decision(
+        self,
+        decision,
+        *,
+        child,
+        interaction_spec,
+        moving_step,
+        now,
+    ):
+        if decision.action == CARE_DECISION_CANCEL:
+            self.cancel_care_mode()
+            return False
+        if decision.action == CARE_DECISION_FINISH_SUCCESS:
+            self.finish_care_mode(success=True)
+            return decision.handled
+        if decision.action == CARE_DECISION_FINISH_FAILURE:
+            self.finish_care_mode(success=False)
+            return decision.handled
+        if decision.action == CARE_DECISION_INTERACTION_TICK:
+            child.mood_score = min(100, child.mood_score + 0.18)
+            if hasattr(child, "sync_mood_state_with_score"):
+                child.sync_mood_state_with_score()
             return True
+        if decision.action == CARE_DECISION_MOVING_INTERACTION_TICK:
+            self.direction = self.care_move_direction or self.direction or 1
+            self.state = "move"
+            child.mood_score = min(100, child.mood_score + 0.18)
+            if hasattr(child, "sync_mood_state_with_score"):
+                child.sync_mood_state_with_score()
+            self.move(self.x() + (moving_step * self.direction), self.y())
+            return True
+        if decision.action == CARE_DECISION_SIT_TICK:
+            self.direction = -1 if child.x() < self.x() else 1
+            child.direction = -1 if self.x() < child.x() else 1
+            self.apply_care_companion_animation()
+            child.ensure_candidate_animation(child.get_child_comfort_candidates())
+            child.mood_score = min(100, child.mood_score + 0.10)
+            if hasattr(child, "sync_mood_state_with_score"):
+                child.sync_mood_state_with_score()
+            return True
+        if decision.action != CARE_DECISION_APPROACH_TICK:
+            return False
 
+        if decision.next_care_plan is not None:
+            self.care_plan = decision.next_care_plan
+        self.state = "move"
+        self.apply_care_approach_animation(child)
+        arrived = self.move_toward_x(
+            decision.target_x,
+            speed_scale=self.get_care_approach_speed_scale(),
+            min_speed=self.get_care_approach_speed(),
+        )
+        transition = SOCIAL_CARE_COORDINATOR.decide_approach_transition(
+            arrived=arrived,
+            distance_to_child=self.distance_to(child),
+            use_interaction=decision.use_interaction,
+        )
+        if transition == CARE_TRANSITION_INTERACTION:
+            self.begin_hidden_interaction(child, interaction_spec, now)
+        elif transition == CARE_TRANSITION_COMPANION:
+            self.begin_companion_care(child, now)
+        return True
+
+    def _update_idle_care_behavior(self, now, all_pets):
         candidates = []
         for pet in all_pets:
             care_block_checker = getattr(pet, "is_care_blocked_by_negative_afterglow", None)

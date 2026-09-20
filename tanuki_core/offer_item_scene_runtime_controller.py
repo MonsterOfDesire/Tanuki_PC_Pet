@@ -748,6 +748,18 @@ class OfferItemSceneRuntimeController:
         self._record_update_duration(profiler_started_at)
         return result
 
+    def is_active(self):
+        return bool(
+            self.offer_scene is not None
+            or self.offer_hover_target_name
+            or self.autonomous_offer_preview is not None
+            or self.ground_offer_items
+            or any(
+                getattr(pet, "held_item_kind", "")
+                for pet in self.pets_list
+            )
+        )
+
     def update_autonomous_offer_proposal(self, now):
         now = float(now)
         if self.autonomous_offer_preview is not None:

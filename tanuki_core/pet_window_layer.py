@@ -3,6 +3,8 @@ from __future__ import annotations
 import ctypes
 from ctypes import wintypes
 
+from .runtime_debug_log import log_suppressed_exception
+
 
 HWND_TOPMOST = -1
 GWL_EXSTYLE = -20
@@ -99,7 +101,8 @@ def restore_pet_topmost(
             return True
         provider = set_topmost or _set_windows_topmost
         return bool(provider(hwnd))
-    except Exception:
+    except Exception as error:
+        log_suppressed_exception("pet_window_layer.restore_topmost", error)
         return False
 
 
@@ -142,5 +145,6 @@ def restore_pet_group_topmost(
         for hwnd in reversed(top_to_bottom):
             restored = bool(provider(hwnd)) or restored
         return restored
-    except Exception:
+    except Exception as error:
+        log_suppressed_exception("pet_window_layer.restore_group_topmost", error)
         return False

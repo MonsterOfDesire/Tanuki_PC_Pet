@@ -1,5 +1,7 @@
 import json
 import os
+import shutil
+import tempfile
 
 from .config_apply_coordinator import ConfigApplyCoordinator
 from .dashboard_state_mapper import (
@@ -26,17 +28,83 @@ class ConfigStore:
         if not os.path.exists(self.config_path):
             return {"schema_version": self.schema_version, "dashboard": {}, "pets": {}, "household": {}}
         try:
-            with open(self.config_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            normalized, warnings = normalize_config_state(data)
-            self.validation_warnings = warnings
-            for warning in warnings:
-                print(f"config 載入提示: {warning}")
-            return normalized
+            return self._load_path(self.config_path)
         except Exception as e:
             print(f"讀取 config.json 失敗 {self.config_path}: {e}")
+            backup_path = self._backup_path
+            if os.path.exists(backup_path):
+                try:
+                    recovered = self._load_path(backup_path)
+                    warning = "主要設定檔損壞，已改用上一份備份"
+                    self.validation_warnings.append(warning)
+                    print(f"config 載入提示: {warning}")
+                    return recovered
+                except Exception as backup_error:
+                    print(f"讀取 config 備份失敗 {backup_path}: {backup_error}")
+                    self.validation_warnings = [str(e), str(backup_error)]
+                    return {"schema_version": self.schema_version, "dashboard": {}, "pets": {}, "household": {}}
             self.validation_warnings = [str(e)]
             return {"schema_version": self.schema_version, "dashboard": {}, "pets": {}, "household": {}}
+
+    @property
+    def _backup_path(self):
+        return f"{self.config_path}.bak"
+
+    def _load_path(self, path):
+        with open(path, "r", encoding="utf-8") as handle:
+            data = json.load(handle)
+        normalized, warnings = normalize_config_state(data)
+        self.validation_warnings = list(warnings)
+        for warning in warnings:
+            print(f"config 載入提示: {warning}")
+        return normalized
+
+    @staticmethod
+    def _is_valid_json_file(path):
+        try:
+            with open(path, "r", encoding="utf-8") as handle:
+                json.load(handle)
+            return True
+        except (OSError, ValueError, TypeError):
+            return False
+
+    @staticmethod
+    def _write_atomic(path, payload):
+        parent_dir = os.path.dirname(os.path.abspath(path))
+        os.makedirs(parent_dir, exist_ok=True)
+        fd, temp_path = tempfile.mkstemp(
+            dir=parent_dir,
+            prefix=f".{os.path.basename(path)}.",
+            suffix=".tmp",
+        )
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
+                handle.write(payload)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temp_path, path)
+        finally:
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+
+    def _backup_current_config(self):
+        if not self._is_valid_json_file(self.config_path):
+            return
+        parent_dir = os.path.dirname(os.path.abspath(self.config_path))
+        fd, temp_path = tempfile.mkstemp(
+            dir=parent_dir,
+            prefix=f".{os.path.basename(self._backup_path)}.",
+            suffix=".tmp",
+        )
+        os.close(fd)
+        try:
+            shutil.copyfile(self.config_path, temp_path)
+            with open(temp_path, "r+b") as handle:
+                os.fsync(handle.fileno())
+            os.replace(temp_path, self._backup_path)
+        finally:
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
 
     def bind(self, dashboard, pets_dict):
         self.dashboard = dashboard
@@ -95,8 +163,8 @@ class ConfigStore:
             parent_dir = os.path.dirname(os.path.abspath(self.config_path))
             if parent_dir:
                 os.makedirs(parent_dir, exist_ok=True)
-            with open(self.config_path, "w", encoding="utf-8") as f:
-                f.write(payload)
+            self._backup_current_config()
+            self._write_atomic(self.config_path, payload)
             self.last_saved_payload = payload
         except Exception as e:
             print(f"寫入 config.json 失敗 {self.config_path}: {e}")

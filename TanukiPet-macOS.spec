@@ -58,10 +58,38 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=["pynput", "pynput.mouse", "pynput.keyboard"],
+    excludes=[
+        "pynput",
+        "pynput.mouse",
+        "pynput.keyboard",
+        "PyQt6.QtPdf",
+        "PyQt6.QtNetwork",
+        "PyQt6.QtSvg",
+    ],
     noarchive=False,
     optimize=0,
 )
+
+unused_qt_binary_markers = (
+    "/qtnetwork.framework/",
+    "/qtpdf.framework/",
+    "/qtsvg.framework/",
+    "libqt6network",
+    "libqt6pdf",
+    "libqt6svg",
+    "libqtuiotouchplugin",
+    "libqsvgicon",
+    "libqpdf",
+    "libqsvg",
+)
+a.binaries = [
+    entry
+    for entry in a.binaries
+    if not any(
+        marker in str(entry[0]).replace("\\", "/").lower()
+        for marker in unused_qt_binary_markers
+    )
+]
 pyz = PYZ(a.pure)
 
 exe = EXE(

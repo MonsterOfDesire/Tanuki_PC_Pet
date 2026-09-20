@@ -227,6 +227,33 @@ class AssetLoaderTests(unittest.TestCase):
             self.assertEqual(second, ["raw:sig-2@0.5"])
             self.assertEqual(raw_calls, [(gif_path, ("sig-1",)), (gif_path, ("sig-2",))])
 
+    def test_scaled_cache_hit_does_not_reload_evicted_raw_frames(self):
+        raw_calls = []
+        cache = FrameCache(
+            signature_getter=lambda path: (path,),
+            max_raw_entries=1,
+        )
+
+        def fake_raw_loader(path):
+            raw_calls.append(path)
+            return [f"raw:{path}"]
+
+        def fake_scaler(raw_frames, scale_factor):
+            return [f"{raw_frames[0]}@{scale_factor}"]
+
+        first = cache.get_scaled_frames(
+            "a.gif", 0.5, raw_loader=fake_raw_loader, scaler=fake_scaler
+        )
+        cache.get_scaled_frames(
+            "b.gif", 0.5, raw_loader=fake_raw_loader, scaler=fake_scaler
+        )
+        second = cache.get_scaled_frames(
+            "a.gif", 0.5, raw_loader=fake_raw_loader, scaler=fake_scaler
+        )
+
+        self.assertIs(first, second)
+        self.assertEqual(raw_calls, ["a.gif", "b.gif"])
+
     def test_frame_cache_eviction_prunes_oldest_raw_and_scaled_entries(self):
         cache = FrameCache(
             signature_getter=lambda path: (path,),

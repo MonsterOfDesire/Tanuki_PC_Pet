@@ -137,6 +137,12 @@ class MemoryAlbumPanelTests(unittest.TestCase):
                 places=3,
             )
             self.assertEqual(contained, viewport)
+            self.assertLessEqual(
+                max(card._pixmap.width(), card._pixmap.height()),
+                512,
+            )
+            self.assertEqual(card._source_size.width(), 1600)
+            self.assertEqual(card._source_size.height(), 900)
             card.deleteLater()
 
     def test_portrait_and_landscape_photos_use_different_card_heights(self):

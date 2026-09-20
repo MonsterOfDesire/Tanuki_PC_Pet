@@ -113,6 +113,12 @@ class TransformationRuntimeController:
             "source": str(getattr(state, "source", "") or ""),
         }
 
+    def is_active(self):
+        return any(
+            self.executor.is_transition_active(pet)
+            for pet in self.pets
+        )
+
     def update(self, now=None):
         transition_now = (
             self.transition_now_provider()

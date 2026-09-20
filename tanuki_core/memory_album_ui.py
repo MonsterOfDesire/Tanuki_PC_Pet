@@ -17,6 +17,7 @@ from PyQt6.QtGui import (
     QPainterPath,
     QPen,
     QPixmap,
+    QImageReader,
 )
 from PyQt6.QtWidgets import (
     QAbstractButton,
@@ -44,6 +45,22 @@ PIN_COLORS = (
 DEFAULT_PHOTO_ASPECT_RATIO = 16.0 / 9.0
 MIN_PHOTO_ASPECT_RATIO = 0.72
 MAX_PHOTO_ASPECT_RATIO = 2.20
+THUMBNAIL_MAX_EDGE_PX = 512
+
+
+def load_memory_thumbnail(path, max_edge=THUMBNAIL_MAX_EDGE_PX):
+    reader = QImageReader(str(path))
+    reader.setAutoTransform(True)
+    source_size = reader.size()
+    if source_size.isValid() and max(source_size.width(), source_size.height()) > max_edge:
+        reader.setScaledSize(
+            source_size.scaled(
+                QSize(max_edge, max_edge),
+                Qt.AspectRatioMode.KeepAspectRatio,
+            )
+        )
+    image = reader.read()
+    return QPixmap.fromImage(image), source_size
 
 
 class MemoryPhotoCard(QAbstractButton):
@@ -53,7 +70,7 @@ class MemoryPhotoCard(QAbstractButton):
         super().__init__(parent)
         self.entry = entry
         self.pin_color = QColor(PIN_COLORS[index % len(PIN_COLORS)])
-        self._pixmap = QPixmap(str(entry.path))
+        self._pixmap, self._source_size = load_memory_thumbnail(entry.path)
         self.photo_aspect_ratio = self._source_aspect_ratio()
         self._hover_progress = 0.0
         self._hover_animation = QPropertyAnimation(
@@ -104,6 +121,14 @@ class MemoryPhotoCard(QAbstractButton):
         )
 
     def _source_aspect_ratio(self):
+        if self._source_size.isValid() and self._source_size.height() > 0:
+            source_ratio = self._source_size.width() / float(
+                self._source_size.height()
+            )
+            return max(
+                MIN_PHOTO_ASPECT_RATIO,
+                min(MAX_PHOTO_ASPECT_RATIO, source_ratio),
+            )
         if self._pixmap.isNull() or self._pixmap.height() <= 0:
             return DEFAULT_PHOTO_ASPECT_RATIO
         source_ratio = self._pixmap.width() / float(self._pixmap.height())

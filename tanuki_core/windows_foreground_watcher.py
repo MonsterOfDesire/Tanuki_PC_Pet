@@ -5,6 +5,8 @@ from ctypes import wintypes
 
 from PyQt6.QtCore import QObject, pyqtSignal
 
+from .runtime_debug_log import log_suppressed_exception
+
 
 EVENT_SYSTEM_FOREGROUND = 0x0003
 WINEVENT_OUTOFCONTEXT = 0x0000
@@ -71,7 +73,8 @@ class WindowsForegroundWatcher(QObject):
                     WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS,
                 )
             self._hook = int(hook or 0) or None
-        except Exception:
+        except Exception as error:
+            log_suppressed_exception("windows_foreground_watcher.start", error)
             self._hook = None
         if not self._hook:
             self._callback = None
@@ -97,7 +100,8 @@ class WindowsForegroundWatcher(QObject):
                 function.restype = wintypes.BOOL
                 result = bool(function(wintypes.HANDLE(hook)))
             return result
-        except Exception:
+        except Exception as error:
+            log_suppressed_exception("windows_foreground_watcher.stop", error)
             return False
         finally:
             self._callback = None

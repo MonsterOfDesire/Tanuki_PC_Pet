@@ -11,6 +11,8 @@ from PyQt6.QtCore import QRect, QSize, Qt
 from PyQt6.QtGui import QImage, QPainter
 from PyQt6.QtWidgets import QApplication
 
+from .runtime_debug_log import log_suppressed_exception
+
 
 ACHIEVEMENT_MEMORY_DIRECTORY = "achievement_memories"
 CAPTURE_FILENAME = "capture.png"
@@ -143,8 +145,11 @@ def crop_virtual_desktop_frame(frame, pets, *, margin=SCENE_CAPTURE_MARGIN_PX):
         try:
             if not pet.isVisible():
                 continue
-        except Exception:
-            pass
+        except Exception as error:
+            log_suppressed_exception(
+                "achievement_memory.pet_visibility",
+                error,
+            )
         rects.append(visible_pet_rect(pet))
     if not rects:
         return frame.image
@@ -278,7 +283,11 @@ class AchievementMemoryCaptureService:
                 if not unlock_image_loaded:
                     try:
                         unlock_image = self.image_provider()
-                    except Exception:
+                    except Exception as error:
+                        log_suppressed_exception(
+                            "achievement_memory.image_provider",
+                            error,
+                        )
                         continue
                     unlock_image_loaded = True
                 image = unlock_image
@@ -306,7 +315,11 @@ class AchievementMemoryCaptureService:
                     encoding="utf-8",
                 )
                 saved.append(path)
-            except Exception:
+            except Exception as error:
+                log_suppressed_exception(
+                    "achievement_memory.save_capture",
+                    error,
+                )
                 continue
         return tuple(saved)
 
@@ -378,12 +391,20 @@ class AchievementMemoryCaptureService:
                 if path.is_file():
                     path.unlink()
                     removed = True
-            except OSError:
+            except OSError as error:
+                log_suppressed_exception(
+                    "achievement_memory.clear_capture_file",
+                    error,
+                )
                 continue
         try:
             directory.rmdir()
-        except OSError:
-            pass
+        except OSError as error:
+            if directory.exists():
+                log_suppressed_exception(
+                    "achievement_memory.clear_capture_directory",
+                    error,
+                )
         return removed
 
 

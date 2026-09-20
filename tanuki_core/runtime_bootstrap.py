@@ -135,7 +135,11 @@ def create_runtime(app=None, capabilities=None):
         ),
         clamp_pet_position=DesktopGeometry.clamp_widget_position,
     )
-    save_scheduler = ConfigSaveScheduler(lambda: config_store)
+    save_scheduler = ConfigSaveScheduler(
+        lambda: config_store,
+        delay_ms=3000,
+        autosave_enabled=True,
+    )
     window_tracker = WindowTracker(platform=capabilities.platform_key)
 
     assets_dir = AssetManager.get_resource_path("assets_cropped")

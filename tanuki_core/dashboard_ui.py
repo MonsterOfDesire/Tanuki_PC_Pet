@@ -7,7 +7,6 @@ from PyQt6.QtWidgets import (
     QLabel,
     QMessageBox,
     QPlainTextEdit,
-    QProgressBar,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -15,6 +14,7 @@ from PyQt6.QtWidgets import (
 
 from .dashboard_actions import DashboardActions
 from .dashboard_controller import DashboardController
+from .dashboard_legacy_adapter import DashboardControlState
 from .dashboard_launcher_binding import DashboardLauncherBinding
 from .dashboard_launcher_ui import (
     COLLAPSED_LAUNCHER_WIDTH,
@@ -71,6 +71,7 @@ from .event_log_binding import DashboardEventLogBinding
 from .relation_summon_binding import DashboardRelationSummonBinding
 from .offer_tray_ui import OfferTrayWindow
 from .runtime import SIM_CLOCK, app_now
+from .runtime_debug_log import log_suppressed_exception
 from .settings_provider import RuntimeSettings
 from .shutdown_controller import DashboardShutdownController
 from .status_settings_binding import DashboardStatusSettingsBinding
@@ -367,11 +368,6 @@ class Dashboard(QWidget):
         "QPushButton:checked { background: #91e08f; border: 1px solid #4a8f48; font-weight: bold; }"
     )
     SECTION_LABEL_STYLE = "color: white; background: rgba(0,0,0,150); padding: 6px 8px; border-radius: 6px;"
-    WORLD_MODE_LABELS = {
-        "golden_legend": "黃金傳說",
-        "sandbox": "沙盒",
-    }
-
     def __init__(
         self,
         target_rect,
@@ -576,140 +572,12 @@ class Dashboard(QWidget):
             role=WINDOW_ROLE_PERSISTENT_TOOL,
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self._initialize_legacy_control_adapters()
         self.layout = QVBoxLayout()
-        self.layout.setSpacing(10)
-        self.layout.setContentsMargins(15, 15, 15, 15)
-        title_row = QHBoxLayout()
-        title_row.setSpacing(6)
-        self.title_label = QLabel("狸貓控制中心")
-        self.title_label.setStyleSheet("color: white; background: rgba(0,0,0,150); padding: 5px; border-radius: 5px;")
-        title_row.addWidget(self.title_label, stretch=1)
-        self.btn_information_center = QPushButton("資訊中心")
-        self.btn_information_center.setToolTip("開啟分頁式資訊中心")
-        self.btn_information_center.clicked.connect(lambda checked=False: self.open_information_center())
-        title_row.addWidget(self.btn_information_center)
-        self.layout.addLayout(title_row)
-        self.status_label = QLabel("")
-        self.status_label.setStyleSheet("color: white; background: rgba(70,90,120,190); padding: 6px 8px; border-radius: 6px;")
-        self.status_label.hide()
-        self.layout.addWidget(self.status_label)
-        self.layout.addWidget(self.make_section_label("全域設定"))
-
-        self.layout.addWidget(self.make_section_label("世界模式"))
-        world_mode_row = self.create_option_selector(
-            self.world_mode_options,
-            self.world_mode_buttons,
-            lambda value: self.WORLD_MODE_LABELS.get(value, str(value)),
-            lambda index: self.set_world_mode(self.world_mode_options[index]),
-        )
-        self.layout.addLayout(world_mode_row)
-
-        self.layout.addWidget(self.make_section_label("時間流速"))
-        speed_row = self.create_option_selector(
-            self.time_scale_options,
-            self.time_scale_buttons,
-            lambda value: f"{value}x",
-            self.set_time_scale_index,
-        )
-        self.layout.addLayout(speed_row)
-
-        self.layout.addWidget(self.make_section_label("顯示比例"))
-        scale_row = self.create_option_selector(
-            self.display_scale_options,
-            self.display_scale_buttons,
-            lambda value: f"{value:g}x",
-            self.set_display_scale_index,
-        )
-        self.layout.addLayout(scale_row)
-
-        self.layout.addWidget(self.make_section_label("開發工具"))
-        self.btn_debug = QPushButton("Debug: 關閉")
-        self.btn_debug.clicked.connect(self.toggle_debug)
-        self.layout.addWidget(self.btn_debug)
-
-        self.btn_validate = QPushButton("檢查 Config / Manifest")
-        self.btn_validate.clicked.connect(self.run_validation_checks)
-        self.layout.addWidget(self.btn_validate)
-
-        self.btn_care = QPushButton("照護功能: 開啟")
-        self.btn_care.clicked.connect(self.toggle_care)
-        self.layout.addWidget(self.btn_care)
-
-        record_row = QHBoxLayout()
-        record_row.setSpacing(6)
-        self.btn_household_summary = QPushButton("家庭摘要")
-        self.btn_household_summary.clicked.connect(self.open_household_summary)
-        record_row.addWidget(self.btn_household_summary)
-        self.btn_social_log = QPushButton("社交紀錄")
-        self.btn_social_log.clicked.connect(self.open_social_log)
-        record_row.addWidget(self.btn_social_log)
-        self.btn_relationship_table = QPushButton("關係表")
-        self.btn_relationship_table.clicked.connect(self.open_relationship_table)
-        record_row.addWidget(self.btn_relationship_table)
-        self.layout.addLayout(record_row)
-
-        household_action_row = QHBoxLayout()
-        household_action_row.setSpacing(6)
-        self.btn_household_donate = QPushButton("捐生活費 +100")
-        self.btn_household_donate.clicked.connect(lambda: self.donate_household_fund(100))
-        household_action_row.addWidget(self.btn_household_donate)
-        self.btn_offer_tray = QPushButton("飲食托盤")
-        self.btn_offer_tray.clicked.connect(self.open_offer_tray)
-        household_action_row.addWidget(self.btn_offer_tray)
-        self.layout.addLayout(household_action_row)
-
-        self.layout.addWidget(
-            self.make_section_label(
-                f"{character_display_name('Tokai Teio')}社交冷卻"
-            )
-        )
-        teio_row = self.create_duration_selector("teio", self.teio_dur_list)
-        self.layout.addLayout(teio_row)
-
-        self.layout.addWidget(
-            self.make_section_label(
-                f"{character_display_name('Tsurumaru Tsuyoshi')}社交冷卻"
-            )
-        )
-        tsuyoshi_row = self.create_duration_selector("tsuyoshi", self.tsuyoshi_dur_list)
-        self.layout.addLayout(tsuyoshi_row)
-
-        for folder_name, info in self.pets_dict.items():
-            container = QWidget()
-            v_box = QVBoxLayout(container)
-            v_box.setSpacing(4)
-            v_box.setContentsMargins(0, 0, 0, 0)
-
-            btn = QPushButton(
-                f"召喚 {character_display_name(info['name'])}"
-            )
-            btn.setFixedHeight(35)
-            btn.setCheckable(True)
-            btn.setChecked(info["pet"].user_visible)
-            btn.toggled.connect(lambda checked, p=info["pet"]: self.handle_pet_toggle(p, checked))
-            btn.setStyleSheet(
-                "QPushButton { background: white; border-radius: 8px; padding: 8px; } QPushButton:checked { background: #aaffaa; }"
-            )
-
-            mood_bar = QProgressBar()
-            mood_bar.setRange(0, 100)
-            mood_bar.setTextVisible(False)
-            mood_bar.setFixedHeight(6)
-            mood_bar.setStyleSheet(
-                "QProgressBar::chunk { background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ff4444, stop:1 #44ff44); } "
-                "QProgressBar { background-color: #333; border-radius: 3px; }"
-            )
-
-            info["mood_bar"] = mood_bar
-            info["toggle_button"] = btn
-
-            v_box.addWidget(btn)
-            v_box.addWidget(mood_bar)
-            self.layout.addWidget(container)
-
         self.update_timer = QTimer(self)
         self.update_timer.timeout.connect(self.refresh_mood_bars)
-        self.update_timer.start(500)
+        # Compatibility-only mood bars are state adapters, not visible widgets.
+        # Keep the timer stopped; live UI pages obtain current pet snapshots.
         self.memory_capture_timer = QTimer(self)
         self.memory_capture_timer.setInterval(500)
         self.memory_capture_timer.timeout.connect(
@@ -721,9 +589,6 @@ class Dashboard(QWidget):
         self.play_calendar_timer.timeout.connect(self.refresh_play_calendar)
         self.play_calendar_timer.start()
 
-        self.btn_exit = QPushButton("關閉系統")
-        self.btn_exit.clicked.connect(self.begin_shutdown)
-        self.layout.addWidget(self.btn_exit)
         self.setLayout(self.layout)
         self.launcher_binding = DashboardLauncherBinding(self)
         self.launcher_panel = DashboardLauncherPanel(
@@ -769,9 +634,66 @@ class Dashboard(QWidget):
         if app is not None:
             app.aboutToQuit.connect(self.foreground_window_watcher.stop)
 
+    def _initialize_legacy_control_adapters(self):
+        self.title_label = DashboardControlState("狸貓控制中心", parent=self)
+        self.status_label = DashboardControlState(parent=self)
+        self.btn_information_center = DashboardControlState(
+            "資訊中心",
+            parent=self,
+        )
+        self.btn_debug = DashboardControlState("Debug: 關閉", parent=self)
+        self.btn_validate = DashboardControlState(
+            "檢查 Config / Manifest",
+            parent=self,
+        )
+        self.btn_care = DashboardControlState("照護功能: 開啟", parent=self)
+        self.btn_household_summary = DashboardControlState(
+            "家庭摘要",
+            parent=self,
+        )
+        self.btn_social_log = DashboardControlState("社交紀錄", parent=self)
+        self.btn_relationship_table = DashboardControlState(
+            "關係表",
+            parent=self,
+        )
+        self.btn_household_donate = DashboardControlState(
+            "捐生活費 +100",
+            parent=self,
+        )
+        self.btn_offer_tray = DashboardControlState("飲食托盤", parent=self)
+        self.btn_exit = DashboardControlState("關閉系統", parent=self)
+        self.world_mode_buttons = [
+            DashboardControlState(parent=self)
+            for _value in self.world_mode_options
+        ]
+        self.time_scale_buttons = [
+            DashboardControlState(parent=self)
+            for _value in self.time_scale_options
+        ]
+        self.display_scale_buttons = [
+            DashboardControlState(parent=self)
+            for _value in self.display_scale_options
+        ]
+        self.teio_duration_buttons = [
+            DashboardControlState(parent=self)
+            for _value in self.teio_dur_list
+        ]
+        self.tsuyoshi_duration_buttons = [
+            DashboardControlState(parent=self)
+            for _value in self.tsuyoshi_dur_list
+        ]
+        for info in self.pets_dict.values():
+            pet = info.get("pet")
+            info["mood_bar"] = DashboardControlState(
+                value=int(getattr(pet, "mood_score", 0) or 0),
+                parent=self,
+            )
+            info["toggle_button"] = DashboardControlState(
+                checked=bool(getattr(pet, "user_visible", False)),
+                parent=self,
+            )
+
     def _activate_launcher_shell(self, target_rect):
-        self._legacy_widgets = []
-        self._remove_legacy_layout_items(self.layout)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
         self.layout.addWidget(self.launcher_panel)
@@ -787,20 +709,8 @@ class Dashboard(QWidget):
             self.launcher_shell_height,
         )
         self.launcher_panel.show()
-        # Legacy mood bars no longer form part of the visible shell.
+        # Compatibility state is non-visual, so no legacy widgets are retained.
         self.update_timer.stop()
-
-    def _remove_legacy_layout_items(self, layout):
-        while layout.count():
-            item = layout.takeAt(0)
-            widget = item.widget()
-            if widget is not None:
-                widget.hide()
-                self._legacy_widgets.append(widget)
-                continue
-            child_layout = item.layout()
-            if child_layout is not None:
-                self._remove_legacy_layout_items(child_layout)
 
     def set_sensor_zone(self, sensor):
         self.sensor_zone = sensor
@@ -969,11 +879,6 @@ class Dashboard(QWidget):
             tuple(info.get("pet") for info in self.pets_dict.values())
         )
 
-    def make_section_label(self, text):
-        label = QLabel(text)
-        label.setStyleSheet(self.SECTION_LABEL_STYLE)
-        return label
-
     def update_care_button_text(self):
         self.btn_care.setText(f"照護功能: {'開啟' if self.care_feature_enabled else '關閉'}")
         self.refresh_information_center_settings()
@@ -1077,33 +982,6 @@ class Dashboard(QWidget):
 
     def handle_pet_toggle(self, pet, checked):
         self.controller.handle_pet_toggle(self, pet, checked)
-
-    def create_duration_selector(self, char, durations):
-        row = QHBoxLayout()
-        row.setSpacing(6)
-        button_bucket = self.teio_duration_buttons if char == "teio" else self.tsuyoshi_duration_buttons
-        for idx, seconds in enumerate(durations):
-            btn = QPushButton(f"{seconds}s")
-            btn.setCheckable(True)
-            btn.setMinimumWidth(48)
-            btn.setStyleSheet(self.DURATION_BTN_STYLE)
-            btn.clicked.connect(lambda checked=False, c=char, i=idx: self.set_duration(c, i))
-            button_bucket.append(btn)
-            row.addWidget(btn)
-        return row
-
-    def create_option_selector(self, values, button_bucket, formatter, handler):
-        row = QHBoxLayout()
-        row.setSpacing(6)
-        for idx, value in enumerate(values):
-            btn = QPushButton(formatter(value))
-            btn.setCheckable(True)
-            btn.setMinimumWidth(48)
-            btn.setStyleSheet(self.DURATION_BTN_STYLE)
-            btn.clicked.connect(lambda checked=False, i=idx: handler(i))
-            button_bucket.append(btn)
-            row.addWidget(btn)
-        return row
 
     def set_duration(self, char, index, save=True):
         self.controller.set_duration(self, char, index, save=save)
@@ -1590,7 +1468,8 @@ class Dashboard(QWidget):
                     QUrl.fromLocalFile(str(self.memory_album.root))
                 )
             )
-        except Exception:
+        except Exception as error:
+            log_suppressed_exception("dashboard.open_memory_album_folder", error)
             return False
 
     def get_manual_camera_availability(self):

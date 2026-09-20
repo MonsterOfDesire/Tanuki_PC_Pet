@@ -2,6 +2,7 @@ import unittest
 
 from tanuki_core.achievement_state import (
     ACHIEVEMENT_PERSISTENCE_SCHEMA_VERSION,
+    MAX_PROCESSED_ACHIEVEMENT_EVENTS,
     AchievementState,
     apply_achievement_persistence_state,
     capture_achievement_persistence_state,
@@ -124,6 +125,24 @@ class AchievementStateTests(unittest.TestCase):
         self.assertEqual(progress.completion_count, 0)
         self.assertEqual(progress.updated_at, 0.0)
         self.assertEqual(state.processed_event_ids["sandbox"], {"event-1"})
+
+    def test_processed_event_ids_keep_only_the_most_recent_bound(self):
+        state = AchievementState()
+
+        for index in range(MAX_PROCESSED_ACHIEVEMENT_EVENTS + 3):
+            state.mark_event_processed("sandbox", f"event-{index}")
+
+        self.assertEqual(
+            len(state.processed_event_ids["sandbox"]),
+            MAX_PROCESSED_ACHIEVEMENT_EVENTS,
+        )
+        self.assertFalse(state.has_processed_event("sandbox", "event-0"))
+        self.assertTrue(
+            state.has_processed_event(
+                "sandbox",
+                f"event-{MAX_PROCESSED_ACHIEVEMENT_EVENTS + 2}",
+            )
+        )
 
 
 if __name__ == "__main__":

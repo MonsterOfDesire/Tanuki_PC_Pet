@@ -240,6 +240,9 @@ class ChorusExecutor:
             and self.session.source == "settings_preview"
         )
 
+    def is_active(self) -> bool:
+        return self.session is not None
+
     def remove_pet(
         self,
         pet,

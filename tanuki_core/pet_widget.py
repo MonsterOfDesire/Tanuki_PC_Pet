@@ -14,6 +14,14 @@ from .pet_ambient_expression_rules import (
 )
 from .pet_basics import PetBasicsMixin
 from .pet_behavior_layers import PetBehaviorLayersMixin
+from .pet_ai_decision import (
+    AI_STAGE_AMBIENT_MOOD,
+    AI_STAGE_CARE,
+    AI_STAGE_OBSERVE,
+    AI_STAGE_POST_OBSERVE,
+    AI_STAGE_SOCIAL,
+    build_pet_ai_stage_plan,
+)
 from .pet_collision_rules import CollisionSnapshot, compute_collision_resolution
 from .pet_logic import (
     LONG_HOLD_RELEASE,
@@ -181,7 +189,6 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         self.star_timer = QTimer(self)
         self.star_timer.setTimerType(Qt.TimerType.PreciseTimer)
         self.star_timer.timeout.connect(self.advance_star_animation)
-        self.star_timer.start(self.STAR_BASE_INTERVAL_MS)
 
         self.settings_provider = settings_provider
         self.window_tracker = window_tracker
@@ -999,11 +1006,6 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             return
 
         care_lock_maintained = self.maintain_care_lock(now)
-        care_behavior_handled = False
-        social_behavior_handled = False
-        post_observe_interaction_handled = False
-        observe_behavior_handled = False
-        ambient_mood_event_handled = False
         active_post_observe_interaction = (
             self.intent_kind == INTENT_POST_OBSERVE_INTERACTION and
             bool(self.intent_target_name)
@@ -1012,68 +1014,52 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             self.intent_kind == INTENT_OBSERVE and
             bool(self.intent_target_name)
         )
-        high_level_followup_allowed = active_post_observe_interaction or active_observe
+        refresh_high_level = False
         if (
             initial_ai_plan.should_attempt_followup and
             not care_lock_maintained and
-            not high_level_followup_allowed
+            not active_post_observe_interaction and
+            not active_observe
         ):
-            high_level_followup_allowed = self.should_refresh_high_level_ai()
+            refresh_high_level = self.should_refresh_high_level_ai()
 
-        if initial_ai_plan.should_attempt_followup and not care_lock_maintained:
-            care_behavior_handled = self.update_care_behavior(now, all_pets)
-        if initial_ai_plan.should_attempt_followup and not care_lock_maintained and not care_behavior_handled:
-            social_behavior_handled = self.update_social_behavior(now, all_pets)
-        if (
-            initial_ai_plan.should_attempt_followup and
-            not care_lock_maintained and
-            not care_behavior_handled and
-            not social_behavior_handled and
-            high_level_followup_allowed
-        ):
-            post_observe_interaction_handled = self.update_post_observe_interaction_behavior(now, all_pets)
-        if (
-            initial_ai_plan.should_attempt_followup and
-            not care_lock_maintained and
-            not care_behavior_handled and
-            not social_behavior_handled and
-            not post_observe_interaction_handled and
-            high_level_followup_allowed
-        ):
-            observe_behavior_handled = self.update_observe_behavior(now, all_pets)
-        if (
-            initial_ai_plan.should_attempt_followup and
-            not care_lock_maintained and
-            not care_behavior_handled and
-            not social_behavior_handled and
-            not post_observe_interaction_handled and
-            not observe_behavior_handled and
-            high_level_followup_allowed
-        ):
-            ambient_mood_event_handled = self.update_ambient_mood_events(now)
+        stage_plan = build_pet_ai_stage_plan(
+            should_attempt_followup=initial_ai_plan.should_attempt_followup,
+            care_lock_maintained=care_lock_maintained,
+            active_post_observe=active_post_observe_interaction,
+            active_observe=active_observe,
+            refresh_high_level=refresh_high_level,
+        )
+        stage_handlers = {
+            AI_STAGE_CARE: lambda: self.update_care_behavior(now, all_pets),
+            AI_STAGE_SOCIAL: lambda: self.update_social_behavior(now, all_pets),
+            AI_STAGE_POST_OBSERVE: lambda: (
+                self.update_post_observe_interaction_behavior(now, all_pets)
+            ),
+            AI_STAGE_OBSERVE: lambda: self.update_observe_behavior(now, all_pets),
+            AI_STAGE_AMBIENT_MOOD: lambda: self.update_ambient_mood_events(now),
+        }
+        handled_stage = next(
+            (
+                stage
+                for stage in stage_plan.stages
+                if stage_handlers[stage]()
+            ),
+            "",
+        )
+        care_behavior_handled = handled_stage == AI_STAGE_CARE
+        social_behavior_handled = handled_stage == AI_STAGE_SOCIAL
 
         followup_ai_plan = self.tick_coordinator.resolve_followup_ai_plan(
             care_lock_maintained=care_lock_maintained,
             care_behavior_handled=care_behavior_handled,
             social_behavior_handled=social_behavior_handled,
         )
-        if observe_behavior_handled:
-            self.refresh_movement_state()
-            if profiler is not None:
-                profiler.record_section(
-                    "pet.ai",
-                    (time.perf_counter() - profiler_started_at) * 1000.0,
-                )
-            return
-        if ambient_mood_event_handled:
-            self.refresh_movement_state()
-            if profiler is not None:
-                profiler.record_section(
-                    "pet.ai",
-                    (time.perf_counter() - profiler_started_at) * 1000.0,
-                )
-            return
-        if post_observe_interaction_handled:
+        if handled_stage in {
+            AI_STAGE_POST_OBSERVE,
+            AI_STAGE_OBSERVE,
+            AI_STAGE_AMBIENT_MOOD,
+        }:
             self.refresh_movement_state()
             if profiler is not None:
                 profiler.record_section(

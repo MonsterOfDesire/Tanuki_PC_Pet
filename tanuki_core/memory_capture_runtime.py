@@ -4,6 +4,8 @@ import random
 import time
 
 from .achievement_memory_capture import capture_pet_scene_image
+from .bounded_key_set import BoundedKeySet
+from .runtime_debug_log import log_suppressed_exception
 
 
 RANDOM_MEMORY_MIN_SECONDS = 8 * 60
@@ -38,7 +40,7 @@ class MemoryCaptureRuntime:
         self.image_provider = image_provider or capture_pet_scene_image
         self.now_provider = now_provider or time.monotonic
         self.rng = rng or random.Random()
-        self._seen_scene_keys = set()
+        self._seen_scene_keys = BoundedKeySet(max_entries=4096)
         self._previous_forms = None
         self._next_random_at = self._sample_next_random(self.now_provider())
         self._capture_suspended_for_speed = False
@@ -290,7 +292,8 @@ class MemoryCaptureRuntime:
     def _capture(self, pets):
         try:
             return self.image_provider(tuple(pet for pet in pets if pet is not None))
-        except Exception:
+        except Exception as error:
+            log_suppressed_exception("memory_capture.image_provider", error)
             return None
 
     @staticmethod

@@ -6,6 +6,8 @@ import json
 import math
 from pathlib import Path
 
+from .runtime_debug_log import log_suppressed_exception
+
 
 MEMORY_ALBUM_DIRECTORY = "memory_album"
 MEMORY_ALBUM_INDEX_FILENAME = "index.json"
@@ -125,11 +127,15 @@ class MemoryAlbumService:
                 )
             )
             self._write_entries(entries)
-        except Exception:
+        except Exception as error:
+            log_suppressed_exception("memory_album.save_capture", error)
             try:
                 path.unlink(missing_ok=True)
-            except Exception:
-                pass
+            except Exception as cleanup_error:
+                log_suppressed_exception(
+                    "memory_album.cleanup_failed_capture",
+                    cleanup_error,
+                )
             return None
         return path
 
@@ -154,12 +160,14 @@ class MemoryAlbumService:
                     for item in raw
                     if isinstance(item, dict)
                 }
-        except (OSError, ValueError, TypeError):
-            pass
+        except (OSError, ValueError, TypeError) as error:
+            if self.index_path.exists():
+                log_suppressed_exception("memory_album.load_index", error)
         entries = []
         try:
             paths = sorted(self.root.glob("*.png"), reverse=True)
-        except OSError:
+        except OSError as error:
+            log_suppressed_exception("memory_album.list_photos", error)
             paths = []
         for path in paths:
             metadata = raw_by_name.get(path.name, {})

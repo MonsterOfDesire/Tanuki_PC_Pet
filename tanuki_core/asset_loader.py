@@ -40,7 +40,10 @@ class FrameCache:
     raw_frames: OrderedDict = field(default_factory=OrderedDict)
     scaled_frames: OrderedDict = field(default_factory=OrderedDict)
     file_signatures: dict = field(default_factory=dict)
-    max_raw_entries: int = 512
+    # Raw decoded GIF frames are much larger than the display-ready pixmaps.
+    # Keep only a small transient window while retaining every scaled runtime
+    # asset, so activity animations remain immediately available.
+    max_raw_entries: int = 8
     max_scaled_entries: int = 1024
 
     @staticmethod
@@ -75,8 +78,9 @@ class FrameCache:
         for key in scaled_keys:
             self.scaled_frames.pop(key, None)
 
-    def get_raw_frames(self, gif_path, raw_loader):
-        signature = self._invalidate_stale_entries(gif_path)
+    def get_raw_frames(self, gif_path, raw_loader, *, signature=None):
+        if signature is None:
+            signature = self._invalidate_stale_entries(gif_path)
         raw_key = (gif_path, signature)
         if raw_key not in self.raw_frames:
             self.raw_frames[raw_key] = raw_loader(gif_path)
@@ -86,13 +90,19 @@ class FrameCache:
         return self.raw_frames[raw_key], signature
 
     def get_scaled_frames(self, gif_path, scale_factor, *, raw_loader, scaler):
-        raw_frames, signature = self.get_raw_frames(gif_path, raw_loader)
+        signature = self._invalidate_stale_entries(gif_path)
         scaled_key = (gif_path, signature, self.normalize_scale(scale_factor))
-        if scaled_key not in self.scaled_frames:
-            self.scaled_frames[scaled_key] = scaler(raw_frames, scale_factor)
-            self._prune_cache(self.scaled_frames, self.max_scaled_entries)
-        else:
+        if scaled_key in self.scaled_frames:
             self.scaled_frames.move_to_end(scaled_key)
+            return self.scaled_frames[scaled_key]
+
+        raw_frames, _signature = self.get_raw_frames(
+            gif_path,
+            raw_loader,
+            signature=signature,
+        )
+        self.scaled_frames[scaled_key] = scaler(raw_frames, scale_factor)
+        self._prune_cache(self.scaled_frames, self.max_scaled_entries)
         return self.scaled_frames[scaled_key]
 
 

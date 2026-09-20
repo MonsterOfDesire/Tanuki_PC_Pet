@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from PyQt6.QtCore import QRect
 
 from .platform_capabilities import get_platform_capabilities
+from .runtime_debug_log import log_suppressed_exception
 
 
 @dataclass(frozen=True)
@@ -87,8 +88,11 @@ class Win32WindowTrackerBackend:
                 )
                 if hr == 0:
                     return rect
-            except Exception:
-                pass
+            except Exception as error:
+                log_suppressed_exception(
+                    "window_tracker.extended_frame_bounds",
+                    error,
+                )
         self.user32.GetWindowRect(hwnd, ctypes.byref(rect))
         return rect
 
@@ -117,7 +121,8 @@ class Win32WindowTrackerBackend:
                 ctypes.sizeof(cloaked),
             )
             return hr == 0 and bool(cloaked.value)
-        except Exception:
+        except Exception as error:
+            log_suppressed_exception("window_tracker.is_cloaked", error)
             return False
 
     def read_window_snapshot(self, hwnd):
