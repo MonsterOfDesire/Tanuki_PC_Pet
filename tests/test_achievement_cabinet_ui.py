@@ -157,9 +157,10 @@ class AchievementCabinetUiTests(unittest.TestCase):
             opener.assert_called_once()
             opened_url = opener.call_args.args[0]
             self.assertTrue(opened_url.isLocalFile())
-            self.assertEqual(
-                os.path.normcase(opened_url.toLocalFile()),
-                os.path.normcase(str(memory_path.resolve())),
+            # Qt may preserve /var or Windows 8.3 aliases while Path.resolve
+            # canonicalizes them. Check the actual file, not its spelling.
+            self.assertTrue(
+                os.path.samefile(opened_url.toLocalFile(), memory_path),
             )
             panel.deleteLater()
 
