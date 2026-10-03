@@ -1,6 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from .ui_icons import METRIC_COLORS
+from .ui_typography import scale_ui_font_styles, ui_font_pixels
 
 
 @dataclass(frozen=True)
@@ -19,9 +20,9 @@ class UiThemeTokens:
     danger: str = "#a34f45"
     border: str = "rgba(54, 44, 36, 170)"
     paper_surface: str = "rgba(255, 253, 247, 244)"
-    frosted_surface: str = "rgba(255, 248, 232, 224)"
+    frosted_surface: str = "rgba(248, 246, 221, 232)"
     glass_surface: str = "rgba(250, 246, 231, 214)"
-    chalkboard_surface: str = "rgba(10, 83, 61, 224)"
+    chalkboard_surface: str = "rgba(35, 77, 59, 242)"
     dark_surface: str = "rgba(18, 20, 27, 230)"
     radius_small: int = 6
     radius_medium: int = 10
@@ -32,16 +33,42 @@ class UiThemeTokens:
     spacing_lg: int = 18
     control_height: int = 36
     navigation_height: int = 46
+    radius_control: int = 14
+    family_card_surface: str = "rgba(246, 248, 234, 221)"
+    event_pane_surface: str = "rgba(7, 31, 24, 75)"
 
 
 DEFAULT_UI_THEME = UiThemeTokens()
 
 
 def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
+    tokens = replace(
+        tokens,
+        control_height=ui_font_pixels(tokens.control_height),
+        navigation_height=ui_font_pixels(tokens.navigation_height),
+    )
+    return scale_ui_font_styles(_build_base_ui_stylesheet(tokens))
+
+
+def apply_ui_theme(widget, tokens=DEFAULT_UI_THEME):
+    from PyQt6.QtCore import Qt
+
+    widget._tanuki_ui_theme = tokens
+    widget.window().setAttribute(Qt.WidgetAttribute.WA_AlwaysShowToolTips, True)
+    widget.setStyleSheet(build_ui_stylesheet(tokens))
+
+
+def _build_base_ui_stylesheet(tokens):
     return f"""
     QWidget {{
         font-family: "{tokens.font_family}";
         color: {tokens.text_primary};
+    }}
+    QToolTip {{
+        color: #2f2924;
+        background: #fff9e7;
+        border: 1px solid #ba9b6d;
+        padding: 6px;
     }}
     QFrame#tanukiSkinContentSurface {{
         border: 1px solid {tokens.border};
@@ -78,6 +105,11 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
     QFrame#tanukiSkinContentSurface[surfaceRole="memory_album"] {{
         background: transparent;
         border: none;
+    }}
+    QFrame#tanukiSkinContentSurface[surfaceRole="noticeboard"] {{
+        background: transparent;
+        border: none;
+        border-radius: 0;
     }}
     QWidget#tanukiMemoryAlbum {{
         background: transparent;
@@ -359,59 +391,182 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
     }}
     QLabel[tanukiRole="settingsNotice"],
     QLabel[tanukiRole="settingsLabel"] {{
-        color: {tokens.text_inverse};
+        color: #4b3525;
+        font-size: 13px;
+    }}
+    QLabel[tanukiRole="settingsLabel"] {{ font-weight: 600; }}
+    QFrame[tanukiRole="settingsShell"] {{
+        background: transparent;
+        border: none;
+        border-radius: {tokens.radius_large}px;
+    }}
+    QFrame[tanukiRole="settingsTabBar"] {{
+        background: transparent;
+        border: none;
+    }}
+    QFrame[tanukiRole="settingsPaperSurface"] {{
+        background: rgba(255, 250, 232, 86);
+        border: 1px solid rgba(139, 100, 55, 92);
+        border-radius: {tokens.radius_large}px;
+    }}
+    QFrame[tanukiRole="settingsCategoryRail"] {{
+        background: rgba(27, 52, 31, 232);
+        border: 1px solid rgba(223, 192, 111, 190);
+        border-radius: {tokens.radius_medium}px;
+    }}
+    QFrame[tanukiRole="settingsContentSurface"] {{
+        background: rgba(16, 27, 20, 198);
+        border: 1px solid rgba(231, 209, 151, 175);
+        border-radius: {tokens.radius_medium}px;
+    }}
+    QLabel[tanukiRole="settingsCategoryHeading"] {{
+        color: #fff8df;
+        font-size: 16px;
+        font-weight: 800;
+        padding: 2px {tokens.spacing_xs}px 6px {tokens.spacing_xs}px;
+    }}
+    QLabel[tanukiRole="settingsPageHeading"] {{
+        color: #fffaf0;
+        font-size: 19px;
+        font-weight: 800;
+        padding: 1px 2px 5px 14px;
+        border-left: 7px solid #74c66b;
+    }}
+    QPushButton[tanukiRole="settingsCategoryButton"] {{
+        min-height: 44px;
+        padding: 0 {tokens.spacing_md}px;
+        color: rgba(255, 252, 239, 225);
+        background: rgba(54, 78, 56, 185);
+        border: 1px solid rgba(239, 213, 146, 165);
+        border-radius: {tokens.radius_medium}px;
+        font-weight: 700;
+        text-align: left;
+    }}
+    QPushButton[tanukiRole="settingsCategoryButton"]:hover {{
+        color: #ffffff;
+        background: rgba(78, 112, 72, 225);
+        border-color: #efd98f;
+    }}
+    QPushButton[tanukiRole="settingsCategoryButton"]:checked {{
+        color: #fffbed;
+        background: rgba(177, 122, 51, 238);
+        border-color: #f1d486;
+    }}
+    QPushButton[tanukiRole="settingsCategoryButton"][compact="true"] {{
+        min-height: 27px;
+        padding: 0 {tokens.spacing_sm}px;
+        text-align: center;
+    }}
+    QPushButton[tanukiRole="settingsTabButton"] {{
+        min-height: 48px;
+        padding: 0 {tokens.spacing_lg}px;
+        color: #f6dfbd;
+        background: rgba(122, 78, 40, 238);
+        border: 2px solid rgba(91, 56, 28, 235);
+        border-bottom: 4px solid rgba(72, 43, 22, 245);
+        border-top-left-radius: 15px;
+        border-top-right-radius: 15px;
+        border-bottom-left-radius: 5px;
+        border-bottom-right-radius: 5px;
+        font-size: 17px;
+        font-weight: 800;
+    }}
+    QPushButton[tanukiRole="settingsTabButton"]:hover {{
+        color: #fffaf0;
+        background: rgba(139, 91, 43, 235);
+        border-color: #79502f;
+    }}
+    QPushButton[tanukiRole="settingsTabButton"]:checked {{
+        color: #4d2c18;
+        background: #fff8df;
+        border-color: #a6783d;
+        border-bottom-color: #fff8df;
     }}
     QGroupBox[tanukiRole="settingsGroup"] {{
-        color: {tokens.text_inverse};
-        font-weight: 700;
-        border: 1px solid rgba(181, 155, 208, 115);
-        border-radius: {tokens.radius_medium}px;
-        margin-top: {tokens.spacing_sm}px;
-        padding: {tokens.spacing_sm}px;
-        background: rgba(0, 0, 0, 45);
+        color: #4a321f;
+        font-weight: 800;
+        border: 1px solid rgba(116, 145, 76, 142);
+        border-radius: 15px;
+        margin-top: 12px;
+        padding: 13px 10px 10px 10px;
+        background: rgba(255, 251, 235, 174);
     }}
     QGroupBox[tanukiRole="settingsGroup"]::title {{
         subcontrol-origin: margin;
         left: {tokens.spacing_md}px;
-        padding: 0 {tokens.spacing_xs}px;
+        padding: 0 8px;
+        color: #5a321b;
+        background: #fff8df;
+        border-radius: 7px;
+        font-size: 14px;
+        font-weight: 850;
+    }}
+    QFrame[tanukiRole="settingsSegmentedControl"] {{
+        min-height: 32px;
+        background: rgba(255, 251, 237, 224);
+        border: 1px solid rgba(156, 123, 77, 150);
+        border-radius: 12px;
     }}
     QPushButton[tanukiRole="settingsOption"] {{
-        min-width: 38px;
+        min-width: 30px;
         min-height: 28px;
-        padding: 0 {tokens.spacing_sm}px;
-        color: rgba(255, 250, 242, 220);
-        background: rgba(255, 255, 255, 18);
-        border: 1px solid rgba(181, 155, 208, 90);
-        border-radius: {tokens.radius_small}px;
+        padding: 0 7px;
+        color: #573722;
+        background: transparent;
+        border: none;
+        border-radius: 9px;
+        font-weight: 650;
     }}
     QPushButton[tanukiRole="settingsOption"][compact="true"] {{
         min-width: 28px;
-        padding: 0 {tokens.spacing_xs}px;
+        min-height: 26px;
+        padding: 0 5px;
+    }}
+    QPushButton[tanukiRole="settingsOption"]:hover:!checked {{
+        color: #42682e;
+        background: rgba(118, 163, 75, 45);
     }}
     QPushButton[tanukiRole="settingsOption"]:checked {{
-        color: {tokens.text_inverse};
-        background: {tokens.settings_accent};
-        border-color: #b59bd0;
-        font-weight: 700;
+        color: #fffdf2;
+        background: #689e43;
+        border: 1px solid #4e7d31;
+        border-bottom: 2px solid #416a29;
+        font-weight: 800;
+    }}
+    QPushButton[tanukiRole="settingsOption"]:pressed {{
+        background: #58893a;
     }}
     QPushButton[tanukiRole="settingsAction"] {{
-        min-height: 30px;
+        min-height: 32px;
         padding: 0 {tokens.spacing_md}px;
-        color: {tokens.text_inverse};
-        background: rgba(255, 255, 255, 18);
-        border: 1px solid rgba(181, 155, 208, 115);
-        border-radius: {tokens.radius_small}px;
+        color: #50321f;
+        background: rgba(255, 247, 222, 232);
+        border: 1px solid rgba(145, 109, 61, 185);
+        border-bottom: 3px solid rgba(112, 78, 42, 180);
+        border-radius: 11px;
+        font-weight: 750;
     }}
     QPushButton[tanukiRole="settingsAction"]:hover {{
-        background: {tokens.settings_accent};
-        border-color: #b59bd0;
+        color: #fffdf4;
+        background: #6a9c45;
+        border-color: #486f31;
+    }}
+    QPushButton[tanukiRole="settingsAction"]:pressed {{
+        background: #557f39;
+        border-bottom-width: 1px;
+    }}
+    QPushButton[tanukiRole="settingsAction"]:disabled {{
+        color: rgba(91, 73, 57, 130);
+        background: rgba(235, 225, 202, 145);
+        border-color: rgba(135, 112, 78, 95);
     }}
     QCheckBox[tanukiRole="settingsToggle"] {{
-        color: {tokens.text_inverse};
+        color: #4b3525;
         spacing: {tokens.spacing_sm}px;
     }}
     QLabel[tanukiRole="settingsToggleLabel"] {{
-        color: {tokens.text_inverse};
+        color: #4b3525;
+        font-size: 13px;
         font-weight: 650;
     }}
     QFrame[tanukiRole="launcherSurface"] {{
@@ -523,6 +678,17 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         background: rgba(255, 255, 255, 34);
         border-color: {tokens.focus};
     }}
+    QPushButton[tanukiRole="launcherAction"][cameraState="full"],
+    QToolButton[tanukiRole="launcherRailAction"][cameraState="full"] {{
+        color: #fff3ce;
+        background: rgba(133, 83, 24, 225);
+        border: 2px solid #f2bf5d;
+    }}
+    QPushButton[tanukiRole="launcherAction"][cameraState="full"]:hover,
+    QToolButton[tanukiRole="launcherRailAction"][cameraState="full"]:hover {{
+        background: rgba(166, 104, 30, 235);
+        border-color: #ffd982;
+    }}
     QPushButton[tanukiRole="launcherShutdown"] {{
         background: rgba(28, 25, 22, 225);
     }}
@@ -580,23 +746,31 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
     QPushButton[tanukiRole="familyAction"] {{
         min-height: 28px;
         padding: 0 {tokens.spacing_sm}px;
-        color: {tokens.text_primary};
-        background: rgba(224, 242, 211, 210);
-        border: 1px solid rgba(105, 164, 93, 135);
-        border-radius: {tokens.radius_small}px;
+        color: #325232;
+        background: #e3edda;
+        border: 1px solid #a7bd96;
+        border-radius: {tokens.radius_control}px;
         font-weight: 800;
     }}
-    QPushButton[tanukiRole="familyAction"]:hover {{
-        background: rgba(205, 233, 187, 235);
+    QPushButton[tanukiRole="familyAction"]:enabled:hover {{
+        background: #edf4e5;
         border-color: {tokens.family_accent};
     }}
+    QPushButton[tanukiRole="familyAction"]:enabled:pressed {{
+        background: #c9dbba;
+        border-color: #779664;
+    }}
+    QPushButton[tanukiRole="familyAction"]:enabled:focus {{
+        border-width: 1px;
+        border-color: #8b682c;
+    }}
     QPushButton[tanukiRole="familyAction"]:disabled {{
-        color: rgba(47, 41, 36, 90);
-        background: rgba(92, 72, 55, 25);
-        border-color: rgba(92, 72, 55, 45);
+        color: #999b90;
+        background: #e6e8de;
+        border-color: #d0d3c5;
     }}
     QFrame[tanukiRole="familyCard"] {{
-        background: rgba(255, 253, 247, 205);
+        background: {tokens.family_card_surface};
         border: 1px solid rgba(92, 72, 55, 100);
         border-radius: {tokens.radius_medium}px;
     }}
@@ -625,7 +799,7 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         padding: {tokens.spacing_sm}px;
     }}
     QFrame[tanukiRole="familySectionCard"] {{
-        background: rgba(255, 253, 247, 195);
+        background: {tokens.family_card_surface};
         border: 1px solid rgba(92, 72, 55, 85);
         border-radius: {tokens.radius_medium}px;
     }}
@@ -705,7 +879,7 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         padding: {tokens.spacing_sm}px;
     }}
     QFrame[tanukiRole="familyStats"] {{
-        background: rgba(255, 253, 247, 205);
+        background: {tokens.family_card_surface};
         border: 1px solid rgba(92, 72, 55, 78);
         border-radius: {tokens.radius_medium}px;
     }}
@@ -787,6 +961,10 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         background: rgba(255, 250, 222, 232);
         border: 2px solid #f2cd69;
     }}
+    QFrame[tanukiRole="achievementCard"][selected="true"] {{
+        background: rgba(255, 246, 207, 242);
+        border: 2px solid #efc64d;
+    }}
     QFrame[tanukiRole="achievementCard"][unlocked="false"] {{
         background: rgba(19, 17, 23, 178);
         border-color: rgba(210, 195, 166, 65);
@@ -841,6 +1019,27 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         color: rgba(239, 212, 127, 210);
         font-size: 11px;
     }}
+    QPushButton[tanukiRole="achievementMemoryOpen"] {{
+        min-height: 30px;
+        padding: 2px {tokens.spacing_sm}px;
+        color: #fff3c7;
+        background: rgba(93, 67, 31, 170);
+        border: 1px solid rgba(231, 199, 97, 185);
+        border-radius: {tokens.radius_small}px;
+        font-size: 11px;
+        font-weight: 850;
+    }}
+    QPushButton[tanukiRole="achievementMemoryOpen"]:hover,
+    QPushButton[tanukiRole="achievementMemoryOpen"]:focus {{
+        color: #fff9e6;
+        background: rgba(137, 98, 38, 220);
+        border-color: #f1d477;
+    }}
+    QPushButton[tanukiRole="achievementMemoryOpen"]:pressed {{
+        color: #f6dfa1;
+        background: rgba(57, 40, 24, 225);
+        border-color: rgba(231, 199, 97, 145);
+    }}
     QFrame[tanukiRole="achievementToast"] {{
         background: rgba(25, 19, 29, 242);
         border: 2px solid #e7c761;
@@ -871,23 +1070,56 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         min-height: 28px;
         padding: 0 {tokens.spacing_sm}px;
         color: rgba(255, 250, 242, 220);
-        background: rgba(0, 0, 0, 30);
-        border: 1px solid rgba(236, 223, 185, 130);
-        border-radius: {tokens.radius_small}px;
+        background: #254f3e;
+        border: 1px solid #618372;
+        border-radius: {tokens.radius_control}px;
+    }}
+    QPushButton[tanukiRole="eventFilter"]:enabled:hover {{
+        background: #346449;
+        border-color: #92b89f;
     }}
     QPushButton[tanukiRole="eventFilter"]:checked {{
         color: {tokens.text_inverse};
-        background: #3b8f70;
-        border-color: #76c7a7;
+        background: #557f45;
+        border-color: #a6cfa9;
         font-weight: 700;
+    }}
+    QPushButton[tanukiRole="eventFilter"]:checked:enabled:hover {{
+        background: #648e52;
+        border-color: #c0dfb6;
+    }}
+    QPushButton[tanukiRole="eventFilter"]:enabled:pressed,
+    QPushButton[tanukiRole="eventFilter"]:checked:enabled:pressed {{
+        background: #3e6035;
+        border-color: #93b99a;
+    }}
+    QPushButton[tanukiRole="eventFilter"]:enabled:focus {{
+        border-width: 1px;
+        border-color: {tokens.focus};
+    }}
+    QPushButton[tanukiRole="eventFilter"]:disabled {{
+        color: #a2b1a7;
+        background: #34453b;
+        border-color: #526558;
     }}
     QComboBox[tanukiRole="eventParticipant"] {{
         min-height: 28px;
         color: {tokens.text_inverse};
-        background: rgba(0, 0, 0, 55);
-        border: 1px solid rgba(236, 223, 185, 130);
-        border-radius: {tokens.radius_small}px;
+        background: #254f3e;
+        border: 1px solid #618372;
+        border-radius: {tokens.radius_control}px;
         padding: 0 {tokens.spacing_sm}px;
+    }}
+    QComboBox[tanukiRole="eventParticipant"]:enabled:hover {{
+        border-color: #92b89f;
+    }}
+    QComboBox[tanukiRole="eventParticipant"]:enabled:focus {{
+        border-color: {tokens.focus};
+    }}
+    QComboBox[tanukiRole="eventParticipant"]::drop-down {{
+        width: 18px;
+        border: none;
+        background: transparent;
     }}
     QComboBox[tanukiRole="eventParticipant"][personalActive="false"] {{
         color: rgba(255, 250, 242, 55);
@@ -916,7 +1148,7 @@ def build_ui_stylesheet(tokens=DEFAULT_UI_THEME):
         margin: {tokens.spacing_sm}px 1px;
     }}
     QFrame[tanukiRole="eventPane"] {{
-        background: rgba(3, 45, 34, 165);
+        background: {tokens.event_pane_surface};
         border: 1px solid rgba(236, 223, 185, 125);
         border-radius: {tokens.radius_medium}px;
     }}

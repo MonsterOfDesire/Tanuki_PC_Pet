@@ -4,6 +4,8 @@ from types import SimpleNamespace
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
+from PyQt6.QtCore import QPoint, QPointF, Qt
+from PyQt6.QtGui import QWheelEvent
 from PyQt6.QtWidgets import QApplication
 
 from tanuki_core.dashboard_presenter import (
@@ -116,6 +118,50 @@ class FamilySummaryPanelTests(unittest.TestCase):
         self.panel.close()
         self.panel.deleteLater()
         self.app.processEvents()
+
+    def _send_member_wheel(self, target, *, angle=None, pixels=None):
+        local = QPoint(10, 10)
+        event = QWheelEvent(
+            QPointF(local), QPointF(target.mapToGlobal(local)),
+            pixels or QPoint(), angle or QPoint(),
+            Qt.MouseButton.NoButton, Qt.KeyboardModifier.NoModifier,
+            Qt.ScrollPhase.NoScrollPhase, False,
+        )
+        QApplication.sendEvent(target, event)
+        self.app.processEvents()
+
+    def test_vertical_mouse_wheel_scrolls_family_members_horizontally(self):
+        self.panel.members_scroll.setFixedWidth(180)
+        self.app.processEvents()
+        scrollbar = self.panel.members_scroll.horizontalScrollBar()
+        self.assertGreater(scrollbar.maximum(), 0)
+        self._send_member_wheel(
+            self.panel.members_scroll.viewport(), angle=QPoint(0, -120),
+        )
+        self.assertGreater(scrollbar.value(), 0)
+        self._send_member_wheel(
+            self.panel.members_scroll.viewport(), angle=QPoint(0, 120),
+        )
+        self.assertEqual(scrollbar.value(), 0)
+
+    def test_wheel_over_family_member_card_also_scrolls(self):
+        self.panel.members_scroll.setFixedWidth(180)
+        self.app.processEvents()
+        self._send_member_wheel(
+            self.panel.member_cards["Air Groove"].name_label,
+            angle=QPoint(0, -120),
+        )
+        self.assertGreater(self.panel.members_scroll.horizontalScrollBar().value(), 0)
+
+    def test_touchpad_pixels_and_horizontal_wheel_keep_horizontal_scrolling(self):
+        self.panel.members_scroll.setFixedWidth(180)
+        self.app.processEvents()
+        scrollbar = self.panel.members_scroll.horizontalScrollBar()
+        viewport = self.panel.members_scroll.viewport()
+        self._send_member_wheel(viewport, pixels=QPoint(0, -12))
+        self.assertEqual(scrollbar.value(), 12)
+        self._send_member_wheel(viewport, angle=QPoint(-120, 0))
+        self.assertGreater(scrollbar.value(), 12)
 
     def test_panel_renders_structured_household_values_and_events(self):
         self.assertEqual(self.panel.fund_value_label.text(), "1,250 元")

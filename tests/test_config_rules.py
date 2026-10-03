@@ -64,6 +64,12 @@ class ConfigRuleTests(unittest.TestCase):
         )
         self.assertEqual(normalized["dashboard"]["race_frequency"], "normal")
         self.assertEqual(normalized["dashboard"]["chorus_frequency"], "normal")
+        self.assertTrue(
+            normalized["dashboard"]["autonomous_sleep_enabled"]
+        )
+        self.assertTrue(
+            normalized["dashboard"]["autonomous_transformation_enabled"]
+        )
         self.assertEqual(normalized["dashboard"]["mood_climate"], "cheerful")
         self.assertEqual(normalized["dashboard"]["ui_locale"], "zh_TW")
         self.assertEqual(normalized["dashboard"]["memory_album_mode"], "off")
@@ -238,6 +244,38 @@ class ConfigRuleTests(unittest.TestCase):
         self.assertEqual(normalized["dashboard"]["race_frequency"], "normal")
         self.assertEqual(normalized["dashboard"]["chorus_frequency"], "normal")
         self.assertEqual(normalized["dashboard"]["mood_climate"], "cheerful")
+
+    def test_disabled_activity_frequencies_are_preserved_but_mood_has_no_disabled_option(self):
+        normalized, _warnings = normalize_config_state(
+            {
+                "schema_version": CONFIG_SCHEMA_VERSION,
+                "dashboard": {
+                    "race_frequency": "disabled",
+                    "chorus_frequency": "disabled",
+                    "mood_climate": "disabled",
+                },
+            }
+        )
+
+        self.assertEqual(normalized["dashboard"]["race_frequency"], "disabled")
+        self.assertEqual(normalized["dashboard"]["chorus_frequency"], "disabled")
+        self.assertEqual(normalized["dashboard"]["mood_climate"], "cheerful")
+
+    def test_schema_eleven_config_enables_new_autonomous_features_by_default(self):
+        normalized, warnings = normalize_config_state(
+            {
+                "schema_version": 11,
+                "dashboard": {"world_mode": "sandbox"},
+            }
+        )
+
+        self.assertTrue(normalized["dashboard"]["autonomous_sleep_enabled"])
+        self.assertTrue(
+            normalized["dashboard"]["autonomous_transformation_enabled"]
+        )
+        self.assertTrue(
+            any("config schema 11 已升級" in warning for warning in warnings)
+        )
 
     def test_memory_album_options_are_normalized_without_deleting_state(self):
         normalized, _warnings = normalize_config_state(

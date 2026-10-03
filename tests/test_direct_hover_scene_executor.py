@@ -133,7 +133,7 @@ class DirectHoverSceneExecutorTests(unittest.TestCase):
             source="ground",
         )
 
-    def test_direct_bottle_keeps_existing_duration(self):
+    def test_direct_bottle_uses_eight_second_drink_duration(self):
         target_pet = SimpleNamespace(name="Tsurumaru Tsuyoshi")
         coordinator = Mock()
         coordinator.start_scene.return_value = SimpleNamespace(started=True)
@@ -153,7 +153,7 @@ class DirectHoverSceneExecutorTests(unittest.TestCase):
 
         self.assertEqual(
             coordinator.start_scene.call_args.kwargs["scene_ends_at"],
-            11.8,
+            18.0,
         )
 
     @patch("tanuki_core.direct_hover_scene_executor.get_direct_offer_accept_context", return_value="offer_accept_tea")

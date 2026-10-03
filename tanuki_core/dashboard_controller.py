@@ -6,6 +6,7 @@ from .shutdown_controller import DashboardShutdownController
 from .ui_localization import set_ui_locale
 from .installation_registry import record_current_installation
 from .settings_provider import RuntimeSettings
+from .ui_typography import normalize_ui_text_size, set_ui_text_size
 
 
 class DashboardController:
@@ -148,6 +149,25 @@ class DashboardController:
         if save:
             dashboard.schedule_save()
 
+    def set_autonomous_sleep_enabled(self, dashboard, enabled, save=True):
+        dashboard.autonomous_sleep_enabled = bool(enabled)
+        dashboard.sync_settings_provider()
+        dashboard.refresh_information_center_settings()
+        if save:
+            dashboard.schedule_save()
+
+    def set_autonomous_transformation_enabled(
+        self,
+        dashboard,
+        enabled,
+        save=True,
+    ):
+        dashboard.autonomous_transformation_enabled = bool(enabled)
+        dashboard.sync_settings_provider()
+        dashboard.refresh_information_center_settings()
+        if save:
+            dashboard.schedule_save()
+
     def set_ui_locale(self, dashboard, value, save=True):
         options = tuple(getattr(dashboard, "ui_locale_options", ()))
         dashboard.ui_locale = (
@@ -156,6 +176,14 @@ class DashboardController:
         set_ui_locale(dashboard.ui_locale)
         record_current_installation(dashboard.ui_locale)
         dashboard.sync_settings_provider()
+        dashboard.retranslate_ui()
+        if save:
+            dashboard.schedule_save()
+
+    def set_ui_text_size(self, dashboard, value, save=True):
+        dashboard.ui_text_size = normalize_ui_text_size(value)
+        dashboard.sync_settings_provider()
+        set_ui_text_size(dashboard.ui_text_size)
         dashboard.retranslate_ui()
         if save:
             dashboard.schedule_save()

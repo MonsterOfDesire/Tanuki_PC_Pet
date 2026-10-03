@@ -45,6 +45,7 @@ class TransformationProfile:
     character_name: str
     transformed_subdirectory: str
     transformed_capabilities: FormCapabilities
+    transformed_visual_scale: float = 1.0
     auto_base_seconds_min: float = 480.0
     auto_base_seconds_max: float = 900.0
     auto_duration_seconds_min: float = 90.0
@@ -75,6 +76,11 @@ TRANSFORMATION_PROFILES = {
     SYMBOLI_RUDOLF_NAME: TransformationProfile(
         character_name=SYMBOLI_RUDOLF_NAME,
         transformed_subdirectory="transformed",
+        # The transformed upright/walk/run alpha bounds are about 414-423 px,
+        # already matching Air Groove and Sirius Symboli at about 419-429 px.
+        # Rudolf's normal 0.45 base scale would therefore make this form about
+        # 12.5% too tall; 0.45 * 0.89 ~= the adults' 0.40 display scale.
+        transformed_visual_scale=0.89,
         transformed_capabilities=FormCapabilities(
             sleep=False,
             work=False,
@@ -99,6 +105,22 @@ BASE_CAPABILITIES = FormCapabilities()
 
 def get_transformation_profile(character_name: str) -> TransformationProfile | None:
     return TRANSFORMATION_PROFILES.get(str(character_name or ""))
+
+
+def get_form_visual_scale(character_name: str, form_key: str) -> float:
+    if str(form_key or FORM_BASE) != FORM_TRANSFORMED:
+        return 1.0
+    profile = get_transformation_profile(character_name)
+    if profile is None:
+        return 1.0
+    return max(0.1, float(profile.transformed_visual_scale))
+
+
+def get_pet_form_visual_scale(pet) -> float:
+    return get_form_visual_scale(
+        getattr(pet, "name", ""),
+        get_pet_form_key(pet),
+    )
 
 
 def get_pet_form_key(pet) -> str:

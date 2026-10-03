@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
+from .ui_theme import DEFAULT_UI_THEME, apply_ui_theme
 from .window_chrome import create_platform_window_chrome
 from .ui_localization import translate_ui
 from .overlay_window import (
@@ -112,7 +112,7 @@ class DetachedInformationPageWindow(QWidget):
         )
         if initial_size is not None:
             self.resize(QSize(initial_size))
-        self.setStyleSheet(build_ui_stylesheet(theme))
+        apply_ui_theme(self, theme)
         self.window_chrome.refresh_geometry()
         self.retranslate_ui()
 

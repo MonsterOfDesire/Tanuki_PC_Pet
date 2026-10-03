@@ -40,6 +40,7 @@ PET_STATE_PROXY_FIELDS = {
         "drag_motion_samples",
         "drag_target_x",
         "drag_target_y",
+        "drag_target_screen_rect",
         "drag_follow_x",
         "drag_follow_y",
         "drag_follow_velocity_x",
@@ -203,6 +204,7 @@ class PetInteractionState:
     drag_motion_samples: tuple = ()
     drag_target_x: float = 0.0
     drag_target_y: float = 0.0
+    drag_target_screen_rect: object | None = None
     drag_follow_x: float = 0.0
     drag_follow_y: float = 0.0
     drag_follow_velocity_x: float = 0.0

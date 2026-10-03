@@ -24,7 +24,7 @@ from .achievement_presenter import (
     AchievementCardSnapshot,
     AchievementUnlockNotificationSnapshot,
 )
-from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
+from .ui_theme import DEFAULT_UI_THEME, apply_ui_theme
 from .ui_controls import ToggleSwitch
 from .overlay_window import (
     WINDOW_ROLE_PERSISTENT_OVERLAY,
@@ -43,6 +43,7 @@ MODE_BUTTON_LABELS = {
 class AchievementTrophyCard(QFrame):
     highlighted = pyqtSignal(object)
     cleared = pyqtSignal()
+    selected = pyqtSignal(object)
     reset_requested = pyqtSignal(object)
 
     def __init__(self, snapshot, pixmap, parent=None):
@@ -50,6 +51,7 @@ class AchievementTrophyCard(QFrame):
         self.snapshot = snapshot
         self.setProperty("tanukiRole", "achievementCard")
         self.setProperty("unlocked", bool(snapshot.unlocked))
+        self.setProperty("selected", False)
         self.setAccessibleName(snapshot.accessible_name)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setMinimumSize(140, 198)
@@ -186,6 +188,40 @@ class AchievementTrophyCard(QFrame):
             self.cleared.emit()
         super().focusOutEvent(event)
 
+    def mouseReleaseEvent(self, event):
+        if (
+            event.button() == Qt.MouseButton.LeftButton
+            and self.rect().contains(event.position().toPoint())
+            and self.snapshot.unlocked
+        ):
+            self.setFocus(Qt.FocusReason.MouseFocusReason)
+            self.selected.emit(self.snapshot)
+        super().mouseReleaseEvent(event)
+
+    def keyPressEvent(self, event):
+        if (
+            event.key()
+            in {
+                Qt.Key.Key_Return,
+                Qt.Key.Key_Enter,
+                Qt.Key.Key_Space,
+            }
+            and self.snapshot.unlocked
+        ):
+            self.selected.emit(self.snapshot)
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
+    def set_selected(self, selected):
+        selected = bool(selected)
+        if self.property("selected") == selected:
+            return
+        self.setProperty("selected", selected)
+        self.style().unpolish(self)
+        self.style().polish(self)
+        self.update()
+
 
 class AchievementCabinetPanel(QWidget):
     def __init__(
@@ -205,6 +241,7 @@ class AchievementCabinetPanel(QWidget):
         self.card_widgets = []
         self._trophy_cache = {}
         self._last_grid_columns = 0
+        self._selected_card_key = None
 
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
@@ -338,6 +375,25 @@ class AchievementCabinetPanel(QWidget):
         self.memory_status_label.hide()
         detail_layout.addWidget(self.memory_status_label)
         self.memory_open_button = QPushButton("開啟原圖")
+        self.memory_open_button.setProperty(
+            "tanukiRole",
+            "achievementMemoryOpen",
+        )
+        self.memory_open_button.setIcon(
+            create_ui_icon(
+                "detach",
+                color="#fff3c7",
+                size=17,
+            )
+        )
+        self.memory_open_button.setIconSize(QSize(17, 17))
+        self.memory_open_button.setCursor(
+            Qt.CursorShape.PointingHandCursor
+        )
+        self.memory_open_button.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
         self.memory_open_button.clicked.connect(
             self._open_current_memory
         )
@@ -374,6 +430,12 @@ class AchievementCabinetPanel(QWidget):
             "achievements.memory_open",
             default="開啟原圖",
         ))
+        self.memory_open_button.setAccessibleName(
+            self.memory_open_button.text()
+        )
+        self.memory_open_button.setToolTip(
+            self.memory_open_button.text()
+        )
         if self.binding is not None:
             self.refresh_from_binding()
         else:
@@ -454,9 +516,13 @@ class AchievementCabinetPanel(QWidget):
             )
         )
         self.detail_time_label.setText("")
+        self._clear_memory_detail()
+
+    def _clear_memory_detail(self):
         self._current_memory_path = None
         self.memory_preview_label.clear()
         self.memory_preview_label.hide()
+        self.memory_status_label.clear()
         self.memory_status_label.hide()
         self.memory_open_button.hide()
 
@@ -464,6 +530,11 @@ class AchievementCabinetPanel(QWidget):
         if not isinstance(card, AchievementCardSnapshot) or not card.unlocked:
             self.clear_detail()
             return
+        # A previously selected achievement may have a screenshot while this
+        # one does not. Reset every screenshot-specific widget before looking
+        # up the new card so stale images and file paths can never leak across
+        # achievement details.
+        self._clear_memory_detail()
         self.detail_title_label.setText(card.title)
         self.detail_method_label.setText(card.acquisition_method)
         self.detail_time_label.setText(
@@ -510,11 +581,30 @@ class AchievementCabinetPanel(QWidget):
         ))
         self.memory_status_label.show()
 
-    def _open_current_memory(self):
-        if self._current_memory_path:
-            QDesktopServices.openUrl(
-                QUrl.fromLocalFile(str(self._current_memory_path))
+    def _handle_card_hovered(self, card):
+        if self._selected_card_key is None:
+            self.show_card_detail(card)
+
+    def _handle_card_selected(self, card):
+        if not isinstance(card, AchievementCardSnapshot) or not card.unlocked:
+            return False
+        self._selected_card_key = card.slot_key
+        for widget in self.card_widgets:
+            widget.set_selected(
+                widget.snapshot.slot_key == self._selected_card_key
             )
+        self.show_card_detail(card)
+        return True
+
+    def _open_current_memory(self):
+        if not self._current_memory_path:
+            return False
+        memory_path = os.path.abspath(
+            os.path.normpath(str(self._current_memory_path))
+        )
+        return QDesktopServices.openUrl(
+            QUrl.fromLocalFile(memory_path)
+        )
 
     def eventFilter(self, watched, event):
         if watched is self.scroll_area.viewport() and event.type() in {
@@ -534,6 +624,7 @@ class AchievementCabinetPanel(QWidget):
         return 2
 
     def _rebuild_cards(self):
+        self._selected_card_key = None
         self._clear_grid_widgets()
         mode = self.snapshot.mode_snapshot(self.current_world_mode)
         tier = mode.tier_snapshot(self.current_tier) if mode else None
@@ -556,8 +647,8 @@ class AchievementCabinetPanel(QWidget):
         for card in cards:
             pixmap = self._trophy_pixmap(card)
             widget = AchievementTrophyCard(card, pixmap)
-            widget.highlighted.connect(self.show_card_detail)
-            widget.cleared.connect(self.clear_detail)
+            widget.highlighted.connect(self._handle_card_hovered)
+            widget.selected.connect(self._handle_card_selected)
             widget.reset_requested.connect(
                 self._handle_reset_achievement
             )
@@ -641,7 +732,7 @@ class AchievementUnlockToast(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
         self.setWindowFlag(Qt.WindowType.WindowDoesNotAcceptFocus, True)
         self.setObjectName("tanukiAchievementUnlockToast")
-        self.setStyleSheet(build_ui_stylesheet(DEFAULT_UI_THEME))
+        apply_ui_theme(self, DEFAULT_UI_THEME)
         self.hide_timer = QTimer(self)
         self.hide_timer.setSingleShot(True)
         self.hide_timer.timeout.connect(self.hide)

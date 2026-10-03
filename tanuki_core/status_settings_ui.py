@@ -5,10 +5,8 @@ from PyQt6.QtWidgets import (
     QButtonGroup,
     QFrame,
     QGridLayout,
-    QGroupBox,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QScrollArea,
     QSizePolicy,
     QVBoxLayout,
@@ -24,6 +22,12 @@ from .ui_localization import (
     translate_ui,
 )
 from .ui_controls import ToggleSwitch
+from .ui_typography import ui_font_pixels, ui_text_scale
+from .settings_hover_help import SettingsHoverHelp
+from .status_settings_art import (
+    NoticeboardAction, NoticeboardLabel, NoticeboardOption, NoticeboardRail,
+    NoticeboardSection, NoticeboardTab,
+)
 from .transformation_control_presenter import (
     TRANSFORMATION_CONTROL_NAMES,
     build_transformation_completion_text,
@@ -32,13 +36,19 @@ from .transformation_control_presenter import (
 
 
 COMPACT_SETTINGS_WIDTH = 660
-SINGLE_COLUMN_SETTINGS_WIDTH = 820
+SINGLE_COLUMN_SETTINGS_WIDTH = 690
 LOCALIZED_SINGLE_COLUMN_SETTINGS_WIDTH = 1040
+STATUS_TAB_ORDER = ("mode", "developer")
+STATUS_TAB_LABEL_KEYS = {
+    "mode": ("settings.tabs.mode", "模式設定"),
+    "developer": ("settings.tabs.developer", "開發工具"),
+}
 WORLD_MODE_LABELS = {
     "golden_legend": "黃金傳說",
     "sandbox": "沙盒",
 }
 RACE_FREQUENCY_LABELS = {
+    "disabled": "不啟用",
     "frequent": "經常",
     "normal": "普通",
     "occasional": "偶爾",
@@ -49,11 +59,13 @@ MOOD_CLIMATE_LABELS = {
     "expressive": "多彩",
 }
 RACE_FREQUENCY_TOOLTIPS = {
+    "disabled": "不開始新的自主競賽；已開始的競賽會正常完成。",
     "frequent": "自主競賽等待與冷卻約為普通的一半。",
     "normal": "使用沙盒或黃金傳說各自的標準競賽排程。",
     "occasional": "自主競賽等待與冷卻約為普通的兩倍。",
 }
 CHORUS_FREQUENCY_TOOLTIPS = {
+    "disabled": "不開始新的自主合奏；已開始的合奏會正常完成。",
     "frequent": "自主合奏等待、重試與冷卻約為普通的一半。",
     "normal": "使用標準自主合奏排程。",
     "occasional": "自主合奏等待、重試與冷卻約為普通的兩倍。",
@@ -106,12 +118,14 @@ SLEEP_CONTROL_IDLE_TEXT = "指定角色睡覺或用既有 waking 流程喚醒；
 
 
 class StatusSettingsPanel(QWidget):
-    def __init__(self, binding=None, parent=None, theme=DEFAULT_UI_THEME):
+    def __init__(self, binding=None, parent=None, theme=DEFAULT_UI_THEME, assets=None):
         super().__init__(parent)
         self.binding = None
         self.theme = theme
+        self.assets = assets
         self._refreshing = False
         self._option_signature = None
+        self._last_settings_snapshot = None
         self.world_mode_buttons = []
         self.time_scale_buttons = []
         self.display_scale_buttons = []
@@ -123,10 +137,14 @@ class StatusSettingsPanel(QWidget):
         self.memory_album_mode_buttons = []
         self.memory_album_capacity_buttons = []
         self.ui_locale_buttons = []
+        self.ui_text_size_buttons = []
         self._button_groups = []
         self._compact_layout = None
         self._single_column_layout = None
         self._sleep_control_columns = None
+        self._noticeboard_scale = None
+        self._active_tab_key = "mode"
+        self.setAttribute(Qt.WidgetAttribute.WA_AlwaysShowToolTips, True)
         self._waiting_for_rudolf_work_preview = False
         self._waiting_for_race_preview = False
         self._waiting_for_chorus_preview = False
@@ -164,7 +182,7 @@ class StatusSettingsPanel(QWidget):
         self.unavailable_label.setWordWrap(True)
         root_layout.addWidget(self.unavailable_label)
 
-        self.settings_grid = QWidget()
+        self.settings_grid = QWidget(self)
         self.grid_layout = QGridLayout(self.settings_grid)
         self.grid_layout.setContentsMargins(0, 0, 0, 0)
         self.grid_layout.setHorizontalSpacing(theme.spacing_md)
@@ -176,8 +194,10 @@ class StatusSettingsPanel(QWidget):
         self.runtime_layout.setVerticalSpacing(theme.spacing_sm)
         self.world_mode_label = self._create_label("世界模式")
         self.runtime_layout.addWidget(self.world_mode_label, 0, 0)
-        self.world_mode_row = QHBoxLayout()
-        self.runtime_layout.addLayout(self.world_mode_row, 0, 1)
+        self.world_mode_control, self.world_mode_row = (
+            self._create_selector_row()
+        )
+        self.runtime_layout.addWidget(self.world_mode_control, 0, 1)
         self.care_switch = ToggleSwitch()
         self.care_switch.setAccessibleName("啟用角色照護功能")
         self.care_switch.setToolTip(
@@ -196,12 +216,20 @@ class StatusSettingsPanel(QWidget):
         self.timing_layout.setVerticalSpacing(theme.spacing_sm)
         self.time_scale_label = self._create_label("時間流速")
         self.timing_layout.addWidget(self.time_scale_label, 0, 0)
-        self.time_scale_row = QHBoxLayout()
-        self.timing_layout.addLayout(self.time_scale_row, 0, 1)
+        self.time_scale_control, self.time_scale_row = (
+            self._create_selector_row()
+        )
+        self.timing_layout.addWidget(self.time_scale_control, 0, 1)
         self.display_scale_label = self._create_label("顯示比例")
         self.timing_layout.addWidget(self.display_scale_label, 1, 0)
-        self.display_scale_row = QHBoxLayout()
-        self.timing_layout.addLayout(self.display_scale_row, 1, 1)
+        self.display_scale_control, self.display_scale_row = (
+            self._create_selector_row()
+        )
+        self.timing_layout.addWidget(self.display_scale_control, 1, 1)
+        self.ui_text_size_label = self._create_label("文字尺寸")
+        self.ui_text_size_control, self.ui_text_size_row = self._create_selector_row()
+        self.timing_layout.addWidget(self.ui_text_size_label, 2, 0)
+        self.timing_layout.addWidget(self.ui_text_size_control, 2, 1)
 
         self.locale_update_group = self._create_group("語言與更新")
         self.locale_update_layout = QGridLayout(
@@ -213,10 +241,14 @@ class StatusSettingsPanel(QWidget):
         self.locale_update_layout.setVerticalSpacing(theme.spacing_sm)
         self.locale_label = self._create_label("介面語言")
         self.locale_update_layout.addWidget(self.locale_label, 0, 0)
-        self.ui_locale_row = QHBoxLayout()
-        self.locale_update_layout.addLayout(self.ui_locale_row, 0, 1)
+        self.ui_locale_control, self.ui_locale_row = (
+            self._create_selector_row()
+        )
+        self.locale_update_layout.addWidget(self.ui_locale_control, 0, 1)
         self.update_action_row = QHBoxLayout()
-        self.update_check_button = QPushButton("立即檢查更新")
+        self.update_check_button = NoticeboardAction("立即檢查更新")
+        self.update_check_button.symbol = "refresh"
+        self.update_check_button.primary = True
         self.update_check_button.setProperty(
             "tanukiRole",
             "settingsAction",
@@ -225,7 +257,7 @@ class StatusSettingsPanel(QWidget):
             self._handle_update_check
         )
         self.update_action_row.addWidget(self.update_check_button)
-        self.update_open_button = QPushButton("查看新版")
+        self.update_open_button = NoticeboardAction("查看新版")
         self.update_open_button.setProperty(
             "tanukiRole",
             "settingsAction",
@@ -256,47 +288,97 @@ class StatusSettingsPanel(QWidget):
             2,
         )
 
-        self.social_group = self._create_group("社交冷卻")
+        self.social_group = self._create_group("模仿魯道夫冷卻")
         self.social_layout = QGridLayout(self.social_group)
         self.social_layout.setHorizontalSpacing(theme.spacing_sm)
         self.social_layout.setVerticalSpacing(theme.spacing_sm)
         self.teio_social_label = self._create_label(character_display_name("Tokai Teio"))
         self.social_layout.addWidget(self.teio_social_label, 0, 0)
-        self.teio_duration_row = QHBoxLayout()
-        self.social_layout.addLayout(self.teio_duration_row, 0, 1)
+        self.teio_duration_control, self.teio_duration_row = (
+            self._create_selector_row()
+        )
+        self.social_layout.addWidget(self.teio_duration_control, 0, 1)
         self.tsuyoshi_social_label = self._create_label(
             character_display_name("Tsurumaru Tsuyoshi")
         )
         self.social_layout.addWidget(self.tsuyoshi_social_label, 1, 0)
-        self.tsuyoshi_duration_row = QHBoxLayout()
-        self.social_layout.addLayout(self.tsuyoshi_duration_row, 1, 1)
+        self.tsuyoshi_duration_control, self.tsuyoshi_duration_row = (
+            self._create_selector_row()
+        )
+        self.social_layout.addWidget(self.tsuyoshi_duration_control, 1, 1)
 
         self.rhythm_group = self._create_group("生活節奏")
         self.rhythm_layout = QGridLayout(self.rhythm_group)
         self.rhythm_layout.setHorizontalSpacing(theme.spacing_sm)
         self.rhythm_layout.setVerticalSpacing(theme.spacing_sm)
+        self.autonomous_sleep_switch = ToggleSwitch()
+        self.autonomous_sleep_switch.setAccessibleName("啟用自主睡眠")
+        self.autonomous_sleep_switch.setToolTip(
+            "關閉後不再開始新的自主睡眠；既有睡眠會正常結束。"
+        )
+        self.autonomous_sleep_switch.toggled.connect(
+            self._handle_autonomous_sleep_toggled
+        )
+        self.autonomous_sleep_toggle_row = self._create_toggle_row(
+            "啟用自主睡眠",
+            self.autonomous_sleep_switch,
+        )
+        self.rhythm_layout.addWidget(
+            self.autonomous_sleep_toggle_row,
+            0,
+            0,
+            1,
+            2,
+        )
+        self.autonomous_transformation_switch = ToggleSwitch()
+        self.autonomous_transformation_switch.setAccessibleName(
+            "啟用自主變身"
+        )
+        self.autonomous_transformation_switch.setToolTip(
+            "關閉後不再開始新的自主變身；既有變身與解除流程會正常完成。"
+        )
+        self.autonomous_transformation_switch.toggled.connect(
+            self._handle_autonomous_transformation_toggled
+        )
+        self.autonomous_transformation_toggle_row = self._create_toggle_row(
+            "啟用自主變身",
+            self.autonomous_transformation_switch,
+        )
+        self.rhythm_layout.addWidget(
+            self.autonomous_transformation_toggle_row,
+            1,
+            0,
+            1,
+            2,
+        )
         self.race_frequency_label = self._create_label("競賽頻率")
         self.race_frequency_label.setToolTip(
             "調整自主競賽的等待與冷卻時間；不略過資格、距離或接受判定。"
         )
-        self.rhythm_layout.addWidget(self.race_frequency_label, 0, 0)
-        self.race_frequency_row = QHBoxLayout()
-        self.rhythm_layout.addLayout(self.race_frequency_row, 0, 1)
+        self.rhythm_layout.addWidget(self.race_frequency_label, 2, 0)
+        self.race_frequency_control, self.race_frequency_row = (
+            self._create_selector_row()
+        )
+        self.rhythm_layout.addWidget(self.race_frequency_control, 2, 1)
         self.chorus_frequency_label = self._create_label("合奏頻率")
         self.chorus_frequency_label.setToolTip(
             "調整自主合奏的等待、重試與冷卻時間；不略過資格、距離或反應判定。"
         )
-        self.rhythm_layout.addWidget(self.chorus_frequency_label, 1, 0)
-        self.chorus_frequency_row = QHBoxLayout()
-        self.rhythm_layout.addLayout(self.chorus_frequency_row, 1, 1)
+        self.rhythm_layout.addWidget(self.chorus_frequency_label, 3, 0)
+        self.chorus_frequency_control, self.chorus_frequency_row = (
+            self._create_selector_row()
+        )
+        self.rhythm_layout.addWidget(self.chorus_frequency_control, 3, 1)
         self.mood_climate_label = self._create_label("情緒氣候")
         self.mood_climate_label.setToolTip(
             "自然心情會隨模擬倍速更新；三種氣候只調整發生率、正負傾向與幅度，"
             "不設定目標心情。"
         )
-        self.rhythm_layout.addWidget(self.mood_climate_label, 2, 0)
-        self.mood_climate_row = QHBoxLayout()
-        self.rhythm_layout.addLayout(self.mood_climate_row, 2, 1)
+        self.rhythm_layout.addWidget(self.mood_climate_label, 4, 0)
+        self.mood_climate_control, self.mood_climate_row = (
+            self._create_selector_row()
+        )
+        self.rhythm_layout.addWidget(self.mood_climate_control, 4, 1)
 
         self.memory_group = self._create_group("回憶相簿")
         self.memory_layout = QGridLayout(self.memory_group)
@@ -304,13 +386,18 @@ class StatusSettingsPanel(QWidget):
         self.memory_layout.setVerticalSpacing(theme.spacing_sm)
         self.memory_mode_label = self._create_label("拍照模式")
         self.memory_layout.addWidget(self.memory_mode_label, 0, 0)
-        self.memory_album_mode_row = QHBoxLayout()
-        self.memory_layout.addLayout(self.memory_album_mode_row, 0, 1)
+        self.memory_album_mode_control, self.memory_album_mode_row = (
+            self._create_selector_row()
+        )
+        self.memory_layout.addWidget(self.memory_album_mode_control, 0, 1)
         self.memory_capacity_label = self._create_label("照片上限")
         self.memory_layout.addWidget(self.memory_capacity_label, 1, 0)
-        self.memory_album_capacity_row = QHBoxLayout()
-        self.memory_layout.addLayout(
+        (
+            self.memory_album_capacity_control,
             self.memory_album_capacity_row,
+        ) = self._create_selector_row()
+        self.memory_layout.addWidget(
+            self.memory_album_capacity_control,
             1,
             1,
         )
@@ -357,7 +444,7 @@ class StatusSettingsPanel(QWidget):
                 self.social_status_switch,
         )
         self.developer_layout.addWidget(self.social_status_toggle_row)
-        self.rudolf_work_preview_button = QPushButton(
+        self.rudolf_work_preview_button = NoticeboardAction(
             "預覽魯道夫工作"
         )
         self.rudolf_work_preview_button.setProperty(
@@ -384,7 +471,7 @@ class StatusSettingsPanel(QWidget):
         self.developer_layout.addWidget(
             self.rudolf_work_preview_status
         )
-        self.race_preview_button = QPushButton(
+        self.race_preview_button = NoticeboardAction(
             "預覽魯道夫 vs 帝寶競賽"
         )
         self.race_preview_button.setProperty(
@@ -405,7 +492,7 @@ class StatusSettingsPanel(QWidget):
         )
         self.race_preview_status.setWordWrap(True)
         self.developer_layout.addWidget(self.race_preview_status)
-        self.chorus_preview_button = QPushButton("立即預覽合奏")
+        self.chorus_preview_button = NoticeboardAction("立即預覽合奏")
         self.chorus_preview_button.setProperty(
             "tanukiRole",
             "settingsAction",
@@ -435,7 +522,8 @@ class StatusSettingsPanel(QWidget):
         self.transformation_preview_row = QHBoxLayout()
         self.transformation_preview_buttons = {}
         for pet_name, display_name in TRANSFORMATION_PREVIEW_NAMES.items():
-            button = QPushButton(f"手動變身{display_name}")
+            button = NoticeboardAction(f"手動變身{display_name}")
+            button.symbol = "sparkles"
             button.setProperty("tanukiRole", "settingsAction")
             button.setAccessibleName(f"切換{display_name}變身形態")
             button.clicked.connect(
@@ -468,7 +556,8 @@ class StatusSettingsPanel(QWidget):
         for index, (pet_name, display_name) in enumerate(
             SLEEP_CONTROL_NAMES.items()
         ):
-            button = QPushButton(f"讓{display_name}睡覺")
+            button = NoticeboardAction(f"讓{display_name}睡覺")
+            button.symbol = "sleep"
             button.setProperty("tanukiRole", "settingsAction")
             button.setAccessibleName(f"切換{display_name}睡眠狀態")
             button.clicked.connect(
@@ -490,10 +579,53 @@ class StatusSettingsPanel(QWidget):
         )
         self.sleep_control_status.setWordWrap(True)
         self.developer_layout.addWidget(self.sleep_control_status)
-        self.validation_button = QPushButton("檢查 Config / Manifest")
+        self.validation_button = NoticeboardAction("檢查 Config / Manifest")
         self.validation_button.setProperty("tanukiRole", "settingsAction")
         self.validation_button.clicked.connect(self._handle_validation)
         self.developer_layout.addWidget(self.validation_button)
+
+        self._compose_noticeboard_cards()
+
+        self.settings_shell = QFrame()
+        self.settings_shell.setProperty("tanukiRole", "settingsShell")
+
+        self.settings_tab_bar = QFrame(self.settings_shell)
+        self.settings_tab_bar.setProperty("tanukiRole", "settingsTabBar")
+        self.settings_tab_button_group = QButtonGroup(self)
+        self.settings_tab_button_group.setExclusive(True)
+        self.settings_tab_buttons = {}
+        for index, tab_key in enumerate(STATUS_TAB_ORDER):
+            button = NoticeboardTab(
+                "leaf" if tab_key == "mode" else "wrench",
+                self.settings_tab_bar,
+            )
+            button.setCheckable(True)
+            button.setProperty("tanukiRole", "settingsTabButton")
+            button.setProperty("tabKey", tab_key)
+            button.setSizePolicy(
+                QSizePolicy.Policy.Expanding,
+                QSizePolicy.Policy.Fixed,
+            )
+            button.clicked.connect(
+                lambda checked=False, key=tab_key: (
+                    self._select_tab(key) if checked else None
+                )
+            )
+            self.settings_tab_button_group.addButton(button, index)
+            self.settings_tab_buttons[tab_key] = button
+        self.settings_tab_buttons[self._active_tab_key].setChecked(True)
+
+        self.settings_content_surface = QFrame(self.settings_shell)
+        self.settings_content_surface.setProperty(
+            "tanukiRole",
+            "settingsPaperSurface",
+        )
+        self.settings_content_layout = QVBoxLayout(
+            self.settings_content_surface
+        )
+        self.settings_content_surface.setStyleSheet("QFrame { background: transparent; border: none; }")
+        self.settings_content_layout.setContentsMargins(0, 0, 0, 0)
+        self.settings_content_layout.setSpacing(theme.spacing_sm)
 
         self.settings_scroll = QScrollArea()
         self.settings_scroll.setObjectName("tanukiStatusSettingsScroll")
@@ -514,11 +646,13 @@ class StatusSettingsPanel(QWidget):
             " background: transparent; }"
         )
         self.settings_scroll.setWidget(self.settings_grid)
-        root_layout.addWidget(self.settings_scroll, stretch=1)
+        self.settings_content_layout.addWidget(self.settings_scroll, stretch=1)
+        root_layout.addWidget(self.settings_shell, stretch=1)
 
         self.set_binding(binding)
         self.retranslate_ui()
         self._update_responsive_layout(force=True)
+        self.hover_help = SettingsHoverHelp(self)
 
     def set_binding(self, binding):
         binding_changed = binding is not self.binding
@@ -533,6 +667,7 @@ class StatusSettingsPanel(QWidget):
             self._reset_chorus_preview_status()
         self.unavailable_label.setVisible(binding is None)
         self.settings_grid.setEnabled(binding is not None)
+        self.settings_tab_bar.setEnabled(binding is not None)
         if binding is not None:
             self.refresh_from_binding(force_rebuild=binding_changed or self._option_signature is None)
 
@@ -554,6 +689,7 @@ class StatusSettingsPanel(QWidget):
             snapshot.memory_album_mode_options,
             snapshot.memory_album_capacity_options,
             snapshot.ui_locale_options,
+            snapshot.ui_text_size_options,
         )
         if force_rebuild or signature != self._option_signature:
             self._rebuild_option_buttons(snapshot)
@@ -568,12 +704,24 @@ class StatusSettingsPanel(QWidget):
             social_status_blocker = QSignalBlocker(
                 self.social_status_switch
             )
+            sleep_blocker = QSignalBlocker(
+                self.autonomous_sleep_switch
+            )
+            transformation_blocker = QSignalBlocker(
+                self.autonomous_transformation_switch
+            )
             self.debug_switch.setChecked(snapshot.debug_enabled)
             self.care_switch.setChecked(
                 snapshot.care_feature_enabled
             )
             self.social_status_switch.setChecked(
                 snapshot.social_status_enabled
+            )
+            self.autonomous_sleep_switch.setChecked(
+                snapshot.autonomous_sleep_enabled
+            )
+            self.autonomous_transformation_switch.setChecked(
+                snapshot.autonomous_transformation_enabled
             )
             preview_enabled = snapshot.world_mode == "sandbox"
             self.rudolf_work_preview_button.setEnabled(
@@ -646,6 +794,10 @@ class StatusSettingsPanel(QWidget):
             )
             self._set_checked(self.time_scale_buttons, snapshot.time_scale_index)
             self._set_checked(self.display_scale_buttons, snapshot.display_scale_index)
+            self._set_checked(
+                self.ui_text_size_buttons,
+                self._option_index(snapshot.ui_text_size_options, snapshot.ui_text_size),
+            )
             self._set_checked(self.teio_duration_buttons, snapshot.teio_duration_index)
             self._set_checked(self.tsuyoshi_duration_buttons, snapshot.tsuyoshi_duration_index)
             self._set_checked(
@@ -691,11 +843,14 @@ class StatusSettingsPanel(QWidget):
                 ),
             )
             self._apply_update_status(snapshot)
+            del transformation_blocker
+            del sleep_blocker
             del social_status_blocker
             del care_blocker
             del debug_blocker
         finally:
             self._refreshing = False
+        self._last_settings_snapshot = snapshot
 
     def _rebuild_option_buttons(self, snapshot):
         for group in self._button_groups:
@@ -723,6 +878,12 @@ class StatusSettingsPanel(QWidget):
             snapshot.display_scale_options,
             lambda value: f"{value:g}x",
             self._handle_display_scale,
+        )
+        self.ui_text_size_buttons = self._populate_selector(
+            self.ui_text_size_row,
+            snapshot.ui_text_size_options,
+            lambda value: translate_ui(f"settings.text_sizes.{value}", default=value),
+            lambda index: self._handle_ui_text_size(snapshot.ui_text_size_options[index]),
         )
         self.teio_duration_buttons = self._populate_selector(
             self.teio_duration_row,
@@ -830,7 +991,98 @@ class StatusSettingsPanel(QWidget):
                 f"settings.mood_climate_tooltips.{value}",
                 default=MOOD_CLIMATE_TOOLTIPS.get(value, ""),
             ))
+        self._refresh_setting_tooltips(snapshot)
         self._update_responsive_layout(force=True)
+        if hasattr(self, "hover_help"):
+            self.hover_help.refresh_targets()
+
+    def _compose_noticeboard_cards(self):
+        """Reuse the existing controls inside the four illustrated paper cards."""
+        self.basic_card = self._create_group("")
+        self.race_preview_button.symbol = "race"
+        self.chorus_preview_button.symbol = "music"
+        self.basic_card_layout = QVBoxLayout(self.basic_card)
+        self.memory_card = self._create_group("")
+        self.memory_card_layout = QVBoxLayout(self.memory_card)
+        for card_layout, groups in (
+            (self.basic_card_layout, (self.runtime_group, self.timing_group)),
+            (self.memory_card_layout, (self.memory_group, self.locale_update_group)),
+        ):
+            card_layout.setContentsMargins(12, 47, 12, 12)
+            card_layout.setSpacing(6)
+            for group in groups:
+                group.embedded = True
+                group.layout().setContentsMargins(0, 0, 0, 0)
+                group.layout().setVerticalSpacing(6)
+                card_layout.addWidget(group)
+
+        for group in (self.rhythm_group, self.social_group, self.developer_group):
+            group.layout().setContentsMargins(12, 47, 12, 12)
+            group.layout().setSpacing(6)
+        self.developer_layout.setSpacing(12)
+        self.memory_settings_note.hide()
+        self.memory_album_mode_control.setToolTip(self.memory_settings_note.text())
+        # Language names need an entire card row, especially English/Japanese.
+        self.locale_update_layout.removeWidget(self.locale_label)
+        self.locale_label.hide()
+        self.locale_update_layout.removeWidget(self.ui_locale_control)
+        self.locale_update_layout.addWidget(self.ui_locale_control, 0, 0, 1, 2)
+        self.locale_update_layout.removeItem(self.update_action_row)
+        self.locale_update_layout.addLayout(self.update_action_row, 1, 0)
+        self.locale_update_layout.removeWidget(self.update_status_label)
+        self.locale_update_layout.addWidget(self.update_status_label, 1, 1)
+
+        labels = (
+            (self.world_mode_label, "globe"),
+            (self.time_scale_label, "clock"),
+            (self.display_scale_label, "display"),
+            (self.ui_text_size_label, "display"),
+            (self.care_toggle_row._text_label, "heart"),
+            (self.autonomous_sleep_toggle_row._text_label, "sleep"),
+            (self.autonomous_transformation_toggle_row._text_label, "sparkles"),
+            (self.race_frequency_label, "race"),
+            (self.chorus_frequency_label, "music"),
+            (self.mood_climate_label, "sun"),
+            (self.memory_mode_label, "camera"),
+            (self.memory_capacity_label, "album"),
+            (self.locale_label, "globe"),
+            (self.debug_toggle_row._text_label, "wrench"),
+            (self.social_status_toggle_row._text_label, "globe"),
+        )
+        for label, symbol in labels:
+            label.symbol = symbol
+        for label, character in (
+            (self.teio_social_label, "Tokai Teio"),
+            (self.tsuyoshi_social_label, "Tsurumaru Tsuyoshi"),
+        ):
+            if self.assets is not None:
+                spec = next((a for a in self.assets.avatar_specs if a.character_name == character), None)
+                if spec is not None:
+                    label.avatar = self.assets.load_avatar_pixmap(spec)
+        self.social_explanation = QLabel()
+        self.social_explanation.setProperty("tanukiRole", "settingsNotice")
+        self.social_explanation.setWordWrap(True)
+        self.social_layout.addWidget(self.social_explanation, 2, 0, 1, 2)
+        self.social_layout.setRowStretch(3, 1)
+        self._noticeboard_cards = (
+            self.basic_card, self.rhythm_group, self.social_group,
+            self.memory_card, self.developer_group,
+        )
+
+    def _position_noticeboard_surfaces(self):
+        if not hasattr(self, "settings_content_surface"):
+            return
+        self.layout().activate()
+        # Source-art coordinates relative to (90, 44, 1076, 734). Keeping the
+        # same transform as the skin prevents paper and controls from drifting.
+        sx = self.settings_shell.width() / 1076.0
+        sy = self.settings_shell.height() / 734.0
+        self.settings_tab_bar.setGeometry(0, 0, self.settings_shell.width(), round(94*sy))
+        self.settings_tab_buttons["mode"].setGeometry(round(95*sx), 0, round(388*sx), round(89*sy))
+        self.settings_tab_buttons["developer"].setGeometry(round(500*sx), round(12*sy), round(357*sx), round(77*sy))
+        self.settings_content_surface.setGeometry(
+            round(19*sx), round(132*sy), round(1034*sx), round(589*sy),
+        )
 
     def _populate_selector(self, layout, options, formatter, handler):
         while layout.count():
@@ -842,9 +1094,18 @@ class StatusSettingsPanel(QWidget):
         group.setExclusive(True)
         buttons = []
         for index, value in enumerate(options):
-            button = QPushButton(formatter(value))
+            button = NoticeboardOption(formatter(value))
             button.setCheckable(True)
             button.setProperty("tanukiRole", "settingsOption")
+            if len(options) == 1:
+                segment_position = "single"
+            elif index == 0:
+                segment_position = "first"
+            elif index == len(options) - 1:
+                segment_position = "last"
+            else:
+                segment_position = "middle"
+            button.setProperty("segmentPosition", segment_position)
             button.setProperty("compact", bool(self._compact_layout))
             button.setSizePolicy(
                 QSizePolicy.Policy.Expanding,
@@ -858,10 +1119,12 @@ class StatusSettingsPanel(QWidget):
         return buttons
 
     def resizeEvent(self, event):
+        self._position_noticeboard_surfaces()
         self._update_responsive_layout()
         super().resizeEvent(event)
 
     def showEvent(self, event):
+        self._position_noticeboard_surfaces()
         self._update_responsive_layout()
         super().showEvent(event)
         if self.binding is not None:
@@ -882,12 +1145,30 @@ class StatusSettingsPanel(QWidget):
                 parent.contentsRect().width(),
             )
         compact = available_width < COMPACT_SETTINGS_WIDTH
+        art_scale = round(max(0.82, min(1.35, available_width / 861.0)), 2)
+        scale_changed = art_scale != self._noticeboard_scale
+        available_height = self.height()
+        if parent is not None:
+            available_height = min(
+                available_height,
+                parent.contentsRect().height(),
+            )
         locale = get_ui_locale()
         single_column_threshold = (
             LOCALIZED_SINGLE_COLUMN_SETTINGS_WIDTH
             if locale in {"en_US", "ja_JP"} else
             SINGLE_COLUMN_SETTINGS_WIDTH
         )
+        single_column_threshold = round(single_column_threshold * ui_text_scale())
+        # Painted options report their true text width. Fall back to one column
+        # when translated/scaled card contents cannot fit beside each other.
+        mode_cards = (self.basic_card, self.rhythm_group, self.social_group, self.memory_card)
+        if self._active_tab_key == "mode":
+            needed_width = max(
+                mode_cards[0].minimumSizeHint().width() + mode_cards[1].minimumSizeHint().width(),
+                mode_cards[2].minimumSizeHint().width() + mode_cards[3].minimumSizeHint().width(),
+            ) + self.theme.spacing_md
+            single_column_threshold = max(single_column_threshold, needed_width)
         single_column = available_width < single_column_threshold
         if locale in {"en_US", "ja_JP"}:
             estimated_developer_width = (
@@ -912,15 +1193,22 @@ class StatusSettingsPanel(QWidget):
             and not layout_changed
             and not spacing_changed
             and not sleep_grid_changed
+            and not scale_changed
         ):
             return
         if force or layout_changed:
             self._apply_settings_grid_layout(single_column)
+        self._apply_setting_field_layout(
+            single_column and (ui_text_scale() > 1.0 or locale in {"en_US", "ja_JP"})
+        )
         if force or sleep_grid_changed:
             self._apply_sleep_control_grid(sleep_control_columns)
         self._compact_layout = compact
         self._single_column_layout = single_column
         self._sleep_control_columns = sleep_control_columns
+        if scale_changed or force:
+            self._apply_noticeboard_scale(art_scale)
+        self._update_tab_copy()
         horizontal_spacing = (
             self.theme.spacing_xs
             if compact else
@@ -951,8 +1239,9 @@ class StatusSettingsPanel(QWidget):
             self.memory_album_mode_row,
             self.memory_album_capacity_row,
             self.ui_locale_row,
+            self.ui_text_size_row,
         ):
-            selector_layout.setSpacing(horizontal_spacing)
+            selector_layout.setSpacing(0)
         for button in (
             self.world_mode_buttons
             + self.time_scale_buttons
@@ -965,10 +1254,81 @@ class StatusSettingsPanel(QWidget):
             + self.memory_album_mode_buttons
             + self.memory_album_capacity_buttons
             + self.ui_locale_buttons
+            + self.ui_text_size_buttons
         ):
             button.setProperty("compact", compact)
             button.style().unpolish(button)
             button.style().polish(button)
+
+    def _apply_noticeboard_scale(self, scale):
+        self._noticeboard_scale = scale
+        for label in self.findChildren(NoticeboardLabel):
+            label.art_scale = scale
+            label.setContentsMargins(round(28*scale), 0, 0, 0)
+            label.setStyleSheet(f"color: #59351e; font-size: {ui_font_pixels(max(12, round(14*scale)))}px; font-weight: 600;")
+            label.update()
+        for button in self.findChildren(NoticeboardOption):
+            button.art_scale = scale
+            button.setFixedHeight(max(round(30*scale), ui_font_pixels(14*scale) + 14))
+            button.updateGeometry()
+            button.update()
+        for card in self._noticeboard_cards:
+            card.art_scale = scale
+            card.layout().setContentsMargins(round(12*scale), round(47*scale*max(1.0, ui_text_scale())), round(12*scale), round(12*scale))
+            card.layout().setSpacing(round(6*scale))
+            card.update()
+        for group in (self.runtime_group, self.timing_group, self.memory_group, self.locale_update_group):
+            group.layout().setVerticalSpacing(round(6*scale))
+        for toggle in (self.care_switch, self.autonomous_sleep_switch, self.autonomous_transformation_switch, self.debug_switch, self.social_status_switch):
+            toggle.setFixedSize(round(50*scale), round(28*scale))
+        self.grid_layout.setVerticalSpacing(round(10*scale))
+
+    def refresh_ui_text_size(self):
+        if hasattr(self, "hover_help"):
+            self.hover_help.hide_help()
+            self.hover_help.refresh_style()
+        self._update_responsive_layout(force=True)
+
+    def _apply_setting_field_layout(self, stacked):
+        """Give long labels and options separate rows before shrinking text."""
+        for layout, first_row, fields in (
+            (self.runtime_layout, 0, ((self.world_mode_label, self.world_mode_control),)),
+            (self.timing_layout, 0, (
+                (self.time_scale_label, self.time_scale_control),
+                (self.display_scale_label, self.display_scale_control),
+                (self.ui_text_size_label, self.ui_text_size_control),
+            )),
+            (self.rhythm_layout, 2, (
+                (self.race_frequency_label, self.race_frequency_control),
+                (self.chorus_frequency_label, self.chorus_frequency_control),
+                (self.mood_climate_label, self.mood_climate_control),
+            )),
+            (self.social_layout, 0, (
+                (self.teio_social_label, self.teio_duration_control),
+                (self.tsuyoshi_social_label, self.tsuyoshi_duration_control),
+            )),
+            (self.memory_layout, 0, (
+                (self.memory_mode_label, self.memory_album_mode_control),
+                (self.memory_capacity_label, self.memory_album_capacity_control),
+            )),
+        ):
+            for index, (label, control) in enumerate(fields):
+                layout.removeWidget(label)
+                layout.removeWidget(control)
+                row = first_row + index * (2 if stacked else 1)
+                if stacked:
+                    layout.addWidget(label, row, 0, 1, 2)
+                    layout.addWidget(control, row + 1, 0, 1, 2)
+                else:
+                    layout.addWidget(label, row, 0)
+                    layout.addWidget(control, row, 1)
+        self.runtime_layout.removeWidget(self.care_toggle_row)
+        self.runtime_layout.addWidget(self.care_toggle_row, 2 if stacked else 1, 0, 1, 2)
+        self.social_layout.removeWidget(self.social_explanation)
+        self.social_layout.addWidget(self.social_explanation, 4 if stacked else 2, 0, 1, 2)
+        for row in range(6):
+            self.social_layout.setRowStretch(row, 0)
+        self.social_layout.setRowStretch(5 if stacked else 3, 1)
 
     def _apply_sleep_control_grid(self, columns):
         columns = max(1, int(columns))
@@ -983,39 +1343,72 @@ class StatusSettingsPanel(QWidget):
 
     def _apply_settings_grid_layout(self, single_column):
         groups = (
-            self.runtime_group,
-            self.timing_group,
-            self.social_group,
-            self.rhythm_group,
-            self.memory_group,
-            self.locale_update_group,
-            self.developer_group,
+            self.basic_card, self.rhythm_group, self.social_group,
+            self.memory_card, self.developer_group,
         )
         for group in groups:
             self.grid_layout.removeWidget(group)
+            group.hide()
+        for row in range(max(7, self.grid_layout.rowCount())):
+            self.grid_layout.setRowStretch(row, 0)
+        for column in range(max(2, self.grid_layout.columnCount())):
+            self.grid_layout.setColumnStretch(column, 0)
 
-        if single_column:
-            for row, group in enumerate(groups):
+        tab_groups = {
+            "mode": (
+                self.basic_card, self.rhythm_group,
+                self.social_group, self.memory_card,
+            ),
+            "developer": (self.developer_group,),
+        }
+        visible_groups = tab_groups[self._active_tab_key]
+
+        if single_column or self._active_tab_key == "developer":
+            for row, group in enumerate(visible_groups):
                 self.grid_layout.addWidget(group, row, 0)
             self.grid_layout.setColumnStretch(0, 1)
             self.grid_layout.setColumnStretch(1, 0)
-            return
+            self.grid_layout.setRowStretch(len(visible_groups), 1)
+        else:
+            self.grid_layout.addWidget(self.basic_card, 0, 0)
+            self.grid_layout.addWidget(self.rhythm_group, 0, 1)
+            self.grid_layout.addWidget(self.social_group, 1, 0)
+            self.grid_layout.addWidget(self.memory_card, 1, 1)
+            self.grid_layout.setColumnStretch(0, 1)
+            self.grid_layout.setColumnStretch(1, 1)
+            self.grid_layout.setRowStretch(0, 5)
+            self.grid_layout.setRowStretch(1, 4)
+            self.grid_layout.setRowStretch(2, 0)
 
-        self.grid_layout.addWidget(self.runtime_group, 0, 0)
-        self.grid_layout.addWidget(self.timing_group, 1, 0)
-        self.grid_layout.addWidget(self.social_group, 2, 0)
-        self.grid_layout.addWidget(self.rhythm_group, 3, 0)
-        self.grid_layout.addWidget(self.memory_group, 4, 0)
-        self.grid_layout.addWidget(self.locale_update_group, 5, 0)
-        self.grid_layout.addWidget(
-            self.developer_group,
-            0,
-            1,
-            6,
-            1,
-        )
-        self.grid_layout.setColumnStretch(0, 52)
-        self.grid_layout.setColumnStretch(1, 48)
+        # Adopt cards before showing them: a parentless first-show creates a
+        # temporary native window and can steal activation from the center.
+        for group in visible_groups:
+            group.show()
+
+    def _select_tab(self, tab_key):
+        if tab_key not in STATUS_TAB_ORDER:
+            return
+        self._active_tab_key = tab_key
+        button = self.settings_tab_buttons[tab_key]
+        if not button.isChecked():
+            button.setChecked(True)
+        self._update_tab_copy()
+        self._apply_settings_grid_layout(bool(self._single_column_layout))
+        self.settings_scroll.verticalScrollBar().setValue(0)
+
+    def _tab_label(self, tab_key):
+        translation_key, default = STATUS_TAB_LABEL_KEYS[tab_key]
+        return translate_ui(translation_key, default=default)
+
+    def _update_tab_copy(self):
+        for tab_key in STATUS_TAB_ORDER:
+            label = self._tab_label(tab_key)
+            button = self.settings_tab_buttons[tab_key]
+            button.setText(label)
+            button.setToolTip(label)
+            button.setAccessibleName(label)
+            button.style().unpolish(button)
+            button.style().polish(button)
 
     def _handle_debug_toggled(self, enabled):
         if self._refreshing or self.binding is None:
@@ -1037,6 +1430,18 @@ class StatusSettingsPanel(QWidget):
         if self._refreshing or self.binding is None:
             return
         self.binding.set_care_feature_enabled(enabled)
+        self.refresh_from_binding()
+
+    def _handle_autonomous_sleep_toggled(self, enabled):
+        if self._refreshing or self.binding is None:
+            return
+        self.binding.set_autonomous_sleep_enabled(enabled)
+        self.refresh_from_binding()
+
+    def _handle_autonomous_transformation_toggled(self, enabled):
+        if self._refreshing or self.binding is None:
+            return
+        self.binding.set_autonomous_transformation_enabled(enabled)
         self.refresh_from_binding()
 
     def _handle_social_status_toggled(self, enabled):
@@ -1143,6 +1548,9 @@ class StatusSettingsPanel(QWidget):
         self.update_status_label.setText(text)
 
     def retranslate_ui(self):
+        self.basic_card.setTitle(translate_ui("settings.noticeboard.basic", default="基本與畫面"))
+        self.rhythm_group.heading = translate_ui("settings.noticeboard.activity", default="自主活動")
+        self.memory_card.setTitle(translate_ui("settings.noticeboard.memory", default="回憶與系統"))
         self.unavailable_label.setText(translate_ui(
             "settings.unavailable",
             default="狀態設定尚未連接執行中的 Dashboard。",
@@ -1157,8 +1565,16 @@ class StatusSettingsPanel(QWidget):
         ))
         self.social_group.setTitle(translate_ui(
             "settings.groups.social_cooldown",
-            default="社交冷卻",
+            default="模仿魯道夫冷卻",
         ))
+        self.social_group.setToolTip(translate_ui(
+            "settings.imitation_cooldown_tooltip",
+            default=(
+                "調整帝寶與鶴寶再次模仿魯道夫前的等待時間；"
+                "不影響一般社交互動冷卻。"
+            ),
+        ))
+        self.social_explanation.setText(self.social_group.toolTip())
         self.rhythm_group.setTitle(translate_ui(
             "settings.groups.life_rhythm",
             default="生活節奏",
@@ -1171,6 +1587,7 @@ class StatusSettingsPanel(QWidget):
             "settings.groups.developer",
             default="開發工具",
         ))
+        self._update_tab_copy()
         self.world_mode_label.setText(translate_ui(
             "settings.world_mode",
             default="世界模式",
@@ -1183,6 +1600,7 @@ class StatusSettingsPanel(QWidget):
             "settings.display_scale",
             default="顯示比例",
         ))
+        self.ui_text_size_label.setText(translate_ui("settings.text_size", default="文字尺寸"))
         self.teio_social_label.setText(character_display_name("Tokai Teio"))
         self.tsuyoshi_social_label.setText(
             character_display_name("Tsurumaru Tsuyoshi")
@@ -1191,11 +1609,38 @@ class StatusSettingsPanel(QWidget):
             "settings.enable_care",
             default="啟用角色照護功能",
         )
-        self.care_toggle_row._text_label.setText(care_text)
+        self.care_toggle_row._text_label.setText(translate_ui("settings.noticeboard.care", default="角色照護"))
         self.care_switch.setAccessibleName(care_text)
         self.care_switch.setToolTip(translate_ui(
             "settings.enable_care_tooltip",
             default="允許低心情照護與相關家庭互動。",
+        ))
+        sleep_text = translate_ui(
+            "settings.enable_autonomous_sleep",
+            default="啟用自主睡眠",
+        )
+        self.autonomous_sleep_toggle_row._text_label.setText(translate_ui("settings.noticeboard.sleep", default="自主睡眠"))
+        self.autonomous_sleep_switch.setAccessibleName(sleep_text)
+        self.autonomous_sleep_switch.setToolTip(translate_ui(
+            "settings.enable_autonomous_sleep_tooltip",
+            default="關閉後不再開始新的自主睡眠；既有睡眠會正常結束。",
+        ))
+        transformation_text = translate_ui(
+            "settings.enable_autonomous_transformation",
+            default="啟用自主變身",
+        )
+        self.autonomous_transformation_toggle_row._text_label.setText(
+            translate_ui("settings.noticeboard.transformation", default="自主變身")
+        )
+        self.autonomous_transformation_switch.setAccessibleName(
+            transformation_text
+        )
+        self.autonomous_transformation_switch.setToolTip(translate_ui(
+            "settings.enable_autonomous_transformation_tooltip",
+            default=(
+                "關閉後不再開始新的自主變身；"
+                "既有變身與解除流程會正常完成。"
+            ),
         ))
         self.race_frequency_label.setText(translate_ui(
             "settings.race_frequency",
@@ -1236,6 +1681,7 @@ class StatusSettingsPanel(QWidget):
                 "既有照片不會自動刪除。"
             ),
         ))
+        self.memory_album_mode_control.setToolTip(self.memory_settings_note.text())
         debug_text = translate_ui(
             "settings.show_debug",
             default="顯示角色 Debug 資訊",
@@ -1314,6 +1760,7 @@ class StatusSettingsPanel(QWidget):
             self._sleep_control_notice_text()
         )
         self._retranslate_update_controls()
+        self._refresh_setting_tooltips()
         self._update_responsive_layout(force=True)
 
     def _retranslate_update_controls(self):
@@ -1384,6 +1831,10 @@ class StatusSettingsPanel(QWidget):
                 f"settings.mood_climates.{value}",
                 default=MOOD_CLIMATE_LABELS.get(value, str(value)),
             ))
+            button.setToolTip(translate_ui(
+                f"settings.mood_climate_tooltips.{value}",
+                default=MOOD_CLIMATE_TOOLTIPS.get(value, ""),
+            ))
         for value, button in zip(
             snapshot.memory_album_mode_options,
             self.memory_album_mode_buttons,
@@ -1396,10 +1847,6 @@ class StatusSettingsPanel(QWidget):
                     "random": "隨機拍照",
                 }.get(value, str(value)),
             ))
-            button.setToolTip(translate_ui(
-                f"settings.mood_climate_tooltips.{value}",
-                default=MOOD_CLIMATE_TOOLTIPS.get(value, ""),
-            ))
         for value, button in zip(
             snapshot.ui_locale_options,
             self.ui_locale_buttons,
@@ -1409,6 +1856,63 @@ class StatusSettingsPanel(QWidget):
                 locale=value,
                 default=str(value),
             ))
+        for value, button in zip(snapshot.ui_text_size_options, self.ui_text_size_buttons):
+            button.setText(translate_ui(f"settings.text_sizes.{value}", default=value))
+        self._refresh_setting_tooltips(snapshot)
+
+    def _refresh_setting_tooltips(self, snapshot=None):
+        """Keep descriptions on the full row and on each native hit target."""
+        for row, toggle in (
+            (self.care_toggle_row, self.care_switch),
+            (self.autonomous_sleep_toggle_row, self.autonomous_sleep_switch),
+            (self.autonomous_transformation_toggle_row, self.autonomous_transformation_switch),
+            (self.debug_toggle_row, self.debug_switch),
+            (self.social_status_toggle_row, self.social_status_switch),
+        ):
+            row.setToolTip(toggle.toolTip())
+            row._text_label.setToolTip(toggle.toolTip())
+        for label, control, buttons, key, default in (
+            (self.world_mode_label, self.world_mode_control, self.world_mode_buttons, "world_mode", "選擇世界模式；沙盒不受家庭經濟規則限制。"),
+            (self.time_scale_label, self.time_scale_control, self.time_scale_buttons, "time_scale", "調整模擬時間流速；倍速期間不計成就，也不自動拍照。"),
+            (self.display_scale_label, self.display_scale_control, self.display_scale_buttons, "display_scale", "調整角色顯示大小，不改變介面文字尺寸。"),
+            (self.ui_text_size_label, self.ui_text_size_control, self.ui_text_size_buttons, "text_size", "調整所有介面文字尺寸：小 80%、中 100%、大 150%；初次使用預設為中，角色圖片大小不變。"),
+            (self.teio_social_label, self.teio_duration_control, self.teio_duration_buttons, "imitation", self.social_group.toolTip()),
+            (self.tsuyoshi_social_label, self.tsuyoshi_duration_control, self.tsuyoshi_duration_buttons, "imitation", self.social_group.toolTip()),
+            (self.memory_capacity_label, self.memory_album_capacity_control, self.memory_album_capacity_buttons, "photo_capacity", "達到照片上限後停止拍攝；調低上限不會刪除已有照片。"),
+            (self.locale_label, self.ui_locale_control, self.ui_locale_buttons, "language", "立即切換介面語言。"),
+        ):
+            text = translate_ui(f"settings.control_tooltips.{key}", default=default)
+            label.setToolTip(text)
+            control.setToolTip(text)
+            for button in buttons:
+                button.setToolTip(text)
+        for label, control in (
+            (self.race_frequency_label, self.race_frequency_control),
+            (self.chorus_frequency_label, self.chorus_frequency_control),
+            (self.mood_climate_label, self.mood_climate_control),
+        ):
+            control.setToolTip(label.toolTip())
+        memory_text = self.memory_settings_note.text()
+        self.memory_mode_label.setToolTip(memory_text)
+        self.memory_album_mode_control.setToolTip(memory_text)
+        modes = snapshot.memory_album_mode_options if snapshot else ("off", "events", "random")
+        for value, button in zip(modes, self.memory_album_mode_buttons):
+            button.setToolTip(translate_ui(f"settings.memory_mode_tooltips.{value}", default=memory_text))
+        self.update_check_button.setToolTip(translate_ui(
+            "settings.control_tooltips.check_updates", default="手動檢查 GitHub 上是否有新版本。"
+        ))
+        self.update_open_button.setToolTip(translate_ui(
+            "settings.control_tooltips.download_update", default="開啟更新下載連結。"
+        ))
+        self.validation_button.setToolTip(translate_ui(
+            "settings.control_tooltips.validate", default="檢查設定與動畫 manifest 的有效性。"
+        ))
+
+    def _handle_ui_text_size(self, value):
+        if self._refreshing or self.binding is None:
+            return
+        self.binding.set_ui_text_size(value)
+        self.refresh_from_binding()
 
     def _handle_time_scale(self, index):
         if self.binding is None:
@@ -1696,7 +2200,18 @@ class StatusSettingsPanel(QWidget):
         if self.binding is None:
             self._reset_transformation_preview_status()
             return
-        self.refresh_from_binding()
+        snapshot = self.binding.snapshot()
+        if snapshot != self._last_settings_snapshot:
+            self.refresh_from_binding()
+            return
+        # Runtime polling must not hide/reinsert all settings cards: that emits
+        # Leave/Enter repeatedly and prevents hover descriptions from settling.
+        states = self._transformation_control_states()
+        presentation = build_transformation_control_presentation(
+            states, world_mode=snapshot.world_mode,
+        )
+        self._apply_transformation_control_presentation(presentation, states)
+        self._refresh_sleep_controls(snapshot.world_mode)
 
     def _reset_transformation_preview_status(self):
         self.transformation_preview_poll_timer.stop()
@@ -2019,17 +2534,24 @@ class StatusSettingsPanel(QWidget):
         except ValueError:
             return 0
 
-    @staticmethod
-    def _create_group(title):
-        group = QGroupBox(title)
+    def _create_group(self, title):
+        group = NoticeboardSection(title, parent=self.settings_grid)
         group.setProperty("tanukiRole", "settingsGroup")
         return group
 
     @staticmethod
+    def _create_selector_row():
+        container = NoticeboardRail()
+        container.setProperty("tanukiRole", "settingsSegmentedControl")
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(1, 1, 1, 1)
+        layout.setSpacing(0)
+        return container, layout
+
+    @staticmethod
     def _create_label(text):
-        label = QLabel(text)
+        label = NoticeboardLabel(text)
         label.setProperty("tanukiRole", "settingsLabel")
-        label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         return label
 
     @staticmethod
@@ -2038,7 +2560,7 @@ class StatusSettingsPanel(QWidget):
         layout = QHBoxLayout(row)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(DEFAULT_UI_THEME.spacing_sm)
-        label = QLabel(text)
+        label = NoticeboardLabel(text)
         label.setProperty("tanukiRole", "settingsToggleLabel")
         row._text_label = label
         layout.addWidget(label, stretch=1)

@@ -2,6 +2,10 @@ from dataclasses import dataclass
 
 from .memory_album import MEMORY_ALBUM_CAPACITIES, MEMORY_ALBUM_MODES
 from .update_runtime_controller import UpdateStatusSnapshot
+from .ui_typography import UI_TEXT_SIZE_OPTIONS
+
+
+FREQUENCY_DISPLAY_ORDER = ("disabled", "occasional", "normal", "frequent")
 
 
 @dataclass(frozen=True)
@@ -24,17 +28,11 @@ class StatusSettingsSnapshot:
     memory_album_capacity: int = 20
     memory_album_capacity_options: tuple[int, ...] = MEMORY_ALBUM_CAPACITIES
     race_frequency: str = "normal"
-    race_frequency_options: tuple[str, ...] = (
-        "frequent",
-        "normal",
-        "occasional",
-    )
+    race_frequency_options: tuple[str, ...] = FREQUENCY_DISPLAY_ORDER
     chorus_frequency: str = "normal"
-    chorus_frequency_options: tuple[str, ...] = (
-        "frequent",
-        "normal",
-        "occasional",
-    )
+    chorus_frequency_options: tuple[str, ...] = FREQUENCY_DISPLAY_ORDER
+    autonomous_sleep_enabled: bool = True
+    autonomous_transformation_enabled: bool = True
     mood_climate: str = "cheerful"
     mood_climate_options: tuple[str, ...] = (
         "cheerful",
@@ -42,6 +40,8 @@ class StatusSettingsSnapshot:
         "expressive",
     )
     ui_locale: str = "zh_TW"
+    ui_text_size: str = "medium"
+    ui_text_size_options: tuple[str, ...] = UI_TEXT_SIZE_OPTIONS
     ui_locale_options: tuple[str, ...] = (
         "zh_TW",
         "zh_CN",
@@ -56,6 +56,14 @@ class StatusSettingsSnapshot:
     update_error_message: str = ""
     update_package_ready: bool = False
     update_method: str = "standalone_updater"
+
+    def __post_init__(self):
+        # Presentation order only: persistence and callbacks still use string values.
+        rank = {value: index for index, value in enumerate(FREQUENCY_DISPLAY_ORDER)}
+        for field in ("race_frequency_options", "chorus_frequency_options"):
+            object.__setattr__(self, field, tuple(sorted(
+                getattr(self, field), key=lambda value: rank.get(value, len(rank))
+            )))
 
 
 class DashboardStatusSettingsBinding:
@@ -118,7 +126,17 @@ class DashboardStatusSettingsBinding:
                 for value in getattr(
                     self.dashboard,
                     "chorus_frequency_options",
-                    ("frequent", "normal", "occasional"),
+                    ("disabled", "frequent", "normal", "occasional"),
+                )
+            ),
+            autonomous_sleep_enabled=bool(
+                getattr(state, "autonomous_sleep_enabled", True)
+            ),
+            autonomous_transformation_enabled=bool(
+                getattr(
+                    state,
+                    "autonomous_transformation_enabled",
+                    True,
                 )
             ),
             mood_climate=str(state.mood_climate),
@@ -127,6 +145,7 @@ class DashboardStatusSettingsBinding:
                 for value in self.dashboard.mood_climate_options
             ),
             ui_locale=str(getattr(state, "ui_locale", "zh_TW")),
+            ui_text_size=str(getattr(state, "ui_text_size", "medium")),
             ui_locale_options=tuple(
                 str(value)
                 for value in getattr(
@@ -182,6 +201,12 @@ class DashboardStatusSettingsBinding:
     def set_chorus_frequency(self, value):
         self.dashboard.set_chorus_frequency(str(value))
 
+    def set_autonomous_sleep_enabled(self, enabled):
+        self.dashboard.set_autonomous_sleep_enabled(bool(enabled))
+
+    def set_autonomous_transformation_enabled(self, enabled):
+        self.dashboard.set_autonomous_transformation_enabled(bool(enabled))
+
     def set_mood_climate(self, value):
         self.dashboard.set_mood_climate(str(value))
 
@@ -193,6 +218,9 @@ class DashboardStatusSettingsBinding:
 
     def set_ui_locale(self, value):
         self.dashboard.set_ui_locale(str(value))
+
+    def set_ui_text_size(self, value):
+        self.dashboard.set_ui_text_size(str(value))
 
     def check_for_updates(self):
         return self.dashboard.check_for_updates()

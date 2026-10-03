@@ -1,7 +1,8 @@
-from PyQt6.QtCore import QSize, Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import QEvent, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QIcon
 from PyQt6.QtWidgets import (
     QAbstractItemView,
+    QApplication,
     QFrame,
     QHBoxLayout,
     QHeaderView,
@@ -23,6 +24,7 @@ from .ui_localization import (
     translate_ui,
 )
 from .ui_theme import DEFAULT_UI_THEME
+from .ui_typography import ui_font_pixels
 
 
 MOOD_BAND_COLORS = {
@@ -31,6 +33,49 @@ MOOD_BAND_COLORS = {
     "depressed": "#4f83b7",
     "unknown": "#8a938c",
 }
+
+
+class HorizontalMembersScrollArea(QScrollArea):
+    """Map ordinary wheel scrolling to the one-row family member list."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._wheel_remainder = 0.0
+
+    def route_member_wheel_events(self, card):
+        for widget in (card, *card.findChildren(QWidget)):
+            widget.installEventFilter(self)
+
+    def eventFilter(self, obj, event):
+        if (
+            event.type() == QEvent.Type.Wheel
+            and obj is not self.viewport()
+            and self.horizontalScrollBar().maximum() > 0
+        ):
+            self.wheelEvent(event)
+            return event.isAccepted()
+        return super().eventFilter(obj, event)
+
+    def wheelEvent(self, event):
+        bar = self.horizontalScrollBar()
+        if bar.maximum() <= bar.minimum():
+            super().wheelEvent(event)
+            return
+        pixels = event.pixelDelta()
+        angle = event.angleDelta()
+        if not pixels.isNull():
+            distance = pixels.x() or pixels.y()
+        elif not angle.isNull():
+            distance = (angle.x() or angle.y()) / 120.0
+            distance *= QApplication.wheelScrollLines() * bar.singleStep()
+        else:
+            event.ignore()
+            return
+        distance += self._wheel_remainder
+        steps = int(distance)
+        self._wheel_remainder = distance - steps
+        bar.setValue(bar.value() - steps)
+        event.accept()
 
 
 class ClickableSummaryFrame(QFrame):
@@ -64,7 +109,7 @@ class FamilyMemberCard(QFrame):
         self.member = member
         self.setProperty("tanukiRole", "familyMemberCard")
         self.setProperty("summoned", bool(member.summoned))
-        self.setFixedWidth(116)
+        self.setFixedWidth(ui_font_pixels(116))
         self.setMinimumHeight(194)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(7, 7, 7, 7)
@@ -89,7 +134,7 @@ class FamilyMemberCard(QFrame):
         self.name_label = QLabel(display_name)
         self.name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.name_label.setWordWrap(True)
-        self.name_label.setFixedHeight(30)
+        self.name_label.setFixedHeight(ui_font_pixels(30))
         self.name_label.setToolTip(display_name)
         self.name_label.setProperty("tanukiRole", "familyMemberName")
         layout.addWidget(self.name_label)
@@ -177,6 +222,10 @@ class FamilyMemberCard(QFrame):
         self.summon_status_label.setProperty("summoned", bool(member.summoned))
         layout.addWidget(self.summon_status_label)
         self._apply_tooltip(member)
+
+    def refresh_ui_text_size(self):
+        self.setFixedWidth(ui_font_pixels(116))
+        self.name_label.setFixedHeight(ui_font_pixels(30))
 
     def apply_live_member(self, member):
         """Update mutable labels without rebuilding the card or its layout."""
@@ -479,7 +528,7 @@ class FamilySummaryPanel(QWidget):
         members_layout.addLayout(members_header)
 
         self.members_stack = QStackedWidget()
-        self.members_scroll = QScrollArea()
+        self.members_scroll = HorizontalMembersScrollArea()
         self.members_scroll.setWidgetResizable(True)
         self.members_scroll.setFrameShape(QFrame.Shape.NoFrame)
         self.members_scroll.setVerticalScrollBarPolicy(
@@ -950,6 +999,7 @@ class FamilySummaryPanel(QWidget):
             )
             self.members_row.addWidget(card)
             self.member_cards[member.character_name] = card
+            self.members_scroll.route_member_wheel_events(card)
         self.members_row.addStretch(1)
         self.members_stack.setCurrentWidget(self.members_scroll)
 

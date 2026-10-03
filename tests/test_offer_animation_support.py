@@ -77,6 +77,51 @@ class OfferAnimationSupportTests(unittest.TestCase):
             ignore_mood_band=False,
         )
 
+    def test_direct_offer_capability_uses_manifest_context_before_legacy_table(self):
+        manager = SimpleNamespace(
+            manifest_data={"move_walk_drink-happy.gif": {}},
+            has_explicit_contextual_result_for_purposes=Mock(
+                return_value=True
+            ),
+        )
+        pet = SimpleNamespace(
+            name="Sirius Symboli",
+            mood_score=82,
+            asset_manager=manager,
+        )
+
+        available = self.build_support().direct_offer_context_available(
+            pet,
+            "honey",
+        )
+
+        self.assertTrue(available)
+        manager.has_explicit_contextual_result_for_purposes.assert_called_once_with(
+            ("move", "idle"),
+            context="offer_accept_honey",
+            mood_score=82,
+        )
+
+    def test_real_manifest_can_disable_legacy_direct_offer_candidate(self):
+        manager = SimpleNamespace(
+            manifest_data={"idle_drink-happy.gif": {}},
+            has_explicit_contextual_result_for_purposes=Mock(
+                return_value=False
+            ),
+        )
+        pet = SimpleNamespace(
+            name="Sirius Symboli",
+            mood_score=82,
+            asset_manager=manager,
+        )
+
+        self.assertFalse(
+            self.build_support().direct_offer_context_available(
+                pet,
+                "honey",
+            )
+        )
+
     def test_held_item_uses_injected_lock_and_position_callbacks(self):
         support = self.build_support()
         support.apply_scene_context_with_preferences = Mock(return_value=True)

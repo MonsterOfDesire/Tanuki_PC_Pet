@@ -860,6 +860,7 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         if visual_purpose == "idle" and not side_ready_followup_pending:
             expression_handled = self.apply_expression_idle_behavior(expression_context)
         current_visual_frames = None
+        preserve_forbidden_moods = ()
         preserve_visual_mood_score = self.mood_score
         preserve_context = expression_context if expression_handled else random_context
         should_apply_negative_afterglow = getattr(self, "should_apply_negative_afterglow_to_candidates", None)
@@ -867,7 +868,14 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             [(visual_purpose, self.current_action_tag)]
         ):
             preserve_visual_mood_score = None
-        if self.current_purpose == visual_purpose and self.current_action_tag and self.current_mood_tag:
+            preferences = getattr(self, "get_negative_afterglow_preferences", None)
+            if callable(preferences):
+                _preferred_moods, preserve_forbidden_moods = preferences()
+        if (
+            self.current_purpose == visual_purpose
+            and self.current_action_tag and self.current_mood_tag
+            and self.current_mood_tag not in preserve_forbidden_moods
+        ):
             current_visual_frames = self.asset_manager.get_specific_frames(
                 self.current_purpose,
                 self.current_action_tag,
@@ -1325,6 +1333,9 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         current_position = self.pos()
         self.drag_target_x = float(current_position.x())
         self.drag_target_y = float(current_position.y())
+        self.drag_target_screen_rect = DesktopGeometry.get_drag_target_screen_rect(
+            global_point.x(), global_point.y(),
+        )
         self.drag_motion_samples = append_drag_motion_sample(
             (),
             timestamp=time.perf_counter(),
@@ -1353,6 +1364,7 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             timer.stop()
         self.drag_follow_active = False
         self.drag_follow_last_at = 0.0
+        self.drag_target_screen_rect = None
         if reset_velocity:
             self.drag_follow_velocity_x = 0.0
             self.drag_follow_velocity_y = 0.0
@@ -1379,10 +1391,11 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             velocity_y=self.drag_follow_velocity_y,
             elapsed_seconds=elapsed,
         )
-        clamped_x, clamped_y = DesktopGeometry.clamp_drag_position(
+        clamped_x, clamped_y = DesktopGeometry.clamp_drag_follow_position(
             self,
             round(step.x),
             round(step.y),
+            target_screen_rect=getattr(self, "drag_target_screen_rect", None),
         )
         if clamped_x != round(step.x):
             self.drag_follow_velocity_x = 0.0
@@ -1392,8 +1405,8 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             self.drag_follow_velocity_y = 0.0
         else:
             self.drag_follow_velocity_y = step.velocity_y
-        self.drag_follow_x = float(clamped_x)
-        self.drag_follow_y = float(clamped_y)
+        self.drag_follow_x = step.x if clamped_x == round(step.x) else float(clamped_x)
+        self.drag_follow_y = step.y if clamped_y == round(step.y) else float(clamped_y)
         self.drag_follow_last_at = now
         self.move(clamped_x, clamped_y)
         self.refresh_movement_state()
@@ -1486,10 +1499,15 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         if self.drag_press_pending or self.dragging:
             global_point = event.globalPosition().toPoint()
             target_pos = global_point - self.drag_pos
+            self.drag_target_screen_rect = DesktopGeometry.get_drag_target_screen_rect(
+                global_point.x(), global_point.y(),
+                previous_screen_rect=getattr(self, "drag_target_screen_rect", None),
+            )
             clamped_x, clamped_y = DesktopGeometry.clamp_drag_position(
                 self,
                 target_pos.x(),
                 target_pos.y(),
+                target_screen_rect=self.drag_target_screen_rect,
             )
             self.drag_target_x = float(clamped_x)
             self.drag_target_y = float(clamped_y)

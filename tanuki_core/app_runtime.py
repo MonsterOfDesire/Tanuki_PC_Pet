@@ -201,6 +201,15 @@ class TanukiAppRuntime(
                 world_mode_provider=(
                     lambda: str(self.settings_provider.world_mode or "")
                 ),
+                autonomous_enabled_provider=(
+                    lambda: bool(
+                        getattr(
+                            self.settings_provider,
+                            "autonomous_transformation_enabled",
+                            True,
+                        )
+                    )
+                ),
                 household_pressure_provider=(
                     lambda: float(self.household.household_pressure)
                 ),
@@ -259,6 +268,15 @@ class TanukiAppRuntime(
                         self.settings_provider,
                         "chorus_frequency",
                         "normal",
+                    )
+                ),
+                autonomous_sleep_enabled_provider=(
+                    lambda: bool(
+                        getattr(
+                            self.settings_provider,
+                            "autonomous_sleep_enabled",
+                            True,
+                        )
                     )
                 ),
                 achievement_runtime_coordinator=(

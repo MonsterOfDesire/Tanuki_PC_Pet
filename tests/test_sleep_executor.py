@@ -162,6 +162,52 @@ class SleepExecutorTests(unittest.TestCase):
         self.executor, self.coordinator = build_executor()
         self.pet = FakePet("Air Groove")
 
+    def test_disabled_autonomous_sleep_does_not_schedule_and_reenable_starts_fresh_wait(self):
+        enabled = [False]
+        self.executor.autonomous_enabled_provider = lambda: enabled[0]
+
+        self.assertEqual(self.update(1000.0), ())
+        self.assertEqual(self.executor.schedules, {})
+
+        enabled[0] = True
+        self.assertEqual(self.update(1010.0), ())
+        self.assertGreater(
+            self.executor.schedules[self.pet.name].next_proposal_at,
+            1010.0,
+        )
+
+    def test_manual_sleep_control_remains_available_when_autonomous_sleep_is_disabled(self):
+        self.executor.autonomous_enabled_provider = lambda: False
+
+        result = self.executor.request_sandbox_toggle(
+            self.pet,
+            now=10.0,
+            world_mode="sandbox",
+            pets=(self.pet,),
+        )
+
+        self.assertTrue(result.started)
+
+    def test_disabling_autonomous_sleep_does_not_force_active_sleeper_awake(self):
+        started = self.executor.request_sandbox_toggle(
+            self.pet,
+            now=10.0,
+            world_mode="sandbox",
+            pets=(self.pet,),
+        )
+        self.assertTrue(started.started)
+        self.executor.autonomous_enabled_provider = lambda: False
+
+        sleeping = self.update(13.0)[0]
+        self.assertTrue(sleeping.phase_changed)
+        self.assertEqual(self.pet.activity_state.phase, SLEEPING_PHASE)
+        self.assertTrue(self.pet.activity_state.active)
+
+        self.update(58.0)
+        finished = self.update(61.0)[0]
+        self.assertTrue(finished.finished)
+        self.assertFalse(self.pet.activity_state.active)
+
     def update(self, now, pets=None, world_mode="sandbox"):
         return self.executor.update(
             now=now,

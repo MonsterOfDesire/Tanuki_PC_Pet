@@ -1071,6 +1071,7 @@ class PetWidgetRuntimeTests(unittest.TestCase):
         pet.drag_follow_active = True
         pet.drag_follow_velocity_x = 800.0
         pet.drag_follow_velocity_y = -400.0
+        pet.drag_target_screen_rect = object()
         event = FakeMouseEvent(200, 100)
 
         with patch(
@@ -1086,6 +1087,7 @@ class PetWidgetRuntimeTests(unittest.TestCase):
         self.assertGreater(pet.throw_velocity_x, 0.0)
         self.assertLess(pet.vy, 0.0)
         self.assertFalse(pet.drag_follow_active)
+        self.assertIsNone(pet.drag_target_screen_rect)
 
     def test_hold_threshold_starts_drag_and_uses_drag_interrupt(self):
         pet = FakePetForPointerInteraction(activity_locked=True)

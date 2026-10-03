@@ -19,6 +19,32 @@ from tanuki_core.shared_food_profiles import (
 
 
 class ItemSceneCoordinatorTests(unittest.TestCase):
+    def test_honey_guardian_stay_only_owns_guardian_and_preserves_released_child(self):
+        guardian = SimpleNamespace(
+            name="Sirius Symboli", offer_scene_kind="honey_guard", offer_locked_until=15.0,
+        )
+        child = SimpleNamespace(
+            name="Tsurumaru Tsuyoshi", offer_scene_kind="held_item", offer_locked_until=25.0,
+        )
+        pets = {guardian.name: guardian, child.name: child}
+        scene = ActiveItemScene(
+            item_kind="honey", scene_kind="honey_guard", stage="snatch",
+            actor_name=guardian.name, target_name=child.name,
+        )
+        coordinator = ItemSceneCoordinator()
+        self.assertEqual(coordinator.get_participants(scene), (guardian.name, child.name))
+        scene.stage = "guardian_stay"
+        self.assertEqual(coordinator.get_participants(scene), (guardian.name,))
+        runtime = SimpleNamespace(offer_scene=scene)
+        find = lambda name, visible_only=False: pets.get(name)
+        self.assertFalse(coordinator.cancel_scenes_for_pet(
+            runtime, pet_name=child.name, find_pet_by_name=find,
+        ))
+        self.assertTrue(coordinator.clear_scene(runtime, find_pet_by_name=find))
+        self.assertEqual(guardian.offer_scene_kind, "none")
+        self.assertEqual(child.offer_scene_kind, "held_item")
+        self.assertEqual(child.offer_locked_until, 25.0)
+
     def test_start_scene_sets_runtime_offer_scene(self):
         runtime = SimpleNamespace(offer_scene=None)
         coordinator = ItemSceneCoordinator(

@@ -7,7 +7,7 @@ from .information_center_state import (
 from .settings_provider import RuntimeSettings
 
 
-CONFIG_SCHEMA_VERSION = 11
+CONFIG_SCHEMA_VERSION = 12
 
 DEFAULT_INFORMATION_CENTER_STATE = information_center_config_state_to_payload(
     InformationCenterConfigState()
@@ -24,8 +24,11 @@ DEFAULT_DASHBOARD_STATE = {
     "social_status_enabled": False,
     "race_frequency": "normal",
     "chorus_frequency": "normal",
+    "autonomous_sleep_enabled": True,
+    "autonomous_transformation_enabled": True,
     "mood_climate": "cheerful",
     "ui_locale": RuntimeSettings.UI_LOCALE_OPTIONS[0],
+    "ui_text_size": "medium",
     "achievement_capture_enabled": False,
     "memory_album_mode": "off",
     "memory_album_capacity": 20,
@@ -194,6 +197,15 @@ def migrate_config_state(raw):
             migrated["dashboard"] = dashboard
         schema_version = 11
 
+    if schema_version < 12:
+        dashboard = migrated.get("dashboard", {})
+        if isinstance(dashboard, dict):
+            dashboard = dict(dashboard)
+            dashboard.setdefault("autonomous_sleep_enabled", True)
+            dashboard.setdefault("autonomous_transformation_enabled", True)
+            migrated["dashboard"] = dashboard
+        schema_version = 12
+
     migrated["schema_version"] = CONFIG_SCHEMA_VERSION
     if original_schema_version != CONFIG_SCHEMA_VERSION:
         warnings.append(f"config schema {original_schema_version} 已升級到 {CONFIG_SCHEMA_VERSION}")
@@ -263,6 +275,20 @@ def normalize_config_state(raw):
                 in RuntimeSettings.CHORUS_FREQUENCY_OPTIONS
                 else DEFAULT_DASHBOARD_STATE["chorus_frequency"]
             ),
+            "autonomous_sleep_enabled": bool(
+                dashboard.get(
+                    "autonomous_sleep_enabled",
+                    DEFAULT_DASHBOARD_STATE["autonomous_sleep_enabled"],
+                )
+            ),
+            "autonomous_transformation_enabled": bool(
+                dashboard.get(
+                    "autonomous_transformation_enabled",
+                    DEFAULT_DASHBOARD_STATE[
+                        "autonomous_transformation_enabled"
+                    ],
+                )
+            ),
             "mood_climate": (
                 dashboard.get(
                     "mood_climate",
@@ -288,6 +314,11 @@ def normalize_config_state(raw):
                         "achievement_capture_enabled"
                     ],
                 )
+            ),
+            "ui_text_size": (
+                dashboard.get("ui_text_size", "medium")
+                if dashboard.get("ui_text_size") in RuntimeSettings.UI_TEXT_SIZE_OPTIONS
+                else "medium"
             ),
             "memory_album_mode": (
                 dashboard.get("memory_album_mode", "off")

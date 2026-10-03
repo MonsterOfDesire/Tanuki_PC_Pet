@@ -113,6 +113,12 @@ class ChorusExecutor:
             return ()
         world_mode = str(world_mode or "")
         frequency_key = self._frequency_key()
+        if frequency_key == "disabled":
+            self.schedule.world_mode = world_mode
+            self.schedule.frequency_key = frequency_key
+            self.schedule.next_proposal_at = 0.0
+            self.schedule.last_wait_reason = "autonomous_disabled"
+            return ()
         if self.schedule.world_mode and self.schedule.world_mode != world_mode:
             self.schedule.next_proposal_at = 0.0
         self.schedule.world_mode = world_mode
@@ -849,6 +855,12 @@ class ChorusExecutor:
             if pet is not None and self._pet_is_visible(pet):
                 self._restore_ambient(pet)
         self.schedule.last_finished_at = float(now)
+        if self._frequency_key() == "disabled":
+            self.schedule.frequency_key = "disabled"
+            self.schedule.next_proposal_at = 0.0
+            self.schedule.last_wait_reason = "autonomous_disabled"
+            self.session = None
+            return
         policy = self._schedule_policy()
         self.schedule.next_proposal_at = float(now) + self._sample(
             policy.cooldown_min_seconds,
@@ -961,7 +973,13 @@ class ChorusExecutor:
             frequency_key = self.frequency_provider()
         except Exception:
             frequency_key = "normal"
-        return str(frequency_key or "normal")
+        frequency_key = str(frequency_key or "normal")
+        return frequency_key if frequency_key in {
+            "disabled",
+            "frequent",
+            "normal",
+            "occasional",
+        } else "normal"
 
     def _sample(self, minimum: float, maximum: float) -> float:
         return max(

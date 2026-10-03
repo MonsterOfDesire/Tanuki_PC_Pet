@@ -17,6 +17,7 @@ from tanuki_core.ui_skin_spec import (
     SKIN_STATUS_SETTINGS,
 )
 from tanuki_core.ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
+from tanuki_core.ui_typography import ui_text_scale
 
 
 class SkinnedWindowFrameTests(unittest.TestCase):
@@ -189,10 +190,10 @@ class SkinnedWindowFrameTests(unittest.TestCase):
         self.assertIn('pageAccent="family_status"', stylesheet)
         self.assertIn('pageAccent="status_settings"', stylesheet)
         self.assertIn('QLabel[tanukiRole="relationLegend"]', stylesheet)
-        self.assertIn("font-size: 17px;", stylesheet)
+        self.assertIn(f"font-size: {17 * ui_text_scale():g}px;", stylesheet)
         self.assertIn('QLabel[tanukiRole="relationFormula"]', stylesheet)
         self.assertIn("color: #17120f;", stylesheet)
-        self.assertIn("font-size: 12px;", stylesheet)
+        self.assertIn(f"font-size: {12 * ui_text_scale():g}px;", stylesheet)
         self.assertIn("font-weight: 800;", stylesheet)
         self.assertIn('surfaceRole="chalkboard"', stylesheet)
 

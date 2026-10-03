@@ -19,6 +19,7 @@ from tanuki_core.event_log_ui import EventLogPanel
 from tanuki_core.information_center_spec import PAGE_EVENT_LOG
 from tanuki_core.ui_icons import METRIC_COLORS, create_metric_icon
 from tanuki_core.ui_localization import set_ui_locale
+from tanuki_core.ui_typography import ui_font_pixels
 
 
 def _pixmap_contains_color(pixmap, expected_color):
@@ -144,7 +145,7 @@ class EventLogPanelTests(unittest.TestCase):
         self.assertLessEqual(self.panel.participant_combo.maximumWidth(), 104)
         self.assertEqual(self.panel.event_table.rowCount(), 2)
         self.assertTrue(self.panel.event_table.showGrid())
-        self.assertEqual(self.panel.event_table.rowHeight(0), 48)
+        self.assertEqual(self.panel.event_table.rowHeight(0), ui_font_pixels(48))
         self.assertFalse(self.panel.filter_buttons["social"].icon().isNull())
         self.assertFalse(
             self.panel.event_table.item(0, self.panel.CHANNEL_COLUMN).icon().isNull()

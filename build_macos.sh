@@ -36,7 +36,11 @@ esac
 
 required_paths=(
   "$repo_root/lab_2.py"
-  "$repo_root/luna.ico"
+  "$repo_root/UI/side.png"
+  "$repo_root/UI/memory_album.png"
+  "$repo_root/UI/memory_album_char.gif"
+  "$repo_root/UI/memory_album_parner1.gif"
+  "$repo_root/UI/memory_album_parner2.gif"
   "$repo_root/assets_cropped"
   "$repo_root/items"
   "$repo_root/UI/locales"
@@ -56,7 +60,7 @@ rm -rf "$build_root" "$dist_root/TanukiPet" "$dist_root/TanukiPet.app"
 mkdir -p "$build_root" "$dist_root"
 
 "$python_exe" "$repo_root/tools/create_macos_iconset.py" \
-  "$repo_root/luna.ico" "$iconset_path"
+  "$repo_root/UI/side.png" "$iconset_path"
 iconutil --convert icns --output "$icon_path" "$iconset_path"
 
 "$python_exe" -m PyInstaller \

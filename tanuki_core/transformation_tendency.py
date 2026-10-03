@@ -215,7 +215,10 @@ def entry_is_positive_teio_tsuyoshi_interaction(entry) -> bool:
 
 
 class TransformationTendencyCoordinator:
-    def __init__(self):
+    def __init__(self, autonomous_enabled_provider=None):
+        self.autonomous_enabled_provider = (
+            autonomous_enabled_provider or (lambda: True)
+        )
         self._processed_entry_sequences: set[int] = set()
         self._ambient_attempt_serials: dict[str, int] = {}
         self._live_signal_attempt_serials: dict[
@@ -429,6 +432,19 @@ class TransformationTendencyCoordinator:
         now: float,
         strength: float = 1.0,
     ) -> TransformationTendencyApplyResult:
+        try:
+            autonomous_enabled = bool(
+                self.autonomous_enabled_provider()
+            )
+        except Exception:
+            autonomous_enabled = True
+        if not autonomous_enabled:
+            return TransformationTendencyApplyResult(
+                False,
+                "autonomous_disabled",
+                character_name=character_name,
+                signal_kind=signal_kind,
+            )
         pet = self._pet_by_name(pets, character_name)
         if pet is None:
             return TransformationTendencyApplyResult(

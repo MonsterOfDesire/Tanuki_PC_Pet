@@ -63,6 +63,7 @@ class DashboardLauncherPanelTests(unittest.TestCase):
         cls.app = QApplication.instance() or QApplication([])
 
     def setUp(self):
+        set_ui_locale("zh_TW")
         self.binding = FakeLauncherBinding()
         self.panel = DashboardLauncherPanel(
             self.binding,
@@ -73,6 +74,7 @@ class DashboardLauncherPanelTests(unittest.TestCase):
         self.app.processEvents()
 
     def tearDown(self):
+        set_ui_locale("zh_TW")
         self.panel.close()
         self.panel.deleteLater()
         self.app.processEvents()
@@ -174,8 +176,25 @@ class DashboardLauncherPanelTests(unittest.TestCase):
         self.panel.expand_button.click()
 
         self.assertTrue(self.panel.is_expanded)
-        self.assertEqual(self.panel.width(), EXPANDED_LAUNCHER_WIDTH)
+        self.assertEqual(self.panel.width(), self.panel.expanded_width)
         self.assertEqual(states, [False, True])
+
+    def test_translated_sidebar_grows_for_english_and_japanese_labels(self):
+        widths = {}
+        for locale in ("zh_TW", "zh_CN", "ja_JP", "en_US"):
+            set_ui_locale(locale)
+            self.panel.retranslate_ui()
+            self.app.processEvents()
+            widths[locale] = self.panel.expanded_width
+            self.assertGreaterEqual(
+                self.panel.title_label.width(),
+                self.panel.title_label.sizeHint().width(),
+            )
+
+        self.assertGreaterEqual(widths["zh_TW"], EXPANDED_LAUNCHER_WIDTH)
+        self.assertEqual(widths["zh_CN"], widths["zh_TW"])
+        self.assertGreater(widths["ja_JP"], EXPANDED_LAUNCHER_WIDTH)
+        self.assertGreater(widths["en_US"], EXPANDED_LAUNCHER_WIDTH)
 
     def test_pin_control_is_distinct_from_manual_collapse(self):
         states = []
@@ -231,7 +250,7 @@ class DashboardLauncherPanelTests(unittest.TestCase):
             self.panel.collapsed_manual_camera_button.property("primary")
         )
 
-    def test_manual_camera_disabled_reason_is_visible_in_tooltip(self):
+    def test_manual_camera_runtime_block_stays_clickable_and_explains_reason(self):
         self.binding.value = DashboardLauncherSnapshot(
             world_mode_key="sandbox",
             world_mode_label="沙盒",
@@ -244,10 +263,36 @@ class DashboardLauncherPanelTests(unittest.TestCase):
 
         self.panel.refresh_from_binding()
 
+        self.assertTrue(self.panel.manual_camera_button.isEnabled())
+        self.assertTrue(self.panel.collapsed_manual_camera_button.isEnabled())
         self.assertIn("1x", self.panel.manual_camera_button.toolTip())
         self.assertEqual(
             self.panel.manual_camera_button.toolTip(),
             self.panel.collapsed_manual_camera_button.toolTip(),
+        )
+        self.panel.manual_camera_button.click()
+        self.assertEqual(self.binding.calls[-1], ("manual_camera",))
+
+        self.binding.value = DashboardLauncherSnapshot(
+            world_mode_key="sandbox",
+            world_mode_label="沙盒",
+            time_scale_label="1x",
+            care_enabled=True,
+            care_label="照護中",
+            manual_camera_available=False,
+            manual_camera_reason="full",
+        )
+        self.panel.refresh_from_binding()
+
+        self.assertTrue(self.panel.manual_camera_button.isEnabled())
+        self.assertIn("已滿", self.panel.manual_camera_button.toolTip())
+        self.assertEqual(
+            self.panel.manual_camera_button.property("cameraState"),
+            "full",
+        )
+        self.assertEqual(
+            self.panel.collapsed_manual_camera_button.property("cameraState"),
+            "full",
         )
 
     def test_manual_camera_entry_fits_both_minimum_height_layouts(self):
@@ -479,6 +524,14 @@ class DashboardLauncherPanelTests(unittest.TestCase):
             self.app.processEvents()
 
             self.assertEqual(dashboard.ui_locale, "ja_JP")
+            self.assertEqual(
+                dashboard.width(),
+                dashboard.launcher_panel.expanded_width,
+            )
+            self.assertGreater(
+                dashboard.width(),
+                EXPANDED_LAUNCHER_WIDTH,
+            )
             self.assertEqual(
                 dashboard.information_center_window.windowTitle(),
                 "たぬき情報センター — 状態設定",

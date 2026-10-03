@@ -184,6 +184,9 @@ class OfferItemSceneAppAdapterMixin:
             pet_can_interact_with_offer_item=dynamic(
                 "pet_can_interact_with_offer_item"
             ),
+            direct_offer_context_available=dynamic(
+                "direct_offer_context_available"
+            ),
             find_offer_drop_target=dynamic("find_offer_drop_target"),
             find_offer_hover_target=dynamic("find_offer_hover_target"),
             apply_offer_negative_afterglow=direct(
@@ -381,6 +384,7 @@ _ANIMATION_FORWARDERS = {
         "pet_is_busy_for_offer_interaction"
     ),
     "pet_can_interact_with_offer_item": "pet_can_interact_with_offer_item",
+    "direct_offer_context_available": "direct_offer_context_available",
     "find_offer_drop_target": "find_offer_drop_target",
     "find_offer_hover_target": "find_offer_hover_target",
     "get_offer_reference_frame": "get_offer_reference_frame",

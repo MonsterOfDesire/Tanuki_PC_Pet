@@ -151,6 +151,20 @@ class FakeStatusSettingsBinding:
         self.calls.append(("chorus_frequency", value))
         self.state = replace(self.state, chorus_frequency=value)
 
+    def set_autonomous_sleep_enabled(self, enabled):
+        self.calls.append(("autonomous_sleep", enabled))
+        self.state = replace(
+            self.state,
+            autonomous_sleep_enabled=bool(enabled),
+        )
+
+    def set_autonomous_transformation_enabled(self, enabled):
+        self.calls.append(("autonomous_transformation", enabled))
+        self.state = replace(
+            self.state,
+            autonomous_transformation_enabled=bool(enabled),
+        )
+
     def set_mood_climate(self, value):
         self.calls.append(("mood_climate", value))
         self.state = replace(self.state, mood_climate=value)
@@ -166,6 +180,12 @@ class FakeStatusSettingsBinding:
     def set_ui_locale(self, value):
         self.calls.append(("ui_locale", value))
         self.state = replace(self.state, ui_locale=value)
+
+    def set_ui_text_size(self, value):
+        from tanuki_core.ui_typography import set_ui_text_size
+        self.calls.append(("ui_text_size", value))
+        self.state = replace(self.state, ui_text_size=value)
+        set_ui_text_size(value)
 
     def check_for_updates(self):
         self.calls.append(("check_updates",))
@@ -256,8 +276,8 @@ class FakeDashboardForBinding:
         self.display_scale_options = [1.0, 1.5, 2.0, 3.0]
         self.teio_dur_list = [2, 5, 10, 20, 30]
         self.tsuyoshi_dur_list = [2, 10, 20, 40, 60]
-        self.race_frequency_options = ["frequent", "normal", "occasional"]
-        self.chorus_frequency_options = ["frequent", "normal", "occasional"]
+        self.race_frequency_options = ["disabled", "frequent", "normal", "occasional"]
+        self.chorus_frequency_options = ["disabled", "frequent", "normal", "occasional"]
         self.mood_climate_options = ["cheerful", "balanced", "expressive"]
         self.calls = []
 
@@ -273,6 +293,8 @@ class FakeDashboardForBinding:
             tsuyoshi_dur_idx=4,
             race_frequency="normal",
             chorus_frequency="normal",
+            autonomous_sleep_enabled=True,
+            autonomous_transformation_enabled=True,
             mood_climate="cheerful",
             memory_album_mode="events",
             memory_album_capacity=50,
@@ -304,6 +326,12 @@ class FakeDashboardForBinding:
 
     def set_chorus_frequency(self, value):
         self.calls.append(("chorus_frequency", value))
+
+    def set_autonomous_sleep_enabled(self, value):
+        self.calls.append(("autonomous_sleep", value))
+
+    def set_autonomous_transformation_enabled(self, value):
+        self.calls.append(("autonomous_transformation", value))
 
     def set_mood_climate(self, value):
         self.calls.append(("mood_climate", value))
@@ -382,6 +410,9 @@ class StatusSettingsPanelTests(unittest.TestCase):
         self.app.processEvents()
 
     def test_panel_reflects_snapshot_selection(self):
+        self.assertEqual(self.panel._active_tab_key, "mode")
+        self.assertTrue(self.panel.settings_tab_buttons["mode"].isChecked())
+        self.assertEqual(len(self.panel.settings_tab_buttons), 2)
         self.assertTrue(self.panel.world_mode_buttons[0].isChecked())
         self.assertIsInstance(self.panel.care_switch, ToggleSwitch)
         self.assertIsInstance(self.panel.debug_switch, ToggleSwitch)
@@ -392,12 +423,38 @@ class StatusSettingsPanelTests(unittest.TestCase):
         self.assertTrue(self.panel.care_switch.isChecked())
         self.assertFalse(self.panel.debug_switch.isChecked())
         self.assertFalse(self.panel.social_status_switch.isChecked())
+        self.assertTrue(self.panel.autonomous_sleep_switch.isChecked())
+        self.assertTrue(
+            self.panel.autonomous_transformation_switch.isChecked()
+        )
+        self.assertEqual(len(self.panel.mood_climate_buttons), 3)
         self.assertEqual(self.panel.findChildren(QCheckBox), [])
         self.assertTrue(self.panel.display_scale_buttons[1].isChecked())
         self.assertTrue(self.panel.teio_duration_buttons[2].isChecked())
         self.assertTrue(self.panel.tsuyoshi_duration_buttons[3].isChecked())
         self.assertTrue(self.panel.memory_album_mode_buttons[0].isChecked())
         self.assertTrue(self.panel.memory_album_capacity_buttons[0].isChecked())
+
+    def test_option_rows_use_shared_segmented_control_styling(self):
+        self.assertEqual(
+            self.panel.world_mode_control.property("tanukiRole"),
+            "settingsSegmentedControl",
+        )
+        self.assertEqual(self.panel.world_mode_row.spacing(), 0)
+        self.assertEqual(
+            [
+                button.property("segmentPosition")
+                for button in self.panel.world_mode_buttons
+            ],
+            ["first", "last"],
+        )
+        self.assertEqual(
+            [
+                button.property("segmentPosition")
+                for button in self.panel.race_frequency_buttons
+            ],
+            ["first", "middle", "middle", "last"],
+        )
 
     def test_language_selector_updates_resource_backed_controls(self):
         self.panel.ui_locale_buttons[3].click()
@@ -491,7 +548,7 @@ class StatusSettingsPanelTests(unittest.TestCase):
         self.assertIn("60%", tooltips[1])
         self.assertIn("90%", tooltips[2])
 
-    def test_social_cooldown_uses_localized_character_names(self):
+    def test_rudolf_imitation_cooldown_uses_localized_character_names(self):
         visible_labels = {
             label.text()
             for label in self.panel.findChildren(QLabel)
@@ -535,11 +592,8 @@ class StatusSettingsPanelTests(unittest.TestCase):
                 )
             )
         )
-        for group, button_rows in (
-            (
-                compact_panel.runtime_group,
-                (compact_panel.world_mode_buttons,),
-            ),
+        mode_groups = (
+            (compact_panel.runtime_group, (compact_panel.world_mode_buttons,)),
             (
                 compact_panel.timing_group,
                 (
@@ -569,7 +623,8 @@ class StatusSettingsPanelTests(unittest.TestCase):
                     compact_panel.memory_album_capacity_buttons,
                 ),
             ),
-        ):
+        )
+        for group, button_rows in mode_groups:
             for buttons in button_rows:
                 geometries = []
                 for button in buttons:
@@ -591,7 +646,7 @@ class StatusSettingsPanelTests(unittest.TestCase):
         compact_panel.deleteLater()
         host.deleteLater()
 
-    def test_wide_layout_stacks_settings_beside_full_height_developer_tools(self):
+    def test_wide_mode_tab_uses_balanced_two_column_cards(self):
         host = QWidget()
         host.setFixedSize(988, 383)
         wide_panel = StatusSettingsPanel(self.binding, parent=host)
@@ -601,13 +656,10 @@ class StatusSettingsPanelTests(unittest.TestCase):
 
         self.assertFalse(wide_panel._single_column_layout)
         expected_positions = {
-            wide_panel.runtime_group: (0, 0, 1, 1),
-            wide_panel.timing_group: (1, 0, 1, 1),
-            wide_panel.social_group: (2, 0, 1, 1),
-            wide_panel.rhythm_group: (3, 0, 1, 1),
-            wide_panel.memory_group: (4, 0, 1, 1),
-            wide_panel.locale_update_group: (5, 0, 1, 1),
-            wide_panel.developer_group: (0, 1, 6, 1),
+            wide_panel.basic_card: (0, 0, 1, 1),
+            wide_panel.rhythm_group: (0, 1, 1, 1),
+            wide_panel.social_group: (1, 0, 1, 1),
+            wide_panel.memory_card: (1, 1, 1, 1),
         }
         actual_positions = {}
         for index in range(wide_panel.grid_layout.count()):
@@ -619,10 +671,8 @@ class StatusSettingsPanelTests(unittest.TestCase):
                 )
 
         self.assertEqual(actual_positions, expected_positions)
-        self.assertGreater(
-            wide_panel.developer_group.height(),
-            wide_panel.social_group.height(),
-        )
+        self.assertTrue(wide_panel.social_group.isVisible())
+        self.assertFalse(wide_panel.developer_group.isVisible())
         self.assertEqual(
             wide_panel.settings_scroll.horizontalScrollBar().maximum(),
             0,
@@ -644,6 +694,8 @@ class StatusSettingsPanelTests(unittest.TestCase):
                 self.app.processEvents()
 
                 self.assertTrue(panel._single_column_layout)
+                panel._select_tab("developer")
+                self.app.processEvents()
                 self.assertEqual(
                     panel.settings_scroll.horizontalScrollBar().maximum(),
                     0,
@@ -665,6 +717,39 @@ class StatusSettingsPanelTests(unittest.TestCase):
                 host.close()
                 panel.deleteLater()
                 host.deleteLater()
+
+    def test_tab_navigation_separates_mode_and_developer_tools(self):
+        self.panel._select_tab("developer")
+        self.app.processEvents()
+
+        self.assertEqual(
+            self.panel._active_tab_key,
+            "developer",
+        )
+        self.assertTrue(
+            self.panel.settings_tab_buttons["developer"].isChecked()
+        )
+        self.assertTrue(self.panel.developer_group.isVisible())
+        self.assertFalse(self.panel.runtime_group.isVisible())
+        self.assertFalse(self.panel.memory_group.isVisible())
+
+    def test_compact_layout_keeps_two_named_tabs_visible(self):
+        host = QWidget()
+        host.setFixedSize(600, 260)
+        panel = StatusSettingsPanel(self.binding, parent=host)
+        panel.setGeometry(host.rect())
+        host.show()
+        self.app.processEvents()
+
+        self.assertEqual(panel.settings_tab_buttons["mode"].text(), "模式設定")
+        self.assertEqual(
+            panel.settings_tab_buttons["developer"].toolTip(),
+            "開發工具",
+        )
+
+        host.close()
+        panel.deleteLater()
+        host.deleteLater()
 
     def test_simplified_chinese_keeps_regular_two_column_layout(self):
         binding = FakeStatusSettingsBinding()
@@ -705,10 +790,12 @@ class StatusSettingsPanelTests(unittest.TestCase):
         self.panel.tsuyoshi_duration_buttons[1].click()
         self.panel.world_mode_buttons[1].click()
         self.panel.care_switch.click()
+        self.panel.autonomous_sleep_switch.click()
+        self.panel.autonomous_transformation_switch.click()
         self.panel.debug_switch.click()
         self.panel.social_status_switch.click()
-        self.panel.race_frequency_buttons[0].click()
-        self.panel.chorus_frequency_buttons[2].click()
+        self.panel.race_frequency_buttons[3].click()
+        self.panel.chorus_frequency_buttons[1].click()
         self.panel.mood_climate_buttons[2].click()
         self.panel.memory_album_mode_buttons[2].click()
         self.panel.memory_album_capacity_buttons[1].click()
@@ -722,6 +809,8 @@ class StatusSettingsPanelTests(unittest.TestCase):
                 ("tsuyoshi", 1),
                 ("world_mode", "sandbox"),
                 ("care", False),
+                ("autonomous_sleep", False),
+                ("autonomous_transformation", False),
                 ("debug", True),
                 ("social_status", True),
                 ("race_frequency", "frequent"),
@@ -731,6 +820,32 @@ class StatusSettingsPanelTests(unittest.TestCase):
                 ("memory_album_capacity", 50),
             ],
         )
+
+    def test_frequency_display_order_and_value_callbacks_are_stable_across_locales(self):
+        order = ("disabled", "occasional", "normal", "frequent")
+        legacy_order = ("disabled", "frequent", "normal", "occasional")
+        for locale in ("zh_TW", "zh_CN", "ja_JP", "en_US"):
+            with self.subTest(locale=locale):
+                self.binding.state = replace(
+                    self.binding.state, ui_locale=locale,
+                    race_frequency="frequent", chorus_frequency="occasional",
+                    race_frequency_options=legacy_order,
+                    chorus_frequency_options=legacy_order,
+                )
+                self.panel.refresh_from_binding()
+                self.assertEqual(self.binding.state.race_frequency_options, order)
+                self.assertEqual(self.binding.state.chorus_frequency_options, order)
+                self.assertTrue(self.panel.race_frequency_buttons[3].isChecked())
+                self.assertTrue(self.panel.chorus_frequency_buttons[1].isChecked())
+                if locale == "zh_TW":
+                    self.assertEqual([button.text() for button in self.panel.race_frequency_buttons],
+                                     ["不啟用", "偶爾", "普通", "經常"])
+                for prefix in ("race", "chorus"):
+                    for index, value in enumerate(order):
+                        getattr(self.panel, f"{prefix}_frequency_buttons")[index].click()
+                        self.assertEqual(self.binding.calls[-1], (f"{prefix}_frequency", value))
+                        self.assertEqual(getattr(self.binding.state, f"{prefix}_frequency"), value)
+                self.assertEqual(len(self.panel.mood_climate_buttons), 3)
 
     def test_validation_action_uses_existing_binding_path(self):
         self.panel.validation_button.click()
@@ -1092,6 +1207,8 @@ class DashboardStatusSettingsBindingTests(unittest.TestCase):
         self.assertEqual(snapshot.tsuyoshi_duration_index, 4)
         self.assertEqual(snapshot.race_frequency, "normal")
         self.assertEqual(snapshot.chorus_frequency, "normal")
+        self.assertTrue(snapshot.autonomous_sleep_enabled)
+        self.assertTrue(snapshot.autonomous_transformation_enabled)
         self.assertEqual(snapshot.mood_climate, "cheerful")
         self.assertEqual(snapshot.memory_album_mode, "events")
         self.assertEqual(snapshot.memory_album_capacity, 50)
@@ -1109,6 +1226,8 @@ class DashboardStatusSettingsBindingTests(unittest.TestCase):
         binding.set_social_duration_index("teio", 2)
         binding.set_race_frequency("occasional")
         binding.set_chorus_frequency("frequent")
+        binding.set_autonomous_sleep_enabled(False)
+        binding.set_autonomous_transformation_enabled(False)
         binding.set_mood_climate("balanced")
         binding.set_memory_album_mode("random")
         binding.set_memory_album_capacity(100)
@@ -1156,6 +1275,8 @@ class DashboardStatusSettingsBindingTests(unittest.TestCase):
                 ("teio", 2),
                 ("race_frequency", "occasional"),
                 ("chorus_frequency", "frequent"),
+                ("autonomous_sleep", False),
+                ("autonomous_transformation", False),
                 ("mood_climate", "balanced"),
                 ("memory_album_mode", "random"),
                 ("memory_album_capacity", 100),

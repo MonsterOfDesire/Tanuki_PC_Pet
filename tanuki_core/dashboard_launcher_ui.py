@@ -15,11 +15,15 @@ from PyQt6.QtWidgets import (
 from .ui_icons import create_ui_icon
 from .ui_skin_assets import UiSkinAssets
 from .ui_skin_spec import ASSET_DASHBOARD_SIDE_ICON
-from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
+from .ui_theme import DEFAULT_UI_THEME, apply_ui_theme
 from .ui_localization import translate_ui
 
 
-EXPANDED_LAUNCHER_WIDTH = 310
+EXPANDED_LAUNCHER_MIN_WIDTH = 310
+EXPANDED_LAUNCHER_MAX_WIDTH = 600
+# Compatibility alias used by existing callers and geometry tests.  The
+# launcher may grow beyond this value after translated labels are measured.
+EXPANDED_LAUNCHER_WIDTH = EXPANDED_LAUNCHER_MIN_WIDTH
 COLLAPSED_LAUNCHER_WIDTH = 72
 LAUNCHER_MINIMUM_HEIGHT = 460
 
@@ -29,6 +33,7 @@ class DashboardLauncherPanel(QWidget):
 
     expanded_changed = pyqtSignal(bool)
     pinned_changed = pyqtSignal(bool)
+    preferred_width_changed = pyqtSignal(int)
 
     def __init__(
         self,
@@ -46,13 +51,14 @@ class DashboardLauncherPanel(QWidget):
             self.assets = UiSkinAssets(resource_resolver)
         self._expanded = True
         self._pinned = False
+        self._expanded_width = EXPANDED_LAUNCHER_MIN_WIDTH
         self.setObjectName("tanukiDashboardLauncher")
         self.setMinimumHeight(LAUNCHER_MINIMUM_HEIGHT)
         self.setSizePolicy(
             QSizePolicy.Policy.Fixed,
             QSizePolicy.Policy.Expanding,
         )
-        self.setStyleSheet(build_ui_stylesheet(theme))
+        apply_ui_theme(self, theme)
 
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
@@ -81,6 +87,10 @@ class DashboardLauncherPanel(QWidget):
     def is_pinned(self):
         return self._pinned
 
+    @property
+    def expanded_width(self):
+        return self._expanded_width
+
     def set_binding(self, binding):
         self.binding = binding
         self.refresh_from_binding()
@@ -100,6 +110,7 @@ class DashboardLauncherPanel(QWidget):
             self.care_status_button.setText("● --")
             self.notice_label.hide()
             self.play_day_label.hide()
+            self._set_camera_state("blocked")
             self._update_camera_tooltips(False, "unavailable")
             return
 
@@ -189,11 +200,19 @@ class DashboardLauncherPanel(QWidget):
             snapshot.offer_tray_open,
         )
         camera_available = bool(snapshot.manual_camera_available)
+        camera_reason = str(snapshot.manual_camera_reason or "")
+        # Speed and capacity are explainable runtime blocks, not missing
+        # functionality. Keep the action clickable so the controller can show
+        # the localized reason instead of making the camera appear broken.
+        camera_actionable = camera_available or camera_reason in {
+            "speed",
+            "full",
+        }
         for button in (
             self.manual_camera_button,
             self.collapsed_manual_camera_button,
         ):
-            button.setEnabled(camera_available)
+            button.setEnabled(camera_actionable)
         self._set_action_active(
             (
                 self.manual_camera_button,
@@ -201,9 +220,18 @@ class DashboardLauncherPanel(QWidget):
             ),
             camera_available and snapshot.manual_camera_active,
         )
+        self._set_camera_state(
+            "full"
+            if camera_reason == "full"
+            else (
+                "active"
+                if camera_available and snapshot.manual_camera_active
+                else ("ready" if camera_available else "blocked")
+            )
+        )
         self._update_camera_tooltips(
             camera_available,
-            snapshot.manual_camera_reason,
+            camera_reason,
         )
 
     def set_expanded(self, expanded, emit_signal=True):
@@ -214,7 +242,7 @@ class DashboardLauncherPanel(QWidget):
             self.expanded_page if expanded else self.collapsed_page
         )
         self.setFixedWidth(
-            EXPANDED_LAUNCHER_WIDTH
+            self._expanded_width
             if expanded
             else COLLAPSED_LAUNCHER_WIDTH
         )
@@ -606,6 +634,64 @@ class DashboardLauncherPanel(QWidget):
             button.style().unpolish(button)
             button.style().polish(button)
 
+    def _set_camera_state(self, state):
+        for button in (
+            self.manual_camera_button,
+            self.collapsed_manual_camera_button,
+        ):
+            button.setProperty("cameraState", str(state or ""))
+            button.style().unpolish(button)
+            button.style().polish(button)
+
+    @staticmethod
+    def _text_width(widget):
+        return widget.fontMetrics().horizontalAdvance(widget.text())
+
+    def _update_preferred_width(self):
+        margins = 2 * self.theme.spacing_lg
+        header_controls = (
+            self.expanded_brand_label.width()
+            # The styled chrome buttons intentionally compress below the
+            # textual sizeHint (the collapse glyph reports an overly wide
+            # hint).  Reserve their real layout footprint instead.
+            + 68
+            + (4 * self.theme.spacing_sm)
+        )
+        title_width = max(
+            self._text_width(self.title_label),
+            self._text_width(self.subtitle_label),
+        )
+        header_width = margins + header_controls + title_width
+        self.title_label.setWordWrap(header_width > EXPANDED_LAUNCHER_MAX_WIDTH)
+
+        tile_text_width = max(
+            self._text_width(self.information_center_button),
+            self._text_width(self.offer_tray_button),
+        )
+        tile_width = (
+            margins
+            + self.theme.spacing_sm
+            + (2 * max(112, tile_text_width + (2 * self.theme.spacing_sm)))
+        )
+        single_action_width = margins + max(
+            self._text_width(self.manual_camera_button) + 70,
+            self._text_width(self.shutdown_button) + 70,
+        )
+        preferred = max(
+            EXPANDED_LAUNCHER_MIN_WIDTH,
+            min(
+                EXPANDED_LAUNCHER_MAX_WIDTH,
+                max(header_width, tile_width, single_action_width),
+            ),
+        )
+        preferred = int(preferred)
+        if preferred == self._expanded_width:
+            return
+        self._expanded_width = preferred
+        if self._expanded:
+            self.setFixedWidth(preferred)
+        self.preferred_width_changed.emit(preferred)
+
     def retranslate_ui(self):
         self.title_label.setText(
             translate_ui("launcher.title", default="狸貓控制中心")
@@ -697,4 +783,8 @@ class DashboardLauncherPanel(QWidget):
         for button, tooltip in tooltips:
             button.setToolTip(tooltip)
             button.setAccessibleName(tooltip)
+        self._update_preferred_width()
+
+    def refresh_ui_text_size(self):
+        self._update_preferred_width()
         self.refresh_from_binding()

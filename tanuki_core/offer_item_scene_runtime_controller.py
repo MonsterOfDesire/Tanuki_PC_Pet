@@ -33,7 +33,6 @@ from .offer_interaction_rules import (
     ITEM_LOLLIPOP,
     ITEM_RAMEN,
     ITEM_TEA,
-    get_direct_offer_accept_candidates,
     get_ground_pickup_pet_names,
 )
 from .offer_scene_execution_port import OfferSceneExecutionPort
@@ -59,6 +58,7 @@ class OfferItemSceneSupport:
     apply_offer_hover_miss: object
     pet_is_busy_for_offer_interaction: object
     pet_can_interact_with_offer_item: object
+    direct_offer_context_available: object
     find_offer_drop_target: object
     find_offer_hover_target: object
     apply_offer_negative_afterglow: object
@@ -251,10 +251,7 @@ class OfferItemSceneRuntimeController:
             return False
         participants = []
         has_hidden_participant = False
-        for pet_name in {
-            self.offer_scene.actor_name,
-            self.offer_scene.target_name,
-        }:
+        for pet_name in self.item_scene_coordinator.get_participants(self.offer_scene):
             if not pet_name:
                 continue
             pet = self.find_pet_by_name(pet_name, visible_only=False)
@@ -314,16 +311,16 @@ class OfferItemSceneRuntimeController:
                 source=source,
             ):
                 return True
-        if get_direct_offer_accept_candidates(
-            item_kind,
-            target_pet.name,
-        ):
+        if self.direct_offer_context_available(target_pet, item_kind):
             return self.start_direct_offer_scene(
                 item_kind,
                 target_pet,
                 source=source,
             )
         return False
+
+    def direct_offer_context_available(self, *args, **kwargs):
+        return self.support.direct_offer_context_available(*args, **kwargs)
 
     def clear_ground_offer_items(self):
         return self.ground_item_coordinator.clear_ground_items()
@@ -521,6 +518,7 @@ class OfferItemSceneRuntimeController:
                     (
                         self.offer_scene.scene_kind == "honey_guard"
                         and self.offer_scene.target_name == pet.name
+                        and self.offer_scene.stage != "guardian_stay"
                     )
                     or (
                         self.offer_scene.scene_kind == "bottle_feed"

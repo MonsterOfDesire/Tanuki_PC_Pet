@@ -6,6 +6,7 @@ from tanuki_core.ui_skin_spec import (
     ASSET_MEMORY_ALBUM_CHARACTER,
     ASSET_MEMORY_ALBUM_PARTNER_1,
     ASSET_MEMORY_ALBUM_PARTNER_2,
+    ASSET_SETTINGS_BACKGROUND,
     ASSET_DASHBOARD_SIDE_ICON,
     FAMILY_AVATAR_SPECS,
     FIT_CONTAIN,
@@ -165,6 +166,37 @@ class UiSkinSpecTests(unittest.TestCase):
                 self.assertEqual(skin.foreground_asset_key, foreground_asset_key)
                 self.assertIsNotNone(skin.foreground_rect)
                 self.assertTrue(UI_ASSET_SPECS[foreground_asset_key].animated)
+
+    def test_status_settings_uses_noticeboard_background_and_full_height_panel(self):
+        skin = UI_SKIN_SPECS[SKIN_STATUS_SETTINGS]
+        asset = UI_ASSET_SPECS[ASSET_SETTINGS_BACKGROUND]
+
+        self.assertEqual(
+            asset.relative_path,
+            "UI/status_setting_noticeboard.png",
+        )
+        self.assertEqual(asset.source_size, (1600, 900))
+        self.assertEqual(skin.minimum_window_size, (720, 480))
+        self.assertEqual(skin.minimum_content_size, (700, 460))
+        self.assertGreaterEqual(skin.content_rect.height, 0.80)
+        self.assertLessEqual(
+            skin.content_rect.x + skin.content_rect.width,
+            skin.foreground_rect.x,
+        )
+        compact_content = compute_content_rect(
+            skin.minimum_window_size,
+            skin,
+        )
+        self.assertGreaterEqual(compact_content.x, 0)
+        self.assertGreaterEqual(compact_content.y, 0)
+        self.assertLessEqual(
+            compact_content.right,
+            skin.minimum_window_size[0],
+        )
+        self.assertLessEqual(
+            compact_content.bottom,
+            skin.minimum_window_size[1],
+        )
 
     def test_achievement_cabinet_keeps_content_clear_of_character_layer(self):
         skin = UI_SKIN_SPECS[SKIN_ACHIEVEMENT_CABINET]

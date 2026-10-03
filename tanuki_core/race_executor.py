@@ -64,6 +64,10 @@ from .transformation_profiles import (
 
 class RaceExecutor:
     GROUND_Y_TOLERANCE = 2.0
+    RUDOLF_LEFT_RECOVERY_EXCLUSIONS = (
+        ("idle", "lie", "happy"),
+        ("idle", "lie", "sad"),
+    )
 
     def __init__(
         self,
@@ -86,7 +90,12 @@ class RaceExecutor:
 
     def _frequency_key(self) -> str:
         value = str(self.frequency_provider() or "normal")
-        return value if value in {"frequent", "normal", "occasional"} else "normal"
+        return value if value in {
+            "disabled",
+            "frequent",
+            "normal",
+            "occasional",
+        } else "normal"
 
     def is_preview_active(self) -> bool:
         activity = self._active_race()
@@ -120,6 +129,12 @@ class RaceExecutor:
             )
         world_mode = str(world_mode or "")
         frequency_key = self._frequency_key()
+        if frequency_key == "disabled":
+            self.schedule.world_mode = world_mode
+            self.schedule.frequency_key = frequency_key
+            self.schedule.next_proposal_at = 0.0
+            self.schedule.last_wait_reason = "autonomous_disabled"
+            return RaceRuntimeResult(False, "autonomous_disabled")
         policy = get_race_schedule_policy(world_mode, frequency_key)
         if policy is None:
             return RaceRuntimeResult(False, "world_mode_disabled")
@@ -708,13 +723,15 @@ class RaceExecutor:
             RACE_RECOVERY_PHASE,
         }:
             targets = []
-            for pet, other_name, form_key in (
+            for role, pet, other_name, form_key in (
                 (
+                    "challenger",
                     challenger,
                     opponent_name,
                     str(activity.metadata.get("challenger_form", "base")),
                 ),
                 (
+                    "opponent",
                     opponent,
                     challenger_name,
                     str(activity.metadata.get("opponent_form", "base")),
@@ -763,12 +780,17 @@ class RaceExecutor:
                     and self._pet_name(pet) == "Symboli Rudolf"
                 ):
                     other_pet = pets_by_name.get(other_name)
-                    if (
-                        other_pet is not None
-                        and self._pet_center_x(pet)
-                        < self._pet_center_x(other_pet)
+                    other_role = (
+                        "opponent" if role == "challenger" else "challenger"
+                    )
+                    if self._role_is_left_at_finish(
+                        activity,
+                        role=role,
+                        pet=pet,
+                        other_role=other_role,
+                        other_pet=other_pet,
                     ):
-                        excluded_variants = (("idle", "lie", "happy"),)
+                        excluded_variants = self.RUDOLF_LEFT_RECOVERY_EXCLUSIONS
                 targets.append(
                     (pet, binding, band_override, excluded_variants)
                 )
@@ -787,6 +809,31 @@ class RaceExecutor:
             if not result.applied:
                 return self._pet_name(pet) or result.reason
         return ""
+
+    def _role_is_left_at_finish(
+        self,
+        activity,
+        *,
+        role: str,
+        pet,
+        other_role: str,
+        other_pet,
+    ) -> bool:
+        """Use the fixed lane targets so transient collision shifts cannot flip sides."""
+
+        metadata = getattr(activity, "metadata", {}) or {}
+        finish_key = f"{role}_finish_x"
+        other_finish_key = f"{other_role}_finish_x"
+        if finish_key in metadata and other_finish_key in metadata:
+            pet_finish_center = float(metadata[finish_key]) + self._pet_width(pet) / 2.0
+            other_finish_center = (
+                float(metadata[other_finish_key]) + self._pet_width(other_pet) / 2.0
+            )
+            return pet_finish_center < other_finish_center
+        return bool(
+            other_pet is not None
+            and self._pet_center_x(pet) < self._pet_center_x(other_pet)
+        )
 
     def _move_to_start(self, activity, pets_by_name, *, now: float) -> bool:
         challenger = pets_by_name.get(
@@ -1100,6 +1147,13 @@ class RaceExecutor:
             or "golden_legend"
         )
         frequency_key = self._frequency_key()
+        if frequency_key == "disabled":
+            self.schedule.world_mode = world_mode
+            self.schedule.frequency_key = frequency_key
+            self.schedule.last_wait_reason = "autonomous_disabled"
+            self.schedule.last_finished_at = float(now)
+            self.schedule.next_proposal_at = 0.0
+            return
         policy = get_race_schedule_policy(world_mode, frequency_key)
         if policy is None:
             return

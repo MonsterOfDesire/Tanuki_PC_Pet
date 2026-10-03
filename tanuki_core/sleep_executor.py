@@ -98,6 +98,7 @@ class SleepExecutor:
         uniform: Callable[[float, float], float] | None = None,
         random_value: Callable[[], float] | None = None,
         max_concurrent_sleepers: int | None = None,
+        autonomous_enabled_provider: Callable[[], bool] | None = None,
     ):
         self.coordinator = coordinator
         self.runtime_adapter = runtime_adapter
@@ -114,6 +115,9 @@ class SleepExecutor:
         )
         self.schedules: dict[str, SleepScheduleState] = {}
         self.join_attempts: dict[str, SleepJoinAttemptState] = {}
+        self.autonomous_enabled_provider = (
+            autonomous_enabled_provider or (lambda: True)
+        )
 
     def update(
         self,
@@ -150,6 +154,17 @@ class SleepExecutor:
             )
             if result.handled:
                 results.append(result)
+
+        if not self._autonomous_enabled():
+            for participant_name in tuple(self.join_attempts):
+                self._cancel_join_attempt(
+                    participant_name,
+                    pet=pets_by_name.get(participant_name),
+                    now=now,
+                    retry=False,
+                )
+            self.schedules.clear()
+            return tuple(results)
 
         for pet in pets:
             participant_name = self._pet_name(pet)
@@ -273,6 +288,14 @@ class SleepExecutor:
         participant_name = self._pet_name(pet)
         attempt = self.join_attempts.get(participant_name)
         if attempt is None:
+            return False
+        if not self._autonomous_enabled():
+            self._cancel_join_attempt(
+                participant_name,
+                pet=pet,
+                now=now,
+                retry=False,
+            )
             return False
         all_pets = tuple(all_pets or ())
         pets_by_name = self._pets_by_name(all_pets)
@@ -1614,6 +1637,12 @@ class SleepExecutor:
             activity.spec.kind == SLEEP_ACTIVITY_KIND
             for activity in self.coordinator.get_active_activities()
         )
+
+    def _autonomous_enabled(self) -> bool:
+        try:
+            return bool(self.autonomous_enabled_provider())
+        except Exception:
+            return True
 
     def _resolve_sleep_capacity(self, pets: Iterable[object]) -> int:
         if self.max_concurrent_sleepers is not None:

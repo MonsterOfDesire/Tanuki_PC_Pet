@@ -84,6 +84,34 @@ class OfferAnimationSupport:
             and can_pet_interact_with_offer_item(item_kind, pet.name)
         )
 
+    def direct_offer_context_available(self, pet, item_kind):
+        if pet is None:
+            return False
+        context = get_direct_offer_accept_context(item_kind, pet.name)
+        asset_manager = getattr(pet, "asset_manager", None)
+        manifest_data = getattr(asset_manager, "manifest_data", None)
+        checker = getattr(
+            asset_manager,
+            "has_explicit_contextual_result_for_purposes",
+            None,
+        )
+        if callable(checker):
+            available = bool(
+                checker(
+                    ("move", "idle"),
+                    context=context,
+                    mood_score=getattr(pet, "mood_score", None),
+                )
+            )
+            # A real manifest is authoritative.  Managers without manifest
+            # metadata are treated as legacy adapters and may still use the
+            # old action table below.
+            if manifest_data:
+                return available
+            if available:
+                return True
+        return bool(get_direct_offer_accept_candidates(item_kind, pet.name))
+
     def find_offer_drop_target(self, item_kind, global_pos):
         global_x = float(global_pos.x())
         global_y = float(global_pos.y())

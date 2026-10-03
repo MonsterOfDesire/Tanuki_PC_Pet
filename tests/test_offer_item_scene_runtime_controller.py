@@ -86,6 +86,30 @@ class OfferItemSceneRuntimeControllerTests(unittest.TestCase):
         self.assertEqual(calls, [(child, {"source": "offer_tray"})])
         self.assertEqual(profile_calls, [])
 
+    def test_manifest_capability_can_start_direct_offer_without_action_whitelist(self):
+        calls = []
+        support = _support(
+            pet_can_interact_with_offer_item=lambda *_args: True,
+            direct_offer_context_available=lambda *_args: True,
+            start_direct_offer_scene=lambda item_kind, target, **kwargs: (
+                calls.append((item_kind, target.name, kwargs["source"]))
+                or True
+            ),
+        )
+        controller = _controller(support=support)
+        target = SimpleNamespace(name="Air Groove")
+
+        handled = controller.start_offer_interaction_for_target(
+            "lollipop",
+            target,
+        )
+
+        self.assertTrue(handled)
+        self.assertEqual(
+            calls,
+            [("lollipop", "Air Groove", "offer_tray")],
+        )
+
     def test_hover_state_is_owned_and_cleared_by_controller(self):
         controller = _controller()
         controller.offer_hover_item_kind = "bottle"
@@ -113,6 +137,7 @@ class OfferItemSceneRuntimeControllerTests(unittest.TestCase):
             choose_honey_guardian_for_child=lambda *_args: "",
             build_offer_item_widget=lambda *_args, **_kwargs: widget,
             apply_held_item_behavior=lambda *_args: True,
+            direct_offer_context_available=lambda *_args: True,
             start_direct_offer_scene=lambda item_kind, target, **kwargs: (
                 calls.append((item_kind, target.name, kwargs["source"]))
                 or True

@@ -1,9 +1,10 @@
 import os
 import unittest
+from unittest.mock import patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QEvent, QObject, QPoint, Qt
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QApplication
 
@@ -15,6 +16,7 @@ from tanuki_core.information_center_spec import (
     PAGE_RELATION_SUMMON,
     PAGE_STATUS_SETTINGS,
     PAGE_ACHIEVEMENTS,
+    PAGE_MEMORY_ALBUM,
 )
 from tanuki_core.information_center_ui import InformationCenterWindow
 from tanuki_core.information_center_size_rules import SIZE_16_10, SIZE_COMPACT
@@ -23,6 +25,8 @@ from tanuki_core.information_center_state import (
     build_information_center_config_state,
 )
 from tanuki_core.status_settings_binding import StatusSettingsSnapshot
+from tanuki_core.status_settings_art import NoticeboardSection
+from tanuki_core.status_settings_ui import StatusSettingsPanel
 from tanuki_core.dashboard_presenter import (
     HouseholdRecentEventPresentation,
     HouseholdSummaryPresentation,
@@ -267,6 +271,105 @@ class InformationCenterWindowTests(unittest.TestCase):
         self.app.processEvents()
         self.assertIsNotNone(self.window.relation_summon_panel)
 
+    def test_first_settings_page_load_never_shows_floating_cards(self):
+        self.window.show()
+        self.app.processEvents()
+        original_show = NoticeboardSection.show
+        shown_as_window = []
+
+        def record_show(section):
+            shown_as_window.append(section.isWindow())
+            return original_show(section)
+
+        with patch.object(NoticeboardSection, "show", record_show):
+            self.window.navigation_buttons[PAGE_STATUS_SETTINGS].click()
+            QTest.qWait(50)
+            self.app.processEvents()
+
+        self.assertIsNotNone(self.window.status_settings_panel)
+        self.assertTrue(shown_as_window)
+        self.assertFalse(any(shown_as_window))
+        self.assertTrue(self.window.isVisible())
+        for card in self.window.status_settings_panel._noticeboard_cards:
+            self.assertIs(
+                card.parentWidget(),
+                self.window.status_settings_panel.settings_grid,
+            )
+
+    def test_settings_panel_has_page_parent_before_initialization(self):
+        original_init = StatusSettingsPanel.__init__
+        initial_parents = []
+
+        def record_init(panel, *args, **kwargs):
+            initial_parents.append(kwargs.get("parent"))
+            original_init(panel, *args, **kwargs)
+
+        with patch.object(StatusSettingsPanel, "__init__", record_init):
+            self.window.select_page(PAGE_STATUS_SETTINGS)
+
+        self.assertEqual(
+            initial_parents,
+            [self.window.pages[PAGE_STATUS_SETTINGS].content_surface],
+        )
+        self.assertFalse(self.window.status_settings_panel.isWindow())
+
+    def test_first_settings_load_preserves_native_window_and_activation(self):
+        class WindowLifecycleObserver(QObject):
+            def __init__(self):
+                super().__init__()
+                self.events = []
+
+            def eventFilter(self, watched, event):
+                if event.type() in (
+                    QEvent.Type.Hide,
+                    QEvent.Type.Show,
+                    QEvent.Type.WindowDeactivate,
+                ):
+                    self.events.append(event.type())
+                return False
+
+        self.window.show()
+        self.window.raise_()
+        self.window.activateWindow()
+        self.app.processEvents()
+        QTest.qWait(25)
+        native_window_id = int(self.window.winId())
+        was_active = self.window.isActiveWindow()
+        observer = WindowLifecycleObserver()
+        self.window.installEventFilter(observer)
+        try:
+            self.window.navigation_buttons[PAGE_STATUS_SETTINGS].click()
+            QTest.qWait(50)
+            self.app.processEvents()
+        finally:
+            self.window.removeEventFilter(observer)
+
+        self.assertEqual(int(self.window.winId()), native_window_id)
+        self.assertTrue(self.window.isVisible())
+        self.assertEqual(observer.events, [])
+        if was_active:
+            self.assertTrue(self.window.isActiveWindow())
+
+    def test_lazy_page_load_failure_keeps_information_center_running(self):
+        self.window.show()
+        self.window._current_page_id = PAGE_MEMORY_ALBUM
+        self.window._pending_page_id = PAGE_MEMORY_ALBUM
+
+        with patch.object(
+            self.window,
+            "_ensure_page_ready",
+            side_effect=RuntimeError("missing packaged skin"),
+        ), patch(
+            "tanuki_core.information_center_ui.log_suppressed_exception"
+        ) as logger:
+            self.window._load_scheduled_page()
+
+        logger.assert_called_once()
+        self.assertIn(
+            "暫時無法載入",
+            self.window.pages[PAGE_MEMORY_ALBUM].loading_label.text(),
+        )
+
     def test_rapid_navigation_builds_only_the_last_requested_page(self):
         self.window.show()
         self.app.processEvents()
@@ -381,7 +484,9 @@ class InformationCenterWindowTests(unittest.TestCase):
                 content_left = scene.x() + content.x()
                 content_top = scene.y() + content.y()
 
-                self.assertTrue(scene.x() < 0 or scene.y() < 0)
+                # Cropping may occur at the right/bottom edge when the content
+                # fits without shifting the scene to a negative origin.
+                self.assertFalse(page.rect().contains(scene))
                 self.assertGreaterEqual(content_left, -1)
                 self.assertGreaterEqual(content_top, -1)
                 self.assertLessEqual(
@@ -427,6 +532,33 @@ class InformationCenterWindowTests(unittest.TestCase):
         self.assertTrue(self.window.status_settings_panel.settings_grid.isEnabled())
         self.assertEqual(len(self.window.status_settings_panel.time_scale_buttons), 4)
 
+    def test_noticeboard_hit_targets_follow_artwork_when_resized(self):
+        self.window.set_status_settings_binding(FakeStatusSettingsBinding())
+        self.window.select_page(PAGE_STATUS_SETTINGS)
+        self.window.show()
+        page = self.window.pages[PAGE_STATUS_SETTINGS]
+        panel = self.window.status_settings_panel
+        for size in ((1600, 1000), (1280, 800), (760, 540)):
+            with self.subTest(size=size):
+                self.window.resize(*size)
+                self.app.processEvents()
+                scene = page.scene_geometry()
+                for key, (x, y, width, height) in {
+                    "mode": (185, 44, 388, 89),
+                    "developer": (590, 56, 357, 77),
+                }.items():
+                    expected_center = QPoint(
+                        round(scene.x() + (x + width / 2) * scene.width() / 1600),
+                        round(scene.y() + (y + height / 2) * scene.height() / 900),
+                    )
+                    target = page.childAt(expected_center)
+                    self.assertIs(target, panel.settings_tab_buttons[key])
+                    QTest.mouseClick(target, Qt.MouseButton.LeftButton)
+                    self.assertEqual(panel._active_tab_key, key)
+                panel._select_tab("mode")
+                self.app.processEvents()
+                self.assertEqual(panel.settings_scroll.horizontalScrollBar().maximum(), 0)
+
     def test_retranslate_after_placeholder_is_replaced_is_safe(self):
         self.window.select_page(PAGE_STATUS_SETTINGS)
         page = self.window.pages[PAGE_STATUS_SETTINGS]
@@ -435,9 +567,11 @@ class InformationCenterWindowTests(unittest.TestCase):
         set_ui_locale("ja_JP")
         try:
             self.window.retranslate_ui()
+            button = self.window.navigation_buttons[PAGE_STATUS_SETTINGS]
+            self.assertEqual(button.toolTip(), "状態設定")
             self.assertEqual(
-                self.window.navigation_buttons[PAGE_STATUS_SETTINGS].text(),
-                "状態設定",
+                button.text(),
+                "" if self.window._navigation_compact else "状態設定",
             )
         finally:
             set_ui_locale("zh_TW")

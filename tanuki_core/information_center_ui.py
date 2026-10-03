@@ -1,5 +1,5 @@
 from PyQt6.QtCore import QRect, QSize, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QGuiApplication
+from PyQt6.QtGui import QFont, QFontMetrics, QGuiApplication
 from PyQt6.QtWidgets import (
     QButtonGroup,
     QFrame,
@@ -45,7 +45,8 @@ from .platform_capabilities import get_platform_capabilities
 from .information_center_detached_ui import DetachedInformationPageWindow
 from .ui_skin_assets import UiSkinAssets
 from .ui_icons import create_ui_icon
-from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
+from .ui_theme import DEFAULT_UI_THEME, apply_ui_theme
+from .ui_typography import ui_text_scale
 from .ui_localization import translate_ui
 from .window_chrome import create_platform_window_chrome
 from .status_settings_ui import StatusSettingsPanel
@@ -54,6 +55,7 @@ from .event_log_ui import EventLogPanel
 from .relation_summon_ui import RelationSummonPanel
 from .achievement_cabinet_ui import AchievementCabinetPanel
 from .memory_album_ui import MemoryAlbumPanel
+from .runtime_debug_log import log_suppressed_exception
 
 
 COMPACT_NAVIGATION_WIDTH = 900
@@ -124,6 +126,16 @@ class InformationCenterPage(SkinnedWindowFrame):
             translate_ui(
                 "information_center.loading",
                 default="正在載入頁面…",
+            )
+        )
+
+    def show_load_error(self):
+        if not self._placeholder_active:
+            return
+        self.loading_label.setText(
+            translate_ui(
+                "information_center.page_load_failed",
+                default="此頁面暫時無法載入；其他功能仍可繼續使用。",
             )
         )
 
@@ -344,7 +356,7 @@ class InformationCenterWindow(QWidget):
             compact_page_height + navigation_height,
         )
         self.setMinimumSize(self._compact_minimum_size)
-        self.setStyleSheet(build_ui_stylesheet(theme))
+        apply_ui_theme(self, theme)
         self.select_page(
             DEFAULT_INFORMATION_CENTER_PAGE,
             defer_content=True,
@@ -486,6 +498,9 @@ class InformationCenterWindow(QWidget):
                     page=localized_page_text(page_spec, "navigation"),
                 )
             )
+        # Retranslation restores full button text; reapply icon-only density
+        # even when the compact/full decision itself did not change.
+        self._navigation_compact = None
         self._update_navigation_density()
 
     def open_page(self, page_id=None):
@@ -769,8 +784,16 @@ class InformationCenterWindow(QWidget):
         )
         if not page_is_requested:
             return
-        page_created = self._ensure_page_ready(page_id)
         page = self.pages[page_id]
+        try:
+            page_created = self._ensure_page_ready(page_id)
+        except Exception as error:
+            log_suppressed_exception(
+                f"information_center.load_page.{page_id}",
+                error,
+            )
+            page.show_load_error()
+            return
         page.set_animation_active(self.is_page_visible(page_id))
         if not page_created:
             self._refresh_page(page_id)
@@ -791,7 +814,13 @@ class InformationCenterWindow(QWidget):
             )
             self.relation_summon_panel = panel
         elif page_id == PAGE_STATUS_SETTINGS:
-            panel = StatusSettingsPanel(binding, theme=self.theme)
+            panel = StatusSettingsPanel(
+                binding,
+                parent=page.content_surface,
+                theme=self.theme,
+                assets=self.assets,
+            )
+            page.set_content_margins(0, 0, 0, 0)
             self.status_settings_panel = panel
         elif page_id == PAGE_FAMILY_STATUS:
             panel = FamilySummaryPanel(
@@ -1059,8 +1088,42 @@ class InformationCenterWindow(QWidget):
         if not self._state_change_suppressed:
             self.state_changed.emit()
 
+    def refresh_ui_text_size(self):
+        self._navigation_compact = None
+        self._update_navigation_density()
+
+    def _navigation_compact_for_width(self):
+        # The same window width can fit Chinese but not longer translations.
+        # Measure full labels even while currently showing icon-only buttons.
+        required_width = (
+            2 * self.theme.spacing_lg
+            + 10 * self.theme.spacing_sm
+            + self.navigation_title.fontMetrics().horizontalAdvance(
+                translate_ui("information_center.title", default="狸貓資訊中心")
+            )
+            + self.window_chrome.controls.sizeHint().width()
+            + self.detach_button.sizeHint().width()
+            + self.size_button.sizeHint().width()
+        )
+        for page_spec in INFORMATION_CENTER_PAGE_SPECS:
+            button = self.navigation_buttons[page_spec.page_id]
+            font = QFont(button.font())
+            font.setBold(True)  # Reserve the checked state too.
+            required_width += (
+                QFontMetrics(font).horizontalAdvance(
+                    localized_page_text(page_spec, "navigation")
+                )
+                + button.iconSize().width()
+                + 2 * self.theme.spacing_md
+                + 10  # Icon/text gap and borders.
+            )
+        return self.width() < max(
+            round(COMPACT_NAVIGATION_WIDTH * ui_text_scale()),
+            required_width,
+        )
+
     def _update_navigation_density(self):
-        compact = self.width() < COMPACT_NAVIGATION_WIDTH
+        compact = self._navigation_compact_for_width()
         if compact == self._navigation_compact:
             self._update_detach_button(compact)
             return
@@ -1107,7 +1170,7 @@ class InformationCenterWindow(QWidget):
         if not hasattr(self, "detach_button"):
             return
         compact = (
-            self.width() < COMPACT_NAVIGATION_WIDTH
+            self._navigation_compact_for_width()
             if compact is None
             else bool(compact)
         )

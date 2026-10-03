@@ -390,8 +390,8 @@ UI_ASSET_SPECS = MappingProxyType(
         ),
         ASSET_SETTINGS_BACKGROUND: UiAssetSpec(
             ASSET_SETTINGS_BACKGROUND,
-            "UI/status_setting.png",
-            (2560, 1440),
+            "UI/status_setting_noticeboard.png",
+            (1600, 900),
         ),
         ASSET_SETTINGS_CHARACTER: UiAssetSpec(
             ASSET_SETTINGS_CHARACTER,
@@ -538,14 +538,14 @@ UI_SKIN_SPECS = MappingProxyType(
         SKIN_STATUS_SETTINGS: UiSkinSpec(
             key=SKIN_STATUS_SETTINGS,
             background_asset_key=ASSET_SETTINGS_BACKGROUND,
-            content_rect=NormalizedRect(0.160, 0.030, 0.680, 0.470),
-            minimum_frame_size=(900, 506),
-            minimum_window_size=(620, 260),
-            minimum_content_size=(600, 240),
-            surface_role="dark",
+            content_rect=NormalizedRect(90 / 1600, 44 / 900, 1076 / 1600, 734 / 900),
+            minimum_frame_size=(1044, 588),
+            minimum_window_size=(720, 480),
+            minimum_content_size=(700, 460),
+            surface_role="noticeboard",
             fit_mode=FIT_CONTAIN,
             foreground_asset_key=ASSET_SETTINGS_CHARACTER,
-            foreground_rect=NormalizedLayerRect(0.720, 0.390, 0.280, 0.500),
+            foreground_rect=NormalizedLayerRect(0.730, 0.458, 0.280, 0.498),
         ),
         SKIN_ACHIEVEMENT_CABINET: UiSkinSpec(
             key=SKIN_ACHIEVEMENT_CABINET,

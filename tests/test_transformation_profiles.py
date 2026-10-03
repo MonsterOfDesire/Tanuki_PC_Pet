@@ -14,6 +14,8 @@ from tanuki_core.transformation_profiles import (
     CAPABILITY_SOCIAL_MIMIC,
     CAPABILITY_WORK,
     apply_pet_form_mood_floor,
+    get_form_visual_scale,
+    get_pet_form_visual_scale,
     pet_form_allows_capability,
     pet_form_allows_care_target,
     pet_form_allows_offer_item,
@@ -74,6 +76,30 @@ class TransformationProfileTests(unittest.TestCase):
 
         self.assertEqual(apply_pet_form_mood_floor(transformed, 12.0), 50.0)
         self.assertEqual(apply_pet_form_mood_floor(base, 12.0), 12.0)
+
+    def test_transformed_rudolf_uses_adult_visual_height_scale(self):
+        transformed_rudolf = build_pet(
+            "Symboli Rudolf",
+            transformed=True,
+            is_adult=True,
+        )
+
+        self.assertAlmostEqual(
+            get_form_visual_scale("Symboli Rudolf", FORM_TRANSFORMED),
+            0.89,
+        )
+        self.assertAlmostEqual(
+            get_pet_form_visual_scale(transformed_rudolf),
+            0.89,
+        )
+        self.assertEqual(
+            get_form_visual_scale("Symboli Rudolf", "base"),
+            1.0,
+        )
+        self.assertEqual(
+            get_form_visual_scale("Tokai Teio", FORM_TRANSFORMED),
+            1.0,
+        )
 
 if __name__ == "__main__":
     unittest.main()

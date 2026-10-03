@@ -1321,9 +1321,20 @@ class PetSocialCareMixin:
     def expand_candidates_with_context(self, purpose, candidates, context=None):
         expanded = list(candidates)
         seen = set(expanded)
+        should_apply_afterglow = getattr(
+            self, "should_apply_negative_afterglow_to_candidates", None,
+        )
+        ignore_mood_band = bool(
+            context == "random"
+            and callable(should_apply_afterglow)
+            and should_apply_afterglow(((purpose, ""),))
+        )
         extra_actions = self.asset_manager.get_action_keys_for_context(
             purpose,
-            mood_score=PetSocialCareMixin.get_visual_mood_score(self),
+            mood_score=(
+                None if ignore_mood_band
+                else PetSocialCareMixin.get_visual_mood_score(self)
+            ),
             context=context,
         )
         for action_type in extra_actions:

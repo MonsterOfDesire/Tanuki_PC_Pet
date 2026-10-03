@@ -10,7 +10,7 @@ from .event_localization import localized_item_label
 from .skinned_window_frame import SkinnedWindowFrame
 from .ui_skin_assets import UiSkinAssets
 from .ui_skin_spec import SKIN_DIET
-from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
+from .ui_theme import DEFAULT_UI_THEME, apply_ui_theme
 from .window_chrome import create_platform_window_chrome
 from .ui_localization import translate_ui
 from .overlay_window import (
@@ -244,7 +244,7 @@ class OfferTrayWindow(QWidget):
         tray_layout.addLayout(instruction_row)
         self.skin_frame.set_content_widget(tray_content)
         layout.addWidget(self.skin_frame)
-        self.setStyleSheet(build_ui_stylesheet(theme))
+        apply_ui_theme(self, theme)
 
         self.chrome_drag_zone = QFrame(self)
         self.chrome_drag_zone.setObjectName("tanukiDietChromeDragZone")

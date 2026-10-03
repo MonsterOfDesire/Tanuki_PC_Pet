@@ -5,6 +5,7 @@ from PyQt6.QtCore import Qt
 
 from .asset_manager import AssetManager
 from .geometry import DesktopGeometry, PetMovementState
+from .transformation_profiles import get_pet_form_visual_scale
 
 
 class PetBasicsMixin:
@@ -34,7 +35,10 @@ class PetBasicsMixin:
         )
         self.asset_manager = AssetManager(
             active_character_path,
-            scale_factor=self.get_effective_scale(),
+            scale_factor=(
+                self.get_effective_scale()
+                * get_pet_form_visual_scale(self)
+            ),
             frame_cache=self.asset_manager.frame_cache,
             store_cache=self.asset_manager.store_cache,
         )

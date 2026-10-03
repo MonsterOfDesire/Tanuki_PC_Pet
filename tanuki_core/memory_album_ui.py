@@ -33,6 +33,7 @@ from PyQt6.QtWidgets import (
 
 from .ui_icons import create_ui_icon
 from .ui_localization import translate_ui
+from .ui_typography import ui_text_scale
 
 
 PIN_COLORS = (
@@ -236,7 +237,10 @@ class MemoryPhotoCard(QAbstractButton):
 
         painter.setPen(QColor("#52483f"))
         font = painter.font()
-        font.setPointSizeF(max(8.0, font.pointSizeF() - 1.0))
+        font.setPointSizeF(max(
+            8.0 * ui_text_scale(),
+            font.pointSizeF() - ui_text_scale(),
+        ))
         font.setBold(True)
         painter.setFont(font)
         painter.drawText(

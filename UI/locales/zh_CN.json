@@ -20,6 +20,7 @@
     "title": "狸猫信息中心",
     "window_title": "狸猫信息中心 — {page}",
     "loading": "正在加载页面…",
+    "page_load_failed": "此页面暂时无法加载；其他功能仍可继续使用。",
     "size": "窗口尺寸",
     "size_tooltip": "应用建议比例；应用后仍可拖曳窗口边框自由调整。",
     "detach": "分离页面",
@@ -379,8 +380,26 @@
   },
   "settings": {
     "language_and_updates": "语言与更新", "interface_language": "界面语言", "unavailable": "状态设置尚未连接执行中的 Dashboard。",
-    "groups": {"runtime": "执行模式", "timing": "时间与画面", "social_cooldown": "社交冷却", "life_rhythm": "生活节奏", "memory_album": "回忆相册", "developer": "开发工具"},
-    "world_mode": "世界模式", "time_scale": "时间流速", "display_scale": "显示比例", "enable_care": "启用角色照护功能", "enable_care_tooltip": "允许低心情照护与相关家庭互动。",
+    "categories": {"title": "设置分类", "overview": "总览"},
+    "tabs": {"mode": "模式设置", "developer": "开发工具"},
+    "noticeboard": {"basic": "基本与画面", "activity": "自主活动", "memory": "回忆与系统", "care": "角色照护", "sleep": "自主睡眠", "transformation": "自主变身"},
+    "text_size": "文字大小", "text_sizes": {"small": "小", "medium": "中", "large": "大"},
+    "control_tooltips": {
+      "world_mode": "选择世界模式；沙盒不受家庭经济规则限制。",
+      "time_scale": "调整模拟时间流速；倍速期间不统计成就，也不自动拍照。",
+      "display_scale": "调整角色显示大小，不改变界面文字大小。",
+      "text_size": "立即调整所有界面文字大小：小 80%、中 100%、大 150%；首次使用默认为中，角色图片大小不变。",
+      "imitation": "调整帝宝与鹤宝再次模仿鲁道夫前的等待时间；不影响一般社交互动冷却。",
+      "photo_capacity": "达到照片上限后停止拍摄；调低上限不会删除已有照片。",
+      "language": "立即切换界面语言。",
+      "check_updates": "手动检查 GitHub 上是否有新版本。",
+      "download_update": "打开更新下载链接。",
+      "validate": "检查设置与动画 manifest 的有效性。"
+    },
+    "memory_mode_tooltips": {"off": "停止自动拍照；仍可使用手动相机。", "events": "仅在 1x 记录互动事件；相册满载后停止拍摄。", "random": "在 1x 记录互动事件，并不定时拍摄日常画面；相册满载后停止拍摄。"},
+    "groups": {"runtime": "执行模式", "timing": "时间与画面", "social_cooldown": "模仿鲁道夫冷却", "life_rhythm": "生活节奏", "memory_album": "回忆相册", "developer": "开发工具"},
+    "imitation_cooldown_tooltip": "调整帝宝与鹤宝再次模仿鲁道夫前的等待时间；不影响一般社交互动冷却。",
+    "world_mode": "世界模式", "time_scale": "时间流速", "display_scale": "显示比例", "enable_care": "启用角色照护功能", "enable_care_tooltip": "允许低心情照护与相关家庭互动。", "enable_autonomous_sleep": "启用自主睡眠", "enable_autonomous_sleep_tooltip": "关闭后不再开始新的自主睡眠；已有睡眠会正常结束。", "enable_autonomous_transformation": "启用自主变身", "enable_autonomous_transformation_tooltip": "关闭后不再开始新的自主变身；已有变身与解除流程会正常完成。",
     "race_frequency": "竞赛频率", "race_frequency_tooltip": "调整自主竞赛的等待与冷却时间；不跳过资格、距离或接受判定。", "chorus_frequency": "合奏频率", "chorus_frequency_tooltip": "调整自主合奏的等待、重试与冷却时间；不跳过资格、距离或反应判定。",
     "mood_climate": "情绪气候", "mood_climate_tooltip": "自然心情会随模拟倍速更新；三种气候只调整发生率、正负倾向与幅度，不设置目标心情。",
     "show_debug": "显示角色 Debug 信息", "show_debug_tooltip": "显示完整角色与效能调试信息。", "show_social_status": "显示角色社交状态标签", "show_social_status_tooltip": "在角色头上显示 random、relation_watch 等行为测试标签。",
@@ -388,13 +407,15 @@
     "preview_work_idle": "只播放工作与休息动画，不应用金钱、家庭压力或心情结算。", "preview_race_idle": "播放鲁道夫与帝宝的完整竞赛；不写入事件，也不应用数值变动。", "preview_chorus_idle": "立即开始一场沙盒合奏；沿用自主反应，不写事件或应用收益。", "preview_work_active": "鲁道夫工作预览已开始；本次不会应用任何结算。", "preview_race_active": "鲁道夫 vs 帝宝竞赛预览已开始；本次不写入正式事件或数值。", "preview_chorus_active": "合奏预览已开始；本次不写入事件，也不应用心情或关系收益。", "sleep_control_idle": "指定角色睡觉或用既有 waking 流程唤醒；仅限沙盒。",
     "preview_work_tooltip": "使用 manifest 的 activity_work_stationary 与 activity_work_rest 预览；不应用正式结算。", "preview_work_sandbox_only": "只可在沙盒模式使用工作预览。", "preview_race_tooltip": "使用竞赛 manifest contexts 播放完整流程；不写入正式事件或数值。", "preview_race_sandbox_only": "只可在沙盒模式使用竞赛预览。", "preview_chorus_tooltip": "立即开始合奏并沿用自主加入／观看反应；不写入事件或应用收益。", "preview_chorus_sandbox_only": "只可在沙盒模式使用合奏预览。",
     "world_modes": {"golden_legend": "黄金传说", "sandbox": "沙盒"},
-    "frequencies": {"frequent": "经常", "normal": "普通", "occasional": "偶尔"},
+    "frequencies": {"disabled": "不启用", "frequent": "经常", "normal": "普通", "occasional": "偶尔"},
     "race_frequency_tooltips": {
+      "disabled": "不开始新的自主竞赛；已开始的竞赛会正常完成。",
       "frequent": "缩短自主竞赛的等待与冷却时间；仍需通过资格、距离与接受判定。",
       "normal": "使用标准的自主竞赛等待与冷却时间。",
       "occasional": "延长自主竞赛的等待与冷却时间；适合希望减少竞赛的情况。"
     },
     "chorus_frequency_tooltips": {
+      "disabled": "不开始新的自主合奏；已开始的合奏会正常完成。",
       "frequent": "缩短自主合奏的等待、重试与冷却时间；仍需通过资格与反应判定。",
       "normal": "使用标准的自主合奏等待、重试与冷却时间。",
       "occasional": "延长自主合奏的等待、重试与冷却时间；适合希望减少演出的情况。"

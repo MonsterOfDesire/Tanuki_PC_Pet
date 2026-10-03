@@ -100,6 +100,7 @@ class ActivityRuntimeController:
         runtime_adapter,
         race_frequency_provider,
         chorus_frequency_provider,
+        autonomous_sleep_enabled_provider=lambda: True,
         **kwargs,
     ):
         work_settlement_adapter = RudolfWorkSettlementAdapter()
@@ -114,6 +115,9 @@ class ActivityRuntimeController:
             sleep_executor=SleepExecutor(
                 coordinator=activity_coordinator,
                 runtime_adapter=runtime_adapter,
+                autonomous_enabled_provider=(
+                    autonomous_sleep_enabled_provider
+                ),
             ),
             race_executor=RaceExecutor(
                 coordinator=activity_coordinator,

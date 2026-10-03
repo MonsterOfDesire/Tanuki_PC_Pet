@@ -9,7 +9,8 @@ from .ui_skin_spec import (
     project_normalized_rect,
     OCCLUSION_DARK_PIXELS,
 )
-from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
+from .ui_theme import DEFAULT_UI_THEME, apply_ui_theme
+from .ui_surface_materials import SkinContentSurface
 
 
 class _ScaledAssetLayer(QWidget):
@@ -115,7 +116,9 @@ class SkinnedWindowFrame(QWidget):
         self.background_layer = _ScaledAssetLayer(self.scene_viewport)
         self.occlusion_surface = QFrame(self.scene_viewport)
         self.occlusion_surface.setObjectName("tanukiSkinOcclusionSurface")
-        self.content_surface = QFrame(self.scene_viewport)
+        self.content_surface = SkinContentSurface(
+            self.scene_viewport, corner_radius=theme.radius_large
+        )
         self.content_surface.setObjectName("tanukiSkinContentSurface")
         self.content_layout = QVBoxLayout(self.content_surface)
         self.content_layout.setContentsMargins(
@@ -127,7 +130,7 @@ class SkinnedWindowFrame(QWidget):
         self.content_layout.setSpacing(theme.spacing_md)
         self.foreground_layer = _ScaledAssetLayer(self.scene_viewport)
         self.additional_foreground_layers = []
-        self.setStyleSheet(build_ui_stylesheet(theme))
+        apply_ui_theme(self, theme)
         if defer_skin:
             self._prepare_deferred_skin(skin_key)
         else:

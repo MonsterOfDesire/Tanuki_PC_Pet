@@ -9,6 +9,7 @@ from .asset_manager import AssetManager
 from .pet_intent_rules import pet_has_sleep_join_intent
 from .transformation_profiles import (
     apply_pet_form_mood_floor,
+    get_form_visual_scale,
     get_transformation_profile,
 )
 from .transformation_rules import (
@@ -137,7 +138,11 @@ class TransformationExecutor:
                 target_form=decision.target_form,
             )
         try:
-            manager = self._build_asset_manager(pet, target_path)
+            manager = self._build_asset_manager(
+                pet,
+                target_path,
+                decision.target_form,
+            )
             initial_result = manager.get_contextual_result_for_any_purpose(
                 context="random",
                 mood_score=max(50.0, float(getattr(pet, "mood_score", 60.0))),
@@ -194,6 +199,7 @@ class TransformationExecutor:
         world_mode: str,
         sim_now: float,
         transition_now: float,
+        autonomous_enabled: bool = True,
     ) -> tuple[TransformationRuntimeResult, ...]:
         results = []
         for pet in tuple(pets or ()):
@@ -212,6 +218,15 @@ class TransformationExecutor:
             if manual_result is not None:
                 if manual_result.handled:
                     results.append(manual_result)
+                continue
+            if (
+                not bool(autonomous_enabled)
+                and state.current_form == FORM_BASE
+                and not state.active
+            ):
+                state.auto_next_attempt_at = 0.0
+                state.auto_retry_at = 0.0
+                self._reset_tendency_state(state)
                 continue
             decision = decide_auto_transformation(
                 TransformationAutoSnapshot(
@@ -614,11 +629,15 @@ class TransformationExecutor:
             return os.path.join(base_path, profile.transformed_subdirectory)
         return base_path
 
-    def _build_asset_manager(self, pet, target_path: str):
+    def _build_asset_manager(self, pet, target_path: str, target_form: str):
         current = getattr(pet, "asset_manager", None)
+        visual_scale = get_form_visual_scale(
+            getattr(pet, "name", ""),
+            target_form,
+        )
         return self.asset_manager_factory(
             target_path,
-            scale_factor=float(pet.get_effective_scale()),
+            scale_factor=float(pet.get_effective_scale()) * visual_scale,
             frame_cache=getattr(current, "frame_cache", None),
             store_cache=getattr(current, "store_cache", None),
         )

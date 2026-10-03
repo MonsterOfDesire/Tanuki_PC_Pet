@@ -84,6 +84,8 @@ class DashboardStateMapperTests(unittest.TestCase):
             play_calendar_started_on="2026-09-10",
             race_frequency="frequent",
             chorus_frequency="occasional",
+            autonomous_sleep_enabled=False,
+            autonomous_transformation_enabled=False,
             mood_climate="expressive",
             ui_locale="ja_JP",
             achievement_capture_enabled=True,
@@ -101,6 +103,8 @@ class DashboardStateMapperTests(unittest.TestCase):
         self.assertTrue(settings.social_status_enabled)
         self.assertEqual(settings.race_frequency, "frequent")
         self.assertEqual(settings.chorus_frequency, "occasional")
+        self.assertFalse(settings.autonomous_sleep_enabled)
+        self.assertFalse(settings.autonomous_transformation_enabled)
         self.assertEqual(settings.mood_climate, "expressive")
         self.assertEqual(settings.ui_locale, "ja_JP")
         self.assertTrue(settings.achievement_capture_enabled)
@@ -142,8 +146,11 @@ class DashboardStateMapperTests(unittest.TestCase):
                 "social_status_enabled": True,
                 "race_frequency": "normal",
                 "chorus_frequency": "normal",
+                "autonomous_sleep_enabled": True,
+                "autonomous_transformation_enabled": True,
                 "mood_climate": "cheerful",
                 "ui_locale": "zh_TW",
+                "ui_text_size": "medium",
                 "achievement_capture_enabled": False,
                 "memory_album_mode": "off",
                 "memory_album_capacity": 20,

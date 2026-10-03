@@ -18,7 +18,6 @@ from .dashboard_legacy_adapter import DashboardControlState
 from .dashboard_launcher_binding import DashboardLauncherBinding
 from .dashboard_launcher_ui import (
     COLLAPSED_LAUNCHER_WIDTH,
-    EXPANDED_LAUNCHER_WIDTH,
     LAUNCHER_MINIMUM_HEIGHT,
     DashboardLauncherPanel,
 )
@@ -73,6 +72,7 @@ from .offer_tray_ui import OfferTrayWindow
 from .runtime import SIM_CLOCK, app_now
 from .runtime_debug_log import log_suppressed_exception
 from .settings_provider import RuntimeSettings
+from .ui_typography import normalize_ui_text_size, set_ui_text_size
 from .shutdown_controller import DashboardShutdownController
 from .status_settings_binding import DashboardStatusSettingsBinding
 from .ui_localization import (
@@ -443,6 +443,20 @@ class Dashboard(QWidget):
         self.chorus_frequency = str(
             getattr(self.settings_provider, "chorus_frequency", "normal")
         )
+        self.autonomous_sleep_enabled = bool(
+            getattr(
+                self.settings_provider,
+                "autonomous_sleep_enabled",
+                True,
+            )
+        )
+        self.autonomous_transformation_enabled = bool(
+            getattr(
+                self.settings_provider,
+                "autonomous_transformation_enabled",
+                True,
+            )
+        )
         self.mood_climate_options = list(
             RuntimeSettings.MOOD_CLIMATE_OPTIONS
         )
@@ -453,6 +467,10 @@ class Dashboard(QWidget):
         self.ui_locale = str(
             getattr(self.settings_provider, "ui_locale", "zh_TW")
         )
+        self.ui_text_size = normalize_ui_text_size(
+            getattr(self.settings_provider, "ui_text_size", "medium")
+        )
+        set_ui_text_size(self.ui_text_size)
         self.achievement_capture_enabled = bool(
             getattr(
                 self.settings_provider,
@@ -602,6 +620,9 @@ class Dashboard(QWidget):
         self.launcher_panel.pinned_changed.connect(
             self._handle_launcher_pinned_changed
         )
+        self.launcher_panel.preferred_width_changed.connect(
+            self._handle_launcher_preferred_width_changed
+        )
         self._activate_launcher_shell(target_rect)
         self.update_positions(target_rect)
         self.move(self.hide_pos)
@@ -705,7 +726,7 @@ class Dashboard(QWidget):
         )
         self.launcher_shell_height = min(520, available_height)
         self.setFixedSize(
-            EXPANDED_LAUNCHER_WIDTH,
+            self.launcher_panel.expanded_width,
             self.launcher_shell_height,
         )
         self.launcher_panel.show()
@@ -717,12 +738,16 @@ class Dashboard(QWidget):
 
     def _set_launcher_window_width(self, expanded):
         width = (
-            EXPANDED_LAUNCHER_WIDTH
+            self.launcher_panel.expanded_width
             if expanded
             else COLLAPSED_LAUNCHER_WIDTH
         )
         self.setFixedSize(width, self.launcher_shell_height)
         self.update_positions(self.target_rect)
+
+    def _handle_launcher_preferred_width_changed(self, _width):
+        if self.launcher_panel.is_expanded:
+            self._set_launcher_window_width(True)
 
     def _handle_launcher_expanded_changed(self, expanded):
         self._set_launcher_window_width(expanded)
@@ -804,8 +829,13 @@ class Dashboard(QWidget):
             social_status_enabled=self.social_status_enabled,
             race_frequency=self.race_frequency,
             chorus_frequency=self.chorus_frequency,
+            autonomous_sleep_enabled=self.autonomous_sleep_enabled,
+            autonomous_transformation_enabled=(
+                self.autonomous_transformation_enabled
+            ),
             mood_climate=self.mood_climate,
             ui_locale=self.ui_locale,
+            ui_text_size=self.ui_text_size,
             achievement_capture_enabled=self.achievement_capture_enabled,
             memory_album_mode=self.memory_album_mode,
             memory_album_capacity=self.memory_album_capacity,
@@ -836,8 +866,16 @@ class Dashboard(QWidget):
         self.display_scale_idx = int(state.display_scale_idx)
         self.race_frequency = str(state.race_frequency)
         self.chorus_frequency = str(state.chorus_frequency)
+        self.autonomous_sleep_enabled = bool(
+            state.autonomous_sleep_enabled
+        )
+        self.autonomous_transformation_enabled = bool(
+            state.autonomous_transformation_enabled
+        )
         self.mood_climate = str(state.mood_climate)
         self.ui_locale = str(state.ui_locale)
+        self.ui_text_size = normalize_ui_text_size(state.ui_text_size)
+        set_ui_text_size(self.ui_text_size)
         self.achievement_capture_enabled = bool(
             state.achievement_capture_enabled
         )
@@ -1028,11 +1066,28 @@ class Dashboard(QWidget):
     def set_chorus_frequency(self, value, save=True):
         self.controller.set_chorus_frequency(self, value, save=save)
 
+    def set_autonomous_sleep_enabled(self, enabled, save=True):
+        self.controller.set_autonomous_sleep_enabled(
+            self,
+            enabled,
+            save=save,
+        )
+
+    def set_autonomous_transformation_enabled(self, enabled, save=True):
+        self.controller.set_autonomous_transformation_enabled(
+            self,
+            enabled,
+            save=save,
+        )
+
     def set_mood_climate(self, value, save=True):
         self.controller.set_mood_climate(self, value, save=save)
 
     def set_ui_locale(self, value, save=True):
         self.controller.set_ui_locale(self, value, save=save)
+
+    def set_ui_text_size(self, value, save=True):
+        self.controller.set_ui_text_size(self, value, save=save)
 
     def get_update_status_snapshot(self):
         return self.update_check_coordinator.snapshot()
@@ -1485,7 +1540,7 @@ class Dashboard(QWidget):
     def _manual_camera_hint_text(self):
         return translate_ui(
             "launcher.manual_camera_controls",
-            default="Tab 切換比例 · Enter 拍照 · Esc 取消",
+            default="左鍵拍照 · Tab 切換比例 · Esc 取消",
         )
 
     def _handle_manual_camera_active_changed(self, active):
@@ -1862,7 +1917,7 @@ class Dashboard(QWidget):
             or self.launcher_panel.is_pinned
         )
         self.setFixedSize(
-            EXPANDED_LAUNCHER_WIDTH
+            self.launcher_panel.expanded_width
             if expanded
             else COLLAPSED_LAUNCHER_WIDTH,
             self.launcher_shell_height,

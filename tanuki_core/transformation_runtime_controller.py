@@ -30,6 +30,7 @@ class TransformationRuntimeController:
         world_mode_provider,
         household_pressure_provider,
         record_household_event,
+        autonomous_enabled_provider=lambda: True,
         refresh_household_summary=None,
         transition_now_provider=time.perf_counter,
         sim_now_provider=app_now,
@@ -44,15 +45,22 @@ class TransformationRuntimeController:
         self.world_mode_provider = world_mode_provider
         self.household_pressure_provider = household_pressure_provider
         self.record_household_event = record_household_event
+        self.autonomous_enabled_provider = autonomous_enabled_provider
         self.refresh_household_summary = refresh_household_summary
         self.transition_now_provider = transition_now_provider
         self.sim_now_provider = sim_now_provider
 
     @classmethod
     def create_default(cls, **kwargs):
+        autonomous_enabled_provider = kwargs.get(
+            "autonomous_enabled_provider",
+            lambda: True,
+        )
         return cls(
             executor=TransformationExecutor(),
-            tendency_coordinator=TransformationTendencyCoordinator(),
+            tendency_coordinator=TransformationTendencyCoordinator(
+                autonomous_enabled_provider=autonomous_enabled_provider,
+            ),
             **kwargs,
         )
 
@@ -155,6 +163,7 @@ class TransformationRuntimeController:
             world_mode=self.world_mode_provider(),
             sim_now=sim_now,
             transition_now=transition_now,
+            autonomous_enabled=self._autonomous_enabled(),
         )
         for result in tuple(auto_results or ()):
             if (
@@ -170,7 +179,10 @@ class TransformationRuntimeController:
         self.achievement_runtime_coordinator.cancel_orphaned_transformations(
             self.pets
         )
-        if self.tendency_coordinator is not None:
+        if (
+            self.tendency_coordinator is not None
+            and self._autonomous_enabled()
+        ):
             self.tendency_coordinator.update_context(
                 pets=self.pets,
                 household_pressure=float(
@@ -180,6 +192,12 @@ class TransformationRuntimeController:
                 now=sim_now,
             )
         return (*transition_results, *auto_results)
+
+    def _autonomous_enabled(self):
+        try:
+            return bool(self.autonomous_enabled_provider())
+        except Exception:
+            return True
 
     def observe_race_event(self, event):
         if self.tendency_coordinator is None:

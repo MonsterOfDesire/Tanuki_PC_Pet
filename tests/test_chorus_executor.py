@@ -555,6 +555,40 @@ class ChorusExecutorTests(unittest.TestCase):
         self.assertEqual(self.executor.schedule.frequency_key, "frequent")
         self.assertEqual(self.executor.schedule.next_proposal_at, 80.0)
 
+    def test_disabled_frequency_blocks_new_chorus_and_reenable_gets_fresh_delay(self):
+        selected = ["disabled"]
+        self.executor.frequency_provider = lambda: selected[0]
+
+        self.assertEqual(self.update(10.0), ())
+        self.assertIsNone(self.executor.session)
+        self.assertEqual(self.executor.schedule.next_proposal_at, 0.0)
+        self.assertEqual(
+            self.executor.schedule.last_wait_reason,
+            "autonomous_disabled",
+        )
+
+        selected[0] = "normal"
+        self.assertEqual(self.update(20.0), ())
+        self.assertGreater(self.executor.schedule.next_proposal_at, 20.0)
+
+    def test_disabling_frequency_does_not_interrupt_active_chorus(self):
+        self.update(10.0)
+        self.executor.frequency_provider = lambda: "disabled"
+        ends_at = self.executor.session.ends_at
+
+        finishing = self.update(ends_at)[0]
+        self.assertEqual(finishing.reason, "finishing")
+        finish_ends_at = self.executor.session.finish_ends_at
+        completed = self.update(finish_ends_at)[0]
+
+        self.assertTrue(completed.finished)
+        self.assertIsNone(self.executor.session)
+        self.assertEqual(self.executor.schedule.next_proposal_at, 0.0)
+        self.assertEqual(
+            self.executor.schedule.last_wait_reason,
+            "autonomous_disabled",
+        )
+
     def test_transformed_teio_can_autonomously_start(self):
         executor, _coordinator = build_executor()
         teio = FakePet("Tokai Teio")

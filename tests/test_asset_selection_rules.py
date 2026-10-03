@@ -1,6 +1,7 @@
 import unittest
 
 from tanuki_core.asset_selection_rules import (
+    has_explicit_contextual_result_for_purposes,
     get_mood_band,
     get_mood_rules,
     is_record_eligible,
@@ -326,6 +327,53 @@ class AssetSelectionRuleTests(unittest.TestCase):
         )
 
         self.assertEqual(result, (["walk_shake:sad"], "move", "walk_shake", "sad"))
+
+    def test_explicit_context_capability_requires_matching_context_and_band(self):
+        asset_records = {
+            "move": {
+                "walk_drink": {
+                    "happy": make_record(
+                        "walk_drink",
+                        "happy",
+                        bands=["normal"],
+                        contexts=["offer_accept_honey"],
+                    ),
+                },
+                "walk": {
+                    "happy": make_record(
+                        "walk",
+                        "happy",
+                        bands=["normal", "low"],
+                        contexts=["random"],
+                    ),
+                },
+            },
+        }
+
+        self.assertTrue(
+            has_explicit_contextual_result_for_purposes(
+                asset_records,
+                ("move", "idle"),
+                context="offer_accept_honey",
+                mood_score=80,
+            )
+        )
+        self.assertFalse(
+            has_explicit_contextual_result_for_purposes(
+                asset_records,
+                ("move", "idle"),
+                context="offer_accept_honey",
+                mood_score=35,
+            )
+        )
+        self.assertFalse(
+            has_explicit_contextual_result_for_purposes(
+                asset_records,
+                ("move", "idle"),
+                context="offer_accept_tea",
+                mood_score=80,
+            )
+        )
 
     def test_candidate_pool_weights_moods_instead_of_prioritizing_happy(self):
         asset_records = {

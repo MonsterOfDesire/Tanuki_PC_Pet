@@ -352,6 +352,45 @@ def select_contextual_result_for_purposes(
     return frames, purpose, action_type, mood_tag
 
 
+def has_explicit_contextual_result_for_purposes(
+    asset_records,
+    purposes,
+    *,
+    context,
+    mood_score=None,
+    forbidden=None,
+):
+    """Return whether a manifest explicitly assigns a usable context.
+
+    This is a side-effect-free capability query.  Unlike the animation
+    resolver it deliberately does not treat context-less legacy records as a
+    match: callers use it to decide whether the manifest author enabled a
+    behaviour, not to choose a compatibility fallback.
+    """
+    if not context:
+        return False
+    forbidden = set(forbidden or ())
+    for purpose in purposes or ():
+        action_map = asset_records.get(purpose, {})
+        for mood_map in action_map.values():
+            for mood_tag, record in mood_map.items():
+                if mood_tag in forbidden or not record:
+                    continue
+                manifest = record.get("manifest") or {}
+                contexts = manifest.get("contexts") or ()
+                if not context_matches(context, contexts):
+                    continue
+                if not is_record_eligible(
+                    record,
+                    mood_score=mood_score,
+                    context=context,
+                ):
+                    continue
+                if record.get("frames"):
+                    return True
+    return False
+
+
 def select_contextual_result_for_candidates(
     asset_records,
     candidates,

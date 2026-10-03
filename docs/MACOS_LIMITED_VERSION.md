@@ -42,7 +42,7 @@ TANUKI_PYTHON=.venv/bin/python bash ./build_macos.sh
 - `dist/TanukiPet.app`
 - `dist/TanukiPet-<version>-macos-arm64.zip` 或 `dist/TanukiPet-<version>-macos-x64.zip`
 
-`.icns` 由 `luna.ico` 在建置時重現產生；產物不含 Windows 更新器。
+`.icns` 由控制列使用的 `UI/side.png` 在建置時重現產生，並加上高對比圓角底板，避免深色桌布或 Dock 上只剩黑色輪廓；產物不含 Windows 更新器。
 
 ## 無 Mac 開發機時的驗證
 
@@ -64,4 +64,4 @@ macOS 原生視窗增強屬於可降級能力：套用 all-Spaces 時必須先�
 
 ## Release 內容
 
-建議跨平台測試版使用 `v0.10.1-beta`，同一個 Release 放置本版 Windows 套件、`TanukiUpdater.exe`、Windows 更新 manifest，以及兩個 macOS ZIP。macOS ZIP 不重複包入 Windows 內容；Release 頁則同時提供各平台下載選項。
+本輪跨平台版本使用 `v0.11.0-beta`，同一個 Release 放置本版 Windows 套件、`TanukiUpdater.exe`、Windows 更新 manifest，以及兩個 macOS ZIP。macOS ZIP 不重複包入 Windows 內容；Release 頁則同時提供各平台下載選項。建置與 push 不代表已建立或發布 Release。

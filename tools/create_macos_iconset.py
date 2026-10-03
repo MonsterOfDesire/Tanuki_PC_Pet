@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 
 ICON_OUTPUTS = (
@@ -28,9 +28,22 @@ def build_iconset(source_path, output_directory):
         source = source.convert("RGBA")
         for file_name, size in ICON_OUTPUTS:
             canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+            inset = max(1, int(round(size * 0.04)))
+            border_width = max(1, int(round(size * 0.018)))
+            draw = ImageDraw.Draw(canvas)
+            draw.rounded_rectangle(
+                (inset, inset, size - inset - 1, size - inset - 1),
+                radius=max(2, int(round(size * 0.22))),
+                fill=(42, 36, 31, 255),
+                outline=(204, 157, 68, 255),
+                width=border_width,
+            )
             resized = source.copy()
             resized.thumbnail(
-                (size, size),
+                (
+                    max(1, int(round(size * 0.82))),
+                    max(1, int(round(size * 0.82))),
+                ),
                 Image.Resampling.LANCZOS,
             )
             canvas.alpha_composite(

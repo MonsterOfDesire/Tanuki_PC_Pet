@@ -1,5 +1,5 @@
 {
-  "schema_version": 8,
+  "schema_version": 12,
   "dashboard": {
     "world_mode": "sandbox",
     "care_feature_enabled": true,
@@ -11,8 +11,15 @@
     "social_status_enabled": false,
     "race_frequency": "normal",
     "chorus_frequency": "normal",
+    "autonomous_sleep_enabled": true,
+    "autonomous_transformation_enabled": true,
     "mood_climate": "cheerful",
-    "ui_locale": "zh_TW"
+    "ui_locale": "zh_TW",
+    "ui_text_size": "medium",
+    "achievement_capture_enabled": false,
+    "memory_album_mode": "off",
+    "memory_album_capacity": 20,
+    "play_calendar_started_on": ""
   },
   "pets": {},
   "household": {}

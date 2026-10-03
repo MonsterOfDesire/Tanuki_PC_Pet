@@ -4,6 +4,7 @@ import tempfile
 import unittest
 
 from tools.create_macos_iconset import ICON_OUTPUTS, build_iconset
+from tanuki_core.ui_skin_spec import iter_runtime_asset_paths
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -28,12 +29,33 @@ class MacOSBuildContractTests(unittest.TestCase):
     def test_iconset_generator_produces_all_apple_icon_slots(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             outputs = build_iconset(
-                REPOSITORY_ROOT / "luna.ico",
+                REPOSITORY_ROOT / "UI" / "side.png",
                 Path(temporary_directory) / "TanukiPet.iconset",
             )
 
             self.assertEqual(len(outputs), len(ICON_OUTPUTS))
             self.assertTrue(all(output.is_file() for output in outputs))
+
+    def test_macos_spec_packages_every_lazy_ui_skin_asset(self):
+        spec_text = (
+            REPOSITORY_ROOT / "TanukiPet-macOS.spec"
+        ).read_text(encoding="utf-8")
+
+        for relative_path in iter_runtime_asset_paths():
+            relative_parts = Path(relative_path).parts
+            if len(relative_parts) != 2:
+                continue
+            _ui_directory, file_name = relative_parts
+            self.assertIn(
+                f'"UI" / "{file_name}"',
+                spec_text,
+                msg=f"macOS package is missing lazy UI asset {relative_path}",
+            )
+
+        build_script = (
+            REPOSITORY_ROOT / "build_macos.sh"
+        ).read_text(encoding="utf-8")
+        self.assertIn('"$repo_root/UI/side.png"', build_script)
 
     def test_macos_package_excludes_windows_updater(self):
         spec_text = (

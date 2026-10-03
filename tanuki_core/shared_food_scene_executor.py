@@ -3,7 +3,6 @@ import random
 from .item_scene_coordinator import SharedFoodSceneState
 from .offer_interaction_rules import (
     FOOD_CONSUME_DURATION_MULTIPLIER,
-    get_direct_offer_accept_candidates,
     get_direct_offer_accept_context,
 )
 from .offer_scene_execution_port import adapt_offer_scene_executor
@@ -521,7 +520,7 @@ class SharedFoodSceneExecutor:
         if (
             holder_pet is None
             or not holder_pet.isVisible()
-            or not get_direct_offer_accept_candidates(item_kind, holder_pet.name)
+            or not port.pets.has_direct_offer_context(holder_pet, item_kind)
         ):
             return False
         return port.flow.start_direct_offer_scene(item_kind, holder_pet, source=source)
