@@ -1,0 +1,4965 @@
+{
+  "schema_version": 1,
+  "analysis_version": "2026-08-27.2f",
+  "generated_at": "2026-08-27T20:32:55+08:00",
+  "scope_note": "Frame-level local audit and motion-semantic triage only. Historical source video pages were browser-blocked and early Futaba attachment payloads were unavailable, so no pixel/source-frame match or exclusion is asserted.",
+  "target_prefixes": [
+    "idle_lie",
+    "idle_sit",
+    "idle_mix_dance"
+  ],
+  "asset_count": 89,
+  "contact_sheets": {
+    "idle_lie": "docs/asset_provenance/review/phase2f_idle_lie_frames.png",
+    "idle_mix_dance": "docs/asset_provenance/review/phase2f_idle_mix_dance_frames.png",
+    "idle_sit": "docs/asset_provenance/review/phase2f_idle_sit_frames.png"
+  },
+  "action_group_count": 16,
+  "action_groups": [
+    {
+      "action_key": "idle_lie",
+      "asset_count": 23,
+      "characters": [
+        "Air Groove",
+        "Sirius Symboli",
+        "Symboli Rudolf",
+        "Tokai Teio",
+        "Tsurumaru Tsuyoshi"
+      ],
+      "forms": [
+        "base"
+      ],
+      "frame_counts": [
+        1,
+        4,
+        6
+      ],
+      "total_durations_ms": [
+        200,
+        400,
+        600,
+        1800,
+        4000
+      ],
+      "pose_orientations": [
+        "balanced",
+        "horizontal"
+      ],
+      "motion_extents": [
+        "broad_body_or_multi_limb",
+        "localized_internal_or_expression",
+        "nearly_static"
+      ],
+      "mean_alpha_change_range": [
+        0.0,
+        0.047859
+      ],
+      "mean_rgba_change_range": [
+        0.0,
+        0.207971
+      ]
+    },
+    {
+      "action_key": "idle_lie_read",
+      "asset_count": 1,
+      "characters": [
+        "Symboli Rudolf"
+      ],
+      "forms": [
+        "base"
+      ],
+      "frame_counts": [
+        4
+      ],
+      "total_durations_ms": [
+        800
+      ],
+      "pose_orientations": [
+        "balanced"
+      ],
+      "motion_extents": [
+        "localized_limb_or_accessory"
+      ],
+      "mean_alpha_change_range": [
+        0.060513,
+        0.060513
+      ],
+      "mean_rgba_change_range": [
+        0.227578,
+        0.227578
+      ]
+    },
+    {
+      "action_key": "idle_mix_dance",
+      "asset_count": 9,
+      "characters": [
+        "Sirius Symboli",
+        "Symboli Rudolf",
+        "Tokai Teio"
+      ],
+      "forms": [
+        "base",
+        "transformed"
+      ],
+      "frame_counts": [
+        8
+      ],
+      "total_durations_ms": [
+        400,
+        800
+      ],
+      "pose_orientations": [
+        "balanced"
+      ],
+      "motion_extents": [
+        "broad_body_or_multi_limb"
+      ],
+      "mean_alpha_change_range": [
+        0.272514,
+        0.296255
+      ],
+      "mean_rgba_change_range": [
+        0.751604,
+        0.847089
+      ]
+    },
+    {
+      "action_key": "idle_mix_dance_carrot",
+      "asset_count": 3,
+      "characters": [
+        "Symboli Rudolf",
+        "Tokai Teio"
+      ],
+      "forms": [
+        "base",
+        "transformed"
+      ],
+      "frame_counts": [
+        8
+      ],
+      "total_durations_ms": [
+        800
+      ],
+      "pose_orientations": [
+        "balanced"
+      ],
+      "motion_extents": [
+        "broad_body_or_multi_limb"
+      ],
+      "mean_alpha_change_range": [
+        0.272305,
+        0.317752
+      ],
+      "mean_rgba_change_range": [
+        0.822126,
+        0.852033
+      ]
+    },
+    {
+      "action_key": "idle_mix_dance_me",
+      "asset_count": 1,
+      "characters": [
+        "Sirius Symboli"
+      ],
+      "forms": [
+        "base"
+      ],
+      "frame_counts": [
+        8
+      ],
+      "total_durations_ms": [
+        800
+      ],
+      "pose_orientations": [
+        "balanced"
+      ],
+      "motion_extents": [
+        "broad_body_or_multi_limb"
+      ],
+      "mean_alpha_change_range": [
+        0.299359,
+        0.299359
+      ],
+      "mean_rgba_change_range": [
+        0.755242,
+        0.755242
+      ]
+    },
+    {
+      "action_key": "idle_mix_dance_sing",
+      "asset_count": 2,
+      "characters": [
+        "Tokai Teio"
+      ],
+      "forms": [
+        "transformed"
+      ],
+      "frame_counts": [
+        8
+      ],
+      "total_durations_ms": [
+        800
+      ],
+      "pose_orientations": [
+        "balanced"
+      ],
+      "motion_extents": [
+        "broad_body_or_multi_limb"
+      ],
+      "mean_alpha_change_range": [
+        0.29073,
+        0.29073
+      ],
+      "mean_rgba_change_range": [
+        0.820534,
+        0.821657
+      ]
+    },
+    {
+      "action_key": "idle_sit",
+      "asset_count": 18,
+      "characters": [
+        "Air Groove",
+        "Sirius Symboli",
+        "Symboli Rudolf",
+        "Tokai Teio",
+        "Tsurumaru Tsuyoshi"
+      ],
+      "forms": [
+        "base",
+        "transformed"
+      ],
+      "frame_counts": [
+        4,
+        8
+      ],
+      "total_durations_ms": [
+        400,
+        800
+      ],
+      "pose_orientations": [
+        "balanced",
+        "upright"
+      ],
+      "motion_extents": [
+        "broad_body_or_multi_limb",
+        "localized_internal_or_expression",
+        "localized_limb_or_accessory"
+      ],
+      "mean_alpha_change_range": [
+        0.007221,
+        0.060199
+      ],
+      "mean_rgba_change_range": [
+        0.090338,
+        0.317924
+      ]
+    },
+    {
+      "action_key": "idle_sit_eat_lollipop",
+      "asset_count": 1,
+      "characters": [
+        "Symboli Rudolf"
+      ],
+      "forms": [
+        "base"
+      ],
+      "frame_counts": [
+        4
+      ],
+      "total_durations_ms": [
+        400
+      ],
+      "pose_orientations": [
+        "balanced"
+      ],
+      "motion_extents": [
+        "broad_body_or_multi_limb"
+      ],
+      "mean_alpha_change_range": [
+        0.024201,
+        0.024201
+      ],
+      "mean_rgba_change_range": [
+        0.195219,
+        0.195219
+      ]
+    },
+    {
+      "action_key": "idle_sit_no",
+      "asset_count": 6,
+      "characters": [
+        "Tsurumaru Tsuyoshi"
+      ],
+      "forms": [
+        "base"
+      ],
+      "frame_counts": [
+        4
+      ],
+      "total_durations_ms": [
+        400
+      ],
+      "pose_orientations": [
+        "balanced",
+        "upright"
+      ],
+      "motion_extents": [
+        "localized_limb_or_accessory"
+      ],
+      "mean_alpha_change_range": [
+        0.048525,
+        0.059485
+      ],
+      "mean_rgba_change_range": [
+        0.375822,
+        0.430387
+      ]
+    },
+    {
+      "action_key": "idle_sit_read",
+      "asset_count": 1,
+      "characters": [
+        "Symboli Rudolf"
+      ],
+      "forms": [
+        "base"
+      ],
+      "frame_counts": [
+        4
+      ],
+      "total_durations_ms": [
+        400
+      ],
+      "pose_orientations": [
+        "balanced"
+      ],
+      "motion_extents": [
+        "localized_internal_or_expression"
+      ],
+      "mean_alpha_change_range": [
+        0.021688,
+        0.021688
+      ],
+      "mean_rgba_change_range": [
+        0.181301,
+        0.181301
+      ]
+    },
+    {
+      "action_key": "idle_sit_small",
+      "asset_count": 2,
+      "characters": [
+        "Symboli Rudolf"
+      ],
+      "forms": [
+        "base"
+      ],
+      "frame_counts": [
+        4
+      ],
+      "total_durations_ms": [
+        400
+      ],
+      "pose_orientations": [
+        "balanced"
+      ],
+      "motion_extents": [
+        "localized_internal_or_expression"
+      ],
+      "mean_alpha_change_range": [
+        0.01655,
+        0.016641
+      ],
+      "mean_rgba_change_range": [
+        0.141141,
+        0.142729
+      ]
+    },
+    {
+      "action_key": "idle_sit_talk",
+      "asset_count": 3,
+      "characters": [
+        "Sirius Symboli"
+      ],
+      "forms": [
+        "base"
+      ],
+      "frame_counts": [
+        4
+      ],
+      "total_durations_ms": [
+        400
+      ],
+      "pose_orientations": [
+        "balanced"
+      ],
+      "motion_extents": [
+        "localized_internal_or_expression"
+      ],
+      "mean_alpha_change_range": [
+        0.008742,
+        0.009309
+      ],
+      "mean_rgba_change_range": [
+        0.109424,
+        0.122809
+      ]
+    },
+    {
+      "action_key": "idle_sit_teach",
+      "asset_count": 3,
+      "characters": [
+        "Air Groove"
+      ],
+      "forms": [
+        "base"
+      ],
+      "frame_counts": [
+        4
+      ],
+      "total_durations_ms": [
+        400
+      ],
+      "pose_orientations": [
+        "upright"
+      ],
+      "motion_extents": [
+        "localized_internal_or_expression"
+      ],
+      "mean_alpha_change_range": [
+        0.010632,
+        0.010824
+      ],
+      "mean_rgba_change_range": [
+        0.142373,
+        0.157744
+      ]
+    },
+    {
+      "action_key": "idle_sit_wave",
+      "asset_count": 8,
+      "characters": [
+        "Tsurumaru Tsuyoshi"
+      ],
+      "forms": [
+        "base"
+      ],
+      "frame_counts": [
+        8
+      ],
+      "total_durations_ms": [
+        800
+      ],
+      "pose_orientations": [
+        "balanced",
+        "upright"
+      ],
+      "motion_extents": [
+        "broad_body_or_multi_limb",
+        "localized_limb_or_accessory"
+      ],
+      "mean_alpha_change_range": [
+        0.064522,
+        0.08691
+      ],
+      "mean_rgba_change_range": [
+        0.3593,
+        0.399622
+      ]
+    },
+    {
+      "action_key": "idle_sit_wave_hug",
+      "asset_count": 3,
+      "characters": [
+        "Tsurumaru Tsuyoshi"
+      ],
+      "forms": [
+        "base"
+      ],
+      "frame_counts": [
+        8
+      ],
+      "total_durations_ms": [
+        800
+      ],
+      "pose_orientations": [
+        "balanced",
+        "upright"
+      ],
+      "motion_extents": [
+        "broad_body_or_multi_limb",
+        "localized_limb_or_accessory"
+      ],
+      "mean_alpha_change_range": [
+        0.0661,
+        0.088658
+      ],
+      "mean_rgba_change_range": [
+        0.375683,
+        0.412378
+      ]
+    },
+    {
+      "action_key": "idle_sit_wave_stretch",
+      "asset_count": 5,
+      "characters": [
+        "Tsurumaru Tsuyoshi"
+      ],
+      "forms": [
+        "base"
+      ],
+      "frame_counts": [
+        8
+      ],
+      "total_durations_ms": [
+        800
+      ],
+      "pose_orientations": [
+        "balanced",
+        "upright"
+      ],
+      "motion_extents": [
+        "broad_body_or_multi_limb",
+        "localized_limb_or_accessory"
+      ],
+      "mean_alpha_change_range": [
+        0.0661,
+        0.088658
+      ],
+      "mean_rgba_change_range": [
+        0.376791,
+        0.413976
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "asset_id": "asset-0013",
+      "relative_path": "assets_cropped/Air Groove/idle_lie-happy.gif",
+      "character": "Air Groove",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "happy",
+      "frame_count": 6,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 600,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          378,
+          211
+        ],
+        "union_bbox_aspect_ratio": 1.799043,
+        "pose_orientation": "horizontal",
+        "mean_alpha_change_ratio": 0.011553,
+        "max_alpha_change_ratio": 0.012136,
+        "mean_rgba_change_ratio": 0.118807,
+        "max_rgba_change_ratio": 0.128373,
+        "mean_centroid_step_normalized": 0.001892,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.002296,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0014",
+      "relative_path": "assets_cropped/Air Groove/idle_lie-sad.gif",
+      "character": "Air Groove",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "sad",
+      "frame_count": 6,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 600,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          378,
+          211
+        ],
+        "union_bbox_aspect_ratio": 1.799043,
+        "pose_orientation": "horizontal",
+        "mean_alpha_change_ratio": 0.011553,
+        "max_alpha_change_ratio": 0.012136,
+        "mean_rgba_change_ratio": 0.117481,
+        "max_rgba_change_ratio": 0.127631,
+        "mean_centroid_step_normalized": 0.001892,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.002296,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0015",
+      "relative_path": "assets_cropped/Air Groove/idle_lie-sleep.gif",
+      "character": "Air Groove",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "sleep",
+      "frame_count": 6,
+      "frame_durations_ms": [
+        300,
+        300,
+        300,
+        300,
+        300,
+        300
+      ],
+      "total_duration_ms": 1800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          418,
+          320
+        ],
+        "union_bbox_aspect_ratio": 1.308176,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.047859,
+        "max_alpha_change_ratio": 0.089118,
+        "mean_rgba_change_ratio": 0.150934,
+        "max_rgba_change_ratio": 0.196498,
+        "mean_centroid_step_normalized": 0.044225,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.112125,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0022",
+      "relative_path": "assets_cropped/Air Groove/idle_sit-angry.gif",
+      "character": "Air Groove",
+      "form": "base",
+      "action_key": "idle_sit",
+      "variant_label": "angry",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          250,
+          376
+        ],
+        "union_bbox_aspect_ratio": 0.663102,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.011224,
+        "max_alpha_change_ratio": 0.012161,
+        "mean_rgba_change_ratio": 0.139941,
+        "max_rgba_change_ratio": 0.145127,
+        "mean_centroid_step_normalized": 0.000367,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.001101,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0023",
+      "relative_path": "assets_cropped/Air Groove/idle_sit-awkward.gif",
+      "character": "Air Groove",
+      "form": "base",
+      "action_key": "idle_sit",
+      "variant_label": "awkward",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          250,
+          338
+        ],
+        "union_bbox_aspect_ratio": 0.738095,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.011422,
+        "max_alpha_change_ratio": 0.012459,
+        "mean_rgba_change_ratio": 0.146332,
+        "max_rgba_change_ratio": 0.151914,
+        "mean_centroid_step_normalized": 0.001761,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.002642,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0024",
+      "relative_path": "assets_cropped/Air Groove/idle_sit-happy.gif",
+      "character": "Air Groove",
+      "form": "base",
+      "action_key": "idle_sit",
+      "variant_label": "happy",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          250,
+          376
+        ],
+        "union_bbox_aspect_ratio": 0.663102,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.011224,
+        "max_alpha_change_ratio": 0.012161,
+        "mean_rgba_change_ratio": 0.139987,
+        "max_rgba_change_ratio": 0.145142,
+        "mean_centroid_step_normalized": 0.000367,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.001101,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0025",
+      "relative_path": "assets_cropped/Air Groove/idle_sit-sad.gif",
+      "character": "Air Groove",
+      "form": "base",
+      "action_key": "idle_sit",
+      "variant_label": "sad",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          250,
+          338
+        ],
+        "union_bbox_aspect_ratio": 0.738095,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.011422,
+        "max_alpha_change_ratio": 0.012459,
+        "mean_rgba_change_ratio": 0.142462,
+        "max_rgba_change_ratio": 0.14794,
+        "mean_centroid_step_normalized": 0.001761,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.002642,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0026",
+      "relative_path": "assets_cropped/Air Groove/idle_sit-smile.gif",
+      "character": "Air Groove",
+      "form": "base",
+      "action_key": "idle_sit",
+      "variant_label": "smile",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          250,
+          376
+        ],
+        "union_bbox_aspect_ratio": 0.663102,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.011224,
+        "max_alpha_change_ratio": 0.012161,
+        "mean_rgba_change_ratio": 0.144881,
+        "max_rgba_change_ratio": 0.150199,
+        "mean_centroid_step_normalized": 0.000367,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.001101,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0027",
+      "relative_path": "assets_cropped/Air Groove/idle_sit_teach-angry.gif",
+      "character": "Air Groove",
+      "form": "base",
+      "action_key": "idle_sit_teach",
+      "variant_label": "angry",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          259,
+          376
+        ],
+        "union_bbox_aspect_ratio": 0.687166,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.010632,
+        "max_alpha_change_ratio": 0.011086,
+        "mean_rgba_change_ratio": 0.142373,
+        "max_rgba_change_ratio": 0.145768,
+        "mean_centroid_step_normalized": 0.001088,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.001088,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0028",
+      "relative_path": "assets_cropped/Air Groove/idle_sit_teach-awkward.gif",
+      "character": "Air Groove",
+      "form": "base",
+      "action_key": "idle_sit_teach",
+      "variant_label": "awkward",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          259,
+          338
+        ],
+        "union_bbox_aspect_ratio": 0.764881,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.010824,
+        "max_alpha_change_ratio": 0.011373,
+        "mean_rgba_change_ratio": 0.14851,
+        "max_rgba_change_ratio": 0.15226,
+        "mean_centroid_step_normalized": 0.0011,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.00165,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0029",
+      "relative_path": "assets_cropped/Air Groove/idle_sit_teach-scold.gif",
+      "character": "Air Groove",
+      "form": "base",
+      "action_key": "idle_sit_teach",
+      "variant_label": "scold",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          259,
+          376
+        ],
+        "union_bbox_aspect_ratio": 0.687166,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.010632,
+        "max_alpha_change_ratio": 0.011086,
+        "mean_rgba_change_ratio": 0.157744,
+        "max_rgba_change_ratio": 0.169213,
+        "mean_centroid_step_normalized": 0.001088,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.001088,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0045",
+      "relative_path": "assets_cropped/Sirius Symboli/idle_lie-smile.gif",
+      "character": "Sirius Symboli",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "smile",
+      "frame_count": 1,
+      "frame_durations_ms": [
+        200
+      ],
+      "total_duration_ms": 200,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          391,
+          209
+        ],
+        "union_bbox_aspect_ratio": 1.879227,
+        "pose_orientation": "horizontal",
+        "mean_alpha_change_ratio": 0.0,
+        "max_alpha_change_ratio": 0.0,
+        "mean_rgba_change_ratio": 0.0,
+        "max_rgba_change_ratio": 0.0,
+        "mean_centroid_step_normalized": 0.0,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.0,
+        "motion_extent": "nearly_static"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0048",
+      "relative_path": "assets_cropped/Sirius Symboli/idle_mix_dance-smile.gif",
+      "character": "Sirius Symboli",
+      "form": "base",
+      "action_key": "idle_mix_dance",
+      "variant_label": "smile",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          416,
+          441
+        ],
+        "union_bbox_aspect_ratio": 0.943052,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.296255,
+        "max_alpha_change_ratio": 0.3662,
+        "mean_rgba_change_ratio": 0.751604,
+        "max_rgba_change_ratio": 0.784309,
+        "mean_centroid_step_normalized": 0.033539,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.058152,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Eight-frame upright/balanced cycle with broad body and multi-limb stepping or dance poses.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "medium",
+          "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0049",
+      "relative_path": "assets_cropped/Sirius Symboli/idle_mix_dance_me-smile.gif",
+      "character": "Sirius Symboli",
+      "form": "base",
+      "action_key": "idle_mix_dance_me",
+      "variant_label": "smile",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          428,
+          441
+        ],
+        "union_bbox_aspect_ratio": 0.970387,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.299359,
+        "max_alpha_change_ratio": 0.357847,
+        "mean_rgba_change_ratio": 0.755242,
+        "max_rgba_change_ratio": 0.788529,
+        "mean_centroid_step_normalized": 0.035616,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.053831,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Eight-frame upright/balanced cycle with broad body and multi-limb stepping or dance poses.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "medium",
+          "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0068",
+      "relative_path": "assets_cropped/Sirius Symboli/idle_sit-happy.gif",
+      "character": "Sirius Symboli",
+      "form": "base",
+      "action_key": "idle_sit",
+      "variant_label": "happy",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          340,
+          396
+        ],
+        "union_bbox_aspect_ratio": 0.857868,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.010618,
+        "max_alpha_change_ratio": 0.010703,
+        "mean_rgba_change_ratio": 0.111382,
+        "max_rgba_change_ratio": 0.11836,
+        "mean_centroid_step_normalized": 0.001851,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.002858,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0069",
+      "relative_path": "assets_cropped/Sirius Symboli/idle_sit-sad.gif",
+      "character": "Sirius Symboli",
+      "form": "base",
+      "action_key": "idle_sit",
+      "variant_label": "sad",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          340,
+          356
+        ],
+        "union_bbox_aspect_ratio": 0.954802,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.010637,
+        "max_alpha_change_ratio": 0.011498,
+        "mean_rgba_change_ratio": 0.109835,
+        "max_rgba_change_ratio": 0.120745,
+        "mean_centroid_step_normalized": 0.002099,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.00303,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0070",
+      "relative_path": "assets_cropped/Sirius Symboli/idle_sit-smile.gif",
+      "character": "Sirius Symboli",
+      "form": "base",
+      "action_key": "idle_sit",
+      "variant_label": "smile",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          340,
+          396
+        ],
+        "union_bbox_aspect_ratio": 0.857868,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.010618,
+        "max_alpha_change_ratio": 0.010703,
+        "mean_rgba_change_ratio": 0.111245,
+        "max_rgba_change_ratio": 0.118161,
+        "mean_centroid_step_normalized": 0.001851,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.002858,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0071",
+      "relative_path": "assets_cropped/Sirius Symboli/idle_sit_talk-sad.gif",
+      "character": "Sirius Symboli",
+      "form": "base",
+      "action_key": "idle_sit_talk",
+      "variant_label": "sad",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          340,
+          356
+        ],
+        "union_bbox_aspect_ratio": 0.954802,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.008742,
+        "max_alpha_change_ratio": 0.009829,
+        "mean_rgba_change_ratio": 0.114059,
+        "max_rgba_change_ratio": 0.125351,
+        "mean_centroid_step_normalized": 0.001683,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.00303,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0072",
+      "relative_path": "assets_cropped/Sirius Symboli/idle_sit_talk-shock.gif",
+      "character": "Sirius Symboli",
+      "form": "base",
+      "action_key": "idle_sit_talk",
+      "variant_label": "shock",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          340,
+          396
+        ],
+        "union_bbox_aspect_ratio": 0.857868,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.009309,
+        "max_alpha_change_ratio": 0.009622,
+        "mean_rgba_change_ratio": 0.122809,
+        "max_rgba_change_ratio": 0.126907,
+        "mean_centroid_step_normalized": 0.001851,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.002858,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0073",
+      "relative_path": "assets_cropped/Sirius Symboli/idle_sit_talk-smile.gif",
+      "character": "Sirius Symboli",
+      "form": "base",
+      "action_key": "idle_sit_talk",
+      "variant_label": "smile",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          340,
+          396
+        ],
+        "union_bbox_aspect_ratio": 0.857868,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.009309,
+        "max_alpha_change_ratio": 0.009622,
+        "mean_rgba_change_ratio": 0.109424,
+        "max_rgba_change_ratio": 0.115913,
+        "mean_centroid_step_normalized": 0.001851,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.002858,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0118",
+      "relative_path": "assets_cropped/Symboli Rudolf/idle_lie-exhausted-sleep.gif",
+      "character": "Symboli Rudolf",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "exhausted-sleep",
+      "frame_count": 6,
+      "frame_durations_ms": [
+        300,
+        300,
+        300,
+        300,
+        300,
+        300
+      ],
+      "total_duration_ms": 1800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          418,
+          319
+        ],
+        "union_bbox_aspect_ratio": 1.312303,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.04557,
+        "max_alpha_change_ratio": 0.081859,
+        "mean_rgba_change_ratio": 0.179467,
+        "max_rgba_change_ratio": 0.242323,
+        "mean_centroid_step_normalized": 0.042596,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.105568,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0119",
+      "relative_path": "assets_cropped/Symboli Rudolf/idle_lie-exhausted.gif",
+      "character": "Symboli Rudolf",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "exhausted",
+      "frame_count": 6,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 600,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          397,
+          211
+        ],
+        "union_bbox_aspect_ratio": 1.889952,
+        "pose_orientation": "horizontal",
+        "mean_alpha_change_ratio": 0.011077,
+        "max_alpha_change_ratio": 0.015178,
+        "mean_rgba_change_ratio": 0.148323,
+        "max_rgba_change_ratio": 0.179926,
+        "mean_centroid_step_normalized": 0.003592,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.004558,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0120",
+      "relative_path": "assets_cropped/Symboli Rudolf/idle_lie-happy.gif",
+      "character": "Symboli Rudolf",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "happy",
+      "frame_count": 6,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 600,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          397,
+          211
+        ],
+        "union_bbox_aspect_ratio": 1.889952,
+        "pose_orientation": "horizontal",
+        "mean_alpha_change_ratio": 0.011077,
+        "max_alpha_change_ratio": 0.015178,
+        "mean_rgba_change_ratio": 0.127003,
+        "max_rgba_change_ratio": 0.157859,
+        "mean_centroid_step_normalized": 0.003592,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.004558,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0121",
+      "relative_path": "assets_cropped/Symboli Rudolf/idle_lie-sad-sleep.gif",
+      "character": "Symboli Rudolf",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "sad-sleep",
+      "frame_count": 6,
+      "frame_durations_ms": [
+        300,
+        300,
+        300,
+        300,
+        300,
+        300
+      ],
+      "total_duration_ms": 1800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          418,
+          319
+        ],
+        "union_bbox_aspect_ratio": 1.312303,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.04557,
+        "max_alpha_change_ratio": 0.081859,
+        "mean_rgba_change_ratio": 0.158465,
+        "max_rgba_change_ratio": 0.222046,
+        "mean_centroid_step_normalized": 0.042596,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.105568,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0122",
+      "relative_path": "assets_cropped/Symboli Rudolf/idle_lie-sad.gif",
+      "character": "Symboli Rudolf",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "sad",
+      "frame_count": 6,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 600,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          397,
+          211
+        ],
+        "union_bbox_aspect_ratio": 1.889952,
+        "pose_orientation": "horizontal",
+        "mean_alpha_change_ratio": 0.011077,
+        "max_alpha_change_ratio": 0.015178,
+        "mean_rgba_change_ratio": 0.1269,
+        "max_rgba_change_ratio": 0.157693,
+        "mean_centroid_step_normalized": 0.003592,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.004558,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0123",
+      "relative_path": "assets_cropped/Symboli Rudolf/idle_lie-sleep.gif",
+      "character": "Symboli Rudolf",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "sleep",
+      "frame_count": 6,
+      "frame_durations_ms": [
+        300,
+        300,
+        300,
+        300,
+        300,
+        300
+      ],
+      "total_duration_ms": 1800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          418,
+          319
+        ],
+        "union_bbox_aspect_ratio": 1.312303,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.04557,
+        "max_alpha_change_ratio": 0.081859,
+        "mean_rgba_change_ratio": 0.158572,
+        "max_rgba_change_ratio": 0.222198,
+        "mean_centroid_step_normalized": 0.042596,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.105568,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0124",
+      "relative_path": "assets_cropped/Symboli Rudolf/idle_lie_read-happy.gif",
+      "character": "Symboli Rudolf",
+      "form": "base",
+      "action_key": "idle_lie_read",
+      "variant_label": "happy",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        200,
+        200,
+        200,
+        200
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          353,
+          320
+        ],
+        "union_bbox_aspect_ratio": 1.103774,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.060513,
+        "max_alpha_change_ratio": 0.063684,
+        "mean_rgba_change_ratio": 0.227578,
+        "max_rgba_change_ratio": 0.247636,
+        "mean_centroid_step_normalized": 0.010147,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.016983,
+        "motion_extent": "localized_limb_or_accessory"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0125",
+      "relative_path": "assets_cropped/Symboli Rudolf/idle_mix_dance-smile.gif",
+      "character": "Symboli Rudolf",
+      "form": "base",
+      "action_key": "idle_mix_dance",
+      "variant_label": "smile",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          449,
+          370
+        ],
+        "union_bbox_aspect_ratio": 1.214674,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.277156,
+        "max_alpha_change_ratio": 0.436981,
+        "mean_rgba_change_ratio": 0.79334,
+        "max_rgba_change_ratio": 0.893611,
+        "mean_centroid_step_normalized": 0.056777,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.142406,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Eight-frame upright/balanced cycle with broad body and multi-limb stepping or dance poses.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "medium",
+          "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0126",
+      "relative_path": "assets_cropped/Symboli Rudolf/idle_mix_dance_carrot-smile.gif",
+      "character": "Symboli Rudolf",
+      "form": "base",
+      "action_key": "idle_mix_dance_carrot",
+      "variant_label": "smile",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          470,
+          370
+        ],
+        "union_bbox_aspect_ratio": 1.271739,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.272305,
+        "max_alpha_change_ratio": 0.356758,
+        "mean_rgba_change_ratio": 0.822126,
+        "max_rgba_change_ratio": 0.856879,
+        "mean_centroid_step_normalized": 0.032051,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.064014,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Eight-frame upright/balanced cycle with broad body and multi-limb stepping or dance poses.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "medium",
+          "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0156",
+      "relative_path": "assets_cropped/Symboli Rudolf/idle_sit-happy.gif",
+      "character": "Symboli Rudolf",
+      "form": "base",
+      "action_key": "idle_sit",
+      "variant_label": "happy",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          313,
+          352
+        ],
+        "union_bbox_aspect_ratio": 0.888571,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.023967,
+        "max_alpha_change_ratio": 0.024617,
+        "mean_rgba_change_ratio": 0.166529,
+        "max_rgba_change_ratio": 0.171749,
+        "mean_centroid_step_normalized": 0.016119,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.045372,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0157",
+      "relative_path": "assets_cropped/Symboli Rudolf/idle_sit_eat_lollipop-sad.gif",
+      "character": "Symboli Rudolf",
+      "form": "base",
+      "action_key": "idle_sit_eat_lollipop",
+      "variant_label": "sad",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          313,
+          352
+        ],
+        "union_bbox_aspect_ratio": 0.888571,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.024201,
+        "max_alpha_change_ratio": 0.024761,
+        "mean_rgba_change_ratio": 0.195219,
+        "max_rgba_change_ratio": 0.203861,
+        "mean_centroid_step_normalized": 0.016119,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.045372,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0158",
+      "relative_path": "assets_cropped/Symboli Rudolf/idle_sit_read-happy.gif",
+      "character": "Symboli Rudolf",
+      "form": "base",
+      "action_key": "idle_sit_read",
+      "variant_label": "happy",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          313,
+          311
+        ],
+        "union_bbox_aspect_ratio": 1.006472,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.021688,
+        "max_alpha_change_ratio": 0.021853,
+        "mean_rgba_change_ratio": 0.181301,
+        "max_rgba_change_ratio": 0.183978,
+        "mean_centroid_step_normalized": 0.001812,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.002252,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0159",
+      "relative_path": "assets_cropped/Symboli Rudolf/idle_sit_small-think.gif",
+      "character": "Symboli Rudolf",
+      "form": "base",
+      "action_key": "idle_sit_small",
+      "variant_label": "think",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          305,
+          297
+        ],
+        "union_bbox_aspect_ratio": 1.027119,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.016641,
+        "max_alpha_change_ratio": 0.018195,
+        "mean_rgba_change_ratio": 0.142729,
+        "max_rgba_change_ratio": 0.144953,
+        "mean_centroid_step_normalized": 0.00165,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.00165,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0160",
+      "relative_path": "assets_cropped/Symboli Rudolf/idle_sit_small-want.gif",
+      "character": "Symboli Rudolf",
+      "form": "base",
+      "action_key": "idle_sit_small",
+      "variant_label": "want",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          305,
+          297
+        ],
+        "union_bbox_aspect_ratio": 1.027119,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.01655,
+        "max_alpha_change_ratio": 0.018303,
+        "mean_rgba_change_ratio": 0.141141,
+        "max_rgba_change_ratio": 0.142656,
+        "mean_centroid_step_normalized": 0.00165,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.00165,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0205",
+      "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_mix_dance-happy.gif",
+      "character": "Symboli Rudolf",
+      "form": "transformed",
+      "action_key": "idle_mix_dance",
+      "variant_label": "happy",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          436,
+          436
+        ],
+        "union_bbox_aspect_ratio": 1.0,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.272514,
+        "max_alpha_change_ratio": 0.35008,
+        "mean_rgba_change_ratio": 0.826281,
+        "max_rgba_change_ratio": 0.855412,
+        "mean_centroid_step_normalized": 0.033986,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.0486,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Eight-frame upright/balanced cycle with broad body and multi-limb stepping or dance poses.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "medium",
+          "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0206",
+      "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_mix_dance-laugh.gif",
+      "character": "Symboli Rudolf",
+      "form": "transformed",
+      "action_key": "idle_mix_dance",
+      "variant_label": "laugh",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          436,
+          436
+        ],
+        "union_bbox_aspect_ratio": 1.0,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.272676,
+        "max_alpha_change_ratio": 0.350339,
+        "mean_rgba_change_ratio": 0.847089,
+        "max_rgba_change_ratio": 0.873905,
+        "mean_centroid_step_normalized": 0.033986,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.0486,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Eight-frame upright/balanced cycle with broad body and multi-limb stepping or dance poses.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "medium",
+          "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0207",
+      "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_mix_dance_carrot-happy.gif",
+      "character": "Symboli Rudolf",
+      "form": "transformed",
+      "action_key": "idle_mix_dance_carrot",
+      "variant_label": "happy",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          470,
+          436
+        ],
+        "union_bbox_aspect_ratio": 1.078341,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.298479,
+        "max_alpha_change_ratio": 0.33396,
+        "mean_rgba_change_ratio": 0.852033,
+        "max_rgba_change_ratio": 0.879926,
+        "mean_centroid_step_normalized": 0.034913,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.060172,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Eight-frame upright/balanced cycle with broad body and multi-limb stepping or dance poses.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "medium",
+          "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0212",
+      "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_sit-laugh.gif",
+      "character": "Symboli Rudolf",
+      "form": "transformed",
+      "action_key": "idle_sit",
+      "variant_label": "laugh",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          331,
+          464
+        ],
+        "union_bbox_aspect_ratio": 0.712121,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.007221,
+        "max_alpha_change_ratio": 0.007267,
+        "mean_rgba_change_ratio": 0.090338,
+        "max_rgba_change_ratio": 0.090844,
+        "mean_centroid_step_normalized": 0.0,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.0,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0241",
+      "relative_path": "assets_cropped/Tokai Teio/idle_lie-cry.gif",
+      "character": "Tokai Teio",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "cry",
+      "frame_count": 6,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 600,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          396,
+          245
+        ],
+        "union_bbox_aspect_ratio": 1.621399,
+        "pose_orientation": "horizontal",
+        "mean_alpha_change_ratio": 0.010652,
+        "max_alpha_change_ratio": 0.010838,
+        "mean_rgba_change_ratio": 0.150862,
+        "max_rgba_change_ratio": 0.159063,
+        "mean_centroid_step_normalized": 0.002663,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.003202,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0242",
+      "relative_path": "assets_cropped/Tokai Teio/idle_lie-exhausted.gif",
+      "character": "Tokai Teio",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "exhausted",
+      "frame_count": 6,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 600,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          396,
+          245
+        ],
+        "union_bbox_aspect_ratio": 1.621399,
+        "pose_orientation": "horizontal",
+        "mean_alpha_change_ratio": 0.010136,
+        "max_alpha_change_ratio": 0.010392,
+        "mean_rgba_change_ratio": 0.152602,
+        "max_rgba_change_ratio": 0.158924,
+        "mean_centroid_step_normalized": 0.002663,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.003202,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0243",
+      "relative_path": "assets_cropped/Tokai Teio/idle_lie-happy.gif",
+      "character": "Tokai Teio",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "happy",
+      "frame_count": 6,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 600,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          396,
+          245
+        ],
+        "union_bbox_aspect_ratio": 1.621399,
+        "pose_orientation": "horizontal",
+        "mean_alpha_change_ratio": 0.010652,
+        "max_alpha_change_ratio": 0.010838,
+        "mean_rgba_change_ratio": 0.139288,
+        "max_rgba_change_ratio": 0.146116,
+        "mean_centroid_step_normalized": 0.002663,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.003202,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0244",
+      "relative_path": "assets_cropped/Tokai Teio/idle_lie-sad-sleep.gif",
+      "character": "Tokai Teio",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "sad-sleep",
+      "frame_count": 6,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 600,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          396,
+          245
+        ],
+        "union_bbox_aspect_ratio": 1.621399,
+        "pose_orientation": "horizontal",
+        "mean_alpha_change_ratio": 0.010652,
+        "max_alpha_change_ratio": 0.010838,
+        "mean_rgba_change_ratio": 0.139755,
+        "max_rgba_change_ratio": 0.145793,
+        "mean_centroid_step_normalized": 0.002663,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.003202,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0245",
+      "relative_path": "assets_cropped/Tokai Teio/idle_lie-sad.gif",
+      "character": "Tokai Teio",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "sad",
+      "frame_count": 6,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 600,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          396,
+          245
+        ],
+        "union_bbox_aspect_ratio": 1.621399,
+        "pose_orientation": "horizontal",
+        "mean_alpha_change_ratio": 0.010652,
+        "max_alpha_change_ratio": 0.010838,
+        "mean_rgba_change_ratio": 0.138712,
+        "max_rgba_change_ratio": 0.145004,
+        "mean_centroid_step_normalized": 0.002663,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.003202,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0246",
+      "relative_path": "assets_cropped/Tokai Teio/idle_lie-sleep.gif",
+      "character": "Tokai Teio",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "sleep",
+      "frame_count": 6,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 600,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          396,
+          245
+        ],
+        "union_bbox_aspect_ratio": 1.621399,
+        "pose_orientation": "horizontal",
+        "mean_alpha_change_ratio": 0.010652,
+        "max_alpha_change_ratio": 0.010838,
+        "mean_rgba_change_ratio": 0.139841,
+        "max_rgba_change_ratio": 0.146439,
+        "mean_centroid_step_normalized": 0.002663,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.003202,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0247",
+      "relative_path": "assets_cropped/Tokai Teio/idle_mix_dance-sad.gif",
+      "character": "Tokai Teio",
+      "form": "base",
+      "action_key": "idle_mix_dance",
+      "variant_label": "sad",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          394,
+          384
+        ],
+        "union_bbox_aspect_ratio": 1.026178,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.289642,
+        "max_alpha_change_ratio": 0.3644,
+        "mean_rgba_change_ratio": 0.785067,
+        "max_rgba_change_ratio": 0.826268,
+        "mean_centroid_step_normalized": 0.036023,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.050608,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Eight-frame upright/balanced cycle with broad body and multi-limb stepping or dance poses.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "medium",
+          "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0248",
+      "relative_path": "assets_cropped/Tokai Teio/idle_mix_dance-smile.gif",
+      "character": "Tokai Teio",
+      "form": "base",
+      "action_key": "idle_mix_dance",
+      "variant_label": "smile",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          394,
+          401
+        ],
+        "union_bbox_aspect_ratio": 0.982456,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.293135,
+        "max_alpha_change_ratio": 0.374902,
+        "mean_rgba_change_ratio": 0.784465,
+        "max_rgba_change_ratio": 0.826574,
+        "mean_centroid_step_normalized": 0.036644,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.049755,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Eight-frame upright/balanced cycle with broad body and multi-limb stepping or dance poses.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "medium",
+          "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0275",
+      "relative_path": "assets_cropped/Tokai Teio/idle_sit-happy.gif",
+      "character": "Tokai Teio",
+      "form": "base",
+      "action_key": "idle_sit",
+      "variant_label": "happy",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          271,
+          321
+        ],
+        "union_bbox_aspect_ratio": 0.84326,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.015149,
+        "max_alpha_change_ratio": 0.015831,
+        "mean_rgba_change_ratio": 0.154576,
+        "max_rgba_change_ratio": 0.159646,
+        "mean_centroid_step_normalized": 0.001182,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.001182,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0276",
+      "relative_path": "assets_cropped/Tokai Teio/idle_sit-laugh.gif",
+      "character": "Tokai Teio",
+      "form": "base",
+      "action_key": "idle_sit",
+      "variant_label": "laugh",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          284,
+          323
+        ],
+        "union_bbox_aspect_ratio": 0.878505,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.060199,
+        "max_alpha_change_ratio": 0.126244,
+        "mean_rgba_change_ratio": 0.317924,
+        "max_rgba_change_ratio": 0.475418,
+        "mean_centroid_step_normalized": 0.00953,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.024364,
+        "motion_extent": "localized_limb_or_accessory"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0299",
+      "relative_path": "assets_cropped/Tokai Teio/transformed/idle_mix_dance-cool.gif",
+      "character": "Tokai Teio",
+      "form": "transformed",
+      "action_key": "idle_mix_dance",
+      "variant_label": "cool",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          414,
+          435
+        ],
+        "union_bbox_aspect_ratio": 0.951501,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.289709,
+        "max_alpha_change_ratio": 0.357348,
+        "mean_rgba_change_ratio": 0.821484,
+        "max_rgba_change_ratio": 0.849402,
+        "mean_centroid_step_normalized": 0.036018,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.059019,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Eight-frame upright/balanced cycle with broad body and multi-limb stepping or dance poses.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "medium",
+          "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0300",
+      "relative_path": "assets_cropped/Tokai Teio/transformed/idle_mix_dance-cute.gif",
+      "character": "Tokai Teio",
+      "form": "transformed",
+      "action_key": "idle_mix_dance",
+      "variant_label": "cute",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          414,
+          435
+        ],
+        "union_bbox_aspect_ratio": 0.951501,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.289709,
+        "max_alpha_change_ratio": 0.357348,
+        "mean_rgba_change_ratio": 0.81263,
+        "max_rgba_change_ratio": 0.84138,
+        "mean_centroid_step_normalized": 0.036018,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.059019,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Eight-frame upright/balanced cycle with broad body and multi-limb stepping or dance poses.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "medium",
+          "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0301",
+      "relative_path": "assets_cropped/Tokai Teio/transformed/idle_mix_dance-smile.gif",
+      "character": "Tokai Teio",
+      "form": "transformed",
+      "action_key": "idle_mix_dance",
+      "variant_label": "smile",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          414,
+          435
+        ],
+        "union_bbox_aspect_ratio": 0.951501,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.289709,
+        "max_alpha_change_ratio": 0.357348,
+        "mean_rgba_change_ratio": 0.811428,
+        "max_rgba_change_ratio": 0.841108,
+        "mean_centroid_step_normalized": 0.036018,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.059019,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Eight-frame upright/balanced cycle with broad body and multi-limb stepping or dance poses.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "medium",
+          "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0302",
+      "relative_path": "assets_cropped/Tokai Teio/transformed/idle_mix_dance_carrot-happy.gif",
+      "character": "Tokai Teio",
+      "form": "transformed",
+      "action_key": "idle_mix_dance_carrot",
+      "variant_label": "happy",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          468,
+          435
+        ],
+        "union_bbox_aspect_ratio": 1.076212,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.317752,
+        "max_alpha_change_ratio": 0.363593,
+        "mean_rgba_change_ratio": 0.847514,
+        "max_rgba_change_ratio": 0.876051,
+        "mean_centroid_step_normalized": 0.036211,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.068578,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Eight-frame upright/balanced cycle with broad body and multi-limb stepping or dance poses.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "medium",
+          "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0303",
+      "relative_path": "assets_cropped/Tokai Teio/transformed/idle_mix_dance_sing-happy.gif",
+      "character": "Tokai Teio",
+      "form": "transformed",
+      "action_key": "idle_mix_dance_sing",
+      "variant_label": "happy",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          414,
+          435
+        ],
+        "union_bbox_aspect_ratio": 0.951501,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.29073,
+        "max_alpha_change_ratio": 0.378198,
+        "mean_rgba_change_ratio": 0.820534,
+        "max_rgba_change_ratio": 0.855652,
+        "mean_centroid_step_normalized": 0.036149,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.059019,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Eight-frame upright/balanced cycle with broad body and multi-limb stepping or dance poses.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "medium",
+          "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0304",
+      "relative_path": "assets_cropped/Tokai Teio/transformed/idle_mix_dance_sing-smile.gif",
+      "character": "Tokai Teio",
+      "form": "transformed",
+      "action_key": "idle_mix_dance_sing",
+      "variant_label": "smile",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          414,
+          435
+        ],
+        "union_bbox_aspect_ratio": 0.951501,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.29073,
+        "max_alpha_change_ratio": 0.378198,
+        "mean_rgba_change_ratio": 0.821657,
+        "max_rgba_change_ratio": 0.857174,
+        "mean_centroid_step_normalized": 0.036149,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.059019,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Eight-frame upright/balanced cycle with broad body and multi-limb stepping or dance poses.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "medium",
+          "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0342",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-cry.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "cry",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          343,
+          207
+        ],
+        "union_bbox_aspect_ratio": 1.663415,
+        "pose_orientation": "horizontal",
+        "mean_alpha_change_ratio": 0.015658,
+        "max_alpha_change_ratio": 0.017344,
+        "mean_rgba_change_ratio": 0.178605,
+        "max_rgba_change_ratio": 0.194862,
+        "mean_centroid_step_normalized": 0.004132,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.004958,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0343",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-exhausted.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "exhausted",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          343,
+          207
+        ],
+        "union_bbox_aspect_ratio": 1.663415,
+        "pose_orientation": "horizontal",
+        "mean_alpha_change_ratio": 0.015658,
+        "max_alpha_change_ratio": 0.017344,
+        "mean_rgba_change_ratio": 0.207971,
+        "max_rgba_change_ratio": 0.221851,
+        "mean_centroid_step_normalized": 0.004132,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.004958,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0344",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-happy.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "happy",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          336,
+          244
+        ],
+        "union_bbox_aspect_ratio": 1.380165,
+        "pose_orientation": "horizontal",
+        "mean_alpha_change_ratio": 0.015812,
+        "max_alpha_change_ratio": 0.018159,
+        "mean_rgba_change_ratio": 0.171251,
+        "max_rgba_change_ratio": 0.189375,
+        "mean_centroid_step_normalized": 0.002388,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.003782,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0345",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-hard-cry.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "hard-cry",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          343,
+          207
+        ],
+        "union_bbox_aspect_ratio": 1.663415,
+        "pose_orientation": "horizontal",
+        "mean_alpha_change_ratio": 0.015658,
+        "max_alpha_change_ratio": 0.017344,
+        "mean_rgba_change_ratio": 0.199319,
+        "max_rgba_change_ratio": 0.213991,
+        "mean_centroid_step_normalized": 0.004132,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.004958,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0346",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-sad.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "sad",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          343,
+          207
+        ],
+        "union_bbox_aspect_ratio": 1.663415,
+        "pose_orientation": "horizontal",
+        "mean_alpha_change_ratio": 0.015658,
+        "max_alpha_change_ratio": 0.017344,
+        "mean_rgba_change_ratio": 0.172096,
+        "max_rgba_change_ratio": 0.18888,
+        "mean_centroid_step_normalized": 0.004132,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.004958,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0347",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-sleep.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "sleep",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        1000,
+        1000,
+        1000,
+        1000
+      ],
+      "total_duration_ms": 4000,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          336,
+          244
+        ],
+        "union_bbox_aspect_ratio": 1.380165,
+        "pose_orientation": "horizontal",
+        "mean_alpha_change_ratio": 0.015812,
+        "max_alpha_change_ratio": 0.018159,
+        "mean_rgba_change_ratio": 0.17828,
+        "max_rgba_change_ratio": 0.195987,
+        "mean_centroid_step_normalized": 0.002388,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.003782,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0348",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-smile.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_lie",
+      "variant_label": "smile",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          336,
+          244
+        ],
+        "union_bbox_aspect_ratio": 1.380165,
+        "pose_orientation": "horizontal",
+        "mean_alpha_change_ratio": 0.015812,
+        "max_alpha_change_ratio": 0.018159,
+        "mean_rgba_change_ratio": 0.177418,
+        "max_rgba_change_ratio": 0.196377,
+        "mean_centroid_step_normalized": 0.002388,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.003782,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Horizontal lying/read/sleep pose dominated by expression, breathing, symbol, or prop changes.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0408",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit-angry.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit",
+      "variant_label": "angry",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          235,
+          314
+        ],
+        "union_bbox_aspect_ratio": 0.746795,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.015097,
+        "max_alpha_change_ratio": 0.017401,
+        "mean_rgba_change_ratio": 0.172041,
+        "max_rgba_change_ratio": 0.19099,
+        "mean_centroid_step_normalized": 0.001441,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.00179,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0409",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit-cry.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit",
+      "variant_label": "cry",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          235,
+          283
+        ],
+        "union_bbox_aspect_ratio": 0.829181,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.014803,
+        "max_alpha_change_ratio": 0.017606,
+        "mean_rgba_change_ratio": 0.174814,
+        "max_rgba_change_ratio": 0.19423,
+        "mean_centroid_step_normalized": 0.002804,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.003016,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0410",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit-happy.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit",
+      "variant_label": "happy",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          235,
+          314
+        ],
+        "union_bbox_aspect_ratio": 0.746795,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.015097,
+        "max_alpha_change_ratio": 0.017401,
+        "mean_rgba_change_ratio": 0.171314,
+        "max_rgba_change_ratio": 0.190195,
+        "mean_centroid_step_normalized": 0.001441,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.00179,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0411",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit-mad.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit",
+      "variant_label": "mad",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          235,
+          314
+        ],
+        "union_bbox_aspect_ratio": 0.746795,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.015097,
+        "max_alpha_change_ratio": 0.017401,
+        "mean_rgba_change_ratio": 0.1721,
+        "max_rgba_change_ratio": 0.191089,
+        "mean_centroid_step_normalized": 0.001441,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.00179,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0412",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit-sad.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit",
+      "variant_label": "sad",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          235,
+          283
+        ],
+        "union_bbox_aspect_ratio": 0.829181,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.014803,
+        "max_alpha_change_ratio": 0.017606,
+        "mean_rgba_change_ratio": 0.171258,
+        "max_rgba_change_ratio": 0.19084,
+        "mean_centroid_step_normalized": 0.002804,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.003016,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0413",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit-smile.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit",
+      "variant_label": "smile",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          235,
+          314
+        ],
+        "union_bbox_aspect_ratio": 0.746795,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.015097,
+        "max_alpha_change_ratio": 0.017401,
+        "mean_rgba_change_ratio": 0.178288,
+        "max_rgba_change_ratio": 0.198637,
+        "mean_centroid_step_normalized": 0.001441,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.00179,
+        "motion_extent": "localized_internal_or_expression"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Stable seated pose dominated by expression, speech, teaching, reading, eating, or small body bobbing.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0414",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_no-angry.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_no",
+      "variant_label": "angry",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          250,
+          313
+        ],
+        "union_bbox_aspect_ratio": 0.797428,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.059485,
+        "max_alpha_change_ratio": 0.060552,
+        "mean_rgba_change_ratio": 0.393755,
+        "max_rgba_change_ratio": 0.427105,
+        "mean_centroid_step_normalized": 0.019418,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.021071,
+        "motion_extent": "localized_limb_or_accessory"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0415",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_no-cry.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_no",
+      "variant_label": "cry",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          250,
+          281
+        ],
+        "union_bbox_aspect_ratio": 0.888889,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.048525,
+        "max_alpha_change_ratio": 0.048784,
+        "mean_rgba_change_ratio": 0.386943,
+        "max_rgba_change_ratio": 0.4209,
+        "mean_centroid_step_normalized": 0.020672,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.022431,
+        "motion_extent": "localized_limb_or_accessory"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0416",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_no-happy.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_no",
+      "variant_label": "happy",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          250,
+          313
+        ],
+        "union_bbox_aspect_ratio": 0.797428,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.059485,
+        "max_alpha_change_ratio": 0.060552,
+        "mean_rgba_change_ratio": 0.392876,
+        "max_rgba_change_ratio": 0.426115,
+        "mean_centroid_step_normalized": 0.019418,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.021071,
+        "motion_extent": "localized_limb_or_accessory"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0417",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_no-hard-cry.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_no",
+      "variant_label": "hard-cry",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          250,
+          281
+        ],
+        "union_bbox_aspect_ratio": 0.888889,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.048525,
+        "max_alpha_change_ratio": 0.048784,
+        "mean_rgba_change_ratio": 0.430387,
+        "max_rgba_change_ratio": 0.468272,
+        "mean_centroid_step_normalized": 0.020672,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.022431,
+        "motion_extent": "localized_limb_or_accessory"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0418",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_no-sad.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_no",
+      "variant_label": "sad",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          250,
+          281
+        ],
+        "union_bbox_aspect_ratio": 0.888889,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.048525,
+        "max_alpha_change_ratio": 0.048784,
+        "mean_rgba_change_ratio": 0.375822,
+        "max_rgba_change_ratio": 0.410928,
+        "mean_centroid_step_normalized": 0.020672,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.022431,
+        "motion_extent": "localized_limb_or_accessory"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0419",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_no-smile.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_no",
+      "variant_label": "smile",
+      "frame_count": 4,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 400,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          250,
+          313
+        ],
+        "union_bbox_aspect_ratio": 0.797428,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.059485,
+        "max_alpha_change_ratio": 0.060552,
+        "mean_rgba_change_ratio": 0.421254,
+        "max_rgba_change_ratio": 0.45806,
+        "mean_centroid_step_normalized": 0.019418,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.021071,
+        "motion_extent": "localized_limb_or_accessory"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0420",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-angry.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_wave",
+      "variant_label": "angry",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          249,
+          317
+        ],
+        "union_bbox_aspect_ratio": 0.784127,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.08691,
+        "max_alpha_change_ratio": 0.153276,
+        "mean_rgba_change_ratio": 0.381007,
+        "max_rgba_change_ratio": 0.511597,
+        "mean_centroid_step_normalized": 0.007329,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.017935,
+        "motion_extent": "localized_limb_or_accessory"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0421",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-cry.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_wave",
+      "variant_label": "cry",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          273,
+          287
+        ],
+        "union_bbox_aspect_ratio": 0.950877,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.064522,
+        "max_alpha_change_ratio": 0.117111,
+        "mean_rgba_change_ratio": 0.366125,
+        "max_rgba_change_ratio": 0.498371,
+        "mean_centroid_step_normalized": 0.013781,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.031954,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0422",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-happy.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_wave",
+      "variant_label": "happy",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          249,
+          317
+        ],
+        "union_bbox_aspect_ratio": 0.784127,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.08691,
+        "max_alpha_change_ratio": 0.153276,
+        "mean_rgba_change_ratio": 0.37981,
+        "max_rgba_change_ratio": 0.510672,
+        "mean_centroid_step_normalized": 0.007329,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.017935,
+        "motion_extent": "localized_limb_or_accessory"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0423",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-hard-cry.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_wave",
+      "variant_label": "hard-cry",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          273,
+          287
+        ],
+        "union_bbox_aspect_ratio": 0.950877,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.064522,
+        "max_alpha_change_ratio": 0.117111,
+        "mean_rgba_change_ratio": 0.399622,
+        "max_rgba_change_ratio": 0.540192,
+        "mean_centroid_step_normalized": 0.013781,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.031954,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0424",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-hard-smile.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_wave",
+      "variant_label": "hard-smile",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          249,
+          317
+        ],
+        "union_bbox_aspect_ratio": 0.784127,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.08691,
+        "max_alpha_change_ratio": 0.153276,
+        "mean_rgba_change_ratio": 0.399222,
+        "max_rgba_change_ratio": 0.535272,
+        "mean_centroid_step_normalized": 0.007329,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.017935,
+        "motion_extent": "localized_limb_or_accessory"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0425",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-mad.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_wave",
+      "variant_label": "mad",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          249,
+          317
+        ],
+        "union_bbox_aspect_ratio": 0.784127,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.08691,
+        "max_alpha_change_ratio": 0.153276,
+        "mean_rgba_change_ratio": 0.382667,
+        "max_rgba_change_ratio": 0.513742,
+        "mean_centroid_step_normalized": 0.007329,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.017935,
+        "motion_extent": "localized_limb_or_accessory"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0426",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-sad.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_wave",
+      "variant_label": "sad",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          273,
+          287
+        ],
+        "union_bbox_aspect_ratio": 0.950877,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.064522,
+        "max_alpha_change_ratio": 0.117111,
+        "mean_rgba_change_ratio": 0.3593,
+        "max_rgba_change_ratio": 0.489639,
+        "mean_centroid_step_normalized": 0.013781,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.031954,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0427",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-smile.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_wave",
+      "variant_label": "smile",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          249,
+          317
+        ],
+        "union_bbox_aspect_ratio": 0.784127,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.08691,
+        "max_alpha_change_ratio": 0.153276,
+        "mean_rgba_change_ratio": 0.397607,
+        "max_rgba_change_ratio": 0.533459,
+        "mean_centroid_step_normalized": 0.007329,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.017935,
+        "motion_extent": "localized_limb_or_accessory"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0428",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_hug-happy.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_wave_hug",
+      "variant_label": "happy",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          249,
+          317
+        ],
+        "union_bbox_aspect_ratio": 0.784127,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.088658,
+        "max_alpha_change_ratio": 0.155484,
+        "mean_rgba_change_ratio": 0.396088,
+        "max_rgba_change_ratio": 0.533021,
+        "mean_centroid_step_normalized": 0.007329,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.017935,
+        "motion_extent": "localized_limb_or_accessory"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0429",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_hug-sad.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_wave_hug",
+      "variant_label": "sad",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          273,
+          287
+        ],
+        "union_bbox_aspect_ratio": 0.950877,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.0661,
+        "max_alpha_change_ratio": 0.119015,
+        "mean_rgba_change_ratio": 0.375683,
+        "max_rgba_change_ratio": 0.512616,
+        "mean_centroid_step_normalized": 0.013781,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.031954,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0430",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_hug-smile.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_wave_hug",
+      "variant_label": "smile",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          249,
+          317
+        ],
+        "union_bbox_aspect_ratio": 0.784127,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.088658,
+        "max_alpha_change_ratio": 0.155484,
+        "mean_rgba_change_ratio": 0.412378,
+        "max_rgba_change_ratio": 0.552158,
+        "mean_centroid_step_normalized": 0.007329,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.017935,
+        "motion_extent": "localized_limb_or_accessory"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0431",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_stretch-angry.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_wave_stretch",
+      "variant_label": "angry",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          249,
+          317
+        ],
+        "union_bbox_aspect_ratio": 0.784127,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.088658,
+        "max_alpha_change_ratio": 0.155484,
+        "mean_rgba_change_ratio": 0.396852,
+        "max_rgba_change_ratio": 0.533821,
+        "mean_centroid_step_normalized": 0.007329,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.017935,
+        "motion_extent": "localized_limb_or_accessory"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0432",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_stretch-cry.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_wave_stretch",
+      "variant_label": "cry",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          273,
+          287
+        ],
+        "union_bbox_aspect_ratio": 0.950877,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.0661,
+        "max_alpha_change_ratio": 0.119015,
+        "mean_rgba_change_ratio": 0.376791,
+        "max_rgba_change_ratio": 0.512102,
+        "mean_centroid_step_normalized": 0.013781,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.031954,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0433",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_stretch-hard-cry.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_wave_stretch",
+      "variant_label": "hard-cry",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          273,
+          287
+        ],
+        "union_bbox_aspect_ratio": 0.950877,
+        "pose_orientation": "balanced",
+        "mean_alpha_change_ratio": 0.0661,
+        "max_alpha_change_ratio": 0.119015,
+        "mean_rgba_change_ratio": 0.403348,
+        "max_rgba_change_ratio": 0.544141,
+        "mean_centroid_step_normalized": 0.013781,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.031954,
+        "motion_extent": "broad_body_or_multi_limb"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0434",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_stretch-hard-smile.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_wave_stretch",
+      "variant_label": "hard-smile",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          249,
+          317
+        ],
+        "union_bbox_aspect_ratio": 0.784127,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.088658,
+        "max_alpha_change_ratio": 0.155484,
+        "mean_rgba_change_ratio": 0.413976,
+        "max_rgba_change_ratio": 0.554743,
+        "mean_centroid_step_normalized": 0.007329,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.017935,
+        "motion_extent": "localized_limb_or_accessory"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    },
+    {
+      "asset_id": "asset-0435",
+      "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_stretch-mad.gif",
+      "character": "Tsurumaru Tsuyoshi",
+      "form": "base",
+      "action_key": "idle_sit_wave_stretch",
+      "variant_label": "mad",
+      "frame_count": 8,
+      "frame_durations_ms": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "total_duration_ms": 800,
+      "motion": {
+        "union_bbox": [
+          2,
+          2,
+          249,
+          317
+        ],
+        "union_bbox_aspect_ratio": 0.784127,
+        "pose_orientation": "upright",
+        "mean_alpha_change_ratio": 0.088658,
+        "max_alpha_change_ratio": 0.155484,
+        "mean_rgba_change_ratio": 0.398527,
+        "max_rgba_change_ratio": 0.535959,
+        "mean_centroid_step_normalized": 0.007329,
+        "centroid_method": "alpha_union_bbox_center",
+        "max_centroid_step_normalized": 0.017935,
+        "motion_extent": "localized_limb_or_accessory"
+      },
+      "motion_template_review": {
+        "local_motion_basis": "Seated cycle with a head/arm gesture while the lower-body seated pose remains substantially stable.",
+        "jitabata_branch": {
+          "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+          "confidence": "high",
+          "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+        },
+        "umarukaigi_branch": {
+          "status": "motion_semantic_candidate_source_frames_unrecovered",
+          "confidence": "low",
+          "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+        }
+      },
+      "external_branch_status": "motion_semantics_triaged_source_frames_not_recovered"
+    }
+  ]
+}

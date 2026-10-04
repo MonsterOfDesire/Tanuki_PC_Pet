@@ -75,3 +75,5 @@ macOS 保留／停用能力、建置方式與人工測試清單請參閱 [docs/M
 ## 授權與素材
 
 原創程式碼與專案文件依 [MIT License](LICENSE) 授權。角色圖像、動畫、道具圖示與其他視覺素材不包含在 MIT 授權範圍內，相關權利仍屬各自權利人；本 repository 不授予重新使用或散布這些素材的權利。詳見 [ASSET_NOTICE.md](ASSET_NOTICE.md)。
+
+來源、作者層次、調查範圍與尚未取得的許可集中記錄於 [素材來源調查](docs/asset_provenance/README.md)。這些文件是有日期與範圍的研究紀錄，不是素材授權證明。

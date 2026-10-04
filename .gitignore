@@ -65,3 +65,13 @@ pip-log.txt
 pip-delete-this-directory.txt
 *.log
 ~$*.xlsx
+
+# Asset provenance: publish reports/data, never raw third-party research media.
+docs/asset_provenance/*.zip
+docs/asset_provenance/*.mp4
+docs/asset_provenance/outputs/
+docs/asset_provenance/review/
+docs/asset_provenance/video_analysis/
+docs/asset_provenance/creator_archive_20220119/
+docs/asset_provenance/timeline_trace_20261004/
+docs/asset_provenance/later_archive_trace_20261004/

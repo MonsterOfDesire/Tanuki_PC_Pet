@@ -1,0 +1,3718 @@
+{
+  "schema_version": 1,
+  "analysis_version": "2026-10-04.2i",
+  "generated_at": "2026-10-04T20:06:23+08:00",
+  "finding_count": 11,
+  "findings": [
+    {
+      "finding_id": "source-finding-001",
+      "title": "Sirius Symboli guitar base composition",
+      "finding_status": "partial_creator_chain_high_confidence",
+      "publication_decision": "orange",
+      "matched_assets": [
+        {
+          "asset_id": "asset-0054",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_music_electricguitar-happy.gif"
+        },
+        {
+          "asset_id": "asset-0056",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_music_guitar-happy.gif"
+        },
+        {
+          "asset_id": "asset-0208",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_music_electricguitar-happy.gif"
+        },
+        {
+          "asset_id": "asset-0209",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_music_electricguitar-smile.gif"
+        },
+        {
+          "asset_id": "asset-0210",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_music_guitar-happy.gif"
+        },
+        {
+          "asset_id": "asset-0211",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_music_guitar-smile.gif"
+        }
+      ],
+      "verified_roles": [
+        {
+          "role": "base_character_pose_and_guitar_composition_author",
+          "subject_id": "author-amami64toshihi",
+          "confidence": "high",
+          "evidence_urls": [
+            "https://x.com/amami64toshihi/status/1570424123989569538",
+            "https://x.com/amami64toshihi/status/1570435591627739137"
+          ]
+        }
+      ],
+      "match_basis": [
+        "same Sirius Symboli hair silhouette and facial placement",
+        "same seated stance and foot placement",
+        "same guitar body, neck, hand positions, and tail layout",
+        "first-party line-art and completed-drawing posts predate the located downstream examples"
+      ],
+      "unresolved_roles": [
+        "digital_sprite_clean_up_or_redraw_artist",
+        "animation_author",
+        "expression_variant_editor",
+        "Symboli_Rudolf_transformation_editor"
+      ],
+      "permission_finding": "No explicit permission for app embedding, source-file repository publication, or installer redistribution was found in the screened first-party profile or posts. This absence is not permission.",
+      "recommended_action": "Do not bundle or publicly redistribute these GIFs. Ask the base drawing author for terms and continue identifying the digital animator and Rudolf transformation editor."
+    },
+    {
+      "finding_id": "source-finding-002",
+      "title": "Air Groove standing drawing rejected as source for local lying group",
+      "finding_status": "candidate_rejected",
+      "publication_decision": "unchanged_gray",
+      "matched_assets": [],
+      "candidate_urls": [
+        "https://x.com/amami64toshihi/status/1580973620968689664",
+        "https://x.com/amami64toshihi/status/1580977650876964865"
+      ],
+      "rejection_basis": "The first-party Air Groove drawing is an upright pose with different body geometry; it does not match the local lying/sleep template group."
+    },
+    {
+      "finding_id": "source-finding-003",
+      "title": "Known restrictive authors screened without a verified local match",
+      "finding_status": "screened_inconclusive",
+      "publication_decision": "unchanged_gray_for_unlinked_assets",
+      "subjects": [
+        "author-gnkk-ata-1240",
+        "author-kanzaki-ryuto"
+      ],
+      "screen_result": "Authenticated media search exposed additional first-party posts, but no visual or name-based match to the five local character folders was verified. This is not an exclusion because deleted, unindexed, reply-only, or externally hosted media may remain."
+    },
+    {
+      "finding_id": "source-finding-004",
+      "title": "Shonbori/Tanuki ecosystem root visual design",
+      "finding_status": "upstream_visual_design_author_high_confidence_downstream_chain_unresolved",
+      "publication_decision": "orange",
+      "matched_asset_scope": "All 456 local GIFs at the shared ecosystem visual-design layer only; this is not an exact pose, frame, animation, or file match.",
+      "matched_assets": [
+        {
+          "asset_id": "asset-0001",
+          "relative_path": "assets_cropped/Air Groove/drag_original-sad.gif"
+        },
+        {
+          "asset_id": "asset-0002",
+          "relative_path": "assets_cropped/Air Groove/drag_original_uniform-sad.gif"
+        },
+        {
+          "asset_id": "asset-0003",
+          "relative_path": "assets_cropped/Air Groove/idle_drink-angry.gif"
+        },
+        {
+          "asset_id": "asset-0004",
+          "relative_path": "assets_cropped/Air Groove/idle_drink-happy.gif"
+        },
+        {
+          "asset_id": "asset-0005",
+          "relative_path": "assets_cropped/Air Groove/idle_drink-sad.gif"
+        },
+        {
+          "asset_id": "asset-0006",
+          "relative_path": "assets_cropped/Air Groove/idle_drink-smile.gif"
+        },
+        {
+          "asset_id": "asset-0007",
+          "relative_path": "assets_cropped/Air Groove/idle_get-angry.gif"
+        },
+        {
+          "asset_id": "asset-0008",
+          "relative_path": "assets_cropped/Air Groove/idle_get-awkward.gif"
+        },
+        {
+          "asset_id": "asset-0009",
+          "relative_path": "assets_cropped/Air Groove/idle_get-happy.gif"
+        },
+        {
+          "asset_id": "asset-0010",
+          "relative_path": "assets_cropped/Air Groove/idle_get-sad.gif"
+        },
+        {
+          "asset_id": "asset-0011",
+          "relative_path": "assets_cropped/Air Groove/idle_get-scold.gif"
+        },
+        {
+          "asset_id": "asset-0012",
+          "relative_path": "assets_cropped/Air Groove/idle_get-smile.gif"
+        },
+        {
+          "asset_id": "asset-0013",
+          "relative_path": "assets_cropped/Air Groove/idle_lie-happy.gif"
+        },
+        {
+          "asset_id": "asset-0014",
+          "relative_path": "assets_cropped/Air Groove/idle_lie-sad.gif"
+        },
+        {
+          "asset_id": "asset-0015",
+          "relative_path": "assets_cropped/Air Groove/idle_lie-sleep.gif"
+        },
+        {
+          "asset_id": "asset-0016",
+          "relative_path": "assets_cropped/Air Groove/idle_music-happy.gif"
+        },
+        {
+          "asset_id": "asset-0017",
+          "relative_path": "assets_cropped/Air Groove/idle_side-angry.gif"
+        },
+        {
+          "asset_id": "asset-0018",
+          "relative_path": "assets_cropped/Air Groove/idle_side-happy.gif"
+        },
+        {
+          "asset_id": "asset-0019",
+          "relative_path": "assets_cropped/Air Groove/idle_side-sad.gif"
+        },
+        {
+          "asset_id": "asset-0020",
+          "relative_path": "assets_cropped/Air Groove/idle_side-scold.gif"
+        },
+        {
+          "asset_id": "asset-0021",
+          "relative_path": "assets_cropped/Air Groove/idle_side-smile.gif"
+        },
+        {
+          "asset_id": "asset-0022",
+          "relative_path": "assets_cropped/Air Groove/idle_sit-angry.gif"
+        },
+        {
+          "asset_id": "asset-0023",
+          "relative_path": "assets_cropped/Air Groove/idle_sit-awkward.gif"
+        },
+        {
+          "asset_id": "asset-0024",
+          "relative_path": "assets_cropped/Air Groove/idle_sit-happy.gif"
+        },
+        {
+          "asset_id": "asset-0025",
+          "relative_path": "assets_cropped/Air Groove/idle_sit-sad.gif"
+        },
+        {
+          "asset_id": "asset-0026",
+          "relative_path": "assets_cropped/Air Groove/idle_sit-smile.gif"
+        },
+        {
+          "asset_id": "asset-0027",
+          "relative_path": "assets_cropped/Air Groove/idle_sit_teach-angry.gif"
+        },
+        {
+          "asset_id": "asset-0028",
+          "relative_path": "assets_cropped/Air Groove/idle_sit_teach-awkward.gif"
+        },
+        {
+          "asset_id": "asset-0029",
+          "relative_path": "assets_cropped/Air Groove/idle_sit_teach-scold.gif"
+        },
+        {
+          "asset_id": "asset-0030",
+          "relative_path": "assets_cropped/Air Groove/interaction_idle_hug_Teio-happy.gif"
+        },
+        {
+          "asset_id": "asset-0031",
+          "relative_path": "assets_cropped/Air Groove/interaction_idle_hug_Tsuyoshi-happy.gif"
+        },
+        {
+          "asset_id": "asset-0032",
+          "relative_path": "assets_cropped/Air Groove/move_walk-angry.gif"
+        },
+        {
+          "asset_id": "asset-0033",
+          "relative_path": "assets_cropped/Air Groove/move_walk-awkward.gif"
+        },
+        {
+          "asset_id": "asset-0034",
+          "relative_path": "assets_cropped/Air Groove/move_walk-happy.gif"
+        },
+        {
+          "asset_id": "asset-0035",
+          "relative_path": "assets_cropped/Air Groove/move_walk-sad.gif"
+        },
+        {
+          "asset_id": "asset-0036",
+          "relative_path": "assets_cropped/Air Groove/move_walk-scold.gif"
+        },
+        {
+          "asset_id": "asset-0037",
+          "relative_path": "assets_cropped/Air Groove/move_walk-smile.gif"
+        },
+        {
+          "asset_id": "asset-0038",
+          "relative_path": "assets_cropped/Air Groove/move_walk_hand-angry.gif"
+        },
+        {
+          "asset_id": "asset-0039",
+          "relative_path": "assets_cropped/Air Groove/move_walk_hand-happy.gif"
+        },
+        {
+          "asset_id": "asset-0040",
+          "relative_path": "assets_cropped/Air Groove/move_walk_hand-sad.gif"
+        },
+        {
+          "asset_id": "asset-0041",
+          "relative_path": "assets_cropped/Air Groove/move_walk_hand-scold.gif"
+        },
+        {
+          "asset_id": "asset-0042",
+          "relative_path": "assets_cropped/Air Groove/move_walk_hand-smile.gif"
+        },
+        {
+          "asset_id": "asset-0043",
+          "relative_path": "assets_cropped/Sirius Symboli/drag_original-sad.gif"
+        },
+        {
+          "asset_id": "asset-0044",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_drink-happy.gif"
+        },
+        {
+          "asset_id": "asset-0045",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_lie-smile.gif"
+        },
+        {
+          "asset_id": "asset-0046",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_mix_dacne_shiii-glance.gif"
+        },
+        {
+          "asset_id": "asset-0047",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_mix_dacne_shiii-smile.gif"
+        },
+        {
+          "asset_id": "asset-0048",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_mix_dance-smile.gif"
+        },
+        {
+          "asset_id": "asset-0049",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_mix_dance_me-smile.gif"
+        },
+        {
+          "asset_id": "asset-0050",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_music_drum_a-happy.gif"
+        },
+        {
+          "asset_id": "asset-0051",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_music_drum_b-happy.gif"
+        },
+        {
+          "asset_id": "asset-0052",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_music_drum_c-happy.gif"
+        },
+        {
+          "asset_id": "asset-0053",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_music_drum_d-happy.gif"
+        },
+        {
+          "asset_id": "asset-0054",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_music_electricguitar-happy.gif"
+        },
+        {
+          "asset_id": "asset-0055",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_music_electricguitar_solo-cool.gif"
+        },
+        {
+          "asset_id": "asset-0056",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_music_guitar-happy.gif"
+        },
+        {
+          "asset_id": "asset-0057",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_rest-angry-sleep.gif"
+        },
+        {
+          "asset_id": "asset-0058",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_rest-angry.gif"
+        },
+        {
+          "asset_id": "asset-0059",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_rest-cool.gif"
+        },
+        {
+          "asset_id": "asset-0060",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_rest-sleep.gif"
+        },
+        {
+          "asset_id": "asset-0061",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_rest-smile.gif"
+        },
+        {
+          "asset_id": "asset-0062",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_side-angry.gif"
+        },
+        {
+          "asset_id": "asset-0063",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_side-cool.gif"
+        },
+        {
+          "asset_id": "asset-0064",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_side-happy.gif"
+        },
+        {
+          "asset_id": "asset-0065",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_side-sad.gif"
+        },
+        {
+          "asset_id": "asset-0066",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_side-scold.gif"
+        },
+        {
+          "asset_id": "asset-0067",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_side-smile.gif"
+        },
+        {
+          "asset_id": "asset-0068",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_sit-happy.gif"
+        },
+        {
+          "asset_id": "asset-0069",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_sit-sad.gif"
+        },
+        {
+          "asset_id": "asset-0070",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_sit-smile.gif"
+        },
+        {
+          "asset_id": "asset-0071",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_sit_talk-sad.gif"
+        },
+        {
+          "asset_id": "asset-0072",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_sit_talk-shock.gif"
+        },
+        {
+          "asset_id": "asset-0073",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_sit_talk-smile.gif"
+        },
+        {
+          "asset_id": "asset-0074",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_stand-angry.gif"
+        },
+        {
+          "asset_id": "asset-0075",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_stand-cool.gif"
+        },
+        {
+          "asset_id": "asset-0076",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_stand-happy.gif"
+        },
+        {
+          "asset_id": "asset-0077",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_stand-sad.gif"
+        },
+        {
+          "asset_id": "asset-0078",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_stand-smile.gif"
+        },
+        {
+          "asset_id": "asset-0079",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_stand_hand-cool.gif"
+        },
+        {
+          "asset_id": "asset-0080",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_stand_hand-glance.gif"
+        },
+        {
+          "asset_id": "asset-0081",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_stand_hand-happy.gif"
+        },
+        {
+          "asset_id": "asset-0082",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_stand_hand-sad.gif"
+        },
+        {
+          "asset_id": "asset-0083",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_stand_hand-smile.gif"
+        },
+        {
+          "asset_id": "asset-0084",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_stand_tail-cool.gif"
+        },
+        {
+          "asset_id": "asset-0085",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_stand_tail-happy.gif"
+        },
+        {
+          "asset_id": "asset-0086",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_stand_tail-smile.gif"
+        },
+        {
+          "asset_id": "asset-0087",
+          "relative_path": "assets_cropped/Sirius Symboli/interaction_idle_drink_Teio-happy.gif"
+        },
+        {
+          "asset_id": "asset-0088",
+          "relative_path": "assets_cropped/Sirius Symboli/interaction_idle_rub_face_Tsuyoshi-happy.gif"
+        },
+        {
+          "asset_id": "asset-0089",
+          "relative_path": "assets_cropped/Sirius Symboli/interaction_idle_tail_Teio-happy.gif"
+        },
+        {
+          "asset_id": "asset-0090",
+          "relative_path": "assets_cropped/Sirius Symboli/move_fly-smile.gif"
+        },
+        {
+          "asset_id": "asset-0091",
+          "relative_path": "assets_cropped/Sirius Symboli/move_jog-happy.gif"
+        },
+        {
+          "asset_id": "asset-0092",
+          "relative_path": "assets_cropped/Sirius Symboli/move_run-angry.gif"
+        },
+        {
+          "asset_id": "asset-0093",
+          "relative_path": "assets_cropped/Sirius Symboli/move_run-cool.gif"
+        },
+        {
+          "asset_id": "asset-0094",
+          "relative_path": "assets_cropped/Sirius Symboli/move_run-happy.gif"
+        },
+        {
+          "asset_id": "asset-0095",
+          "relative_path": "assets_cropped/Sirius Symboli/move_run-sad.gif"
+        },
+        {
+          "asset_id": "asset-0096",
+          "relative_path": "assets_cropped/Sirius Symboli/move_run-scold.gif"
+        },
+        {
+          "asset_id": "asset-0097",
+          "relative_path": "assets_cropped/Sirius Symboli/move_run-smile.gif"
+        },
+        {
+          "asset_id": "asset-0098",
+          "relative_path": "assets_cropped/Sirius Symboli/move_run_hand-angry.gif"
+        },
+        {
+          "asset_id": "asset-0099",
+          "relative_path": "assets_cropped/Sirius Symboli/move_run_hand-happy.gif"
+        },
+        {
+          "asset_id": "asset-0100",
+          "relative_path": "assets_cropped/Sirius Symboli/move_run_hand-scold.gif"
+        },
+        {
+          "asset_id": "asset-0101",
+          "relative_path": "assets_cropped/Sirius Symboli/move_run_hand_drink-smile.gif"
+        },
+        {
+          "asset_id": "asset-0102",
+          "relative_path": "assets_cropped/Sirius Symboli/move_walk-angry.gif"
+        },
+        {
+          "asset_id": "asset-0103",
+          "relative_path": "assets_cropped/Sirius Symboli/move_walk-happy.gif"
+        },
+        {
+          "asset_id": "asset-0104",
+          "relative_path": "assets_cropped/Sirius Symboli/move_walk-sad.gif"
+        },
+        {
+          "asset_id": "asset-0105",
+          "relative_path": "assets_cropped/Sirius Symboli/move_walk-smile.gif"
+        },
+        {
+          "asset_id": "asset-0106",
+          "relative_path": "assets_cropped/Sirius Symboli/move_walk_drink-happy.gif"
+        },
+        {
+          "asset_id": "asset-0107",
+          "relative_path": "assets_cropped/Sirius Symboli/move_walk_talk-happy.gif"
+        },
+        {
+          "asset_id": "asset-0108",
+          "relative_path": "assets_cropped/Sirius Symboli/move_walk_talk-sad.gif"
+        },
+        {
+          "asset_id": "asset-0109",
+          "relative_path": "assets_cropped/Sirius Symboli/move_walk_talk-scold.gif"
+        },
+        {
+          "asset_id": "asset-0110",
+          "relative_path": "assets_cropped/Symboli Rudolf/drag_original-sad.gif"
+        },
+        {
+          "asset_id": "asset-0111",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_clean-cry.gif"
+        },
+        {
+          "asset_id": "asset-0112",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_dance_three-happy.gif"
+        },
+        {
+          "asset_id": "asset-0113",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_dance_uma-happy.gif"
+        },
+        {
+          "asset_id": "asset-0114",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_dance_uma-hurry.gif"
+        },
+        {
+          "asset_id": "asset-0115",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_get-happy.gif"
+        },
+        {
+          "asset_id": "asset-0116",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_get-hurry.gif"
+        },
+        {
+          "asset_id": "asset-0117",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_get-sad.gif"
+        },
+        {
+          "asset_id": "asset-0118",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_lie-exhausted-sleep.gif"
+        },
+        {
+          "asset_id": "asset-0119",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_lie-exhausted.gif"
+        },
+        {
+          "asset_id": "asset-0120",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_lie-happy.gif"
+        },
+        {
+          "asset_id": "asset-0121",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_lie-sad-sleep.gif"
+        },
+        {
+          "asset_id": "asset-0122",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_lie-sad.gif"
+        },
+        {
+          "asset_id": "asset-0123",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_lie-sleep.gif"
+        },
+        {
+          "asset_id": "asset-0124",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_lie_read-happy.gif"
+        },
+        {
+          "asset_id": "asset-0125",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_mix_dance-smile.gif"
+        },
+        {
+          "asset_id": "asset-0126",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_mix_dance_carrot-smile.gif"
+        },
+        {
+          "asset_id": "asset-0127",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_music_bigdrum-happy.gif"
+        },
+        {
+          "asset_id": "asset-0128",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_music_drum-happy.gif"
+        },
+        {
+          "asset_id": "asset-0129",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_music_flute-happy.gif"
+        },
+        {
+          "asset_id": "asset-0130",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_music_trumpet-happy.gif"
+        },
+        {
+          "asset_id": "asset-0131",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_observe-happy.gif"
+        },
+        {
+          "asset_id": "asset-0132",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_observe-want.gif"
+        },
+        {
+          "asset_id": "asset-0133",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_photo-happy.gif"
+        },
+        {
+          "asset_id": "asset-0134",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_photo_ready-happy.gif"
+        },
+        {
+          "asset_id": "asset-0135",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_rest-happy.gif"
+        },
+        {
+          "asset_id": "asset-0136",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_rest-sad.gif"
+        },
+        {
+          "asset_id": "asset-0137",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_rest_eat_lollipop-sad.gif"
+        },
+        {
+          "asset_id": "asset-0138",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_rest_fan-happy.gif"
+        },
+        {
+          "asset_id": "asset-0139",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_side_cross-sad.gif"
+        },
+        {
+          "asset_id": "asset-0140",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_side_drink-happy.gif"
+        },
+        {
+          "asset_id": "asset-0141",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_side_face-happy.gif"
+        },
+        {
+          "asset_id": "asset-0142",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_side_face-sad.gif"
+        },
+        {
+          "asset_id": "asset-0143",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_side_face-smile.gif"
+        },
+        {
+          "asset_id": "asset-0144",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_side_face_hand-happy.gif"
+        },
+        {
+          "asset_id": "asset-0145",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_side_face_hand-sad.gif"
+        },
+        {
+          "asset_id": "asset-0146",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_side_face_hand-smile.gif"
+        },
+        {
+          "asset_id": "asset-0147",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_side_hug-happy.gif"
+        },
+        {
+          "asset_id": "asset-0148",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_side_hug-hurry.gif"
+        },
+        {
+          "asset_id": "asset-0149",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_side_no-happy.gif"
+        },
+        {
+          "asset_id": "asset-0150",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_side_no-hard-happy.gif"
+        },
+        {
+          "asset_id": "asset-0151",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_side_rub-happy.gif"
+        },
+        {
+          "asset_id": "asset-0152",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_side_sit_please-happy.gif"
+        },
+        {
+          "asset_id": "asset-0153",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_side_sit_ramen-happy.gif"
+        },
+        {
+          "asset_id": "asset-0154",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_side_stretch-angry.gif"
+        },
+        {
+          "asset_id": "asset-0155",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_side_yes-happy.gif"
+        },
+        {
+          "asset_id": "asset-0156",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_sit-happy.gif"
+        },
+        {
+          "asset_id": "asset-0157",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_sit_eat_lollipop-sad.gif"
+        },
+        {
+          "asset_id": "asset-0158",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_sit_read-happy.gif"
+        },
+        {
+          "asset_id": "asset-0159",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_sit_small-think.gif"
+        },
+        {
+          "asset_id": "asset-0160",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_sit_small-want.gif"
+        },
+        {
+          "asset_id": "asset-0161",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_sleep-happy.gif"
+        },
+        {
+          "asset_id": "asset-0162",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_sorry-hurry.gif"
+        },
+        {
+          "asset_id": "asset-0163",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_spin-happy.gif"
+        },
+        {
+          "asset_id": "asset-0164",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_squat-happy.gif"
+        },
+        {
+          "asset_id": "asset-0165",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_squat-sad.gif"
+        },
+        {
+          "asset_id": "asset-0166",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_stand-happy.gif"
+        },
+        {
+          "asset_id": "asset-0167",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_stand-think.gif"
+        },
+        {
+          "asset_id": "asset-0168",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_stand_open-happy.gif"
+        },
+        {
+          "asset_id": "asset-0169",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_stand_open_cross-happy.gif"
+        },
+        {
+          "asset_id": "asset-0170",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_stand_open_cross-sad.gif"
+        },
+        {
+          "asset_id": "asset-0171",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_turn_hear-happy.gif"
+        },
+        {
+          "asset_id": "asset-0172",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_turn_side-happy.gif"
+        },
+        {
+          "asset_id": "asset-0173",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_turn_side-sad.gif"
+        },
+        {
+          "asset_id": "asset-0174",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_work_dig-hurry.gif"
+        },
+        {
+          "asset_id": "asset-0175",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_work_knock-happy.gif"
+        },
+        {
+          "asset_id": "asset-0176",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_work_ricecake-hurry.gif"
+        },
+        {
+          "asset_id": "asset-0177",
+          "relative_path": "assets_cropped/Symboli Rudolf/interaction_idle_hug_Tsuyoshi-happy.gif"
+        },
+        {
+          "asset_id": "asset-0178",
+          "relative_path": "assets_cropped/Symboli Rudolf/interaction_idle_lie_Teio-cry.gif"
+        },
+        {
+          "asset_id": "asset-0179",
+          "relative_path": "assets_cropped/Symboli Rudolf/interaction_idle_lie_Teio-happy.gif"
+        },
+        {
+          "asset_id": "asset-0180",
+          "relative_path": "assets_cropped/Symboli Rudolf/interaction_idle_lie_Teio-sad.gif"
+        },
+        {
+          "asset_id": "asset-0181",
+          "relative_path": "assets_cropped/Symboli Rudolf/interaction_idle_play_Teio-happy.gif"
+        },
+        {
+          "asset_id": "asset-0182",
+          "relative_path": "assets_cropped/Symboli Rudolf/interaction_idle_read_Teio-happy.gif"
+        },
+        {
+          "asset_id": "asset-0183",
+          "relative_path": "assets_cropped/Symboli Rudolf/interaction_idle_side_Teio-happy.gif"
+        },
+        {
+          "asset_id": "asset-0184",
+          "relative_path": "assets_cropped/Symboli Rudolf/interaction_move_candy_Teio-happy.gif"
+        },
+        {
+          "asset_id": "asset-0185",
+          "relative_path": "assets_cropped/Symboli Rudolf/interaction_move_fly_Teio-happy.gif"
+        },
+        {
+          "asset_id": "asset-0186",
+          "relative_path": "assets_cropped/Symboli Rudolf/interaction_move_walk_Teio-cry.gif"
+        },
+        {
+          "asset_id": "asset-0187",
+          "relative_path": "assets_cropped/Symboli Rudolf/interaction_move_walk_Teio-happy.gif"
+        },
+        {
+          "asset_id": "asset-0188",
+          "relative_path": "assets_cropped/Symboli Rudolf/interaction_move_walk_Teio-sad.gif"
+        },
+        {
+          "asset_id": "asset-0189",
+          "relative_path": "assets_cropped/Symboli Rudolf/move_climb-happy.gif"
+        },
+        {
+          "asset_id": "asset-0190",
+          "relative_path": "assets_cropped/Symboli Rudolf/move_climb-hurry.gif"
+        },
+        {
+          "asset_id": "asset-0191",
+          "relative_path": "assets_cropped/Symboli Rudolf/move_climb-sad.gif"
+        },
+        {
+          "asset_id": "asset-0192",
+          "relative_path": "assets_cropped/Symboli Rudolf/move_fly-happy.gif"
+        },
+        {
+          "asset_id": "asset-0193",
+          "relative_path": "assets_cropped/Symboli Rudolf/move_fly-hurry.gif"
+        },
+        {
+          "asset_id": "asset-0194",
+          "relative_path": "assets_cropped/Symboli Rudolf/move_fly-sad.gif"
+        },
+        {
+          "asset_id": "asset-0195",
+          "relative_path": "assets_cropped/Symboli Rudolf/move_fly_up-happy.gif"
+        },
+        {
+          "asset_id": "asset-0196",
+          "relative_path": "assets_cropped/Symboli Rudolf/move_run-happy.gif"
+        },
+        {
+          "asset_id": "asset-0197",
+          "relative_path": "assets_cropped/Symboli Rudolf/move_run_stretch-happy.gif"
+        },
+        {
+          "asset_id": "asset-0198",
+          "relative_path": "assets_cropped/Symboli Rudolf/move_run_stretch-hurry.gif"
+        },
+        {
+          "asset_id": "asset-0199",
+          "relative_path": "assets_cropped/Symboli Rudolf/move_sneak-happy.gif"
+        },
+        {
+          "asset_id": "asset-0200",
+          "relative_path": "assets_cropped/Symboli Rudolf/move_walk-happy.gif"
+        },
+        {
+          "asset_id": "asset-0201",
+          "relative_path": "assets_cropped/Symboli Rudolf/move_walk-sad.gif"
+        },
+        {
+          "asset_id": "asset-0202",
+          "relative_path": "assets_cropped/Symboli Rudolf/move_work_boxes-hurry.gif"
+        },
+        {
+          "asset_id": "asset-0203",
+          "relative_path": "assets_cropped/Symboli Rudolf/move_work_santa-hurry.gif"
+        },
+        {
+          "asset_id": "asset-0204",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/drag_original-laugh.gif"
+        },
+        {
+          "asset_id": "asset-0205",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_mix_dance-happy.gif"
+        },
+        {
+          "asset_id": "asset-0206",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_mix_dance-laugh.gif"
+        },
+        {
+          "asset_id": "asset-0207",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_mix_dance_carrot-happy.gif"
+        },
+        {
+          "asset_id": "asset-0208",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_music_electricguitar-happy.gif"
+        },
+        {
+          "asset_id": "asset-0209",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_music_electricguitar-smile.gif"
+        },
+        {
+          "asset_id": "asset-0210",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_music_guitar-happy.gif"
+        },
+        {
+          "asset_id": "asset-0211",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_music_guitar-smile.gif"
+        },
+        {
+          "asset_id": "asset-0212",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_sit-laugh.gif"
+        },
+        {
+          "asset_id": "asset-0213",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_stand-cool.gif"
+        },
+        {
+          "asset_id": "asset-0214",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_stand-happy.gif"
+        },
+        {
+          "asset_id": "asset-0215",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_stand-laugh.gif"
+        },
+        {
+          "asset_id": "asset-0216",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_stand-serious.gif"
+        },
+        {
+          "asset_id": "asset-0217",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_stand_hand-cool.gif"
+        },
+        {
+          "asset_id": "asset-0218",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_stand_hand-serious.gif"
+        },
+        {
+          "asset_id": "asset-0219",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/move_run-happy.gif"
+        },
+        {
+          "asset_id": "asset-0220",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/move_run-laugh.gif"
+        },
+        {
+          "asset_id": "asset-0221",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/move_run-power.gif"
+        },
+        {
+          "asset_id": "asset-0222",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/move_run-serious.gif"
+        },
+        {
+          "asset_id": "asset-0223",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/move_run-smile.gif"
+        },
+        {
+          "asset_id": "asset-0224",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/move_run_dash-happy.gif"
+        },
+        {
+          "asset_id": "asset-0225",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/move_walk-cool.gif"
+        },
+        {
+          "asset_id": "asset-0226",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/move_walk-happy.gif"
+        },
+        {
+          "asset_id": "asset-0227",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/move_walk-laugh.gif"
+        },
+        {
+          "asset_id": "asset-0228",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/move_walk-smile.gif"
+        },
+        {
+          "asset_id": "asset-0229",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/move_walk_talk-happy.gif"
+        },
+        {
+          "asset_id": "asset-0230",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/move_walk_talk-laugh.gif"
+        },
+        {
+          "asset_id": "asset-0231",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/move_walk_talk-smile.gif"
+        },
+        {
+          "asset_id": "asset-0232",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/move_walk_talk-think.gif"
+        },
+        {
+          "asset_id": "asset-0233",
+          "relative_path": "assets_cropped/Tokai Teio/drag_original-sad.gif"
+        },
+        {
+          "asset_id": "asset-0234",
+          "relative_path": "assets_cropped/Tokai Teio/idle_dance_shake-cute.gif"
+        },
+        {
+          "asset_id": "asset-0235",
+          "relative_path": "assets_cropped/Tokai Teio/idle_dance_shake-happy.gif"
+        },
+        {
+          "asset_id": "asset-0236",
+          "relative_path": "assets_cropped/Tokai Teio/idle_dance_shake-smile.gif"
+        },
+        {
+          "asset_id": "asset-0237",
+          "relative_path": "assets_cropped/Tokai Teio/idle_dance_three-confidence.gif"
+        },
+        {
+          "asset_id": "asset-0238",
+          "relative_path": "assets_cropped/Tokai Teio/idle_dance_uma-happy.gif"
+        },
+        {
+          "asset_id": "asset-0239",
+          "relative_path": "assets_cropped/Tokai Teio/idle_dance_uma-hard-happy.gif"
+        },
+        {
+          "asset_id": "asset-0240",
+          "relative_path": "assets_cropped/Tokai Teio/idle_dance_uma_drink-hard-happy.gif"
+        },
+        {
+          "asset_id": "asset-0241",
+          "relative_path": "assets_cropped/Tokai Teio/idle_lie-cry.gif"
+        },
+        {
+          "asset_id": "asset-0242",
+          "relative_path": "assets_cropped/Tokai Teio/idle_lie-exhausted.gif"
+        },
+        {
+          "asset_id": "asset-0243",
+          "relative_path": "assets_cropped/Tokai Teio/idle_lie-happy.gif"
+        },
+        {
+          "asset_id": "asset-0244",
+          "relative_path": "assets_cropped/Tokai Teio/idle_lie-sad-sleep.gif"
+        },
+        {
+          "asset_id": "asset-0245",
+          "relative_path": "assets_cropped/Tokai Teio/idle_lie-sad.gif"
+        },
+        {
+          "asset_id": "asset-0246",
+          "relative_path": "assets_cropped/Tokai Teio/idle_lie-sleep.gif"
+        },
+        {
+          "asset_id": "asset-0247",
+          "relative_path": "assets_cropped/Tokai Teio/idle_mix_dance-sad.gif"
+        },
+        {
+          "asset_id": "asset-0248",
+          "relative_path": "assets_cropped/Tokai Teio/idle_mix_dance-smile.gif"
+        },
+        {
+          "asset_id": "asset-0249",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side-cry.gif"
+        },
+        {
+          "asset_id": "asset-0250",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side-happy.gif"
+        },
+        {
+          "asset_id": "asset-0251",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side-sad.gif"
+        },
+        {
+          "asset_id": "asset-0252",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_eat_candy-cry.gif"
+        },
+        {
+          "asset_id": "asset-0253",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_eat_candy-happy.gif"
+        },
+        {
+          "asset_id": "asset-0254",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_face-happy.gif"
+        },
+        {
+          "asset_id": "asset-0255",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_face-smile.gif"
+        },
+        {
+          "asset_id": "asset-0256",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_face_hand-angry.gif"
+        },
+        {
+          "asset_id": "asset-0257",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_face_hand-cry.gif"
+        },
+        {
+          "asset_id": "asset-0258",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_face_hand-happy.gif"
+        },
+        {
+          "asset_id": "asset-0259",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_face_hand-sad.gif"
+        },
+        {
+          "asset_id": "asset-0260",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_face_hand-smile.gif"
+        },
+        {
+          "asset_id": "asset-0261",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_face_stretch-happy.gif"
+        },
+        {
+          "asset_id": "asset-0262",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_face_stretch-smile.gif"
+        },
+        {
+          "asset_id": "asset-0263",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_face_stretch-yell.gif"
+        },
+        {
+          "asset_id": "asset-0264",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_rub-angry.gif"
+        },
+        {
+          "asset_id": "asset-0265",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_rub-cry.gif"
+        },
+        {
+          "asset_id": "asset-0266",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_rub-happy.gif"
+        },
+        {
+          "asset_id": "asset-0267",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_rub-sad.gif"
+        },
+        {
+          "asset_id": "asset-0268",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_sit_drink-happy.gif"
+        },
+        {
+          "asset_id": "asset-0269",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_sit_drink-sad.gif"
+        },
+        {
+          "asset_id": "asset-0270",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_sit_ramen-confidence.gif"
+        },
+        {
+          "asset_id": "asset-0271",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_sit_ramen-sad.gif"
+        },
+        {
+          "asset_id": "asset-0272",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_stretch-angry.gif"
+        },
+        {
+          "asset_id": "asset-0273",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_sulking-angry.gif"
+        },
+        {
+          "asset_id": "asset-0274",
+          "relative_path": "assets_cropped/Tokai Teio/idle_side_sulking-hard-angry.gif"
+        },
+        {
+          "asset_id": "asset-0275",
+          "relative_path": "assets_cropped/Tokai Teio/idle_sit-happy.gif"
+        },
+        {
+          "asset_id": "asset-0276",
+          "relative_path": "assets_cropped/Tokai Teio/idle_sit-laugh.gif"
+        },
+        {
+          "asset_id": "asset-0277",
+          "relative_path": "assets_cropped/Tokai Teio/idle_stand-happy.gif"
+        },
+        {
+          "asset_id": "asset-0278",
+          "relative_path": "assets_cropped/Tokai Teio/idle_stand-sad.gif"
+        },
+        {
+          "asset_id": "asset-0279",
+          "relative_path": "assets_cropped/Tokai Teio/idle_stand_music-happy.gif"
+        },
+        {
+          "asset_id": "asset-0280",
+          "relative_path": "assets_cropped/Tokai Teio/idle_sway-sad.gif"
+        },
+        {
+          "asset_id": "asset-0281",
+          "relative_path": "assets_cropped/Tokai Teio/idle_sway-want.gif"
+        },
+        {
+          "asset_id": "asset-0282",
+          "relative_path": "assets_cropped/Tokai Teio/idle_sway_hula-sad.gif"
+        },
+        {
+          "asset_id": "asset-0283",
+          "relative_path": "assets_cropped/Tokai Teio/idle_sway_music-happy.gif"
+        },
+        {
+          "asset_id": "asset-0284",
+          "relative_path": "assets_cropped/Tokai Teio/move_jog-angry.gif"
+        },
+        {
+          "asset_id": "asset-0285",
+          "relative_path": "assets_cropped/Tokai Teio/move_jog-cry.gif"
+        },
+        {
+          "asset_id": "asset-0286",
+          "relative_path": "assets_cropped/Tokai Teio/move_jog-sad.gif"
+        },
+        {
+          "asset_id": "asset-0287",
+          "relative_path": "assets_cropped/Tokai Teio/move_run-cry.gif"
+        },
+        {
+          "asset_id": "asset-0288",
+          "relative_path": "assets_cropped/Tokai Teio/move_run-effort.gif"
+        },
+        {
+          "asset_id": "asset-0289",
+          "relative_path": "assets_cropped/Tokai Teio/move_run-happy.gif"
+        },
+        {
+          "asset_id": "asset-0290",
+          "relative_path": "assets_cropped/Tokai Teio/move_run-sad.gif"
+        },
+        {
+          "asset_id": "asset-0291",
+          "relative_path": "assets_cropped/Tokai Teio/move_sneak-happy.gif"
+        },
+        {
+          "asset_id": "asset-0292",
+          "relative_path": "assets_cropped/Tokai Teio/move_walk-cry.gif"
+        },
+        {
+          "asset_id": "asset-0293",
+          "relative_path": "assets_cropped/Tokai Teio/move_walk-happy.gif"
+        },
+        {
+          "asset_id": "asset-0294",
+          "relative_path": "assets_cropped/Tokai Teio/move_walk-sad.gif"
+        },
+        {
+          "asset_id": "asset-0295",
+          "relative_path": "assets_cropped/Tokai Teio/move_walk_drink-cry.gif"
+        },
+        {
+          "asset_id": "asset-0296",
+          "relative_path": "assets_cropped/Tokai Teio/move_walk_drink-hard-happy.gif"
+        },
+        {
+          "asset_id": "asset-0297",
+          "relative_path": "assets_cropped/Tokai Teio/move_walk_drink-sad.gif"
+        },
+        {
+          "asset_id": "asset-0298",
+          "relative_path": "assets_cropped/Tokai Teio/move_walk_shake-happy.gif"
+        },
+        {
+          "asset_id": "asset-0299",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_mix_dance-cool.gif"
+        },
+        {
+          "asset_id": "asset-0300",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_mix_dance-cute.gif"
+        },
+        {
+          "asset_id": "asset-0301",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_mix_dance-smile.gif"
+        },
+        {
+          "asset_id": "asset-0302",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_mix_dance_carrot-happy.gif"
+        },
+        {
+          "asset_id": "asset-0303",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_mix_dance_sing-happy.gif"
+        },
+        {
+          "asset_id": "asset-0304",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_mix_dance_sing-smile.gif"
+        },
+        {
+          "asset_id": "asset-0305",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_stand-cool.gif"
+        },
+        {
+          "asset_id": "asset-0306",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_stand-happy.gif"
+        },
+        {
+          "asset_id": "asset-0307",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_stand-smile.gif"
+        },
+        {
+          "asset_id": "asset-0308",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_stand_cross-cute.gif"
+        },
+        {
+          "asset_id": "asset-0309",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_stand_cross-happy.gif"
+        },
+        {
+          "asset_id": "asset-0310",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_stand_cross-sad.gif"
+        },
+        {
+          "asset_id": "asset-0311",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_stand_cross-smile.gif"
+        },
+        {
+          "asset_id": "asset-0312",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_stand_cross-think.gif"
+        },
+        {
+          "asset_id": "asset-0313",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_stand_pose-cool.gif"
+        },
+        {
+          "asset_id": "asset-0314",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_stand_pose-smile.gif"
+        },
+        {
+          "asset_id": "asset-0315",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_stand_V-cute.gif"
+        },
+        {
+          "asset_id": "asset-0316",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_stand_V-happy.gif"
+        },
+        {
+          "asset_id": "asset-0317",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_stand_V-smile.gif"
+        },
+        {
+          "asset_id": "asset-0318",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/move_fly-cute.gif"
+        },
+        {
+          "asset_id": "asset-0319",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/move_fly-happy.gif"
+        },
+        {
+          "asset_id": "asset-0320",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/move_fly-serious.gif"
+        },
+        {
+          "asset_id": "asset-0321",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/move_fly-smile.gif"
+        },
+        {
+          "asset_id": "asset-0322",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/drag_fly-angry.gif"
+        },
+        {
+          "asset_id": "asset-0323",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/drag_fly-cry.gif"
+        },
+        {
+          "asset_id": "asset-0324",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/drag_fly-happy.gif"
+        },
+        {
+          "asset_id": "asset-0325",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/drag_fly-hard-cry.gif"
+        },
+        {
+          "asset_id": "asset-0326",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/drag_fly-laugh.gif"
+        },
+        {
+          "asset_id": "asset-0327",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/drag_fly-sad.gif"
+        },
+        {
+          "asset_id": "asset-0328",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/drag_fly-smile.gif"
+        },
+        {
+          "asset_id": "asset-0329",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_drink-happy.gif"
+        },
+        {
+          "asset_id": "asset-0330",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_drink-sad.gif"
+        },
+        {
+          "asset_id": "asset-0331",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_drink-smile.gif"
+        },
+        {
+          "asset_id": "asset-0332",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_eat-happy.gif"
+        },
+        {
+          "asset_id": "asset-0333",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_eat-sad.gif"
+        },
+        {
+          "asset_id": "asset-0334",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_eat-smile.gif"
+        },
+        {
+          "asset_id": "asset-0335",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_eat-think.gif"
+        },
+        {
+          "asset_id": "asset-0336",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_get-angry.gif"
+        },
+        {
+          "asset_id": "asset-0337",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_get-cry.gif"
+        },
+        {
+          "asset_id": "asset-0338",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_get-happy.gif"
+        },
+        {
+          "asset_id": "asset-0339",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_get-hard-cry.gif"
+        },
+        {
+          "asset_id": "asset-0340",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_get-sad.gif"
+        },
+        {
+          "asset_id": "asset-0341",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_get-smile.gif"
+        },
+        {
+          "asset_id": "asset-0342",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-cry.gif"
+        },
+        {
+          "asset_id": "asset-0343",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-exhausted.gif"
+        },
+        {
+          "asset_id": "asset-0344",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-happy.gif"
+        },
+        {
+          "asset_id": "asset-0345",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-hard-cry.gif"
+        },
+        {
+          "asset_id": "asset-0346",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-sad.gif"
+        },
+        {
+          "asset_id": "asset-0347",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-sleep.gif"
+        },
+        {
+          "asset_id": "asset-0348",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-smile.gif"
+        },
+        {
+          "asset_id": "asset-0349",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_rest-angry.gif"
+        },
+        {
+          "asset_id": "asset-0350",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_rest-happy.gif"
+        },
+        {
+          "asset_id": "asset-0351",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_rest-mad.gif"
+        },
+        {
+          "asset_id": "asset-0352",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_rest-sleep.gif"
+        },
+        {
+          "asset_id": "asset-0353",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_rest-smile.gif"
+        },
+        {
+          "asset_id": "asset-0354",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side-angry.gif"
+        },
+        {
+          "asset_id": "asset-0355",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side-cry.gif"
+        },
+        {
+          "asset_id": "asset-0356",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side-happy.gif"
+        },
+        {
+          "asset_id": "asset-0357",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side-hard-cry.gif"
+        },
+        {
+          "asset_id": "asset-0358",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side-sad.gif"
+        },
+        {
+          "asset_id": "asset-0359",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side-scared.gif"
+        },
+        {
+          "asset_id": "asset-0360",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side-sleep.gif"
+        },
+        {
+          "asset_id": "asset-0361",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side-smile.gif"
+        },
+        {
+          "asset_id": "asset-0362",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side-think.gif"
+        },
+        {
+          "asset_id": "asset-0363",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_face-happy.gif"
+        },
+        {
+          "asset_id": "asset-0364",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_face-smile.gif"
+        },
+        {
+          "asset_id": "asset-0365",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_face_hand-happy.gif"
+        },
+        {
+          "asset_id": "asset-0366",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_face_hand-smile.gif"
+        },
+        {
+          "asset_id": "asset-0367",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_face_hug-cry.gif"
+        },
+        {
+          "asset_id": "asset-0368",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_face_hug-happy.gif"
+        },
+        {
+          "asset_id": "asset-0369",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_face_hug-hard-cry.gif"
+        },
+        {
+          "asset_id": "asset-0370",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_face_hug-sad.gif"
+        },
+        {
+          "asset_id": "asset-0371",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_face_hug-smile.gif"
+        },
+        {
+          "asset_id": "asset-0372",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_face_stretch-angry.gif"
+        },
+        {
+          "asset_id": "asset-0373",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_fan-smile.gif"
+        },
+        {
+          "asset_id": "asset-0374",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_hug-angry.gif"
+        },
+        {
+          "asset_id": "asset-0375",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_hug-cry.gif"
+        },
+        {
+          "asset_id": "asset-0376",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_hug-happy.gif"
+        },
+        {
+          "asset_id": "asset-0377",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_hug-hard-cry.gif"
+        },
+        {
+          "asset_id": "asset-0378",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_hug-sad.gif"
+        },
+        {
+          "asset_id": "asset-0379",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_hug-smile.gif"
+        },
+        {
+          "asset_id": "asset-0380",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_music-smile.gif"
+        },
+        {
+          "asset_id": "asset-0381",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_ready-angry.gif"
+        },
+        {
+          "asset_id": "asset-0382",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_ready-smile.gif"
+        },
+        {
+          "asset_id": "asset-0383",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_rub-cry.gif"
+        },
+        {
+          "asset_id": "asset-0384",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_rub-happy.gif"
+        },
+        {
+          "asset_id": "asset-0385",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_rub-sad.gif"
+        },
+        {
+          "asset_id": "asset-0386",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_rub-smile.gif"
+        },
+        {
+          "asset_id": "asset-0387",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_shake-angry.gif"
+        },
+        {
+          "asset_id": "asset-0388",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_shake-cry.gif"
+        },
+        {
+          "asset_id": "asset-0389",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_shake-happy.gif"
+        },
+        {
+          "asset_id": "asset-0390",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_shake-hard-cry.gif"
+        },
+        {
+          "asset_id": "asset-0391",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_shake-hard-smile.gif"
+        },
+        {
+          "asset_id": "asset-0392",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_shake-sad.gif"
+        },
+        {
+          "asset_id": "asset-0393",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_shake-smile.gif"
+        },
+        {
+          "asset_id": "asset-0394",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_stand-angry.gif"
+        },
+        {
+          "asset_id": "asset-0395",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_stand-cry.gif"
+        },
+        {
+          "asset_id": "asset-0396",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_stand-happy.gif"
+        },
+        {
+          "asset_id": "asset-0397",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_stand-sad.gif"
+        },
+        {
+          "asset_id": "asset-0398",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_stand_cheer-happy.gif"
+        },
+        {
+          "asset_id": "asset-0399",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_stand_cheer-smile.gif"
+        },
+        {
+          "asset_id": "asset-0400",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_stretch-angry.gif"
+        },
+        {
+          "asset_id": "asset-0401",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_stretch-cry.gif"
+        },
+        {
+          "asset_id": "asset-0402",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_stretch-happy.gif"
+        },
+        {
+          "asset_id": "asset-0403",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_stretch-hard-cry.gif"
+        },
+        {
+          "asset_id": "asset-0404",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_stretch-sad.gif"
+        },
+        {
+          "asset_id": "asset-0405",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_stretch-smile.gif"
+        },
+        {
+          "asset_id": "asset-0406",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_sulking-angry.gif"
+        },
+        {
+          "asset_id": "asset-0407",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_side_sulking-think.gif"
+        },
+        {
+          "asset_id": "asset-0408",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit-angry.gif"
+        },
+        {
+          "asset_id": "asset-0409",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit-cry.gif"
+        },
+        {
+          "asset_id": "asset-0410",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit-happy.gif"
+        },
+        {
+          "asset_id": "asset-0411",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit-mad.gif"
+        },
+        {
+          "asset_id": "asset-0412",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit-sad.gif"
+        },
+        {
+          "asset_id": "asset-0413",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit-smile.gif"
+        },
+        {
+          "asset_id": "asset-0414",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_no-angry.gif"
+        },
+        {
+          "asset_id": "asset-0415",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_no-cry.gif"
+        },
+        {
+          "asset_id": "asset-0416",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_no-happy.gif"
+        },
+        {
+          "asset_id": "asset-0417",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_no-hard-cry.gif"
+        },
+        {
+          "asset_id": "asset-0418",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_no-sad.gif"
+        },
+        {
+          "asset_id": "asset-0419",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_no-smile.gif"
+        },
+        {
+          "asset_id": "asset-0420",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-angry.gif"
+        },
+        {
+          "asset_id": "asset-0421",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-cry.gif"
+        },
+        {
+          "asset_id": "asset-0422",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-happy.gif"
+        },
+        {
+          "asset_id": "asset-0423",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-hard-cry.gif"
+        },
+        {
+          "asset_id": "asset-0424",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-hard-smile.gif"
+        },
+        {
+          "asset_id": "asset-0425",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-mad.gif"
+        },
+        {
+          "asset_id": "asset-0426",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-sad.gif"
+        },
+        {
+          "asset_id": "asset-0427",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-smile.gif"
+        },
+        {
+          "asset_id": "asset-0428",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_hug-happy.gif"
+        },
+        {
+          "asset_id": "asset-0429",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_hug-sad.gif"
+        },
+        {
+          "asset_id": "asset-0430",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_hug-smile.gif"
+        },
+        {
+          "asset_id": "asset-0431",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_stretch-angry.gif"
+        },
+        {
+          "asset_id": "asset-0432",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_stretch-cry.gif"
+        },
+        {
+          "asset_id": "asset-0433",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_stretch-hard-cry.gif"
+        },
+        {
+          "asset_id": "asset-0434",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_stretch-hard-smile.gif"
+        },
+        {
+          "asset_id": "asset-0435",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_stretch-mad.gif"
+        },
+        {
+          "asset_id": "asset-0436",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_squat-angry.gif"
+        },
+        {
+          "asset_id": "asset-0437",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_squat-cry.gif"
+        },
+        {
+          "asset_id": "asset-0438",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_squat-happy.gif"
+        },
+        {
+          "asset_id": "asset-0439",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_squat-hard-cry.gif"
+        },
+        {
+          "asset_id": "asset-0440",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_squat-sad.gif"
+        },
+        {
+          "asset_id": "asset-0441",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_squat-smile.gif"
+        },
+        {
+          "asset_id": "asset-0442",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_stand-happy.gif"
+        },
+        {
+          "asset_id": "asset-0443",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_stand-sad.gif"
+        },
+        {
+          "asset_id": "asset-0444",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/move_climb-angry.gif"
+        },
+        {
+          "asset_id": "asset-0445",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/move_climb-cry.gif"
+        },
+        {
+          "asset_id": "asset-0446",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/move_climb-happy.gif"
+        },
+        {
+          "asset_id": "asset-0447",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/move_climb-hard-cry.gif"
+        },
+        {
+          "asset_id": "asset-0448",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/move_climb-sad.gif"
+        },
+        {
+          "asset_id": "asset-0449",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/move_climb-smile.gif"
+        },
+        {
+          "asset_id": "asset-0450",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/move_fly-angry.gif"
+        },
+        {
+          "asset_id": "asset-0451",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/move_fly-cry.gif"
+        },
+        {
+          "asset_id": "asset-0452",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/move_fly-happy.gif"
+        },
+        {
+          "asset_id": "asset-0453",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/move_fly-hard-cry.gif"
+        },
+        {
+          "asset_id": "asset-0454",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/move_fly-laugh.gif"
+        },
+        {
+          "asset_id": "asset-0455",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/move_fly-sad.gif"
+        },
+        {
+          "asset_id": "asset-0456",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/move_fly-smile.gif"
+        }
+      ],
+      "verified_roles": [
+        {
+          "role": "root_shonbori_tanuki_visual_design_author",
+          "subject_id": "author-deon-jetaime",
+          "confidence": "high",
+          "evidence_urls": [
+            "https://x.com/deon_Jetaime/status/1394789901392957443",
+            "https://tsumanne.net/si/data/2021/05/31/7320721/",
+            "https://umabbs.com/patio.cgi?log=past&pg=100&read=4373&res=187"
+          ]
+        }
+      ],
+      "chronology": [
+        {
+          "date": "2021-05-19",
+          "event": "Deon publishes the first-party Shonbori Rudolf illustration.",
+          "url": "https://x.com/deon_Jetaime/status/1394789901392957443"
+        },
+        {
+          "date": "2021-05-31",
+          "event": "Archived Futaba thread shows a pixel Shonbori/Tanuki version and explicitly describes the drawing as originating from a person outside Futaba.",
+          "url": "https://tsumanne.net/si/data/2021/05/31/7320721/"
+        },
+        {
+          "date": "2021-10-26",
+          "event": "In a direct mini-interview, Deon described the illustration's origin and acknowledged the meme with surprise/amusement; the interview did not state reuse or redistribution terms.",
+          "url": "https://www.inside-games.jp/article/2021/10/26/134933.html"
+        },
+        {
+          "date": "2023-01-21",
+          "event": "Community discussion independently identifies Deon and links the same first-party post as the first Shonbori Rudolf illustration.",
+          "url": "https://umabbs.com/patio.cgi?log=past&pg=100&read=4373&res=187"
+        }
+      ],
+      "match_basis": [
+        "documented chronology from first-party illustration to early pixel derivative",
+        "oversized rounded head and compact rounded body proportions",
+        "horizontal downcast eye motif, circular pink cheeks, simplified limbs, ears, and tail",
+        "representative visual review spans every local character folder and both base/transformed forms"
+      ],
+      "representative_local_assets_reviewed": [
+        "assets_cropped/Air Groove/idle_lie-happy.gif",
+        "assets_cropped/Sirius Symboli/idle_mix_dance-smile.gif",
+        "assets_cropped/Symboli Rudolf/idle_lie-happy.gif",
+        "assets_cropped/Symboli Rudolf/transformed/idle_mix_dance-happy.gif",
+        "assets_cropped/Tokai Teio/idle_lie-happy.gif",
+        "assets_cropped/Tokai Teio/transformed/idle_mix_dance-smile.gif",
+        "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-happy.gif",
+        "assets_cropped/Tsurumaru Tsuyoshi/idle_side-happy.gif"
+      ],
+      "early_attachment_retrieval": {
+        "attachment_urls": [
+          "https://tsumanne.net/si/data/2021/05/31/7320721/1622388089235.png",
+          "https://tsumanne.net/si/data/2021/05/31/7320721/fu49786.png"
+        ],
+        "internet_archive_availability_result": "no_archived_snapshots_returned_for_either_exact_url",
+        "search_cache_result": "thread_text_and_attachment_names_only_no_image_payload",
+        "comparison_status": "not_possible_attachment_payload_unavailable",
+        "interpretation": "The early attachments cannot be marked as local-frame matches or non-matches. Their thread context remains chronology evidence only."
+      },
+      "unresolved_roles": [
+        "pixel_conversion_artist",
+        "base_body_template_artist_or_artists",
+        "character_specific_redraw_artist_or_artists",
+        "animation_author_or_authors",
+        "expression_variant_editor_or_editors",
+        "later_editor_or_editors"
+      ],
+      "permission_finding": "The direct author interview acknowledges the meme but states no reuse terms. No explicit permission for modification, app embedding, source-file repository publication, or installer redistribution was found on the screened first-party surfaces. Absence and a friendly reaction are not permission.",
+      "recommended_action": "Keep all files out of public app/repository/release redistribution until Deon's terms and the downstream pixel/redraw/animation/editor chain are resolved.",
+      "author_interview": {
+        "source_url": "https://www.inside-games.jp/article/2021/10/26/134933.html",
+        "attitude_summary": "Neutral-to-positive surprise at the meme's emergence.",
+        "permission_effect": "none; no public reuse, modification, embedding, or redistribution terms stated"
+      }
+    },
+    {
+      "finding_id": "source-finding-005",
+      "title": "Historical archive PNG component screening",
+      "finding_status": "screened_no_match",
+      "publication_decision": "no_independent_change",
+      "matched_assets": [],
+      "screening_data": "data/archive_png_component_screening.json",
+      "screened_png_count": 214,
+      "local_decoded_frame_count": 2259,
+      "exact_local_frame_match_file_count": 0,
+      "visual_candidate_file_count": 0,
+      "candidate_threshold": 0.86,
+      "maximum_candidate_score": 0.77203,
+      "interpretation": "The screened PNGs are not exact decoded frames or credible component-level visual matches for the local GIFs. This is negative evidence only and does not exclude deleted or unscreened sources."
+    },
+    {
+      "finding_id": "source-finding-006",
+      "title": "Anonymous early animation branches",
+      "finding_status": "ecosystem_animation_history_identified_specific_creators_and_local_matches_unresolved",
+      "publication_decision": "no_independent_change_already_orange",
+      "matched_assets": [],
+      "verified_roles": [
+        {
+          "role": "early_flailing_animation_creator_cluster",
+          "subject_id": "creator-cluster-futaba-anonymous-early-animators",
+          "confidence": "high_that_creator_was_anonymous_futaba_volunteer_low_for_identity",
+          "evidence_urls": [
+            "https://w.atwiki.jp/niconicomugen/pages/11090.html",
+            "https://www.nicovideo.jp/watch/sm38852466"
+          ]
+        }
+      ],
+      "chronology": [
+        {
+          "date": "2021-06-07",
+          "event": "NicoNico video sm38852466 republishes an early Shonbori/Tanuki animation and explicitly names Futaba as its repost source; uploader 三代目コペルニクス君 is not treated as the animator.",
+          "url": "https://www.nicovideo.jp/watch/sm38852466"
+        },
+        {
+          "date": "2021-10-02",
+          "event": "NicoNico video sm39422705 uses the already-developed Umaru-meeting motion branch; its description says the materials were already fully available.",
+          "url": "https://www.nicovideo.jp/watch/sm39422705"
+        }
+      ],
+      "lineage_summary": "Community history describes the first low-frame flailing animation as volunteer-made at Futaba, then records multiple movements traced from the Umaru meeting scene.",
+      "community_distribution_context": "Historical community commentary describes taking the works outside the community as disfavoured and later diffusion as tacitly tolerated. This is contextual evidence, not an individual licence and not a verified prohibition by a specific local-asset author.",
+      "unresolved_roles": [
+        "specific_flailing_animator_identity",
+        "specific_umarukaigi_template_animator_identities",
+        "local_asset_group_visual_matches",
+        "individual_reuse_and_redistribution_terms"
+      ],
+      "recommended_action": "Recover source frames or source packs before linking any local action group; do not credit early NicoNico uploaders as animators when their own descriptions identify the upload as a repost."
+    },
+    {
+      "finding_id": "source-finding-007",
+      "title": "Local motion-family triage against Jitabata and Umaru-meeting branches",
+      "finding_status": "motion_semantics_triaged_external_source_frames_unrecovered",
+      "publication_decision": "no_independent_change_already_orange",
+      "matched_asset_scope": "89 local GIFs across idle_lie*, idle_sit*, and idle_mix_dance*.",
+      "matched_assets": [
+        {
+          "asset_id": "asset-0013",
+          "relative_path": "assets_cropped/Air Groove/idle_lie-happy.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0014",
+          "relative_path": "assets_cropped/Air Groove/idle_lie-sad.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0015",
+          "relative_path": "assets_cropped/Air Groove/idle_lie-sleep.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0022",
+          "relative_path": "assets_cropped/Air Groove/idle_sit-angry.gif",
+          "action_key": "idle_sit",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0023",
+          "relative_path": "assets_cropped/Air Groove/idle_sit-awkward.gif",
+          "action_key": "idle_sit",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0024",
+          "relative_path": "assets_cropped/Air Groove/idle_sit-happy.gif",
+          "action_key": "idle_sit",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0025",
+          "relative_path": "assets_cropped/Air Groove/idle_sit-sad.gif",
+          "action_key": "idle_sit",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0026",
+          "relative_path": "assets_cropped/Air Groove/idle_sit-smile.gif",
+          "action_key": "idle_sit",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0027",
+          "relative_path": "assets_cropped/Air Groove/idle_sit_teach-angry.gif",
+          "action_key": "idle_sit_teach",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0028",
+          "relative_path": "assets_cropped/Air Groove/idle_sit_teach-awkward.gif",
+          "action_key": "idle_sit_teach",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0029",
+          "relative_path": "assets_cropped/Air Groove/idle_sit_teach-scold.gif",
+          "action_key": "idle_sit_teach",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0045",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_lie-smile.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0048",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_mix_dance-smile.gif",
+          "action_key": "idle_mix_dance",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "medium",
+            "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0049",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_mix_dance_me-smile.gif",
+          "action_key": "idle_mix_dance_me",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "medium",
+            "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0068",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_sit-happy.gif",
+          "action_key": "idle_sit",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0069",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_sit-sad.gif",
+          "action_key": "idle_sit",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0070",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_sit-smile.gif",
+          "action_key": "idle_sit",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0071",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_sit_talk-sad.gif",
+          "action_key": "idle_sit_talk",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0072",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_sit_talk-shock.gif",
+          "action_key": "idle_sit_talk",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0073",
+          "relative_path": "assets_cropped/Sirius Symboli/idle_sit_talk-smile.gif",
+          "action_key": "idle_sit_talk",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0118",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_lie-exhausted-sleep.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0119",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_lie-exhausted.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0120",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_lie-happy.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0121",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_lie-sad-sleep.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0122",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_lie-sad.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0123",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_lie-sleep.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0124",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_lie_read-happy.gif",
+          "action_key": "idle_lie_read",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0125",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_mix_dance-smile.gif",
+          "action_key": "idle_mix_dance",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "medium",
+            "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0126",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_mix_dance_carrot-smile.gif",
+          "action_key": "idle_mix_dance_carrot",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "medium",
+            "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0156",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_sit-happy.gif",
+          "action_key": "idle_sit",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0157",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_sit_eat_lollipop-sad.gif",
+          "action_key": "idle_sit_eat_lollipop",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0158",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_sit_read-happy.gif",
+          "action_key": "idle_sit_read",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0159",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_sit_small-think.gif",
+          "action_key": "idle_sit_small",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0160",
+          "relative_path": "assets_cropped/Symboli Rudolf/idle_sit_small-want.gif",
+          "action_key": "idle_sit_small",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0205",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_mix_dance-happy.gif",
+          "action_key": "idle_mix_dance",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "medium",
+            "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0206",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_mix_dance-laugh.gif",
+          "action_key": "idle_mix_dance",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "medium",
+            "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0207",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_mix_dance_carrot-happy.gif",
+          "action_key": "idle_mix_dance_carrot",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "medium",
+            "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0212",
+          "relative_path": "assets_cropped/Symboli Rudolf/transformed/idle_sit-laugh.gif",
+          "action_key": "idle_sit",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0241",
+          "relative_path": "assets_cropped/Tokai Teio/idle_lie-cry.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0242",
+          "relative_path": "assets_cropped/Tokai Teio/idle_lie-exhausted.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0243",
+          "relative_path": "assets_cropped/Tokai Teio/idle_lie-happy.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0244",
+          "relative_path": "assets_cropped/Tokai Teio/idle_lie-sad-sleep.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0245",
+          "relative_path": "assets_cropped/Tokai Teio/idle_lie-sad.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0246",
+          "relative_path": "assets_cropped/Tokai Teio/idle_lie-sleep.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0247",
+          "relative_path": "assets_cropped/Tokai Teio/idle_mix_dance-sad.gif",
+          "action_key": "idle_mix_dance",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "medium",
+            "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0248",
+          "relative_path": "assets_cropped/Tokai Teio/idle_mix_dance-smile.gif",
+          "action_key": "idle_mix_dance",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "medium",
+            "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0275",
+          "relative_path": "assets_cropped/Tokai Teio/idle_sit-happy.gif",
+          "action_key": "idle_sit",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0276",
+          "relative_path": "assets_cropped/Tokai Teio/idle_sit-laugh.gif",
+          "action_key": "idle_sit",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0299",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_mix_dance-cool.gif",
+          "action_key": "idle_mix_dance",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "medium",
+            "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0300",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_mix_dance-cute.gif",
+          "action_key": "idle_mix_dance",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "medium",
+            "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0301",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_mix_dance-smile.gif",
+          "action_key": "idle_mix_dance",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "medium",
+            "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0302",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_mix_dance_carrot-happy.gif",
+          "action_key": "idle_mix_dance_carrot",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "medium",
+            "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0303",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_mix_dance_sing-happy.gif",
+          "action_key": "idle_mix_dance_sing",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "medium",
+            "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0304",
+          "relative_path": "assets_cropped/Tokai Teio/transformed/idle_mix_dance_sing-smile.gif",
+          "action_key": "idle_mix_dance_sing",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The coordinated stepping/dance cycle is not the simple low-frame hands-and-feet flailing motion described for the earliest Jitabata branch."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "medium",
+            "basis": "The coordinated full-body dance cycle is compatible with the documented later Umaru-meeting traced-motion branch, but no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0342",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-cry.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0343",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-exhausted.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0344",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-happy.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0345",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-hard-cry.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0346",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-sad.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0347",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-sleep.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0348",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_lie-smile.gif",
+          "action_key": "idle_lie",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The lying pose is not compatible with the documented meeting/dance motion family."
+          }
+        },
+        {
+          "asset_id": "asset-0408",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit-angry.gif",
+          "action_key": "idle_sit",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0409",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit-cry.gif",
+          "action_key": "idle_sit",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0410",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit-happy.gif",
+          "action_key": "idle_sit",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0411",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit-mad.gif",
+          "action_key": "idle_sit",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0412",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit-sad.gif",
+          "action_key": "idle_sit",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0413",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit-smile.gif",
+          "action_key": "idle_sit",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed frames do not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "No repeated meeting/dance-style limb or full-body sequence is visible in the reviewed frames."
+          }
+        },
+        {
+          "asset_id": "asset-0414",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_no-angry.gif",
+          "action_key": "idle_sit_no",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0415",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_no-cry.gif",
+          "action_key": "idle_sit_no",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0416",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_no-happy.gif",
+          "action_key": "idle_sit_no",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0417",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_no-hard-cry.gif",
+          "action_key": "idle_sit_no",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0418",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_no-sad.gif",
+          "action_key": "idle_sit_no",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0419",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_no-smile.gif",
+          "action_key": "idle_sit_no",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0420",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-angry.gif",
+          "action_key": "idle_sit_wave",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0421",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-cry.gif",
+          "action_key": "idle_sit_wave",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0422",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-happy.gif",
+          "action_key": "idle_sit_wave",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0423",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-hard-cry.gif",
+          "action_key": "idle_sit_wave",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0424",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-hard-smile.gif",
+          "action_key": "idle_sit_wave",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0425",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-mad.gif",
+          "action_key": "idle_sit_wave",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0426",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-sad.gif",
+          "action_key": "idle_sit_wave",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0427",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave-smile.gif",
+          "action_key": "idle_sit_wave",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0428",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_hug-happy.gif",
+          "action_key": "idle_sit_wave_hug",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0429",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_hug-sad.gif",
+          "action_key": "idle_sit_wave_hug",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0430",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_hug-smile.gif",
+          "action_key": "idle_sit_wave_hug",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0431",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_stretch-angry.gif",
+          "action_key": "idle_sit_wave_stretch",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0432",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_stretch-cry.gif",
+          "action_key": "idle_sit_wave_stretch",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0433",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_stretch-hard-cry.gif",
+          "action_key": "idle_sit_wave_stretch",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0434",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_stretch-hard-smile.gif",
+          "action_key": "idle_sit_wave_stretch",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        },
+        {
+          "asset_id": "asset-0435",
+          "relative_path": "assets_cropped/Tsurumaru Tsuyoshi/idle_sit_wave_stretch-mad.gif",
+          "action_key": "idle_sit_wave_stretch",
+          "jitabata_branch": {
+            "status": "motion_semantic_rejected_not_pixel_source_exclusion",
+            "confidence": "high",
+            "basis": "The reviewed seated gesture does not show the documented combined hands-and-feet flailing pattern."
+          },
+          "umarukaigi_branch": {
+            "status": "motion_semantic_candidate_source_frames_unrecovered",
+            "confidence": "low",
+            "basis": "The seated gesture could belong to a later meeting-scene-derived family, but action semantics alone are insufficient and no source frames were available for matching."
+          }
+        }
+      ],
+      "summary_counts": {
+        "reviewed": 89,
+        "jitabata_motion_semantic_rejections": 89,
+        "umarukaigi_motion_semantic_candidates": 37,
+        "umarukaigi_medium_confidence_candidates": 15,
+        "umarukaigi_low_confidence_candidates": 22,
+        "umarukaigi_motion_semantic_rejections": 52
+      },
+      "evidence": [
+        {
+          "url": "https://w.atwiki.jp/niconicomugen/pages/11090.html",
+          "basis": "Community history distinguishes an early low-frame hands-and-feet flailing animation from later motions traced from the Himouto! Umaru-chan meeting scene."
+        },
+        {
+          "url": "https://www.inside-games.jp/article/2021/10/26/134933.html",
+          "basis": "Contemporary editorial history describes the flailing GIF, later variants, and dance-video usage, and includes a direct mini-interview with Deon."
+        },
+        {
+          "url": "https://note.com/beam_tarai_no2/n/n6a353a7abfb2",
+          "basis": "A downstream 2024 Tanuki video creator explicitly distinguishes Jitabata from Umaru Dance, describes Umaru Dance as a bow-legged dance, and states that its reusable cycle has eight frames. This supports branch semantics and frame-count compatibility only; the writer is not treated as the template author."
+        },
+        {
+          "local_data": "data/motion_template_audit.json"
+        },
+        {
+          "local_contact_sheet": "review/phase2f_idle_lie_frames.png"
+        },
+        {
+          "local_contact_sheet": "review/phase2f_idle_sit_frames.png"
+        },
+        {
+          "local_contact_sheet": "review/phase2f_idle_mix_dance_frames.png"
+        }
+      ],
+      "interpretation": "All 89 reviewed files can be rejected as motion-semantic matches to the documented canonical Jitabata branch. For the later Umaru-meeting branch, 15 idle_mix_dance* files remain medium-confidence motion candidates: they are broad dance cycles and all have eight frames, matching a downstream creator's description of the reusable Umaru Dance cycle. Another 22 idle_sit_no/wave* files remain low-confidence candidates; 52 are semantic rejections. None of these statuses identifies an author or proves pixel lineage.",
+      "limits": "Historical source frames were not recovered: early Futaba attachment payloads are unavailable and the in-app browser safety policy blocked the NicoNico player page. Therefore no exact pixel/source-frame match or exclusion is asserted.",
+      "recommended_action": "Prioritize source-pack or archived-frame recovery for the 15 medium candidates, then the 22 low candidates. Keep every candidate orange until creator identity and reuse/redistribution terms are resolved."
+    },
+    {
+      "finding_id": "source-finding-008",
+      "title": "Bilibili retrospective video claims and unverified early-creator leads",
+      "finding_status": "historical_claims_triaged_creator_leads_unverified",
+      "publication_decision": "unchanged_orange",
+      "matched_assets": [],
+      "source": {
+        "public_url": "https://www.bilibili.com/video/BV1Z2bozEEqW/",
+        "local_file": "31335712088-1-192.mp4",
+        "sha256": "cd387d92aca29081e13c27c3b96b7d81b34c74c2553e8d9d1b70afaabad6f798",
+        "duration_seconds": 818.148209,
+        "review": "video_analysis/BV1Z2bozEEqW/VIDEO_CLAIMS_EVIDENCE_REVIEW_ZH_TW.md"
+      },
+      "extraction_summary": {
+        "transcript_segments": 333,
+        "sampled_frames": 226,
+        "ocr_entries": 219,
+        "contact_sheets": 19,
+        "timeline_coverage": "00:00:00-00:13:37"
+      },
+      "claims": [
+        {
+          "time_range": "00:01:19-00:01:49",
+          "claim": "Deon's 2021-05-19 Shonbori Rudolf image is the visual starting point and later spread to Futaba.",
+          "status": "independently_corroborated",
+          "basis": "Consistent with the first-party Deon post, the 2021 Inside Games interview, and the 2021-05-31 Futaba archive."
+        },
+        {
+          "time_range": "00:02:36-00:02:50",
+          "claim": "An artist called Rotas made the first hands-and-feet-flailing GIF from Deon's image.",
+          "status": "name_is_video_only_lead_history_partially_corroborated",
+          "basis": "The video visibly names Rotas. Older sources corroborate an anonymous volunteer animation but do not supply that name, account, original post, or policy."
+        },
+        {
+          "time_range": "00:03:46-00:04:52",
+          "claim": "An anonymous creator called the ramen-loving Tanuki friend or Ramen creator began a 2021-09-09 Umaru-derived series and supplied blank-face and component templates.",
+          "status": "video_only_identity_and_date_general_branch_corroborated",
+          "basis": "The video provides the label and date; MUGENwiki supports the Umaru-meeting-derived branch generally but not the claimed identity, profession, or exact date."
+        },
+        {
+          "time_range": "00:07:28-00:08:08",
+          "claim": "Unauthorized reposting and hostile material led to attacks and deletion of the WIKIWIKI asset collection.",
+          "status": "deletion_partially_supported_causation_unverified",
+          "basis": "The video shows the missing WIKIWIKI page and a later 2022 transport article that mentions deletion, but no first-party administrator statement was recovered."
+        },
+        {
+          "time_range": "00:08:10-00:08:46",
+          "claim": "Many creators tacitly tolerated compilation uploads to video sites.",
+          "status": "community_history_corroborated_not_permission",
+          "basis": "Consistent with MUGENwiki's explicit description of tacit toleration. Tacit toleration is not an app, repository, source-file, or installer redistribution licence."
+        },
+        {
+          "time_range": "00:11:13-00:11:44",
+          "claim": "The video author acted as a transporter and compiled the Large Tanuki Pack from about 500 to more than 30,000 files.",
+          "status": "first_person_compiler_claim_not_authorship_or_licence",
+          "basis": "The video displays a folder property panel with 30,194 files and 1,803 folders; no per-file creator or permission manifest is shown."
+        }
+      ],
+      "limits": "Neither Rotas nor the ramen-associated creator has a verified first-party account, original post, policy statement, or exact match to a local GIF. Rotas must not be conflated with the later on-screen name Roterszeng without independent identity evidence.",
+      "interpretation": "The video materially improves the historical lead list but establishes no new permission for the 456 local GIFs and no asset-specific creator match.",
+      "recommended_action": "Search the May-June 2021 window for Rotas with Deon and Jitabata terms, and the 2021-09-09 window for the ramen-associated creator with Umaru, blank-face, and component-template terms. Keep all 456 assets orange."
+    },
+    {
+      "finding_id": "source-finding-009",
+      "title": "2022-01-19 first-person source thread and recovered animation variants",
+      "finding_status": "contemporaneous_creator_statement_recovered_no_exact_local_match",
+      "publication_decision": "unchanged_orange",
+      "matched_assets": [],
+      "source_url": "https://tsumanne.net/si/data/2022/01/19/7810014/",
+      "opening_post_number": 888566300,
+      "creator_candidate_id": "creator-anonymous-img-thread-888566300",
+      "creator_role": "anonymous_claimant_of_posted_animation_variants_and_expression_components",
+      "identity_scope": "Opening poster and same public ID in this thread only; no cross-thread or real-world identity inference.",
+      "corroborates_video": {
+        "public_url": "https://www.nicovideo.jp/watch/sm44817709",
+        "claim_date": "2022-01-19",
+        "claim": "blank-face variants, expression parts, Rudolf variants and daily-posting hiatus",
+        "strength": "strong_for_this_dated_event_not_the_entire_video_timeline"
+      },
+      "recovered_attachments": [
+        {
+          "url": "https://tsumanne.net/si/data/2022/01/19/7810014/1642600822920.gif",
+          "sha256": "ec3c4e5040c4ea35fedf55c5659a67cf9111dcba6010e3d26380b357003fe194",
+          "post_number": 888566300,
+          "frame_count": 4
+        },
+        {
+          "url": "https://tsumanne.net/si/data/2022/01/19/7810014/fu726103.gif",
+          "sha256": "34883876d5ac2d988ef76afb6d2ca476d57babea9f56f547dd563f38b8cb8e86",
+          "post_number": 888566300,
+          "frame_count": 12
+        },
+        {
+          "url": "https://tsumanne.net/si/data/2022/01/19/7810014/fu726105.gif",
+          "sha256": "84bd30b03b3f1eedb6f9afe0c4cfea8a74764aea953ba68056dc6f79a879d16f",
+          "post_number": 888566300,
+          "frame_count": 12
+        },
+        {
+          "url": "https://tsumanne.net/si/data/2022/01/19/7810014/fu726107.gif",
+          "sha256": "3f3fbe53f54cc259c50b97139b0d0a1124c510c52ac4b48ea25cbc18cc3fac28",
+          "post_number": 888566300,
+          "frame_count": 4
+        },
+        {
+          "url": "https://tsumanne.net/si/data/2022/01/19/7810014/fu726113.gif",
+          "sha256": "6f0c65cc1bc4a5d24b36375950be7ab4e9cbf8f3a985330690701342c2e57cd9",
+          "post_number": 888566300,
+          "frame_count": 8
+        },
+        {
+          "url": "https://tsumanne.net/si/data/2022/01/19/7810014/fu726120.gif",
+          "sha256": "895381c17e54b6c1e47fffce2d4d5e39c3fd21c7b988ac017ca7fe45c28e82ca",
+          "post_number": 888566300,
+          "frame_count": 8
+        },
+        {
+          "url": "https://tsumanne.net/si/data/2022/01/19/7810014/fu726226.gif",
+          "sha256": "ccff723d32bbe0bf63c7ec23eef7e1699af99fafe6af6bed89e5fe7ddd6f096b",
+          "post_number": 888569093,
+          "frame_count": 8
+        },
+        {
+          "url": "https://tsumanne.net/si/data/2022/01/19/7810014/fu726228.gif",
+          "sha256": "968590d9d1592fc276897e83f51abb0131799bb504d866349d827c59d6b94ec5",
+          "post_number": 888569093,
+          "frame_count": 8
+        }
+      ],
+      "screening": {
+        "local_gifs": 456,
+        "local_frames": 2479,
+        "source_gifs": 8,
+        "source_frames": 64,
+        "exact_cropped_rgba_frame_matches": 0,
+        "exact_cropped_rgba_sequence_matches": 0,
+        "method": "Per-frame alpha bbox crop; zero invisible RGB; hash dimensions plus exact RGBA. Sequence comparison permits cyclic start rotation, records timing separately. No rescale/mirror/fuzzy match in exact results."
+      },
+      "permission_finding": "No explicit opening-poster prohibition or applicable reuse/redistribution grant identified in this recovered thread. Third-party requests, isolated disputes and favourable comments are not creator terms.",
+      "archive_candidate": {
+        "public_url": "https://www.axfc.net/u/4048846.zip",
+        "original_filename": "[たぬきGIFまとめ]20220119.zip",
+        "server_advertised_sha256": "31fe70de5cec41626d10f8923cc54037ce582684fd16b40b21a6cea31130d945",
+        "captcha_required": true,
+        "payload_obtained": false,
+        "user_will_provide_local_path": true
+      },
+      "limits": "Eight recovered GIFs do not establish authorship or exclusion of the 456 local files. The full ZIP, rescaled/recoloured/edited versions and component-level comparisons remain open. Do not merge with Deon, Ramen-labelled creator, 天美トシヒ or video uploader without evidence.",
+      "review": "SOURCE_TRACE_PHASE2G_ZH_TW.md",
+      "comparison_file": "timeline_trace_20261004/gif_comparison.json"
+    },
+    {
+      "finding_id": "source-finding-010",
+      "title": "Hash-verified January 2022 creator archive, creation log and alpha animation-template links",
+      "finding_status": "first_party_collection_received_partial_animation_template_lineage_linked",
+      "creator_candidate_id": "creator-anonymous-img-thread-888566300",
+      "creator_role": "anonymous_first_person_collection_provider_and_claimed_animation_variant_maker",
+      "creator_identity_limit": "No verified persistent account, real name, or identity merge with Deon/Rotas/Ramen/video uploader.",
+      "source_url": "https://tsumanne.net/si/data/2022/01/19/7810014/",
+      "archive": {
+        "source_url": "https://www.axfc.net/u/4048846.zip",
+        "sha256": "31fe70de5cec41626d10f8923cc54037ce582684fd16b40b21a6cea31130d945",
+        "hash_verified": true,
+        "files": 2381,
+        "images": 2380,
+        "gif_count": 2364,
+        "png_count": 16,
+        "original_post_attachments_byte_identical": 8
+      },
+      "creator_log": {
+        "memo_sha256": "364a63100ac812530f66658f30ba447df3836beb276a11d080529633a0abb257",
+        "dated_entries": 140,
+        "span": [
+          "2021-09-02",
+          "2022-01-19"
+        ],
+        "interpretation": "Earlier than the later retrospective video; a dated creation claim, not independent proof of first-ever work or global origin."
+      },
+      "matched_assets": [
+        "asset-0111",
+        "asset-0113",
+        "asset-0114",
+        "asset-0124",
+        "asset-0125",
+        "asset-0126",
+        "asset-0127",
+        "asset-0128",
+        "asset-0129",
+        "asset-0130",
+        "asset-0139",
+        "asset-0151",
+        "asset-0152",
+        "asset-0153",
+        "asset-0156",
+        "asset-0157",
+        "asset-0161",
+        "asset-0162",
+        "asset-0164",
+        "asset-0165",
+        "asset-0168",
+        "asset-0169",
+        "asset-0170",
+        "asset-0176",
+        "asset-0189",
+        "asset-0190",
+        "asset-0191",
+        "asset-0192",
+        "asset-0193",
+        "asset-0194",
+        "asset-0195",
+        "asset-0196",
+        "asset-0197",
+        "asset-0198",
+        "asset-0203",
+        "asset-0205",
+        "asset-0206",
+        "asset-0207",
+        "asset-0213",
+        "asset-0214",
+        "asset-0215",
+        "asset-0216",
+        "asset-0217",
+        "asset-0218",
+        "asset-0237",
+        "asset-0247",
+        "asset-0248",
+        "asset-0249",
+        "asset-0250",
+        "asset-0251",
+        "asset-0268",
+        "asset-0269",
+        "asset-0270",
+        "asset-0271",
+        "asset-0284",
+        "asset-0285",
+        "asset-0286",
+        "asset-0287",
+        "asset-0288",
+        "asset-0289",
+        "asset-0290",
+        "asset-0292",
+        "asset-0298"
+      ],
+      "match_layer": "exact whole-sequence alpha silhouette/movement template plus low mean RGB error; NOT exact full pixels or expression identity",
+      "screening": {
+        "finding_id": "source-finding-010",
+        "asset_count": 456,
+        "alpha_template_linked_assets": 63,
+        "alpha_template_pair_count": 79,
+        "linked_by_character": {
+          "Symboli Rudolf": 44,
+          "Tokai Teio": 19
+        },
+        "exact_raw_rgba_sequence_matches": 0,
+        "strict_raw_colour_tolerance_matches": 0,
+        "fitted_palette_mapping_matches": 0
+      },
+      "permission_finding": "No explicit prohibition or applicable reuse/redistribution grant found in the sole text log, archive comment, member names, GIF comments, PNG embedded text or parsed XMP creator/rights fields. This is a limited-scope negative finding; artwork-embedded statements, later policies, deleted posts and upstream rights are not cleared.",
+      "xmp_screening": {
+        "gif_count": 2364,
+        "parse_errors": 0,
+        "creator_tools": {
+          "Adobe Photoshop CS6 (Windows)": 2362,
+          "Adobe Photoshop CS6 Windows": 2
+        },
+        "human_creator_or_rights_fields_found": 0,
+        "policy_keyword_records": 0
+      },
+      "publication_decision": "unchanged_orange",
+      "review": "SOURCE_TRACE_PHASE2H_ZH_TW.md",
+      "coverage_file": "creator_archive_20220119/alpha_animation_template_screening.json"
+    },
+    {
+      "finding_id": "source-finding-011",
+      "title": "January 2022 thread-local editor and self-made archive claims, kept separate from OP",
+      "finding_status": "primary_role_claims_verified_no_new_local_lineage_or_permission",
+      "source_url": "https://tsumanne.net/si/data/2022/01/19/7810014/",
+      "matched_assets": [],
+      "anonymous_identity_merges": 0,
+      "local_exact_frame_matches": 0,
+      "local_exact_sequence_matches": 0,
+      "permission_finding": "No opening-poster ban or applicable app/repository/installer redistribution permission established; another participant's invitation is scope-unclear and not the OP's grant.",
+      "publication_decision": "unchanged_orange",
+      "review": "SOURCE_TRACE_PHASE2I_ZH_TW.md",
+      "evidence_file": "later_archive_trace_20261004/thread_reading.json",
+      "later_target_result": "No verified later OP archive or 2022-05-20 Sirius / 2022-07-29 Tsuyoshi original post recovered in this bounded pass."
+    }
+  ]
+}

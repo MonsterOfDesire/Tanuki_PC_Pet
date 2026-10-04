@@ -1,0 +1,289 @@
+{
+  "schema_version": 1,
+  "analysis_version": "2026-08-27.2f",
+  "generated_at": "2026-08-27T20:32:55+08:00",
+  "screening_scope": "Historical Futaba/tsumanne and public-web root tracing, authenticated read-only X verification of Deon's first-party post and policy surface, plus component-level archive PNG screening.",
+  "policies": [
+    {
+      "subject_id": "author-gnkk-ata-1240",
+      "subject_type": "author_profile",
+      "display_name": "ｼｶﾐﾔ（鹿宮）",
+      "handles": [
+        "@gnkk__ata_1240"
+      ],
+      "policy_class": "explicit_no_unauthorized_reposting",
+      "policy_risk_color_if_asset_matches": "red",
+      "local_asset_link_status": "not_established",
+      "local_asset_link_confidence": "none",
+      "local_asset_link_note": "Authenticated X media search found additional first-party tanuki posts, but no verified match to the current five-character local scope. This remains inconclusive, not an exclusion.",
+      "evidence": [
+        {
+          "url": "https://x.com/gnkk__ata_1240",
+          "source_kind": "first_party_profile",
+          "access_method": "public profile DOM in the in-app browser",
+          "observed_text": "無断転載✖",
+          "observed_at": "2026-08-25",
+          "evidence_strength": "strong_for_policy_only"
+        }
+      ],
+      "permission_matrix": {
+        "video_or_stream_use": "permission_required",
+        "modification_or_cropping": "permission_required",
+        "app_embedded_display": "permission_required",
+        "repository_original_file": "permission_required",
+        "release_or_installer_redistribution": "permission_required",
+        "commercial_or_monetized_use": "permission_required_and_upstream_ip_review",
+        "attribution_requirement": "unknown",
+        "contact_requirement": "obtain_explicit_permission_before_use"
+      }
+    },
+    {
+      "subject_id": "author-kanzaki-ryuto",
+      "subject_type": "author_profile",
+      "display_name": "神咲竜兎@どらもどき",
+      "handles": [
+        "@kanzaki_ryuto",
+        "@ryutokanzaki.bsky.social"
+      ],
+      "policy_class": "explicit_no_unauthorized_reposting",
+      "policy_risk_color_if_asset_matches": "red",
+      "local_asset_link_status": "not_established",
+      "local_asset_link_confidence": "none",
+      "local_asset_link_note": "Authenticated X media search found additional first-party tanuki posts, but no verified match to the current five-character local scope. This remains inconclusive, not an exclusion.",
+      "evidence": [
+        {
+          "url": "https://x.com/kanzaki_ryuto",
+          "source_kind": "first_party_profile",
+          "access_method": "public profile DOM in the in-app browser",
+          "observed_text": "■無断転載厳禁",
+          "observed_at": "2026-08-25",
+          "evidence_strength": "strong_for_policy_only"
+        },
+        {
+          "url": "https://bsky.app/profile/ryutokanzaki.bsky.social",
+          "source_kind": "first_party_profile",
+          "access_method": "public web index",
+          "observed_text": "■無断転載厳禁",
+          "observed_at": "2026-08-25",
+          "evidence_strength": "corroborating_first_party_profile"
+        }
+      ],
+      "permission_matrix": {
+        "video_or_stream_use": "permission_required",
+        "modification_or_cropping": "permission_required",
+        "app_embedded_display": "permission_required",
+        "repository_original_file": "permission_required",
+        "release_or_installer_redistribution": "permission_required",
+        "commercial_or_monetized_use": "permission_required_and_upstream_ip_review",
+        "attribution_requirement": "unknown",
+        "contact_requirement": "obtain_explicit_permission_before_use"
+      }
+    },
+    {
+      "subject_id": "source-tnk114",
+      "subject_type": "asset_uploader_index",
+      "display_name": "tnk114 uploader",
+      "handles": [],
+      "policy_class": "download_available_but_reuse_terms_not_found",
+      "policy_risk_color_if_asset_matches": "orange",
+      "local_asset_link_status": "not_established",
+      "local_asset_link_confidence": "none",
+      "local_asset_link_note": "The index describes an asset storage location and lists downloadable archives, but its visible page text does not grant reuse, modification, or redistribution rights.",
+      "evidence": [
+        {
+          "url": "https://uu.getuploader.com/tnk114/index/filename/asc/1",
+          "source_kind": "public_uploader_index",
+          "access_method": "public web page",
+          "observed_text": "作ったたぬき(ウマ娘)素材置き場です",
+          "observed_at": "2026-08-25",
+          "evidence_strength": "strong_for_availability_not_permission"
+        }
+      ],
+      "permission_matrix": {
+        "video_or_stream_use": "unknown",
+        "modification_or_cropping": "unknown",
+        "app_embedded_display": "unknown",
+        "repository_original_file": "unknown",
+        "release_or_installer_redistribution": "unknown",
+        "commercial_or_monetized_use": "unknown_and_upstream_ip_review_required",
+        "attribution_requirement": "unknown",
+        "contact_requirement": "identify_uploader_and_creator_then_request_terms"
+      }
+    },
+    {
+      "subject_id": "author-amami64toshihi",
+      "subject_type": "author_profile",
+      "display_name": "天美トシヒ",
+      "handles": [
+        "@amami64toshihi"
+      ],
+      "policy_class": "no_explicit_reuse_terms_found_in_screened_public_profile_or_posts",
+      "policy_risk_color_if_asset_matches": "orange",
+      "local_asset_link_status": "base_composition_match_established_for_guitar_group",
+      "local_asset_link_confidence": "high_for_base_composition_only",
+      "local_asset_link_note": "A first-party Sirius Symboli line-art post and its completed drawing strongly match the pose and composition of six local guitar GIFs. The digital clean-up, animation author, and Symboli Rudolf transformation editor are not identified.",
+      "evidence": [
+        {
+          "url": "https://x.com/amami64toshihi/status/1570424123989569538",
+          "source_kind": "first_party_line_art_post",
+          "access_method": "authenticated read-only X DOM and public pbs.twimg.com image",
+          "observed_text": "シリウスシンボリ　線画",
+          "published_at": "2022-09-15",
+          "observed_at": "2026-08-25",
+          "evidence_strength": "strong_for_base_composition_authorship"
+        },
+        {
+          "url": "https://x.com/amami64toshihi/status/1570435591627739137",
+          "source_kind": "first_party_completed_drawing_post",
+          "access_method": "authenticated read-only X DOM and public pbs.twimg.com image",
+          "observed_text": "シリウスシンボリ(たぬき)",
+          "published_at": "2022-09-15",
+          "observed_at": "2026-08-25",
+          "evidence_strength": "corroborating_for_base_composition_authorship"
+        },
+        {
+          "url": "https://x.com/amami64toshihi",
+          "source_kind": "first_party_profile",
+          "access_method": "authenticated read-only X DOM",
+          "observed_text": "No explicit reposting, modification, app-bundling, or redistribution terms were visible in the screened profile bio.",
+          "observed_at": "2026-08-25",
+          "evidence_strength": "absence_of_terms_is_not_permission"
+        }
+      ],
+      "permission_matrix": {
+        "video_or_stream_use": "unknown",
+        "modification_or_cropping": "unknown",
+        "app_embedded_display": "permission_not_established",
+        "repository_original_file": "permission_not_established",
+        "release_or_installer_redistribution": "permission_not_established",
+        "commercial_or_monetized_use": "unknown_and_upstream_ip_review_required",
+        "attribution_requirement": "unknown",
+        "contact_requirement": "request_explicit_permission_and_identify_downstream_editors"
+      }
+    },
+    {
+      "subject_id": "author-deon-jetaime",
+      "subject_type": "author_profile",
+      "display_name": "デオン",
+      "handles": [
+        "@deon_Jetaime"
+      ],
+      "policy_class": "author_acknowledged_meme_no_explicit_reuse_or_redistribution_terms_found",
+      "policy_risk_color_if_asset_matches": "orange",
+      "local_asset_link_status": "root_visual_design_lineage_established_for_full_local_scope",
+      "local_asset_link_confidence": "high_for_ecosystem_visual_design_only",
+      "local_asset_link_note": "The first-party 2021-05-19 Shonbori Rudolf post is the documented root of the Shonbori/Tanuki visual motif used throughout the 456 local GIFs. This does not identify the pixel converter, body-template artist, character redraw artist, animator, expression editor, or later editor.",
+      "evidence": [
+        {
+          "url": "https://x.com/deon_Jetaime/status/1394789901392957443",
+          "media_url": "https://pbs.twimg.com/media/E1tAA9sUUAQA5WL?format=jpg&name=orig",
+          "source_kind": "first_party_root_illustration_post",
+          "access_method": "authenticated read-only X DOM and public pbs.twimg.com image",
+          "observed_text": "ションボリルドルフ",
+          "published_at": "2021-05-19",
+          "published_at_utc": "2021-05-18T23:00:01Z",
+          "observed_at": "2026-08-27",
+          "evidence_strength": "strong_for_root_visual_design_authorship"
+        },
+        {
+          "url": "https://x.com/deon_Jetaime",
+          "source_kind": "first_party_profile",
+          "access_method": "authenticated read-only X DOM",
+          "observed_text": "The screened profile bio contained an official contact link but no visible terms granting or prohibiting reposting, modification, app embedding, or redistribution.",
+          "observed_at": "2026-08-27",
+          "evidence_strength": "absence_of_terms_is_not_permission"
+        },
+        {
+          "url": "https://x.com/search?q=from%3Adeon_Jetaime%20%28%E7%84%A1%E6%96%AD%E8%BB%A2%E8%BC%89%20OR%20%E8%BB%A2%E8%BC%89%20OR%20%E4%BA%8C%E6%AC%A1%E5%88%A9%E7%94%A8%20OR%20%E7%B4%A0%E6%9D%90%20OR%20%E5%88%A9%E7%94%A8%29&src=typed_query&f=live",
+          "source_kind": "focused_first_party_policy_search",
+          "access_method": "authenticated read-only X search",
+          "observed_text": "No explicit public reuse or redistribution policy was found in the focused search.",
+          "observed_at": "2026-08-27",
+          "evidence_strength": "limited_negative_search_not_permission"
+        },
+        {
+          "url": "https://deon3.com/",
+          "source_kind": "first_party_contact_site",
+          "access_method": "public web page linked from the first-party X profile",
+          "observed_text": "ご依頼、ご相談など、こちらのフォームからお願いいたします。",
+          "observed_at": "2026-08-27",
+          "evidence_strength": "strong_for_public_contact_route_only"
+        },
+        {
+          "url": "https://www.inside-games.jp/article/2021/10/26/134933.html",
+          "source_kind": "direct_author_mini_interview",
+          "access_method": "public editorial interview page",
+          "observed_text": "Deon explained that the illustration was one of his recurring dejected-walking character drawings and reacted with surprise/amusement to the Tanuki meme. The interview contains no visible grant or prohibition covering modification, reposting, app embedding, or file redistribution.",
+          "published_at": "2021-10-26",
+          "observed_at": "2026-08-27",
+          "evidence_strength": "strong_for_author_attitude_not_permission"
+        }
+      ],
+      "permission_matrix": {
+        "video_or_stream_use": "unknown",
+        "modification_or_cropping": "unknown",
+        "app_embedded_display": "permission_not_established",
+        "repository_original_file": "permission_not_established",
+        "release_or_installer_redistribution": "permission_not_established",
+        "commercial_or_monetized_use": "unknown_and_upstream_ip_review_required",
+        "attribution_requirement": "unknown",
+        "contact_requirement": "request_explicit_permission_via_first_party_contact_route"
+      },
+      "author_attitude_finding": "The direct interview documents neutral-to-positive surprise at the meme's emergence, but does not establish consent for any project use."
+    },
+    {
+      "subject_id": "creator-cluster-futaba-anonymous-early-animators",
+      "subject_type": "anonymous_creator_cluster",
+      "display_name": "anonymous Futaba early Shonbori/Tanuki animator(s)",
+      "handles": [],
+      "policy_class": "creator_identity_and_individual_reuse_terms_not_recoverable",
+      "policy_risk_color_if_asset_matches": "orange",
+      "local_asset_link_status": "ecosystem_animation_history_only_no_exact_local_match",
+      "local_asset_link_confidence": "contextual_not_asset_specific",
+      "local_asset_link_note": "Historical sources describe an anonymous volunteer-made low-frame flailing animation and later Umaru-meeting traces. No exact local action group is assigned without recoverable source frames.",
+      "evidence": [
+        {
+          "url": "https://w.atwiki.jp/niconicomugen/pages/11090.html",
+          "source_kind": "community_history_page",
+          "access_method": "public web page",
+          "observed_text": "Records an anonymous volunteer-made low-frame flailing animation followed by motions traced from the Umaru meeting scene.",
+          "observed_at": "2026-08-27",
+          "evidence_strength": "contextual_secondary_history"
+        },
+        {
+          "url": "https://www.nicovideo.jp/watch/sm38852466",
+          "source_kind": "early_downstream_repost",
+          "access_method": "NicoNico public thumbinfo endpoint",
+          "observed_text": "転載元▶https://img.2chan.net/b/futaba.php?mode=cat",
+          "published_at": "2021-06-07",
+          "observed_at": "2026-08-27",
+          "evidence_strength": "strong_that_uploader_is_reposter_not_creator"
+        }
+      ],
+      "permission_matrix": {
+        "video_or_stream_use": "unknown",
+        "modification_or_cropping": "unknown",
+        "app_embedded_display": "permission_not_established",
+        "repository_original_file": "permission_not_established",
+        "release_or_installer_redistribution": "permission_not_established",
+        "commercial_or_monetized_use": "unknown_and_upstream_ip_review_required",
+        "attribution_requirement": "unknown_creator_identity_unresolved",
+        "contact_requirement": "identify_specific_creator_before_requesting_terms"
+      }
+    }
+  ],
+  "upstream_ip_policies": [
+    {
+      "subject_id": "ip-umamusume-derivative-guidelines",
+      "subject_type": "upstream_ip_guideline",
+      "display_name": "Uma Musume Pretty Derby derivative-work guidelines",
+      "publisher": "Cygames",
+      "url": "https://umamusume.jp/derivativework_guidelines",
+      "observed_at": "2026-08-27",
+      "policy_summary": "The current official guideline asks creators not to publish or use works that infringe third-party rights and excludes commercial use beyond the scope of doujin activities.",
+      "project_implication": "The guideline is not a licence to bundle another fan creator's GIF files. App, repository, release, and installer redistribution still require permission from every relevant creator layer.",
+      "evidence_strength": "official_current_guideline_checked_2026-08-27"
+    }
+  ],
+  "interpretation_note": "Policy evidence is independent of authorship linkage. A restrictive profile is not assigned to a local asset unless a separate source match is verified."
+}

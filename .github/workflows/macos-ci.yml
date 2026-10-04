@@ -62,6 +62,9 @@ jobs:
           python tools/manifest_xlsx_to_json.py --assets-dir "assets_cropped/Symboli Rudolf" --character transformed
           python tools/manifest_xlsx_to_json.py --assets-dir "assets_cropped/Tokai Teio" --character transformed
 
+      - name: Validate public asset provenance snapshot
+        run: python tools/check_asset_provenance_publication.py
+
       - name: Build signed ad-hoc application bundle
         run: bash ./build_macos.sh "$RUNNER_TEMP/tanuki-build"
 
