@@ -1,0 +1,42 @@
+title: "[提問] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        歡迎詢問 Tanuki PC Pet 的使用方式與行為。若已確認是可重現錯誤，請改用 GitHub Issues 的「可重現錯誤」表單。
+        Discussions 是公開空間，請勿貼上敏感資料。
+
+  - type: dropdown
+    id: topic
+    attributes:
+      label: 問題主題
+      options:
+        - 安裝、啟動與更新
+        - 角色行為與自然互動
+        - 競賽、合唱／合奏或其他 Activity
+        - 資訊中心與設定
+        - 成就與存檔
+        - 開發與二次開發
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: 想詢問的內容
+      description: 請描述背景、你想完成的事情，以及目前卡住的位置。
+    validations:
+      required: true
+
+  - type: textarea
+    id: attempts
+    attributes:
+      label: 已查閱或嘗試的內容
+      description: 可列出看過的文件、嘗試過的方法與結果。
+
+  - type: input
+    id: version
+    attributes:
+      label: 使用版本（選填）
+      placeholder: v0.8.0-beta
