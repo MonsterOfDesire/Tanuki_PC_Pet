@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "analysis_version": "2026-08-27.2e",
+  "generated_at": "2026-08-27T20:16:02+08:00",
+  "search_count": 5,
+  "searches": [
+    {
+      "search_id": "historical-search-001",
+      "targets": [
+        "Futaba",
+        "tsumanne"
+      ],
+      "query_concepts": [
+        "ションボリルドルフ",
+        "たぬき",
+        "ピクセルドルフ"
+      ],
+      "result_urls": [
+        "https://tsumanne.net/si/data/2021/05/31/7320721/"
+      ],
+      "result": "early_pixel_derivative_and_explicit_outside-artist_lineage_reference"
+    },
+    {
+      "search_id": "historical-search-002",
+      "targets": [
+        "Niconico",
+        "Nicozon"
+      ],
+      "query_concepts": [
+        "character names",
+        "たぬき",
+        "animation/action terms"
+      ],
+      "result_urls": [
+        "https://www.nicozon.net/tag/%E3%82%B7%E3%83%AA%E3%82%A6%E3%82%B9%E3%82%B7%E3%83%B3%E3%83%9C%E3%83%AA%EF%BC%88%E3%82%A6%E3%83%9E%E5%A8%98%EF%BC%89/l/d"
+      ],
+      "result": "downstream_video_and_tag_records_only_no_asset_creator_identified"
+    },
+    {
+      "search_id": "historical-search-003",
+      "targets": [
+        "public web",
+        "X"
+      ],
+      "query_concepts": [
+        "first Shonbori Rudolf",
+        "デオン",
+        "1394789901392957443"
+      ],
+      "result_urls": [
+        "https://x.com/deon_Jetaime/status/1394789901392957443",
+        "https://umabbs.com/patio.cgi?log=past&pg=100&read=4373&res=187"
+      ],
+      "result": "root_visual_design_author_identified_and_first_party_post_verified"
+    },
+    {
+      "search_id": "historical-search-004",
+      "targets": [
+        "Internet Archive",
+        "search cache",
+        "Common Crawl"
+      ],
+      "query_concepts": [
+        "exact early attachment URLs",
+        "1622388089235.png",
+        "fu49786.png"
+      ],
+      "result_urls": [
+        "https://tsumanne.net/si/data/2021/05/31/7320721/1622388089235.png",
+        "https://tsumanne.net/si/data/2021/05/31/7320721/fu49786.png"
+      ],
+      "result": "internet_archive_returned_no_snapshots; search cache retained names/text only; no recoverable image payload was obtained in this phase"
+    },
+    {
+      "search_id": "historical-search-005",
+      "targets": [
+        "NicoNico",
+        "NicoNico MUGENwiki"
+      ],
+      "query_concepts": [
+        "first flailing animation",
+        "Umaru meeting trace",
+        "sm38852466",
+        "sm39422705"
+      ],
+      "result_urls": [
+        "https://w.atwiki.jp/niconicomugen/pages/11090.html",
+        "https://www.nicovideo.jp/watch/sm38852466",
+        "https://www.nicovideo.jp/watch/sm39422705"
+      ],
+      "result": "anonymous_futaba_animation_branch_documented; early_niconico_uploader_explicitly_identified_the_video_as_a_repost; no_exact_local_action_match_yet"
+    }
+  ],
+  "limitations": "Search indexes do not cover deleted posts, all Futaba attachments, private accounts, reply-only media, or every NicoNico video description. Negative results are not proof of nonexistence."
+}

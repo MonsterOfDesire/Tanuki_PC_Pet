@@ -81,6 +81,14 @@ class AchievementRuntimeServiceTests(unittest.TestCase):
             "race.first_natural_finish",
             result.unlocked_achievement_ids,
         )
+        self.assertEqual(
+            result.source_event.payload["activity_id"],
+            "race-1",
+        )
+        self.assertEqual(
+            result.source_event.event_name,
+            ACTIVITY_EVENT_RACE_COMPLETED,
+        )
         self.assertEqual(self.changed_results, [result])
         self.assertNotIn("race-1", self.guard.active_session_ids)
 

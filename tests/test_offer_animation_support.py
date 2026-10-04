@@ -33,6 +33,25 @@ class OfferAnimationSupportTests(unittest.TestCase):
             self.build_support().pet_is_busy_for_offer_interaction(pet)
         )
 
+    def test_inertial_throw_blocks_offer_interaction(self):
+        pet = SimpleNamespace(
+            transformation_state=None,
+            activity_state=None,
+            intent_kind="none",
+            dragging=False,
+            drag_press_pending=False,
+            throw_active=True,
+            flight_mode="none",
+            care_mode="none",
+            care_partner=None,
+            is_hugging=False,
+            is_under_care=lambda now: False,
+        )
+
+        self.assertTrue(
+            self.build_support().pet_is_busy_for_offer_interaction(pet)
+        )
+
     def test_scene_context_delegates_manifest_selection_to_pet(self):
         changer = Mock(return_value=True)
         pet = SimpleNamespace(
@@ -56,6 +75,51 @@ class OfferAnimationSupportTests(unittest.TestCase):
             forbidden=("sad",),
             preserve=True,
             ignore_mood_band=False,
+        )
+
+    def test_direct_offer_capability_uses_manifest_context_before_legacy_table(self):
+        manager = SimpleNamespace(
+            manifest_data={"move_walk_drink-happy.gif": {}},
+            has_explicit_contextual_result_for_purposes=Mock(
+                return_value=True
+            ),
+        )
+        pet = SimpleNamespace(
+            name="Sirius Symboli",
+            mood_score=82,
+            asset_manager=manager,
+        )
+
+        available = self.build_support().direct_offer_context_available(
+            pet,
+            "honey",
+        )
+
+        self.assertTrue(available)
+        manager.has_explicit_contextual_result_for_purposes.assert_called_once_with(
+            ("move", "idle"),
+            context="offer_accept_honey",
+            mood_score=82,
+        )
+
+    def test_real_manifest_can_disable_legacy_direct_offer_candidate(self):
+        manager = SimpleNamespace(
+            manifest_data={"idle_drink-happy.gif": {}},
+            has_explicit_contextual_result_for_purposes=Mock(
+                return_value=False
+            ),
+        )
+        pet = SimpleNamespace(
+            name="Sirius Symboli",
+            mood_score=82,
+            asset_manager=manager,
+        )
+
+        self.assertFalse(
+            self.build_support().direct_offer_context_available(
+                pet,
+                "honey",
+            )
         )
 
     def test_held_item_uses_injected_lock_and_position_callbacks(self):

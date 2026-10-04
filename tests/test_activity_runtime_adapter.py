@@ -39,6 +39,7 @@ class FakePet:
         self.mood_score = 90.0
         self.dragging = False
         self.drag_press_pending = False
+        self.throw_active = False
         self.is_angry_locked = False
         self.is_recovering = False
         self.care_mode = "none"
@@ -50,6 +51,7 @@ class FakePet:
         self.vy = 0.0
         self.offer_scene_kind = "none"
         self.held_item_kind = ""
+        self.side_ready_followup_locked = False
         self.user_visible = True
         self.state = "move"
         self.state_timer = 99
@@ -66,6 +68,10 @@ class FakePet:
 
     def is_offer_locked(self, now):
         return False
+
+    def is_side_ready_followup_locked(self, now):
+        _ = now
+        return self.side_ready_followup_locked
 
     def apply_animation_result(self, purpose, result):
         self.apply_calls.append((purpose, result))
@@ -117,6 +123,30 @@ class ActivityRuntimeAdapterTests(unittest.TestCase):
         )
 
         self.assertEqual(snapshot.busy_reasons, ("drag",))
+
+    def test_snapshot_treats_inertial_throw_as_airborne(self):
+        pet = FakePet()
+        pet.throw_active = True
+
+        snapshot = ActivityRuntimeAdapter().build_participant_snapshot(
+            pet,
+            role="worker",
+            now=10.0,
+        )
+
+        self.assertEqual(snapshot.busy_reasons, ("airborne",))
+
+    def test_snapshot_treats_rare_standing_pose_as_busy(self):
+        pet = FakePet()
+        pet.side_ready_followup_locked = True
+
+        snapshot = ActivityRuntimeAdapter().build_participant_snapshot(
+            pet,
+            role="participant",
+            now=10.0,
+        )
+
+        self.assertEqual(snapshot.busy_reasons, ("rare_pose",))
 
     def test_projection_and_expected_release_update_pet_activity_state(self):
         pet = FakePet()

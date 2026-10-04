@@ -59,6 +59,19 @@ class PetTickCoordinatorTests(unittest.TestCase):
         self.assertTrue(plan.should_apply_gravity)
         self.assertFalse(plan.should_run_ai)
 
+    def test_horizontal_throw_skips_ai_even_when_vertical_speed_is_zero(self):
+        plan = self.coordinator.resolve_tick_execution_plan(
+            dragging=False,
+            window_perch_handled=False,
+            window_flight_handled=False,
+            vertical_velocity=0.0,
+            throw_active=True,
+        )
+
+        self.assertEqual(plan.phase, TICK_PHASE_AIRBORNE)
+        self.assertTrue(plan.should_apply_gravity)
+        self.assertFalse(plan.should_run_ai)
+
     def test_recovery_active_walk_refreshes_without_followup(self):
         plan = self.coordinator.resolve_initial_ai_plan(
             is_angry_locked=False,

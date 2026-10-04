@@ -85,6 +85,17 @@ implemented.
 - `runtime_dashboard_launcher.png`
 - `runtime_dashboard_launcher_collapsed.png`
 - `runtime_status_settings_toggles.png`
+- `dashboard_launcher_play_day_concept.png`
+- `runtime_memory_album.png`
+- `runtime_memory_album_hover.png`
+- `runtime_memory_album_compact.png`
+- `runtime_achievement_reset.png`
+- `memory_album_ui_concept.png`
+- `memory_album_ui_concept_partners.png`
+- `memory_album_ui_concept_clubroom.png`
+- `memory_album_ui_concept_clubroom_v2.png`
+- `manual_camera_4_3_ui_concept.svg` / `.png`
+- `manual_camera_16_9_ui_concept.svg` / `.png`
 
 ## Dashboard launcher contract
 
@@ -93,6 +104,10 @@ implemented.
   controllers, bindings, and information-center pages remain the data/action
   owners.
 - The primary tiles open Information Center and the independent food tray.
+- A full-width manual-camera action appears below the primary tiles, with a
+  matching camera icon in the collapsed rail. The Dashboard exposes a narrow
+  `toggle_manual_camera` controller entry point; the action is enabled only at
+  1x and while the non-destructive memory-album capacity has room.
 - The three summary chips show world mode, time speed, and care state without
   accepting pointer or keyboard interaction.
 - Expanded and collapsed layouts both provide an explicit status-settings action.
@@ -108,3 +123,86 @@ implemented.
 - The next implementation batch should introduce a separate
   `DashboardLauncherPanel`; do not continue adding UI branches to
   `dashboard_ui.py`.
+
+## Manual camera concept contract
+
+- Both viewfinders use the same 300 px logical/output height. The 4:3 frame is
+  400 × 300 and the 16:9 frame is 534 × 300, so switching ratios changes only
+  the left and right field of view.
+- The region outside the frame uses a semi-transparent neutral-gray overlay.
+  The frame interior remains clear; overlays and controls must be hidden before
+  capture and must never be written into the saved photo.
+- A low-contrast full outline provides the exact crop boundary. Gold corner
+  brackets, a subtle thirds grid, and a center reticle provide composition cues
+  without turning the viewfinder into a decorative window frame.
+- Camera mode deliberately exposes no persistent ratio selector, shutter
+  button, screen label, speed label, or resolution text. The movable frame
+  follows the pointer; left-click activates the shutter, `Tab` or `Space`
+  switches 4:3 / 16:9, and `Esc` cancels. `Enter` has no camera action so the
+  shutter has one unambiguous input path.
+- A quiet control hint follows directly above the frame like a compact title
+  bar. It stays outside the capture surface and disappears with the overlay
+  before capture. Pointer sampling runs at 16 ms and uses floating-point easing
+  so the compact frame does not jump between coarse native mouse events.
+
+## Memory album comparison concepts
+
+- `memory_album_ui_concept.png` keeps one large character at lower-left and the
+  open album on the right.
+- `memory_album_ui_concept_partners.png` reserves a wider left column for the
+  original character plus `memory_album_parner1.gif` and
+  `memory_album_parner2.gif`, while keeping every photo interaction surface
+  unobstructed on the right.
+- `memory_album_ui_concept_clubroom.png` uses the current `memory_album.png`
+  clubroom. The main character is upper-left; partner 1 is lower-left and
+  partner 2 is lower-right. Both partners face inward after horizontal mirroring.
+- `memory_album_ui_concept_clubroom_v2.png` is the corrected comparison draft
+  with a true left-right reflection applied to both partner designs.
+- All four are comparison drafts. None replaces the source artwork or commits
+  final runtime foreground geometry.
+
+## Runtime memory album contract
+
+- The memory album uses its own `memory_album` skin and the current
+  `memory_album.png` clubroom background; it no longer shares the trophy-cabinet
+  scene.
+- `memory_album_char.gif` is the lower-right foreground. Both partner GIFs are
+  grouped at the lower-left and mirrored by the renderer, so source files remain
+  unchanged. The character layers may overlap the outer photo cards by design.
+- The main character keeps the GIF's native 1:1 aspect ratio. Its four-frame
+  animation runs at 300%, matching `event_note_char.gif` at 100 ms per frame
+  while leaving all source GIF timings untouched.
+- The album header is split into two compact paper tabs: current usage on the
+  left page and the photo-folder action on the right. Capture mode and capacity
+  now live in the Status Settings page so no translucent toolbar crosses the
+  book spine.
+- The live photo grid uses two columns at normal information-center sizes and
+  four columns only on wide layouts, preserving the visual left/right book
+  spread.
+- Every existing photo is painted as a white instant-photo card with a prominent
+  colored upper-left pushpin and a wider highlighted metal needle. Hover/focus
+  animates the card within its reserved layout
+  area, adding scale, lift, and shadow without shifting neighbouring cards.
+- Photo cards derive their display height from each image's own aspect ratio and
+  always use contain scaling. Portrait, 4:3, 16:9, and wide captures therefore
+  keep their subjects intact instead of being cropped; only extreme aspect
+  ratios are clamped to a practical card height and receive a small matte.
+- Clicking a card continues to open the original file through the operating
+  system's default image viewer. `runtime_memory_album.png` and
+  `runtime_memory_album_hover.png` were rendered from the live Qt widgets using
+  the existing user album rather than placeholder images.
+- `runtime_memory_album_compact.png` verifies that the two paper tabs remain
+  separated at the minimum window size. `runtime_achievement_reset.png` records
+  the trophy card's compact two-stage reset control in its armed danger state.
+
+## Play-day display slot
+
+- The expanded launcher places a compact day chip at the right side of
+  the existing `目前狀態` heading. It is hidden in the collapsed rail so the
+  persistent desktop footprint does not grow.
+- The chip stays hidden until the runtime exposes a positive
+  `launcher_play_day_number`.
+- Day 1 is the local calendar date on which this feature first initializes.
+  Crossing local midnight increments the number even if the application was
+  closed; existing installations are not backdated. The start date persists in
+  config schema 11.

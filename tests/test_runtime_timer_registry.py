@@ -2,10 +2,45 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from tanuki_core.runtime_timer_registry import start_runtime_timers
+from tanuki_core.runtime_timer_registry import (
+    IdleTimerCadence,
+    start_runtime_timers,
+)
 
 
 class RuntimeTimerRegistryTests(unittest.TestCase):
+    def test_idle_cadence_scales_polling_without_delaying_active_work(self):
+        cadence = IdleTimerCadence()
+
+        self.assertTrue(cadence.should_run(
+            now=10.0,
+            active=False,
+            base_interval_ms=30,
+            idle_interval_ms=240,
+            speed=1.0,
+        ))
+        self.assertFalse(cadence.should_run(
+            now=10.1,
+            active=False,
+            base_interval_ms=30,
+            idle_interval_ms=240,
+            speed=1.0,
+        ))
+        self.assertTrue(cadence.should_run(
+            now=10.1,
+            active=True,
+            base_interval_ms=30,
+            idle_interval_ms=240,
+            speed=1.0,
+        ))
+        self.assertTrue(cadence.should_run(
+            now=10.11,
+            active=True,
+            base_interval_ms=30,
+            idle_interval_ms=240,
+            speed=8.0,
+        ))
+
     def test_default_registry_preserves_timer_names_and_intervals(self):
         calls = []
 
@@ -23,12 +58,23 @@ class RuntimeTimerRegistryTests(unittest.TestCase):
                     lambda _pets, default, speed: default
                 ),
             ),
-            window_tracker=SimpleNamespace(refresh=lambda: None),
+            window_tracker=SimpleNamespace(
+                available=True,
+                refresh=lambda: None,
+            ),
             update_offer_scene=lambda: None,
             update_transformations=lambda: None,
             update_race=lambda: None,
             update_chorus=lambda: None,
             update_household_events=lambda: None,
+            offer_item_scene_runtime_controller=SimpleNamespace(
+                is_active=lambda: False,
+            ),
+            transformation_runtime_controller=SimpleNamespace(
+                is_active=lambda: False,
+            ),
+            race_executor=SimpleNamespace(is_active=lambda: False),
+            chorus_executor=SimpleNamespace(is_active=lambda: False),
         )
 
         with patch(
@@ -60,6 +106,44 @@ class RuntimeTimerRegistryTests(unittest.TestCase):
         self.assertEqual(calls[6][1]["minimum_interval_ms"], 8)
         self.assertEqual(calls[7][1]["minimum_interval_ms"], 12)
         self.assertEqual(calls[8][1]["minimum_interval_ms"], 250)
+
+    def test_unavailable_window_tracker_does_not_start_poll_timer(self):
+        runtime = SimpleNamespace(
+            app=object(),
+            pets_list=[],
+            profiler=object(),
+            logic_scheduler=SimpleNamespace(
+                run=lambda *_args, **_kwargs: None,
+                resolve_repeat_count=(
+                    lambda _pets, default, speed: default
+                ),
+            ),
+            window_tracker=SimpleNamespace(
+                available=False,
+                refresh=lambda: None,
+            ),
+            update_offer_scene=lambda: None,
+            update_transformations=lambda: None,
+            update_race=lambda: None,
+            update_chorus=lambda: None,
+            update_household_events=lambda: None,
+            offer_item_scene_runtime_controller=SimpleNamespace(
+                is_active=lambda: False,
+            ),
+            transformation_runtime_controller=SimpleNamespace(
+                is_active=lambda: False,
+            ),
+            race_executor=SimpleNamespace(is_active=lambda: False),
+            chorus_executor=SimpleNamespace(is_active=lambda: False),
+        )
+
+        with patch(
+            "tanuki_core.runtime_timer_registry.register_runtime_timer",
+            return_value=object(),
+        ):
+            timers = start_runtime_timers(runtime)
+
+        self.assertNotIn("windows", timers)
 
 
 if __name__ == "__main__":

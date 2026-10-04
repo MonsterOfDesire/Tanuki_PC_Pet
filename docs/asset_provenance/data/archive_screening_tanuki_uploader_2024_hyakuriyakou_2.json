@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "analysis_version": "2026-08-26.2c",
+  "generated_at": "2026-08-26T21:08:44+08:00",
+  "method_note": "Exact file, decoded RGBA sequence including timing, and first-frame hashes are checked before perceptual candidates. Perceptual candidates are not authorship findings and must be manually reviewed in the context of shared templates and later edits.",
+  "extracted_root": "G:\\TanukiProject\\.codex_tmp\\asset_provenance_01a033f4\\extracted\\2024-hyakuriyakou-2",
+  "local_asset_count": 456,
+  "screened_gif_count": 0,
+  "error_count": 0,
+  "exact_file_match_count": 0,
+  "exact_decoded_sequence_match_count": 0,
+  "exact_first_frame_match_count": 0,
+  "visual_candidate_file_count": 0,
+  "archive_gifs": [],
+  "errors": []
+}

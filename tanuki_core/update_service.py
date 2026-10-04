@@ -17,6 +17,7 @@ from .update_package import (
     UpdatePackageManifest,
     get_update_package_asset_name,
 )
+from .platform_capabilities import get_platform_capabilities
 
 
 GITHUB_API_VERSION = "2022-11-28"
@@ -96,8 +97,10 @@ class UpdateCheckResult:
         )
 
 
-def get_release_update_bundle_assets(release):
+def get_release_update_bundle_assets(release, *, platform=None):
     if release is None:
+        return None
+    if not get_platform_capabilities(platform).standalone_updater:
         return None
     updater = release.find_asset(UPDATER_ASSET_NAME)
     manifest = release.find_asset(UPDATE_MANIFEST_ASSET_NAME)

@@ -8,6 +8,8 @@ from pathlib import Path
 import sys
 
 from .app_version import APP_VERSION, AppVersion
+from .app_paths import get_user_data_directory
+from .platform_capabilities import get_platform_capabilities
 from .ui_localization import DEFAULT_UI_LOCALE, normalize_ui_locale
 from .update_package import DEFAULT_EXECUTABLE_NAME
 
@@ -26,14 +28,23 @@ def _runtime_base_path():
     return Path(executable).resolve().parent
 
 
-def get_installation_record_path(local_app_data=None):
-    if local_app_data is None:
-        local_app_data = os.environ.get("LOCALAPPDATA")
-    if not local_app_data:
-        local_app_data = Path.home() / "AppData" / "Local"
+def get_installation_record_path(
+    local_app_data=None,
+    *,
+    platform=None,
+    home=None,
+    environ=None,
+):
+    if str(local_app_data or "").strip():
+        data_directory = Path(local_app_data) / INSTALLATION_RECORD_DIRECTORY_NAME
+    else:
+        data_directory = get_user_data_directory(
+            platform=platform,
+            home=home,
+            environ=environ,
+        )
     return (
-        Path(local_app_data)
-        / INSTALLATION_RECORD_DIRECTORY_NAME
+        data_directory
         / INSTALLATION_RECORD_FILE_NAME
     )
 
@@ -115,7 +126,10 @@ def save_installation_record(record, path=None):
 def record_current_installation(ui_locale=DEFAULT_UI_LOCALE, path=None):
     """Record only packaged runs; source checkouts are not installations."""
 
-    if not _is_frozen_runtime():
+    if (
+        not _is_frozen_runtime()
+        or not get_platform_capabilities().standalone_updater
+    ):
         return None
     executable_name = Path(sys.executable).name or DEFAULT_EXECUTABLE_NAME
     record = InstallationRecord(

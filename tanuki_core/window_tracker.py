@@ -1,7 +1,7 @@
 from PyQt6.QtCore import QObject, QPoint, QRect
 from PyQt6.QtWidgets import QApplication
 
-from .window_tracker_backend import Win32WindowTrackerBackend
+from .window_tracker_backend import create_window_tracker_backend
 from .window_tracker_policy import WindowSurface, build_window_surface
 from .window_surface_rules import (
     can_actor_perch_on_surface,
@@ -27,11 +27,11 @@ class WindowTracker(QObject):
     WS_POPUP = 0x80000000
     WS_CAPTION = 0x00C00000
 
-    def __init__(self, backend=None):
+    def __init__(self, backend=None, platform=None):
         super().__init__()
         self.surfaces = []
         self.surface_map = {}
-        self.backend = backend or Win32WindowTrackerBackend()
+        self.backend = backend or create_window_tracker_backend(platform)
         self.available = self.backend.available
         self.own_pid = self.backend.own_pid
 

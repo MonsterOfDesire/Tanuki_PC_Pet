@@ -21,6 +21,7 @@ class SharedFoodSceneState:
     consumer_names: tuple[str, ...] = ()
     holder_animation: AnimationSignature = ()
     partner_animation: AnimationSignature = ()
+    approach_target_x: float | None = None
     item_hidden: bool = False
     effects_applied: bool = False
 
@@ -238,7 +239,8 @@ class ItemSceneCoordinator:
         participants = []
         if scene.actor_name:
             participants.append(scene.actor_name)
-        if scene.target_name and scene.target_name != scene.actor_name:
+        child_released = scene.scene_kind == "honey_guard" and scene.stage == "guardian_stay"
+        if scene.target_name and scene.target_name != scene.actor_name and not child_released:
             participants.append(scene.target_name)
         return tuple(participants)
 

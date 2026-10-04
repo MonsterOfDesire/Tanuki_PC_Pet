@@ -5,6 +5,8 @@ from .runtime import SIM_CLOCK, app_now
 from .shutdown_controller import DashboardShutdownController
 from .ui_localization import set_ui_locale
 from .installation_registry import record_current_installation
+from .settings_provider import RuntimeSettings
+from .ui_typography import normalize_ui_text_size, set_ui_text_size
 
 
 class DashboardController:
@@ -61,7 +63,7 @@ class DashboardController:
     def set_world_mode(self, dashboard, world_mode, save=True):
         previous_mode = getattr(dashboard, "world_mode", "")
         if world_mode not in getattr(dashboard, "world_mode_options", ()):
-            world_mode = dashboard.world_mode_options[0]
+            world_mode = RuntimeSettings.DEFAULT_WORLD_MODE
         dashboard.world_mode = str(world_mode)
         dashboard.sync_settings_provider()
         dashboard.update_world_mode_buttons()
@@ -147,6 +149,25 @@ class DashboardController:
         if save:
             dashboard.schedule_save()
 
+    def set_autonomous_sleep_enabled(self, dashboard, enabled, save=True):
+        dashboard.autonomous_sleep_enabled = bool(enabled)
+        dashboard.sync_settings_provider()
+        dashboard.refresh_information_center_settings()
+        if save:
+            dashboard.schedule_save()
+
+    def set_autonomous_transformation_enabled(
+        self,
+        dashboard,
+        enabled,
+        save=True,
+    ):
+        dashboard.autonomous_transformation_enabled = bool(enabled)
+        dashboard.sync_settings_provider()
+        dashboard.refresh_information_center_settings()
+        if save:
+            dashboard.schedule_save()
+
     def set_ui_locale(self, dashboard, value, save=True):
         options = tuple(getattr(dashboard, "ui_locale_options", ()))
         dashboard.ui_locale = (
@@ -156,6 +177,25 @@ class DashboardController:
         record_current_installation(dashboard.ui_locale)
         dashboard.sync_settings_provider()
         dashboard.retranslate_ui()
+        if save:
+            dashboard.schedule_save()
+
+    def set_ui_text_size(self, dashboard, value, save=True):
+        dashboard.ui_text_size = normalize_ui_text_size(value)
+        dashboard.sync_settings_provider()
+        set_ui_text_size(dashboard.ui_text_size)
+        dashboard.retranslate_ui()
+        if save:
+            dashboard.schedule_save()
+
+    def set_achievement_capture_enabled(
+        self,
+        dashboard,
+        enabled,
+        save=True,
+    ):
+        dashboard.achievement_capture_enabled = bool(enabled)
+        dashboard.sync_settings_provider()
         if save:
             dashboard.schedule_save()
 

@@ -20,6 +20,7 @@ class FakeAssetManager:
         forbidden=None,
         mood_score=None,
         ordered_preferences=False,
+        excluded_variants=(),
     ):
         self.calls.append(
             {
@@ -29,6 +30,7 @@ class FakeAssetManager:
                 "forbidden": forbidden,
                 "mood_score": mood_score,
                 "ordered_preferences": ordered_preferences,
+                "excluded_variants": tuple(excluded_variants),
             }
         )
         return self.results.get((context, mood_score))
@@ -122,6 +124,7 @@ class ManifestAnimationResolverTests(unittest.TestCase):
                     "forbidden": None,
                     "mood_score": 30.0,
                     "ordered_preferences": False,
+                    "excluded_variants": (),
                 }
             ],
         )

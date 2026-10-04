@@ -113,6 +113,7 @@ class FakeDashboard:
         self.care_feature_enabled = False
         self.debug_enabled = False
         self.social_status_enabled = False
+        self.achievement_capture_enabled = False
         self.race_frequency_options = ["frequent", "normal", "occasional"]
         self.race_frequency = "normal"
         self.chorus_frequency_options = ["frequent", "normal", "occasional"]
@@ -331,6 +332,16 @@ class DashboardControllerTests(unittest.TestCase):
             self.tools.debug_refresh_calls,
             [dashboard.pets_dict],
         )
+        self.assertEqual(dashboard.save_calls, 1)
+
+    def test_set_achievement_capture_enabled_persists_opt_in(self):
+        controller = self.build_controller()
+        dashboard = FakeDashboard()
+
+        controller.set_achievement_capture_enabled(dashboard, True)
+
+        self.assertTrue(dashboard.achievement_capture_enabled)
+        self.assertEqual(dashboard.sync_calls, 1)
         self.assertEqual(dashboard.save_calls, 1)
 
     def test_handle_pet_toggle_delegates_visibility_and_save(self):

@@ -9,6 +9,7 @@ from tanuki_core.ui_localization import (
     set_ui_locale,
     translate_ui,
 )
+from tanuki_core.settings_provider import RuntimeSettings
 
 
 class UiLocalizationTests(unittest.TestCase):
@@ -115,6 +116,51 @@ class UiLocalizationTests(unittest.TestCase):
         self.assertEqual(normalize_ui_locale("ja-JP"), "ja_JP")
         self.assertEqual(normalize_ui_locale("zh-CN"), "zh_CN")
         self.assertEqual(normalize_ui_locale("unsupported"), "zh_TW")
+
+    def test_rudolf_imitation_cooldown_is_distinct_from_social_cooldown(self):
+        expected = {
+            "zh_TW": "模仿魯道夫冷卻",
+            "zh_CN": "模仿鲁道夫冷却",
+            "ja_JP": "ルドルフ模倣クールダウン",
+            "en_US": "Rudolf Imitation Cooldown",
+        }
+
+        for locale, label in expected.items():
+            with self.subTest(locale=locale):
+                self.assertEqual(
+                    translate_ui(
+                        "settings.groups.social_cooldown",
+                        locale=locale,
+                    ),
+                    label,
+                )
+
+    def test_activity_disable_labels_are_localized_but_mood_climate_has_no_off_state(self):
+        expected = {
+            "zh_TW": ("模式設定", "不啟用"),
+            "zh_CN": ("模式设置", "不启用"),
+            "ja_JP": ("モード設定", "無効"),
+            "en_US": ("Mode Settings", "Disabled"),
+        }
+
+        for locale, (tab_label, disabled_label) in expected.items():
+            with self.subTest(locale=locale):
+                self.assertEqual(
+                    translate_ui("settings.tabs.mode", locale=locale),
+                    tab_label,
+                )
+                self.assertEqual(
+                    translate_ui(
+                        "settings.frequencies.disabled",
+                        locale=locale,
+                    ),
+                    disabled_label,
+                )
+
+        self.assertNotIn(
+            "disabled",
+            RuntimeSettings.MOOD_CLIMATE_OPTIONS,
+        )
 
     def test_simplified_chinese_catalog_localizes_ui_and_legacy_names(self):
         self.assertEqual(

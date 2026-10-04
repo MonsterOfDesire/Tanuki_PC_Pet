@@ -2,7 +2,7 @@ import random
 
 from .item_scene_coordinator import SharedFoodSceneState
 from .offer_interaction_rules import (
-    get_direct_offer_accept_candidates,
+    FOOD_CONSUME_DURATION_MULTIPLIER,
     get_direct_offer_accept_context,
 )
 from .offer_scene_execution_port import adapt_offer_scene_executor
@@ -38,6 +38,64 @@ SHARED_FOOD_REQUEST_DECISION_SECONDS = 1.2
 SHARED_FOOD_TRANSITION_SECONDS = 0.45
 SHARED_FOOD_FINISH_SECONDS = 0.65
 SHARED_FOOD_APPROACH_MIN_SPEED = 1.5
+SHARED_FOOD_APPROACH_ARRIVAL_DISTANCE = 6.0
+SHARED_FOOD_VISUAL_SPACING_FACTOR = 0.36
+
+
+def _current_visual_width(pet):
+    frames = tuple(getattr(pet, "current_frames", ()) or ())
+    if frames:
+        frame = frames[
+            int(getattr(pet, "frame_index", 0) or 0) % len(frames)
+        ]
+        width = getattr(frame, "width", None)
+        if callable(width):
+            try:
+                return max(1.0, float(width()))
+            except (TypeError, ValueError):
+                pass
+    width = getattr(pet, "width", None)
+    try:
+        return max(
+            1.0,
+            float(width() if callable(width) else width or 1.0) * 0.5,
+        )
+    except (TypeError, ValueError):
+        return 1.0
+
+
+def resolve_shared_food_approach_target_x(
+    holder_pet,
+    partner_pet,
+    *,
+    approach_distance,
+):
+    holder_x = float(holder_pet.x())
+    partner_x = float(partner_pet.x())
+    spacing = max(
+        float(approach_distance),
+        (
+            _current_visual_width(holder_pet)
+            + _current_visual_width(partner_pet)
+        )
+        * SHARED_FOOD_VISUAL_SPACING_FACTOR,
+    )
+    preferred_side = -1 if partner_x < holder_x else 1
+    clamp = getattr(partner_pet, "clamp_x_to_virtual_geometry", None)
+
+    def candidate(side):
+        target = holder_x + (float(side) * spacing)
+        if callable(clamp):
+            target = float(clamp(target, partner_pet.width()))
+        return target
+
+    preferred = candidate(preferred_side)
+    alternate = candidate(-preferred_side)
+    preferred_separation = abs(preferred - holder_x)
+    alternate_separation = abs(alternate - holder_x)
+    if alternate_separation > preferred_separation + 1.0:
+        return alternate
+    return preferred
 
 
 @adapt_offer_scene_executor
@@ -234,7 +292,10 @@ class SharedFoodSceneExecutor:
                 port.pets.is_busy(pet, now)
                 or getattr(pet, "is_angry_locked", False)
             ),
-            dragging=bool(getattr(pet, "dragging", False)),
+            dragging=bool(
+                getattr(pet, "dragging", False)
+                or getattr(pet, "throw_active", False)
+            ),
             recovering=bool(getattr(pet, "is_recovering", False)),
             social_mode=str(getattr(pet, "social_mode", "none") or "none"),
             perched=bool(getattr(pet, "perched_window_hwnd", 0)),
@@ -248,6 +309,7 @@ class SharedFoodSceneExecutor:
             or port.pets.is_busy(pet, now)
             or getattr(pet, "is_angry_locked", False)
             or getattr(pet, "dragging", False)
+            or getattr(pet, "throw_active", False)
             or getattr(pet, "is_recovering", False)
             or getattr(pet, "social_mode", "none") != "none"
             or getattr(pet, "flight_mode", "none") != "none"
@@ -458,7 +520,7 @@ class SharedFoodSceneExecutor:
         if (
             holder_pet is None
             or not holder_pet.isVisible()
-            or not get_direct_offer_accept_candidates(item_kind, holder_pet.name)
+            or not port.pets.has_direct_offer_context(holder_pet, item_kind)
         ):
             return False
         return port.flow.start_direct_offer_scene(item_kind, holder_pet, source=source)
@@ -513,8 +575,13 @@ class SharedFoodSceneExecutor:
         shared_seconds = max(2.0, float(profile.shared_duration_seconds))
         if outcome_key == SHARED_FOOD_OUTCOME_SHARE_BOTH:
             remaining = shared_seconds - SHARED_FOOD_TRANSITION_SECONDS - SHARED_FOOD_FINISH_SECONDS
-            return max(0.75, remaining / 2.0)
-        return max(1.0, shared_seconds - SHARED_FOOD_FINISH_SECONDS)
+            base_seconds = max(0.75, remaining / 2.0)
+        else:
+            base_seconds = max(
+                1.0,
+                shared_seconds - SHARED_FOOD_FINISH_SECONDS,
+            )
+        return base_seconds * FOOD_CONSUME_DURATION_MULTIPLIER
 
     def apply_shared_food_stage_animations(
         self,
@@ -552,8 +619,15 @@ class SharedFoodSceneExecutor:
                 preserve=preserve,
             )
             partner_pet.state = "move"
+            shared_state.approach_target_x = (
+                resolve_shared_food_approach_target_x(
+                    holder_pet,
+                    partner_pet,
+                    approach_distance=profile.approach_distance,
+                )
+            )
             partner_pet.move_toward_x(
-                holder_pet.x(),
+                shared_state.approach_target_x,
                 speed_scale=1.0,
                 min_speed=max(SHARED_FOOD_APPROACH_MIN_SPEED, partner_pet.get_base_speed()),
             )
@@ -691,7 +765,13 @@ class SharedFoodSceneExecutor:
                 holder_capabilities,
                 partner_capabilities,
             )
-            if partner_pet.distance_to(holder_pet) <= float(profile.approach_distance):
+            target_x = shared_state.approach_target_x
+            arrived = (
+                target_x is not None
+                and abs(float(partner_pet.x()) - float(target_x))
+                <= SHARED_FOOD_APPROACH_ARRIVAL_DISTANCE
+            )
+            if arrived:
                 port.shared_food.set_stage(
                     "request_decision",
                     now,

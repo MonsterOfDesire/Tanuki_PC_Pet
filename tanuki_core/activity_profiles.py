@@ -60,6 +60,7 @@ class ActivityAnimationBinding:
         mood_score: float,
         *,
         band_override: str = "",
+        excluded_variants=(),
     ) -> ManifestAnimationRequest:
         band_override = str(band_override or "").strip()
         if band_override and band_override not in VALID_BANDS:
@@ -74,6 +75,7 @@ class ActivityAnimationBinding:
             return ManifestAnimationRequest(
                 contexts=self.contexts,
                 band_policy=BAND_POLICY_IGNORE,
+                excluded_variants=tuple(excluded_variants or ()),
             )
         current_band = band_override or get_mood_band(float(mood_score))
         band_order = _normalize_unique_strings(
@@ -83,4 +85,5 @@ class ActivityAnimationBinding:
             contexts=self.contexts,
             band_order=band_order,
             band_policy=BAND_POLICY_MATCH,
+            excluded_variants=tuple(excluded_variants or ()),
         )

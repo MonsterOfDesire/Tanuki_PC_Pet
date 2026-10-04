@@ -1,6 +1,6 @@
 import unittest
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from tests.qt_test_support import QT_BINDINGS_AVAILABLE, QtApplicationTestCase
 
@@ -1038,6 +1038,30 @@ class OfferInteractionRuntimeTests(QtApplicationTestCase):
         self.assertEqual(len(pet.move_toward_calls), 1)
         self.assertEqual(pet.ensure_calls, [])
 
+    def test_sirius_honey_can_use_manifest_move_without_move_action_whitelist(self):
+        pet = FakePet("Sirius Symboli")
+        pet.context_successes.add(("move", "offer_accept_honey"))
+        runtime = self.build_runtime([pet])
+        runtime.offer_scene = ActiveOfferScene(
+            item_kind=ITEM_HONEY,
+            scene_kind="direct_accept",
+            actor_name=pet.name,
+            target_name=pet.name,
+            stage="accept",
+            stage_ends_at=20.0,
+            scene_ends_at=20.0,
+            direct_accept_purpose_order=("move", "idle"),
+        )
+
+        handled = runtime.update_direct_offer_scene(10.0)
+
+        self.assertTrue(handled)
+        self.assertEqual(pet.context_calls[0][0], "move")
+        self.assertEqual(pet.current_purpose, "move")
+        self.assertEqual(pet.state, "move")
+        self.assertEqual(len(pet.move_toward_calls), 1)
+        self.assertEqual(pet.ensure_calls, [])
+
     def test_update_direct_offer_scene_can_choose_stationary_accept_even_when_move_context_exists(self):
         pet = FakePet("Tokai Teio")
         pet.context_successes.add(("move", "offer_accept_honey"))
@@ -1373,6 +1397,106 @@ class OfferInteractionRuntimeTests(QtApplicationTestCase):
         self.assertEqual(child.mood_score, 60.0)
         self.assertIsNone(runtime.offer_scene)
 
+    def test_bottle_drink_lasts_eight_simulation_seconds_for_both_sources(self):
+        for source in ("offer_tray", "autonomous"):
+            with self.subTest(source=source):
+                holder = FakePet("Sirius Symboli")
+                child = FakePet("Tsurumaru Tsuyoshi")
+                holder._x, child._x = 100, 180
+                holder.context_successes.update({
+                    ("idle", "bottle_feed_hold"),
+                    ("idle", "bottle_feed_watch"),
+                })
+                child.context_successes.update({
+                    ("move", "bottle_feed_child_approach"),
+                    ("idle", "bottle_feed_child_drink"),
+                })
+                runtime = self.build_runtime([holder, child])
+                runtime.ensure_pet_held_item(holder, ITEM_BOTTLE, source=source)
+                runtime.offer_scene = ActiveOfferScene(
+                    item_kind=ITEM_BOTTLE,
+                    scene_kind="bottle_feed",
+                    actor_name=holder.name,
+                    target_name=child.name,
+                    stage="approach",
+                    scene_ends_at=100.0,
+                    source=source,
+                )
+                with patch.object(runtime, "record_offer_event") as record:
+                    self.assertTrue(runtime.update_bottle_feed_scene(10.0))
+                    self.assertEqual(runtime.offer_scene.stage, "drink")
+                    self.assertEqual(runtime.offer_scene.scene_ends_at, 18.0)
+                    for now in (11.0, 15.0, 17.99):
+                        self.assertTrue(runtime.update_bottle_feed_scene(now))
+                        self.assertIsNotNone(runtime.offer_scene)
+                        self.assertEqual(child.mood_score, 50.0)
+                        self.assertEqual(holder.current_action_tag, "bottle_feed_watch")
+                        self.assertEqual(child.current_action_tag, "bottle_feed_child_drink")
+                        self.assertEqual((holder._x, child._x), (100, 180))
+                    record.assert_not_called()
+                    self.assertTrue(runtime.update_bottle_feed_scene(18.0))
+                    self.assertIsNone(runtime.offer_scene)
+                    self.assertEqual(child.mood_score, 60.0)
+                    record.assert_called_once_with(
+                        ITEM_BOTTLE, holder.name, child.name, "bottle_feed", source=source,
+                    )
+
+    def test_player_bottle_given_directly_to_child_uses_milk_context_for_eight_seconds(self):
+        child = FakePet("Tsurumaru Tsuyoshi")
+        child.context_successes.add(("idle", "offer_accept_milk"))
+        runtime = self.build_runtime([child])
+        with patch.object(runtime.offer_item_scene_runtime_controller, "now_provider", return_value=10.0):
+            self.assertTrue(runtime.start_offer_interaction_for_target(ITEM_BOTTLE, child))
+        self.assertEqual(runtime.offer_scene.scene_kind, "direct_accept")
+        self.assertEqual(runtime.offer_scene.scene_ends_at, 18.0)
+        self.assertTrue(runtime.update_direct_offer_scene(17.99))
+        self.assertEqual(child.current_action_tag, "offer_accept_milk")
+        self.assertFalse(runtime.update_direct_offer_scene(18.0))
+        self.assertIsNone(runtime.offer_scene)
+
+    def test_honey_child_is_free_after_two_seconds_while_guardian_stays_for_five(self):
+        guardian = FakePet("Sirius Symboli")
+        child = FakePet("Tsurumaru Tsuyoshi")
+        guardian.context_successes.add(("idle", "honey_guard_take"))
+        child.context_successes.add(("idle", "offer_denied"))
+        guardian._x, child._x = 100, 160
+        runtime = self.build_runtime([guardian, child])
+        runtime.offer_scene = ActiveOfferScene(
+            item_kind=ITEM_HONEY, scene_kind="honey_guard",
+            actor_name=guardian.name, target_name=child.name,
+            stage="approach", scene_ends_at=100.0,
+        )
+        self.assertTrue(runtime.update_honey_guard_scene(10.0))
+        self.assertTrue(runtime.update_honey_guard_scene(11.99))
+        self.assertEqual(child.offer_scene_kind, "honey_guard")
+        self.assertTrue(runtime.update_honey_guard_scene(12.0))
+        self.assertEqual(child.offer_scene_kind, "none")
+        self.assertEqual(child.offer_locked_until, 0.0)
+        self.assertEqual(runtime.offer_scene.stage, "guardian_stay")
+        self.assertEqual(child.negative_afterglow_until, 15.0)
+        self.assertEqual(child.negative_afterglow_care_block_until, 15.0)
+        self.assertIn("cry", child.negative_afterglow_preferred_moods)
+        self.assertIn("happy", child.negative_afterglow_forbidden_moods)
+        child._x = 500
+        child.state = "move"
+        child.current_action_tag = "random"
+        child.direction = -1
+        for now in (12.1, 14.99):
+            self.assertTrue(runtime.update_honey_guard_scene(now))
+            self.assertEqual(child.offer_scene_kind, "none")
+            self.assertEqual(child.current_action_tag, "random")
+            self.assertEqual(child.state, "move")
+            self.assertEqual(child.direction, -1)
+            self.assertEqual(child.negative_afterglow_until, 15.0)
+            self.assertEqual(guardian._x, 100)
+            self.assertEqual(guardian.current_action_tag, "honey_guard_take")
+        child._visible = False
+        self.assertFalse(runtime.cancel_offer_scene_if_hidden_participants())
+        self.assertFalse(runtime.update_honey_guard_scene(15.0))
+        self.assertIsNone(runtime.offer_scene)
+        self.assertEqual(guardian.offer_scene_kind, "none")
+
+
     def test_update_offer_scene_cancels_bottle_feed_and_clears_hidden_holder_item(self):
         holder = FakePet("Sirius Symboli", visible=False)
         child = FakePet("Tsurumaru Tsuyoshi")
@@ -1643,12 +1767,14 @@ class OfferInteractionRuntimeTests(QtApplicationTestCase):
             scene_ends_at=20.0,
             event_recorded=False,
         )
+        record_event = Mock(wraps=runtime.record_offer_event)
+        runtime.record_offer_event = record_event
 
         handled = runtime.update_honey_guard_scene(10.0)
 
         self.assertTrue(handled)
         self.assertEqual(child.mood_score, 20.0)
-        self.assertEqual(runtime.offer_scene.scene_ends_at, 11.2)
+        self.assertEqual(runtime.offer_scene.scene_ends_at, 15.0)
         self.assertEqual(guardian.negative_afterglow_until, 15.0)
         self.assertEqual(guardian.negative_afterglow_preferred_moods, ("sad", "think"))
         self.assertIn("happy", guardian.negative_afterglow_forbidden_moods)
@@ -1658,15 +1784,48 @@ class OfferInteractionRuntimeTests(QtApplicationTestCase):
         self.assertIn("cry", child.negative_afterglow_preferred_moods)
         self.assertIn("happy", child.negative_afterglow_forbidden_moods)
 
-        self.assertTrue(runtime.update_honey_guard_scene(11.1))
-        self.assertIsNotNone(runtime.offer_scene)
-        self.assertEqual(guardian.current_action_tag, "honey_guard_take")
-        self.assertFalse(runtime.update_honey_guard_scene(11.2))
+        for now in (11.2, 13.0, 14.99):
+            self.assertTrue(runtime.update_honey_guard_scene(now))
+            self.assertIsNotNone(runtime.offer_scene)
+            self.assertEqual(guardian.current_action_tag, "honey_guard_take")
+            self.assertEqual(child.current_action_tag, "offer_denied")
+            self.assertEqual(child.mood_score, 20.0)
+            self.assertEqual((guardian._x, child._x), (100, 160))
+            self.assertEqual(guardian.direction, -child.direction)
+        self.assertFalse(runtime.update_honey_guard_scene(15.0))
         self.assertIsNone(runtime.offer_scene)
         self.assertEqual(guardian.offer_scene_kind, "none")
         self.assertEqual(child.offer_scene_kind, "none")
         self.assertEqual(guardian.negative_afterglow_until, 15.0)
         self.assertEqual(child.negative_afterglow_until, 15.0)
+        record_event.assert_called_once()
+
+    def test_initial_honey_stay_releases_both_locks_when_either_pet_is_hidden(self):
+        for hidden_name in ("Sirius Symboli", "Tsurumaru Tsuyoshi"):
+            with self.subTest(hidden_name=hidden_name):
+                guardian = FakePet("Sirius Symboli")
+                child = FakePet("Tsurumaru Tsuyoshi")
+                guardian.context_successes.add(("idle", "honey_guard_take"))
+                child.context_successes.add(("idle", "offer_denied"))
+                guardian._x, child._x = 100, 160
+                runtime = self.build_runtime([guardian, child])
+                runtime.offer_scene = ActiveOfferScene(
+                    item_kind=ITEM_HONEY,
+                    scene_kind="honey_guard",
+                    actor_name=guardian.name,
+                    target_name=child.name,
+                    stage="approach",
+                    scene_ends_at=100.0,
+                )
+                self.assertTrue(runtime.update_honey_guard_scene(10.0))
+                self.assertEqual(runtime.offer_scene.scene_ends_at, 15.0)
+                runtime.find_pet_by_name(hidden_name, visible_only=False)._visible = False
+                self.assertTrue(runtime.update_offer_scene(11.0))
+                self.assertIsNone(runtime.offer_scene)
+                self.assertEqual(guardian.offer_scene_kind, "none")
+                self.assertEqual(child.offer_scene_kind, "none")
+                self.assertEqual(guardian.offer_locked_until, 0.0)
+                self.assertEqual(child.offer_locked_until, 0.0)
 
 
 if __name__ == "__main__":

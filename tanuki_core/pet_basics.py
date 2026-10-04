@@ -5,6 +5,7 @@ from PyQt6.QtCore import Qt
 
 from .asset_manager import AssetManager
 from .geometry import DesktopGeometry, PetMovementState
+from .transformation_profiles import get_pet_form_visual_scale
 
 
 class PetBasicsMixin:
@@ -34,7 +35,10 @@ class PetBasicsMixin:
         )
         self.asset_manager = AssetManager(
             active_character_path,
-            scale_factor=self.get_effective_scale(),
+            scale_factor=(
+                self.get_effective_scale()
+                * get_pet_form_visual_scale(self)
+            ),
             frame_cache=self.asset_manager.frame_cache,
             store_cache=self.asset_manager.store_cache,
         )
@@ -97,16 +101,19 @@ class PetBasicsMixin:
 
     def update_bar_opacity(self, value):
         self.bar_opacity = value
+        self.refresh_pointer_input_region()
         self.update()
 
     def animate_heart(self, value):
         self.heart_opacity = 1.0 - (value ** 2)
         self.heart_y_offset = int(value * 60)
+        self.refresh_pointer_input_region()
         self.update()
 
     def animate_log_icon(self, value):
         self.log_icon_opacity = 1.0 - (value ** 2)
         self.log_icon_y_offset = int(value * 42)
+        self.refresh_pointer_input_region()
         self.update()
 
     def pop_heart(self):
@@ -258,7 +265,7 @@ class PetBasicsMixin:
     def refresh_movement_state(self, surface=None):
         if surface is None:
             surface = self.get_surface_snapshot()
-        if self.vy != 0:
+        if self.vy != 0 or bool(getattr(self, "throw_active", False)):
             intent = "falling"
             locomotion = "airborne"
             anchor = "air"

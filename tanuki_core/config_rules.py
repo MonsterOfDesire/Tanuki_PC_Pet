@@ -1,4 +1,4 @@
-from .dashboard_state_mapper import WORLD_MODE_OPTIONS
+from .dashboard_state_mapper import DEFAULT_WORLD_MODE, WORLD_MODE_OPTIONS
 from .information_center_state import (
     InformationCenterConfigState,
     information_center_config_state_to_payload,
@@ -7,14 +7,14 @@ from .information_center_state import (
 from .settings_provider import RuntimeSettings
 
 
-CONFIG_SCHEMA_VERSION = 8
+CONFIG_SCHEMA_VERSION = 12
 
 DEFAULT_INFORMATION_CENTER_STATE = information_center_config_state_to_payload(
     InformationCenterConfigState()
 )
 
 DEFAULT_DASHBOARD_STATE = {
-    "world_mode": WORLD_MODE_OPTIONS[0],
+    "world_mode": DEFAULT_WORLD_MODE,
     "care_feature_enabled": True,
     "teio_dur_idx": 3,
     "tsuyoshi_dur_idx": 2,
@@ -24,8 +24,15 @@ DEFAULT_DASHBOARD_STATE = {
     "social_status_enabled": False,
     "race_frequency": "normal",
     "chorus_frequency": "normal",
+    "autonomous_sleep_enabled": True,
+    "autonomous_transformation_enabled": True,
     "mood_climate": "cheerful",
     "ui_locale": RuntimeSettings.UI_LOCALE_OPTIONS[0],
+    "ui_text_size": "medium",
+    "achievement_capture_enabled": False,
+    "memory_album_mode": "off",
+    "memory_album_capacity": 20,
+    "play_calendar_started_on": "",
     "information_center": DEFAULT_INFORMATION_CENTER_STATE,
 }
 
@@ -162,6 +169,43 @@ def migrate_config_state(raw):
             migrated["dashboard"] = dashboard
         schema_version = 8
 
+    if schema_version < 9:
+        dashboard = migrated.get("dashboard", {})
+        if isinstance(dashboard, dict):
+            dashboard = dict(dashboard)
+            dashboard.setdefault(
+                "achievement_capture_enabled",
+                DEFAULT_DASHBOARD_STATE["achievement_capture_enabled"],
+            )
+            migrated["dashboard"] = dashboard
+        schema_version = 9
+
+    if schema_version < 10:
+        dashboard = migrated.get("dashboard", {})
+        if isinstance(dashboard, dict):
+            dashboard = dict(dashboard)
+            dashboard.setdefault("memory_album_mode", "off")
+            dashboard.setdefault("memory_album_capacity", 20)
+            migrated["dashboard"] = dashboard
+        schema_version = 10
+
+    if schema_version < 11:
+        dashboard = migrated.get("dashboard", {})
+        if isinstance(dashboard, dict):
+            dashboard = dict(dashboard)
+            dashboard.setdefault("play_calendar_started_on", "")
+            migrated["dashboard"] = dashboard
+        schema_version = 11
+
+    if schema_version < 12:
+        dashboard = migrated.get("dashboard", {})
+        if isinstance(dashboard, dict):
+            dashboard = dict(dashboard)
+            dashboard.setdefault("autonomous_sleep_enabled", True)
+            dashboard.setdefault("autonomous_transformation_enabled", True)
+            migrated["dashboard"] = dashboard
+        schema_version = 12
+
     migrated["schema_version"] = CONFIG_SCHEMA_VERSION
     if original_schema_version != CONFIG_SCHEMA_VERSION:
         warnings.append(f"config schema {original_schema_version} 已升級到 {CONFIG_SCHEMA_VERSION}")
@@ -231,6 +275,20 @@ def normalize_config_state(raw):
                 in RuntimeSettings.CHORUS_FREQUENCY_OPTIONS
                 else DEFAULT_DASHBOARD_STATE["chorus_frequency"]
             ),
+            "autonomous_sleep_enabled": bool(
+                dashboard.get(
+                    "autonomous_sleep_enabled",
+                    DEFAULT_DASHBOARD_STATE["autonomous_sleep_enabled"],
+                )
+            ),
+            "autonomous_transformation_enabled": bool(
+                dashboard.get(
+                    "autonomous_transformation_enabled",
+                    DEFAULT_DASHBOARD_STATE[
+                        "autonomous_transformation_enabled"
+                    ],
+                )
+            ),
             "mood_climate": (
                 dashboard.get(
                     "mood_climate",
@@ -248,6 +306,34 @@ def normalize_config_state(raw):
                 if dashboard.get("ui_locale")
                 in RuntimeSettings.UI_LOCALE_OPTIONS
                 else DEFAULT_DASHBOARD_STATE["ui_locale"]
+            ),
+            "achievement_capture_enabled": bool(
+                dashboard.get(
+                    "achievement_capture_enabled",
+                    DEFAULT_DASHBOARD_STATE[
+                        "achievement_capture_enabled"
+                    ],
+                )
+            ),
+            "ui_text_size": (
+                dashboard.get("ui_text_size", "medium")
+                if dashboard.get("ui_text_size") in RuntimeSettings.UI_TEXT_SIZE_OPTIONS
+                else "medium"
+            ),
+            "memory_album_mode": (
+                dashboard.get("memory_album_mode", "off")
+                if dashboard.get("memory_album_mode")
+                in RuntimeSettings.MEMORY_ALBUM_MODE_OPTIONS
+                else "off"
+            ),
+            "memory_album_capacity": (
+                int(dashboard.get("memory_album_capacity", 20))
+                if dashboard.get("memory_album_capacity")
+                in RuntimeSettings.MEMORY_ALBUM_CAPACITY_OPTIONS
+                else 20
+            ),
+            "play_calendar_started_on": str(
+                dashboard.get("play_calendar_started_on", "") or ""
             ),
             "information_center": normalized_information_center,
         },

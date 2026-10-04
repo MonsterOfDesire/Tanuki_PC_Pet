@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8e1d6"/><stop offset="1" stop-color="#c9b9a3"/></linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#86a86f"/><stop offset="1" stop-color="#617f55"/></linearGradient>
+    <mask id="outside"><rect width="1920" height="1080" fill="#fff"/><rect x="320" y="120" width="1280" height="720" rx="7" fill="#000"/></mask>
+  </defs>
+
+  <rect width="1920" height="720" fill="url(#wall)"/><rect y="720" width="1920" height="360" fill="url(#floor)"/><rect y="698" width="1920" height="25" fill="#5b3d2d"/>
+  <g opacity=".78" fill="#624735"><rect x="90" y="155" width="430" height="26" rx="13"/><rect x="1400" y="155" width="430" height="26" rx="13"/></g>
+  <g fill="#faf7f0" stroke="#8a725f" stroke-width="8"><rect x="125" y="205" width="300" height="230" rx="12"/><rect x="1495" y="205" width="300" height="230" rx="12"/></g>
+  <g opacity=".9"><rect x="176" y="253" width="198" height="132" rx="8" fill="#9bb5bf"/><circle cx="275" cy="310" r="44" fill="#f2bf5d"/><rect x="1544" y="254" width="198" height="132" rx="8" fill="#a6bc91"/><path d="M1582 360 Q1643 250 1704 360" fill="#5a875c"/></g>
+  <g opacity=".95" stroke="#251e1a" stroke-width="7" stroke-linejoin="round">
+    <g transform="translate(655 470)"><circle cy="-95" r="72" fill="#d69a6d"/><path d="M-55-142 L-22-196 L0-143 M55-142 L22-196 L0-143" fill="#d69a6d"/><rect x="-88" y="-28" width="176" height="210" rx="68" fill="#76559a"/></g>
+    <g transform="translate(960 430)"><circle cy="-105" r="82" fill="#b87955"/><path d="M-62-159 L-28-218 L2-157 M62-159 L28-218 L-2-157" fill="#b87955"/><rect x="-98" y="-22" width="196" height="235" rx="76" fill="#4d8fc7"/></g>
+    <g transform="translate(1265 490)"><circle cy="-92" r="68" fill="#d7b58c"/><path d="M-52-135 L-22-187 L2-136 M52-135 L22-187 L-2-136" fill="#d7b58c"/><rect x="-84" y="-22" width="168" height="198" rx="64" fill="#69a45d"/></g>
+  </g>
+  <g fill="#fff8e8" opacity=".9"><circle cx="624" cy="365" r="8"/><circle cx="684" cy="365" r="8"/><circle cx="925" cy="316" r="9"/><circle cx="995" cy="316" r="9"/><circle cx="1237" cy="405" r="8"/><circle cx="1293" cy="405" r="8"/></g>
+
+  <rect width="1920" height="1080" fill="#24272d" opacity=".67" mask="url(#outside)"/>
+  <rect x="320" y="120" width="1280" height="720" rx="7" fill="none" stroke="#fff7dc" stroke-opacity=".55" stroke-width="2"/>
+  <g stroke="#fff7dc" stroke-opacity=".18" stroke-width="2" stroke-dasharray="9 13"><line x1="746.667" y1="120" x2="746.667" y2="840"/><line x1="1173.333" y1="120" x2="1173.333" y2="840"/><line x1="320" y1="360" x2="1600" y2="360"/><line x1="320" y1="600" x2="1600" y2="600"/></g>
+  <g fill="none" stroke="#f2bf5d" stroke-width="7" stroke-linecap="round"><path d="M320 205V120H405"/><path d="M1515 120H1600V205"/><path d="M320 755V840H405"/><path d="M1515 840H1600V755"/></g>
+  <g fill="none" stroke="#fffaf2" stroke-width="3" stroke-linecap="round"><circle cx="960" cy="480" r="15" opacity=".78"/><line x1="925" y1="480" x2="995" y2="480"/><line x1="960" y1="445" x2="960" y2="515"/></g>
+  <text x="1850" y="64" text-anchor="end"
+        font-family="Arial, sans-serif" font-size="21" font-weight="700"
+        fill="#fffaf2" opacity=".72">Esc</text>
+</svg>

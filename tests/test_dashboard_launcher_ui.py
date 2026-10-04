@@ -1,5 +1,7 @@
 import os
 import unittest
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -15,6 +17,7 @@ from tanuki_core.dashboard_launcher_binding import (
 from tanuki_core.dashboard_launcher_ui import (
     COLLAPSED_LAUNCHER_WIDTH,
     EXPANDED_LAUNCHER_WIDTH,
+    LAUNCHER_MINIMUM_HEIGHT,
     DashboardLauncherPanel,
 )
 from tanuki_core.information_center_spec import PAGE_STATUS_SETTINGS
@@ -30,6 +33,9 @@ class FakeLauncherBinding:
             time_scale_label="4x",
             care_enabled=True,
             care_label="照護中",
+            manual_camera_available=True,
+            play_day_number=12,
+            play_started_on="2026-09-06",
         )
 
     def snapshot(self):
@@ -40,6 +46,9 @@ class FakeLauncherBinding:
 
     def open_offer_tray(self):
         self.calls.append(("offer_tray",))
+
+    def toggle_manual_camera(self):
+        self.calls.append(("manual_camera",))
 
     def open_status_settings(self):
         self.calls.append(("status_settings",))
@@ -54,6 +63,7 @@ class DashboardLauncherPanelTests(unittest.TestCase):
         cls.app = QApplication.instance() or QApplication([])
 
     def setUp(self):
+        set_ui_locale("zh_TW")
         self.binding = FakeLauncherBinding()
         self.panel = DashboardLauncherPanel(
             self.binding,
@@ -64,6 +74,7 @@ class DashboardLauncherPanelTests(unittest.TestCase):
         self.app.processEvents()
 
     def tearDown(self):
+        set_ui_locale("zh_TW")
         self.panel.close()
         self.panel.deleteLater()
         self.app.processEvents()
@@ -106,11 +117,26 @@ class DashboardLauncherPanelTests(unittest.TestCase):
             self.panel.care_status_button.property("statusState"),
             "enabled",
         )
+        self.assertEqual(self.panel.play_day_label.text(), "第 12 天")
+        self.assertTrue(self.panel.play_day_label.isVisible())
+        self.assertIn("2026-09-06", self.panel.play_day_label.toolTip())
+
+    def test_play_day_slot_hides_until_runtime_exposes_a_valid_day(self):
+        self.binding.value = DashboardLauncherSnapshot(
+            world_mode_key="sandbox",
+            world_mode_label="沙盒",
+            time_scale_label="1x",
+            care_enabled=True,
+            care_label="照護中",
+        )
+        self.panel.refresh_from_binding()
+
+        self.assertFalse(self.panel.play_day_label.isVisible())
 
     def test_primary_and_secondary_actions_delegate_to_binding(self):
         self.panel.information_center_button.click()
         self.panel.offer_tray_button.click()
-        self.panel.settings_button.click()
+        self.panel.manual_camera_button.click()
         self.panel.shutdown_button.click()
 
         self.assertEqual(
@@ -118,7 +144,7 @@ class DashboardLauncherPanelTests(unittest.TestCase):
             [
                 ("information_center",),
                 ("offer_tray",),
-                ("status_settings",),
+                ("manual_camera",),
                 ("shutdown",),
             ],
         )
@@ -150,8 +176,25 @@ class DashboardLauncherPanelTests(unittest.TestCase):
         self.panel.expand_button.click()
 
         self.assertTrue(self.panel.is_expanded)
-        self.assertEqual(self.panel.width(), EXPANDED_LAUNCHER_WIDTH)
+        self.assertEqual(self.panel.width(), self.panel.expanded_width)
         self.assertEqual(states, [False, True])
+
+    def test_translated_sidebar_grows_for_english_and_japanese_labels(self):
+        widths = {}
+        for locale in ("zh_TW", "zh_CN", "ja_JP", "en_US"):
+            set_ui_locale(locale)
+            self.panel.retranslate_ui()
+            self.app.processEvents()
+            widths[locale] = self.panel.expanded_width
+            self.assertGreaterEqual(
+                self.panel.title_label.width(),
+                self.panel.title_label.sizeHint().width(),
+            )
+
+        self.assertGreaterEqual(widths["zh_TW"], EXPANDED_LAUNCHER_WIDTH)
+        self.assertEqual(widths["zh_CN"], widths["zh_TW"])
+        self.assertGreater(widths["ja_JP"], EXPANDED_LAUNCHER_WIDTH)
+        self.assertGreater(widths["en_US"], EXPANDED_LAUNCHER_WIDTH)
 
     def test_pin_control_is_distinct_from_manual_collapse(self):
         states = []
@@ -170,11 +213,133 @@ class DashboardLauncherPanelTests(unittest.TestCase):
             self.panel.collapsed_information_button.accessibleName(),
             "開啟資訊中心",
         )
-        self.assertEqual(
-            self.panel.collapsed_settings_button.toolTip(),
-            "開啟狀態設定",
+        self.assertIn(
+            "Tab",
+            self.panel.collapsed_manual_camera_button.accessibleName(),
         )
+        self.assertFalse(hasattr(self.panel, "collapsed_settings_button"))
         self.assertIn("黃金傳說", self.panel.collapsed_status_dots.toolTip())
+
+    def test_manual_camera_entry_tracks_availability_and_active_state(self):
+        self.binding.value = DashboardLauncherSnapshot(
+            world_mode_key="sandbox",
+            world_mode_label="沙盒",
+            time_scale_label="1x",
+            care_enabled=True,
+            care_label="照護中",
+        )
+        self.panel.refresh_from_binding()
+
+        self.assertFalse(self.panel.manual_camera_button.isEnabled())
+        self.assertFalse(self.panel.collapsed_manual_camera_button.isEnabled())
+
+        self.binding.value = DashboardLauncherSnapshot(
+            world_mode_key="sandbox",
+            world_mode_label="沙盒",
+            time_scale_label="1x",
+            care_enabled=True,
+            care_label="照護中",
+            manual_camera_available=True,
+            manual_camera_active=True,
+        )
+        self.panel.refresh_from_binding()
+
+        self.assertTrue(self.panel.manual_camera_button.isEnabled())
+        self.assertTrue(self.panel.manual_camera_button.property("primary"))
+        self.assertTrue(
+            self.panel.collapsed_manual_camera_button.property("primary")
+        )
+
+    def test_manual_camera_runtime_block_stays_clickable_and_explains_reason(self):
+        self.binding.value = DashboardLauncherSnapshot(
+            world_mode_key="sandbox",
+            world_mode_label="沙盒",
+            time_scale_label="8x",
+            care_enabled=True,
+            care_label="照護中",
+            manual_camera_available=False,
+            manual_camera_reason="speed",
+        )
+
+        self.panel.refresh_from_binding()
+
+        self.assertTrue(self.panel.manual_camera_button.isEnabled())
+        self.assertTrue(self.panel.collapsed_manual_camera_button.isEnabled())
+        self.assertIn("1x", self.panel.manual_camera_button.toolTip())
+        self.assertEqual(
+            self.panel.manual_camera_button.toolTip(),
+            self.panel.collapsed_manual_camera_button.toolTip(),
+        )
+        self.panel.manual_camera_button.click()
+        self.assertEqual(self.binding.calls[-1], ("manual_camera",))
+
+        self.binding.value = DashboardLauncherSnapshot(
+            world_mode_key="sandbox",
+            world_mode_label="沙盒",
+            time_scale_label="1x",
+            care_enabled=True,
+            care_label="照護中",
+            manual_camera_available=False,
+            manual_camera_reason="full",
+        )
+        self.panel.refresh_from_binding()
+
+        self.assertTrue(self.panel.manual_camera_button.isEnabled())
+        self.assertIn("已滿", self.panel.manual_camera_button.toolTip())
+        self.assertEqual(
+            self.panel.manual_camera_button.property("cameraState"),
+            "full",
+        )
+        self.assertEqual(
+            self.panel.collapsed_manual_camera_button.property("cameraState"),
+            "full",
+        )
+
+    def test_manual_camera_entry_fits_both_minimum_height_layouts(self):
+        self.panel.resize(EXPANDED_LAUNCHER_WIDTH, LAUNCHER_MINIMUM_HEIGHT)
+        self.app.processEvents()
+
+        self.assertLess(
+            self.panel.manual_camera_button.geometry().bottom(),
+            self.panel.status_caption.geometry().top(),
+        )
+
+        self.panel.set_expanded(False)
+        self.panel.resize(COLLAPSED_LAUNCHER_WIDTH, LAUNCHER_MINIMUM_HEIGHT)
+        self.app.processEvents()
+
+        self.assertLess(
+            self.panel.collapsed_manual_camera_button.geometry().bottom(),
+            self.panel.collapsed_status_dots.geometry().top(),
+        )
+
+    def test_information_and_offer_actions_only_highlight_while_open(self):
+        self.assertFalse(
+            self.panel.information_center_button.property("primary")
+        )
+        self.assertFalse(self.panel.offer_tray_button.property("primary"))
+
+        self.binding.value = DashboardLauncherSnapshot(
+            world_mode_key="golden_legend",
+            world_mode_label="黃金傳說",
+            time_scale_label="4x",
+            care_enabled=True,
+            care_label="照護中",
+            information_center_open=True,
+            offer_tray_open=True,
+        )
+        self.panel.refresh_from_binding()
+
+        self.assertTrue(
+            self.panel.information_center_button.property("primary")
+        )
+        self.assertTrue(
+            self.panel.collapsed_information_button.property("primary")
+        )
+        self.assertTrue(self.panel.offer_tray_button.property("primary"))
+        self.assertTrue(
+            self.panel.collapsed_offer_button.property("primary")
+        )
 
     def test_dashboard_uses_launcher_as_the_only_visible_shell_surface(self):
         dashboard = Dashboard(
@@ -197,6 +362,8 @@ class DashboardLauncherPanelTests(unittest.TestCase):
                 dashboard.launcher_panel,
             )
             self.assertTrue(dashboard.title_label.isHidden())
+            self.assertFalse(dashboard.update_timer.isActive())
+            self.assertTrue(dashboard.memory_capture_timer.isActive())
 
             dashboard.time_scale_idx = 2
             dashboard.care_feature_enabled = False
@@ -213,6 +380,52 @@ class DashboardLauncherPanelTests(unittest.TestCase):
             )
         finally:
             dashboard.update_timer.stop()
+            dashboard.memory_capture_timer.stop()
+            dashboard.close()
+            dashboard.deleteLater()
+            self.app.processEvents()
+
+    def test_launcher_buttons_toggle_windows_and_refresh_highlights(self):
+        dashboard = Dashboard(
+            QRect(0, 0, 1280, 720),
+            {},
+            AssetManager.get_resource_path,
+        )
+        try:
+            dashboard.show()
+            dashboard.launcher_panel.information_center_button.click()
+            dashboard.launcher_panel.offer_tray_button.click()
+            self.app.processEvents()
+
+            self.assertTrue(
+                dashboard.launcher_panel.information_center_button.property(
+                    "primary"
+                )
+            )
+            self.assertTrue(
+                dashboard.launcher_panel.offer_tray_button.property("primary")
+            )
+
+            dashboard.launcher_panel.information_center_button.click()
+            dashboard.launcher_panel.offer_tray_button.click()
+            self.app.processEvents()
+
+            self.assertFalse(dashboard.information_center_window.isVisible())
+            self.assertFalse(dashboard.offer_tray_window.isVisible())
+            self.assertFalse(
+                dashboard.launcher_panel.information_center_button.property(
+                    "primary"
+                )
+            )
+            self.assertFalse(
+                dashboard.launcher_panel.offer_tray_button.property("primary")
+            )
+        finally:
+            dashboard.update_timer.stop()
+            if dashboard.information_center_window is not None:
+                dashboard.information_center_window.close()
+            if dashboard.offer_tray_window is not None:
+                dashboard.offer_tray_window.close()
             dashboard.close()
             dashboard.deleteLater()
             self.app.processEvents()
@@ -272,6 +485,27 @@ class DashboardLauncherPanelTests(unittest.TestCase):
             dashboard.deleteLater()
             self.app.processEvents()
 
+    def test_launcher_without_edge_sensor_keeps_collapsed_rail_visible(self):
+        dashboard = Dashboard(
+            QRect(0, 0, 1280, 720),
+            {},
+            AssetManager.get_resource_path,
+        )
+        dashboard.anim.setDuration(0)
+        try:
+            dashboard.launcher_panel.set_expanded(False)
+            self.app.processEvents()
+
+            self.assertFalse(dashboard.is_expanded)
+            self.assertEqual(dashboard.width(), COLLAPSED_LAUNCHER_WIDTH)
+            self.assertEqual(dashboard.pos(), dashboard.show_pos)
+            self.assertTrue(dashboard.isVisible())
+        finally:
+            dashboard.update_timer.stop()
+            dashboard.close()
+            dashboard.deleteLater()
+            self.app.processEvents()
+
     def test_language_switch_after_lazy_settings_load_does_not_crash(self):
         dashboard = Dashboard(
             QRect(0, 0, 1280, 720),
@@ -291,12 +525,28 @@ class DashboardLauncherPanelTests(unittest.TestCase):
 
             self.assertEqual(dashboard.ui_locale, "ja_JP")
             self.assertEqual(
+                dashboard.width(),
+                dashboard.launcher_panel.expanded_width,
+            )
+            self.assertGreater(
+                dashboard.width(),
+                EXPANDED_LAUNCHER_WIDTH,
+            )
+            self.assertEqual(
                 dashboard.information_center_window.windowTitle(),
                 "たぬき情報センター — 状態設定",
             )
             self.assertEqual(
                 dashboard.launcher_panel.title_label.text(),
                 "たぬきコントロールセンター",
+            )
+            self.assertIn(
+                "手動カメラ",
+                dashboard.launcher_panel.manual_camera_button.toolTip(),
+            )
+            self.assertEqual(
+                dashboard.launcher_panel.expand_button.toolTip(),
+                "サイドバーを展開",
             )
         finally:
             set_ui_locale("zh_TW")
@@ -320,6 +570,10 @@ class DashboardLauncherBindingTests(unittest.TestCase):
                 self.world_mode = "sandbox"
                 self.care_feature_enabled = False
                 self.calls = []
+                self.information_center_window = None
+                self.offer_tray_window = None
+                self.manual_camera_active = True
+                self.launcher_play_day_number = 8
 
             def get_time_scale(self):
                 return 2.0
@@ -330,6 +584,10 @@ class DashboardLauncherBindingTests(unittest.TestCase):
             def open_offer_tray(self):
                 self.calls.append(("offer_tray",))
 
+            def toggle_manual_camera(self):
+                self.calls.append(("manual_camera",))
+                return True
+
             def begin_shutdown(self):
                 self.calls.append(("shutdown",))
 
@@ -339,21 +597,174 @@ class DashboardLauncherBindingTests(unittest.TestCase):
         snapshot = binding.snapshot()
         binding.open_information_center()
         binding.open_offer_tray()
+        binding.toggle_manual_camera()
         binding.open_status_settings()
         binding.begin_shutdown()
 
         self.assertEqual(snapshot.world_mode_label, "沙盒")
         self.assertEqual(snapshot.time_scale_label, "2x")
         self.assertEqual(snapshot.care_label, "照護關閉")
+        self.assertFalse(snapshot.information_center_open)
+        self.assertFalse(snapshot.offer_tray_open)
+        self.assertTrue(snapshot.manual_camera_available)
+        self.assertTrue(snapshot.manual_camera_active)
+        self.assertEqual(snapshot.play_day_number, 8)
+
+        dashboard.information_center_window = SimpleNamespace(
+            isVisible=lambda: True,
+            close=Mock(),
+        )
+        dashboard.offer_tray_window = SimpleNamespace(
+            isVisible=lambda: True,
+            close=Mock(),
+        )
+        visible_snapshot = binding.snapshot()
+        self.assertTrue(visible_snapshot.information_center_open)
+        self.assertTrue(visible_snapshot.offer_tray_open)
+
+        binding.open_information_center()
+        binding.open_offer_tray()
+
+        dashboard.information_center_window.close.assert_called_once_with()
+        dashboard.offer_tray_window.close.assert_called_once_with()
         self.assertEqual(
             dashboard.calls,
             [
                 ("information_center", None),
                 ("offer_tray",),
+                ("manual_camera",),
                 ("information_center", "status_settings"),
                 ("shutdown",),
             ],
         )
+
+
+class DashboardAchievementResetTests(unittest.TestCase):
+    def test_unlock_saves_memory_in_the_same_one_x_callback(self):
+        toast = SimpleNamespace(show_notification=Mock(return_value=True))
+        dashboard = SimpleNamespace(
+            get_achievement_cabinet_snapshot=lambda: object(),
+            information_center_window=None,
+            achievement_unlock_toast=toast,
+            achievement_capture_enabled=True,
+            resource_resolver=Mock(),
+            target_rect=QRect(0, 0, 1280, 720),
+            world_mode="sandbox",
+            capture_achievement_memories=Mock(return_value=("capture.png",)),
+        )
+
+        with patch(
+            "tanuki_core.dashboard_ui.build_achievement_unlock_notification",
+            return_value=object(),
+        ):
+            shown = Dashboard.handle_achievement_unlocks(
+                dashboard,
+                ("race.first_natural_finish",),
+            )
+
+        self.assertTrue(shown)
+        dashboard.capture_achievement_memories.assert_called_once_with(
+            ("race.first_natural_finish",),
+            "sandbox",
+            capture_context=None,
+        )
+
+    def test_achievement_memory_capture_is_blocked_outside_one_x(self):
+        dashboard = SimpleNamespace(
+            get_time_scale=lambda: 8.0,
+            pets_dict={},
+            achievement_memory_capture=SimpleNamespace(capture=Mock()),
+            information_center_window=None,
+        )
+
+        saved = Dashboard.capture_achievement_memories(
+            dashboard,
+            ("race.first_natural_finish",),
+            "sandbox",
+        )
+
+        self.assertEqual(saved, ())
+        dashboard.achievement_memory_capture.capture.assert_not_called()
+
+    def test_capture_context_crops_to_triggering_character(self):
+        sirius = SimpleNamespace(name="Sirius Symboli")
+        tsuyoshi = SimpleNamespace(name="Tsurumaru Tsuyoshi")
+        context = SimpleNamespace(event_name="activity.sleep.completed")
+        capture_service = SimpleNamespace(
+            capture_target_names=Mock(return_value={"Sirius Symboli"}),
+            capture=Mock(return_value=("capture.png",)),
+        )
+        dashboard = SimpleNamespace(
+            get_time_scale=lambda: 1.0,
+            pets_dict={
+                "sirius": {"pet": sirius},
+                "tsuyoshi": {"pet": tsuyoshi},
+            },
+            achievement_memory_capture=capture_service,
+            information_center_window=None,
+        )
+        image = object()
+
+        with patch(
+            "tanuki_core.dashboard_ui.capture_pet_scene_image",
+            return_value=image,
+        ) as capture_scene:
+            saved = Dashboard.capture_achievement_memories(
+                dashboard,
+                ("sleep.first_natural_finish",),
+                "sandbox",
+                capture_context=context,
+            )
+
+        self.assertEqual(saved, ("capture.png",))
+        capture_scene.assert_called_once_with((sirius,))
+        capture_service.capture.assert_called_once_with(
+            ("sleep.first_natural_finish",),
+            world_mode="sandbox",
+            fallback_image=image,
+            capture_context=context,
+        )
+
+    def test_successful_reset_also_clears_the_matching_capture(self):
+        dashboard = SimpleNamespace(
+            achievement_reset_provider=Mock(return_value=True),
+            achievement_memory_capture=SimpleNamespace(
+                clear_capture=Mock(return_value=True),
+            ),
+            refresh_household_summary_if_open=Mock(),
+        )
+
+        reset = Dashboard.reset_achievement(
+            dashboard,
+            "sandbox",
+            "race.first_natural_finish",
+        )
+
+        self.assertTrue(reset)
+        dashboard.achievement_memory_capture.clear_capture.assert_called_once_with(
+            "sandbox",
+            "race.first_natural_finish",
+        )
+        dashboard.refresh_household_summary_if_open.assert_called_once_with()
+
+    def test_failed_reset_preserves_the_capture(self):
+        dashboard = SimpleNamespace(
+            achievement_reset_provider=Mock(return_value=False),
+            achievement_memory_capture=SimpleNamespace(
+                clear_capture=Mock(),
+            ),
+            refresh_household_summary_if_open=Mock(),
+        )
+
+        reset = Dashboard.reset_achievement(
+            dashboard,
+            "sandbox",
+            "unknown",
+        )
+
+        self.assertFalse(reset)
+        dashboard.achievement_memory_capture.clear_capture.assert_not_called()
+        dashboard.refresh_household_summary_if_open.assert_not_called()
 
 
 if __name__ == "__main__":

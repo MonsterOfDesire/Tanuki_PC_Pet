@@ -21,6 +21,9 @@ from tanuki_core.information_center_state import (
 
 
 class DashboardStateMapperTests(unittest.TestCase):
+    def test_runtime_settings_default_to_sandbox(self):
+        self.assertEqual(RuntimeSettings().world_mode, "sandbox")
+
     def test_safe_index_clamps_and_falls_back(self):
         self.assertEqual(safe_index("2", 0, 5), 2)
         self.assertEqual(safe_index("99", 1, 5), 4)
@@ -78,10 +81,14 @@ class DashboardStateMapperTests(unittest.TestCase):
             display_scale_idx=3,
             debug_enabled=True,
             social_status_enabled=True,
+            play_calendar_started_on="2026-09-10",
             race_frequency="frequent",
             chorus_frequency="occasional",
+            autonomous_sleep_enabled=False,
+            autonomous_transformation_enabled=False,
             mood_climate="expressive",
             ui_locale="ja_JP",
+            achievement_capture_enabled=True,
         )
 
         apply_dashboard_config_to_settings(settings, state)
@@ -96,8 +103,12 @@ class DashboardStateMapperTests(unittest.TestCase):
         self.assertTrue(settings.social_status_enabled)
         self.assertEqual(settings.race_frequency, "frequent")
         self.assertEqual(settings.chorus_frequency, "occasional")
+        self.assertFalse(settings.autonomous_sleep_enabled)
+        self.assertFalse(settings.autonomous_transformation_enabled)
         self.assertEqual(settings.mood_climate, "expressive")
         self.assertEqual(settings.ui_locale, "ja_JP")
+        self.assertTrue(settings.achievement_capture_enabled)
+        self.assertEqual(settings.play_calendar_started_on, "2026-09-10")
 
     def test_dashboard_payload_round_trip_uses_expected_shape(self):
         state = build_dashboard_config_state(
@@ -109,6 +120,7 @@ class DashboardStateMapperTests(unittest.TestCase):
             display_scale_idx=0,
             debug_enabled=False,
             social_status_enabled=True,
+            play_calendar_started_on="2026-09-10",
             information_center=build_information_center_config_state(
                 x=120,
                 y=80,
@@ -134,8 +146,15 @@ class DashboardStateMapperTests(unittest.TestCase):
                 "social_status_enabled": True,
                 "race_frequency": "normal",
                 "chorus_frequency": "normal",
+                "autonomous_sleep_enabled": True,
+                "autonomous_transformation_enabled": True,
                 "mood_climate": "cheerful",
                 "ui_locale": "zh_TW",
+                "ui_text_size": "medium",
+                "achievement_capture_enabled": False,
+                "memory_album_mode": "off",
+                "memory_album_capacity": 20,
+                "play_calendar_started_on": "2026-09-10",
                 "information_center": {
                     "x": 120,
                     "y": 80,

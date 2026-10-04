@@ -22,6 +22,10 @@ class QObject:
     pass
 
 
+class QEvent:
+    Type = types.SimpleNamespace(Show=1, WinIdChange=2)
+
+
 class QTimer:
     def __init__(self, *args, **kwargs):
         pass
@@ -82,6 +86,27 @@ class QPixmap:
         pass
 
 
+class QBitmap:
+    @staticmethod
+    def fromImage(image):
+        return image
+
+
+class QRegion:
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __ior__(self, other):
+        _ = other
+        return self
+
+
+class QGuiApplication:
+    @staticmethod
+    def instance():
+        return None
+
+
 class QWidget:
     pass
 
@@ -102,6 +127,8 @@ class QApplication:
 
 if not hasattr(qtcore_module, "QObject"):
     qtcore_module.QObject = QObject
+if not hasattr(qtcore_module, "QEvent"):
+    qtcore_module.QEvent = QEvent
 if not hasattr(qtcore_module, "QTimer"):
     qtcore_module.QTimer = QTimer
 if not hasattr(qtcore_module, "QVariantAnimation"):
@@ -114,6 +141,12 @@ if not hasattr(qtgui_module, "QPainter"):
     qtgui_module.QPainter = QPainter
 if not hasattr(qtgui_module, "QPixmap"):
     qtgui_module.QPixmap = QPixmap
+if not hasattr(qtgui_module, "QBitmap"):
+    qtgui_module.QBitmap = QBitmap
+if not hasattr(qtgui_module, "QRegion"):
+    qtgui_module.QRegion = QRegion
+if not hasattr(qtgui_module, "QGuiApplication"):
+    qtgui_module.QGuiApplication = QGuiApplication
 if not hasattr(qtwidgets_module, "QApplication"):
     qtwidgets_module.QApplication = QApplication
 if not hasattr(qtwidgets_module, "QWidget"):
@@ -132,6 +165,7 @@ from tanuki_core.geometry import DesktopGeometry
 from tanuki_core.pet_basics import PetBasicsMixin
 from tanuki_core.pet_widget import Qt, TanukiPet
 from tanuki_core.pet_logic import MoodUpdate
+from tanuki_core.platform_capabilities import get_platform_capabilities
 
 
 class FakeStarTimer:
@@ -180,6 +214,7 @@ class FakePoint:
 class FakeMouseEvent:
     def __init__(self, x=100, y=120):
         self._point = FakePoint(x, y)
+        self.ignored = False
 
     def button(self):
         return Qt.MouseButton.LeftButton
@@ -187,18 +222,39 @@ class FakeMouseEvent:
     def globalPosition(self):
         return types.SimpleNamespace(toPoint=lambda: self._point)
 
+    def ignore(self):
+        self.ignored = True
+
 
 class FakePetForPointerInteraction:
     DRAG_HOLD_THRESHOLD_MS = TanukiPet.DRAG_HOLD_THRESHOLD_MS
     DRAG_HOLD_THRESHOLD_SECONDS = TanukiPet.DRAG_HOLD_THRESHOLD_SECONDS
 
-    def __init__(self, activity_locked=False):
+    def __init__(
+        self,
+        activity_locked=False,
+        platform="win32",
+        pointer_hit=True,
+    ):
+        self.platform_capabilities = get_platform_capabilities(platform)
+        self.pointer_hit = bool(pointer_hit)
+        self.pointer_hit_calls = []
         self.transformation_state = types.SimpleNamespace(active=False)
         self.dragging = False
         self.drag_press_pending = False
         self.drag_start_time = 0.0
+        self.drag_motion_samples = ()
         self.drag_pos = FakePoint()
         self.drag_hold_timer = FakeControlledTimer()
+        self.drag_follow_timer = FakeControlledTimer()
+        self.drag_target_x = 10.0
+        self.drag_target_y = 20.0
+        self.drag_follow_x = 10.0
+        self.drag_follow_y = 20.0
+        self.drag_follow_velocity_x = 0.0
+        self.drag_follow_velocity_y = 0.0
+        self.drag_follow_last_at = 0.0
+        self.drag_follow_active = False
         self.click_reset_timer = FakeControlledTimer()
         self.lock_timer = FakeControlledTimer()
         self.click_count = 0
@@ -207,6 +263,9 @@ class FakePetForPointerInteraction:
         self.flight_mode = "none"
         self.perched_window_hwnd = 0
         self.vy = 3.0
+        self.throw_active = False
+        self.throw_velocity_x = 0.0
+        self.throw_remainder_x = 0.0
         self.fall_origin_y = 10
         self.mood_score = 60.0
         self.state = "move"
@@ -226,6 +285,10 @@ class FakePetForPointerInteraction:
 
     def pos(self):
         return FakePoint(10, 20)
+
+    def pointer_hits_visible_character(self, local_point):
+        self.pointer_hit_calls.append((local_point.x(), local_point.y()))
+        return self.pointer_hit
 
     def is_activity_locked(self):
         return self._activity_locked
@@ -249,6 +312,15 @@ class FakePetForPointerInteraction:
 
     def _begin_drag_after_hold(self):
         return TanukiPet._begin_drag_after_hold(self)
+
+    def _start_drag_follow(self):
+        return TanukiPet._start_drag_follow(self)
+
+    def _stop_drag_follow(self, *, reset_velocity=True):
+        return TanukiPet._stop_drag_follow(
+            self,
+            reset_velocity=reset_velocity,
+        )
 
     def _apply_short_click_interaction(self):
         return TanukiPet._apply_short_click_interaction(self)
@@ -561,6 +633,7 @@ class FakePetForSideReadyFollowup:
         self.current_mood_tag = "smile"
         self.current_frames = ["ready"]
         self.idle_side_stand_armed = True
+        self.side_ready_followup_lock_until = 0.0
         self.pending_ambient_animation_event = ()
         self.ambient_animation_event_serial = 0
         self.ambient_animation_confirmation_scheduled_serial = 0
@@ -575,6 +648,10 @@ class FakePetForSideReadyFollowup:
 
     def x(self):
         return 10
+
+    def try_start_window_flight(self, now):
+        _ = now
+        return False
 
     def get_base_speed(self):
         return 2.0
@@ -767,6 +844,35 @@ class FakePetForMoodAnimationGuard:
 
 
 class PetWidgetRuntimeTests(unittest.TestCase):
+    def test_macos_transparent_pixel_does_not_start_click_or_drag(self):
+        pet = FakePetForPointerInteraction(
+            platform="darwin",
+            pointer_hit=False,
+        )
+        event = FakeMouseEvent(100, 120)
+
+        with patch("tanuki_core.pet_widget.time.time", return_value=100.0):
+            TanukiPet.mousePressEvent(pet, event)
+
+        self.assertTrue(event.ignored)
+        self.assertFalse(pet.drag_press_pending)
+        self.assertEqual(pet.drag_hold_timer.started_with, [])
+        self.assertEqual(pet.pointer_hit_calls, [(90, 100)])
+
+    def test_windows_keeps_existing_rectangular_pointer_behavior(self):
+        pet = FakePetForPointerInteraction(
+            platform="win32",
+            pointer_hit=False,
+        )
+        event = FakeMouseEvent(100, 120)
+
+        with patch("tanuki_core.pet_widget.time.time", return_value=100.0):
+            TanukiPet.mousePressEvent(pet, event)
+
+        self.assertFalse(event.ignored)
+        self.assertTrue(pet.drag_press_pending)
+        self.assertEqual(pet.pointer_hit_calls, [])
+
     def test_click_reaction_uses_strict_random_context(self):
         pet = FakePetForClickReaction()
 
@@ -850,6 +956,8 @@ class PetWidgetRuntimeTests(unittest.TestCase):
         self.assertTrue(pet.dragging)
         self.assertEqual(pet.drag_animation_calls, 1)
         self.assertEqual(pet.heart_calls, 0)
+        self.assertTrue(pet.drag_follow_active)
+        self.assertEqual(pet.drag_follow_timer.started_with, [16])
 
     def test_regular_drag_release_restores_strict_random_idle(self):
         pet = FakePetForPointerInteraction()
@@ -865,6 +973,54 @@ class PetWidgetRuntimeTests(unittest.TestCase):
         self.assertEqual(pet.context_state_calls, [("idle", "random")])
         self.assertEqual(pet.changed_states, [])
         self.assertEqual(pet.random_idle_calls, 0)
+
+    def test_fast_drag_release_starts_inertial_throw_before_window_snap(self):
+        pet = FakePetForPointerInteraction()
+        pet.dragging = True
+        pet.drag_start_time = 500.0
+        pet.drag_motion_samples = (
+            (1.00, 100.0, 200.0),
+            (1.04, 180.0, 160.0),
+        )
+        event = FakeMouseEvent(280, 100)
+
+        with patch(
+            "tanuki_core.pet_widget.time.time",
+            return_value=500.08,
+        ), patch(
+            "tanuki_core.pet_widget.time.perf_counter",
+            return_value=1.08,
+        ):
+            TanukiPet.mouseReleaseEvent(pet, event)
+
+        self.assertFalse(pet.dragging)
+        self.assertTrue(pet.throw_active)
+        self.assertGreater(pet.throw_velocity_x, 0.0)
+        self.assertLess(pet.vy, 0.0)
+        self.assertEqual(pet.context_state_calls, [])
+
+    def test_recent_flick_survives_brief_stationary_release_event(self):
+        pet = FakePetForPointerInteraction()
+        pet.dragging = True
+        pet.drag_start_time = 500.0
+        pet.drag_motion_samples = (
+            (1.00, 100.0, 200.0),
+            (1.08, 240.0, 140.0),
+        )
+        event = FakeMouseEvent(240, 140)
+
+        with patch(
+            "tanuki_core.pet_widget.time.time",
+            return_value=500.16,
+        ), patch(
+            "tanuki_core.pet_widget.time.perf_counter",
+            return_value=1.16,
+        ):
+            TanukiPet.mouseReleaseEvent(pet, event)
+
+        self.assertTrue(pet.throw_active)
+        self.assertGreater(pet.throw_velocity_x, 0.0)
+        self.assertLess(pet.vy, 0.0)
 
     def test_sub_three_pixel_motion_starts_drag_after_time_threshold(self):
         pet = FakePetForPointerInteraction()
@@ -885,7 +1041,53 @@ class PetWidgetRuntimeTests(unittest.TestCase):
 
         self.assertTrue(pet.dragging)
         self.assertEqual(pet.drag_animation_calls, 1)
-        self.assertEqual(pet.moved_to, (14, 20))
+        self.assertEqual((pet.drag_target_x, pet.drag_target_y), (14.0, 20.0))
+        self.assertIsNone(pet.moved_to)
+
+    def test_drag_follow_timer_moves_partway_toward_cursor_target(self):
+        pet = FakePetForPointerInteraction()
+        pet.dragging = True
+        pet.drag_follow_active = True
+        pet.drag_follow_last_at = 1.0
+        pet.drag_target_x = 110.0
+        pet.drag_target_y = 20.0
+
+        with patch.object(
+            DesktopGeometry,
+            "clamp_drag_position",
+            side_effect=lambda _pet, x, y: (x, y),
+        ):
+            moved = TanukiPet._advance_drag_follow(pet, now=1.016)
+
+        self.assertTrue(moved)
+        self.assertGreater(pet.moved_to[0], 10)
+        self.assertLess(pet.moved_to[0], 110)
+        self.assertGreater(pet.drag_follow_velocity_x, 0.0)
+
+    def test_release_uses_velocity_accumulated_while_dragging(self):
+        pet = FakePetForPointerInteraction()
+        pet.dragging = True
+        pet.drag_start_time = 500.0
+        pet.drag_follow_active = True
+        pet.drag_follow_velocity_x = 800.0
+        pet.drag_follow_velocity_y = -400.0
+        pet.drag_target_screen_rect = object()
+        event = FakeMouseEvent(200, 100)
+
+        with patch(
+            "tanuki_core.pet_widget.time.time",
+            return_value=500.5,
+        ), patch(
+            "tanuki_core.pet_widget.time.perf_counter",
+            return_value=1.5,
+        ):
+            TanukiPet.mouseReleaseEvent(pet, event)
+
+        self.assertTrue(pet.throw_active)
+        self.assertGreater(pet.throw_velocity_x, 0.0)
+        self.assertLess(pet.vy, 0.0)
+        self.assertFalse(pet.drag_follow_active)
+        self.assertIsNone(pet.drag_target_screen_rect)
 
     def test_hold_threshold_starts_drag_and_uses_drag_interrupt(self):
         pet = FakePetForPointerInteraction(activity_locked=True)
@@ -1178,7 +1380,7 @@ class PetWidgetRuntimeTests(unittest.TestCase):
         self.assertEqual(pet.stationary_configured, [("random", True, "manifest_walk")])
         self.assertEqual(pet.moved, 1)
 
-    def test_side_ready_next_idle_uses_followup_context_on_ten_percent_roll(self):
+    def test_side_ready_next_idle_uses_followup_context_on_fifty_percent_roll(self):
         pet = FakePetForSideReadyFollowup()
 
         with patch("tanuki_core.pet_widget.random.random", return_value=0.05):
@@ -1222,16 +1424,24 @@ class PetWidgetRuntimeTests(unittest.TestCase):
         pet.current_mood_tag = "happy"
         pet.current_frames = ["stand"]
 
-        queued = TanukiPet.queue_ambient_animation_event_confirmation(
-            pet,
-            "side_ready_followup",
-        )
+        with patch("tanuki_core.pet_widget.app_now", return_value=100.0):
+            queued = TanukiPet.queue_ambient_animation_event_confirmation(
+                pet,
+                "side_ready_followup",
+            )
 
         self.assertTrue(queued)
         self.assertEqual(pet.state, "idle")
-        self.assertGreaterEqual(pet.state_timer, 60)
+        self.assertEqual(pet.state_timer, 1)
+        self.assertEqual(pet.side_ready_followup_lock_until, 105.5)
+        self.assertTrue(
+            TanukiPet.is_side_ready_followup_locked(pet, now=105.4)
+        )
+        self.assertFalse(
+            TanukiPet.is_side_ready_followup_locked(pet, now=105.5)
+        )
 
-    def test_side_ready_next_idle_returns_to_random_on_ninety_percent_roll(self):
+    def test_side_ready_next_idle_returns_to_random_on_failed_fifty_percent_roll(self):
         pet = FakePetForSideReadyFollowup()
 
         with patch("tanuki_core.pet_widget.random.random", return_value=0.50):
@@ -1239,6 +1449,17 @@ class PetWidgetRuntimeTests(unittest.TestCase):
 
         self.assertEqual(pet.changed_contexts, ["random"])
         self.assertEqual(pet.ambient_events, [])
+
+    def test_expired_side_ready_forces_idle_before_fifty_percent_roll(self):
+        pet = FakePetForSideReadyFollowup()
+        pet.state = "move"
+        pet.state_timer = 1
+
+        with patch("tanuki_core.pet_widget.random.random", return_value=0.25):
+            TanukiPet.update_random_behavior(pet)
+
+        self.assertEqual(pet.state, "idle")
+        self.assertEqual(pet.changed_contexts, ["side_ready_followup"])
 
     def test_stale_side_ready_arm_does_not_roll_followup_after_another_visual(self):
         pet = FakePetForSideReadyFollowup()

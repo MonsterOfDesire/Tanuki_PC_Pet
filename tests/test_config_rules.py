@@ -64,8 +64,17 @@ class ConfigRuleTests(unittest.TestCase):
         )
         self.assertEqual(normalized["dashboard"]["race_frequency"], "normal")
         self.assertEqual(normalized["dashboard"]["chorus_frequency"], "normal")
+        self.assertTrue(
+            normalized["dashboard"]["autonomous_sleep_enabled"]
+        )
+        self.assertTrue(
+            normalized["dashboard"]["autonomous_transformation_enabled"]
+        )
         self.assertEqual(normalized["dashboard"]["mood_climate"], "cheerful")
         self.assertEqual(normalized["dashboard"]["ui_locale"], "zh_TW")
+        self.assertEqual(normalized["dashboard"]["memory_album_mode"], "off")
+        self.assertEqual(normalized["dashboard"]["memory_album_capacity"], 20)
+        self.assertEqual(normalized["dashboard"]["play_calendar_started_on"], "")
         self.assertEqual(normalized["pets"]["Tokai Teio"]["x"], 10)
         self.assertEqual(normalized["household"], {})
         self.assertTrue(any("config schema 1 已升級" in warning for warning in warnings))
@@ -102,7 +111,7 @@ class ConfigRuleTests(unittest.TestCase):
 
         self.assertEqual(original_version, 1)
         self.assertIn("dashboard", migrated)
-        self.assertEqual(migrated["dashboard"]["world_mode"], "golden_legend")
+        self.assertEqual(migrated["dashboard"]["world_mode"], "sandbox")
         self.assertFalse(migrated["dashboard"]["care_feature_enabled"])
         self.assertEqual(migrated["dashboard"]["time_scale_idx"], 2)
         self.assertEqual(migrated["household"], {})
@@ -236,6 +245,51 @@ class ConfigRuleTests(unittest.TestCase):
         self.assertEqual(normalized["dashboard"]["chorus_frequency"], "normal")
         self.assertEqual(normalized["dashboard"]["mood_climate"], "cheerful")
 
+    def test_disabled_activity_frequencies_are_preserved_but_mood_has_no_disabled_option(self):
+        normalized, _warnings = normalize_config_state(
+            {
+                "schema_version": CONFIG_SCHEMA_VERSION,
+                "dashboard": {
+                    "race_frequency": "disabled",
+                    "chorus_frequency": "disabled",
+                    "mood_climate": "disabled",
+                },
+            }
+        )
+
+        self.assertEqual(normalized["dashboard"]["race_frequency"], "disabled")
+        self.assertEqual(normalized["dashboard"]["chorus_frequency"], "disabled")
+        self.assertEqual(normalized["dashboard"]["mood_climate"], "cheerful")
+
+    def test_schema_eleven_config_enables_new_autonomous_features_by_default(self):
+        normalized, warnings = normalize_config_state(
+            {
+                "schema_version": 11,
+                "dashboard": {"world_mode": "sandbox"},
+            }
+        )
+
+        self.assertTrue(normalized["dashboard"]["autonomous_sleep_enabled"])
+        self.assertTrue(
+            normalized["dashboard"]["autonomous_transformation_enabled"]
+        )
+        self.assertTrue(
+            any("config schema 11 已升級" in warning for warning in warnings)
+        )
+
+    def test_memory_album_options_are_normalized_without_deleting_state(self):
+        normalized, _warnings = normalize_config_state(
+            {
+                "schema_version": CONFIG_SCHEMA_VERSION,
+                "dashboard": {
+                    "memory_album_mode": "random",
+                    "memory_album_capacity": 100,
+                },
+            }
+        )
+        self.assertEqual(normalized["dashboard"]["memory_album_mode"], "random")
+        self.assertEqual(normalized["dashboard"]["memory_album_capacity"], 100)
+
     def test_schema_six_config_receives_chorus_frequency_default(self):
         normalized, warnings = normalize_config_state(
             {
@@ -262,6 +316,21 @@ class ConfigRuleTests(unittest.TestCase):
             any("config schema 7 已升級" in warning for warning in warnings)
         )
 
+    def test_schema_eight_config_disables_achievement_capture_by_default(self):
+        normalized, warnings = normalize_config_state(
+            {
+                "schema_version": 8,
+                "dashboard": {"world_mode": "sandbox"},
+            }
+        )
+
+        self.assertFalse(
+            normalized["dashboard"]["achievement_capture_enabled"]
+        )
+        self.assertTrue(
+            any("config schema 8 已升級" in warning for warning in warnings)
+        )
+
     def test_invalid_locale_falls_back_to_traditional_chinese(self):
         normalized, _warnings = normalize_config_state(
             {
@@ -273,6 +342,33 @@ class ConfigRuleTests(unittest.TestCase):
         )
 
         self.assertEqual(normalized["dashboard"]["ui_locale"], "zh_TW")
+
+    def test_missing_or_invalid_world_mode_defaults_to_sandbox(self):
+        missing, _warnings = normalize_config_state(
+            {"schema_version": CONFIG_SCHEMA_VERSION, "dashboard": {}}
+        )
+        invalid, _warnings = normalize_config_state(
+            {
+                "schema_version": CONFIG_SCHEMA_VERSION,
+                "dashboard": {"world_mode": "unknown"},
+            }
+        )
+
+        self.assertEqual(missing["dashboard"]["world_mode"], "sandbox")
+        self.assertEqual(invalid["dashboard"]["world_mode"], "sandbox")
+
+    def test_explicit_existing_golden_legend_mode_is_preserved(self):
+        normalized, _warnings = normalize_config_state(
+            {
+                "schema_version": CONFIG_SCHEMA_VERSION,
+                "dashboard": {"world_mode": "golden_legend"},
+            }
+        )
+
+        self.assertEqual(
+            normalized["dashboard"]["world_mode"],
+            "golden_legend",
+        )
 
     def test_simplified_chinese_locale_is_preserved(self):
         normalized, _warnings = normalize_config_state(

@@ -5,6 +5,7 @@ from .activity_event_contract import (
     ACTIVITY_EVENT_CHORUS_INTERRUPTED,
     build_activity_event_metadata,
 )
+from .bounded_key_set import BoundedKeySet
 from .chorus_state import ChorusEvent
 from .chorus_settlement import build_chorus_settlement_plan
 
@@ -20,7 +21,7 @@ CHORUS_EVENT_DISPLAY_NAMES = {
 
 class ChorusEventAdapter:
     def __init__(self):
-        self._processed_event_keys: set[str] = set()
+        self._processed_event_keys = BoundedKeySet(max_entries=4096)
 
     def apply(
         self,

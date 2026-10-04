@@ -1,5 +1,4 @@
 import math
-import os
 import random
 import time
 
@@ -15,6 +14,14 @@ from .pet_ambient_expression_rules import (
 )
 from .pet_basics import PetBasicsMixin
 from .pet_behavior_layers import PetBehaviorLayersMixin
+from .pet_ai_decision import (
+    AI_STAGE_AMBIENT_MOOD,
+    AI_STAGE_CARE,
+    AI_STAGE_OBSERVE,
+    AI_STAGE_POST_OBSERVE,
+    AI_STAGE_SOCIAL,
+    build_pet_ai_stage_plan,
+)
 from .pet_collision_rules import CollisionSnapshot, compute_collision_resolution
 from .pet_logic import (
     LONG_HOLD_RELEASE,
@@ -30,16 +37,26 @@ from .pet_random_rules import (
     RANDOM_CONTEXT,
     SEVERE_RANDOM_DIRECTION_FLIP_CHANCE,
     SIDE_READY_FOLLOWUP_CONTEXT,
-    SIDE_READY_FOLLOWUP_MIN_HOLD_STEPS,
+    SIDE_READY_FOLLOWUP_HOLD_SECONDS,
     build_random_state_transition,
     choose_idle_animation_context,
     derive_random_visual_purpose,
     extend_random_state_timer,
     get_idle_action_override,
     is_side_ready_followup_eligible,
+    is_side_ready_followup_lock_active,
     is_visible_side_ready_followup,
     resolve_random_stuck_behavior,
+    should_force_side_ready_idle_resolution,
     should_refresh_severe_random_state,
+)
+from .pet_throw_rules import (
+    DRAG_FOLLOW_TIMER_MS,
+    advance_drag_follow,
+    advance_horizontal_throw,
+    THROW_ACTIVE_GRAVITY_SCALE,
+    append_drag_motion_sample,
+    resolve_throw_launch,
 )
 from .pet_overlay_renderer import PetOverlayRenderer
 from .pet_runtime_state import PET_STATE_PROXY_FIELDS, build_pet_runtime_state
@@ -52,6 +69,15 @@ from .pet_intent_rules import (
     pet_has_sleep_join_intent,
 )
 from .pet_windowing import PetWindowingMixin
+from .overlay_window import (
+    WINDOW_ROLE_PET,
+    apply_platform_tool_window_attributes,
+    build_overlay_window_flags,
+)
+from .pet_pointer_hit_test import visible_frame_pixel_hit
+from .pet_input_region import PetInputRegionController
+from .pet_window_layer import restore_pet_topmost
+from .platform_capabilities import get_platform_capabilities
 from .runtime import SIM_CLOCK, app_now, get_pet_logic_step_count
 from .transformation_profiles import (
     apply_pet_form_mood_floor,
@@ -59,16 +85,6 @@ from .transformation_profiles import (
     pet_is_transforming,
 )
 from .transformation_state import FORM_TRANSFORMED
-
-
-SAFE_WINDOW_MODE = os.environ.get("TANUKI_SAFE_WINDOW_MODE", "0") == "1"
-
-
-def build_overlay_window_flags():
-    flags = Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint
-    if not SAFE_WINDOW_MODE:
-        flags |= Qt.WindowType.Tool
-    return flags
 
 
 def forwarded_state_property(state_attr, field_name):
@@ -115,7 +131,15 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
     DRAG_HOLD_THRESHOLD_MS = 100
     DRAG_HOLD_THRESHOLD_SECONDS = DRAG_HOLD_THRESHOLD_MS / 1000.0
 
-    def __init__(self, char_id, char_folder, scale=0.8, settings_provider=None, window_tracker=None):
+    def __init__(
+        self,
+        char_id,
+        char_folder,
+        scale=0.8,
+        settings_provider=None,
+        window_tracker=None,
+        platform_capabilities=None,
+    ):
         super().__init__()
         self.char_id = char_id
         self.name = char_id
@@ -148,6 +172,9 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         self.drag_hold_timer = QTimer(self)
         self.drag_hold_timer.setSingleShot(True)
         self.drag_hold_timer.timeout.connect(self._begin_drag_after_hold)
+        self.drag_follow_timer = QTimer(self)
+        self.drag_follow_timer.setTimerType(Qt.TimerType.PreciseTimer)
+        self.drag_follow_timer.timeout.connect(self._advance_drag_follow)
         self.lock_timer = QTimer(self)
         self.lock_timer.setSingleShot(True)
         self.lock_timer.timeout.connect(self.unlock_interaction)
@@ -162,10 +189,15 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         self.star_timer = QTimer(self)
         self.star_timer.setTimerType(Qt.TimerType.PreciseTimer)
         self.star_timer.timeout.connect(self.advance_star_animation)
-        self.star_timer.start(self.STAR_BASE_INTERVAL_MS)
 
         self.settings_provider = settings_provider
         self.window_tracker = window_tracker
+        self.platform_capabilities = (
+            platform_capabilities or get_platform_capabilities()
+        )
+        self.input_region_controller = PetInputRegionController(
+            enabled=self.platform_capabilities.alpha_pet_input_region,
+        )
 
         self.bar_opacity = 0.0
         self.fade_anim = QVariantAnimation(self)
@@ -203,7 +235,17 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         self.log_icon_anim.finished.connect(lambda: setattr(self, "show_log_icon", False))
         self.radius = 100 * self.get_effective_scale()
         self.mass = 2 if self.is_adult else 0.8
-        self.setWindowFlags(build_overlay_window_flags())
+        self.setWindowFlags(
+            build_overlay_window_flags(
+                self.platform_capabilities,
+                role=WINDOW_ROLE_PET,
+            )
+        )
+        apply_platform_tool_window_attributes(
+            self,
+            self.platform_capabilities,
+            role=WINDOW_ROLE_PET,
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setMouseTracking(True)
         self.anim_timer = QTimer(self)
@@ -218,6 +260,7 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         )
         self.tick_coordinator = PetTickCoordinator()
         self.change_state("idle", "stand")
+        self.refresh_pointer_input_region(force=True)
         self.last_x = self.x()
         self.refresh_movement_state()
         self.show()
@@ -313,9 +356,13 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         serial = int(self.ambient_animation_event_serial) + 1
         self.ambient_animation_event_serial = serial
         self.state = "idle"
-        self.state_timer = max(
-            int(self.state_timer),
-            SIDE_READY_FOLLOWUP_MIN_HOLD_STEPS,
+        # The absolute simulation-time lock below owns the visible duration.
+        # Leave only one state step so random selection resumes immediately
+        # after the protected pose expires instead of adding a second hold.
+        self.state_timer = 1
+        self.side_ready_followup_lock_until = max(
+            float(getattr(self, "side_ready_followup_lock_until", 0.0) or 0.0),
+            app_now() + SIDE_READY_FOLLOWUP_HOLD_SECONDS,
         )
         self.pending_ambient_animation_event = (
             serial,
@@ -381,6 +428,13 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
     def next_frame(self, steps=1):
         if self.current_frames:
             self.frame_index = (self.frame_index + int(steps)) % len(self.current_frames)
+            refresh_pointer_input_region = getattr(
+                self,
+                "refresh_pointer_input_region",
+                None,
+            )
+            if callable(refresh_pointer_input_region):
+                refresh_pointer_input_region()
             self.update()
 
     def advance_animation_timer(self):
@@ -485,6 +539,23 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         self.change_state(target_purpose, self.current_action_tag)
         return True
 
+    def refresh_pet_window_layer(self, *, force=False):
+        return restore_pet_topmost(
+            self,
+            platform_key=getattr(
+                getattr(self, "platform_capabilities", None),
+                "platform_key",
+                "",
+            ),
+        )
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        QTimer.singleShot(
+            0,
+            lambda: self.refresh_pet_window_layer(force=True),
+        )
+
     def tick(self, all_pets):
         profiler = getattr(self, "runtime_profiler", None)
         profiler_started_at = time.perf_counter() if profiler is not None else 0.0
@@ -522,8 +593,9 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         window_perch_handled = False
         window_flight_handled = False
         pointer_engaged = bool(self.dragging or self.drag_press_pending)
+        throw_active = bool(getattr(self, "throw_active", False))
         tick_window_plan = self.tick_coordinator.build_tick_window_plan(
-            pointer_engaged
+            pointer_engaged or throw_active
         )
         if tick_window_plan.try_window_perch:
             window_perch_handled = self.update_window_perch(all_pets)
@@ -535,6 +607,7 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             window_perch_handled=window_perch_handled,
             window_flight_handled=window_flight_handled,
             vertical_velocity=self.vy,
+            throw_active=throw_active,
         )
         if tick_plan.should_refresh_and_return:
             self.refresh_behavior_layers(all_pets, now=now)
@@ -568,15 +641,39 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
 
     def apply_gravity(self):
         surface = self.get_surface_snapshot()
+        throw_was_active = bool(getattr(self, "throw_active", False))
+        current_x = self.x()
         current_y = self.y()
         current_vy = self.vy
+        throw_velocity_x = float(
+            getattr(self, "throw_velocity_x", 0.0) or 0.0
+        )
+        throw_remainder_x = float(
+            getattr(self, "throw_remainder_x", 0.0) or 0.0
+        )
         fall_origin_y = self.fall_origin_y
         total_mood_penalty = 0.0
         for _ in range(get_pet_logic_step_count(self)):
+            if throw_was_active:
+                horizontal_step = advance_horizontal_throw(
+                    current_x=current_x,
+                    velocity_x=throw_velocity_x,
+                    remainder_x=throw_remainder_x,
+                    left_bound=surface.left_bound,
+                    right_bound=surface.right_bound,
+                    grounded=current_y >= surface.floor_top_y,
+                )
+                current_x = horizontal_step.x
+                throw_velocity_x = horizontal_step.velocity_x
+                throw_remainder_x = horizontal_step.remainder_x
             gravity_step = compute_gravity_step(
                 current_y=current_y,
                 current_vy=current_vy,
-                gravity=self.gravity,
+                gravity=(
+                    self.gravity * THROW_ACTIVE_GRAVITY_SCALE
+                    if throw_was_active
+                    else self.gravity
+                ),
                 floor_top_y=surface.floor_top_y,
                 bounce=self.bounce,
                 fall_origin_y=fall_origin_y,
@@ -589,11 +686,28 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             total_mood_penalty += float(gravity_step.mood_penalty)
         self.fall_origin_y = fall_origin_y
         self.vy = current_vy
-        if self.y() != current_y:
-            self.move(self.x(), current_y)
+        self.throw_velocity_x = throw_velocity_x
+        self.throw_remainder_x = throw_remainder_x
+        self.throw_active = bool(
+            throw_was_active
+            and (
+                abs(throw_velocity_x) > 0.0
+                or abs(current_vy) > 0.0
+                or current_y < surface.floor_top_y
+            )
+        )
+        if self.x() != current_x or self.y() != current_y:
+            self.move(current_x, current_y)
         if total_mood_penalty > 0:
             self.mood_score = max(0.0, self.mood_score - total_mood_penalty)
             self.apply_hard_landing_animation()
+        elif throw_was_active and not self.throw_active:
+            self.state = "idle"
+            if not self.change_state_for_context_with_preferences(
+                "idle",
+                RANDOM_CONTEXT,
+            ):
+                self.apply_random_idle_animation()
         self.refresh_movement_state()
 
     def update_star_animation(self):
@@ -695,9 +809,25 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
 
         self.last_x = self.x()
         self.state_timer -= get_pet_logic_step_count(self)
+        force_side_ready_idle = should_force_side_ready_idle_resolution(
+            getattr(self, "name", ""),
+            state_timer=self.state_timer,
+            allow_reselect=allow_reselect,
+            side_ready_followup_armed=getattr(
+                self,
+                "idle_side_stand_armed",
+                False,
+            ),
+            current_action_tag=getattr(self, "current_action_tag", ""),
+            current_frames=getattr(self, "current_frames", ()),
+        )
         if self.state_timer <= 0 and allow_reselect:
             transition = build_random_state_transition(
-                next_state=random.choice(["idle", "move"]),
+                next_state=(
+                    "idle"
+                    if force_side_ready_idle
+                    else random.choice(["idle", "move"])
+                ),
                 next_state_timer=random.randint(100, 150),
                 flip_roll=random.random(),
                 flip_threshold=NORMAL_RANDOM_DIRECTION_FLIP_CHANCE,
@@ -730,6 +860,7 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         if visual_purpose == "idle" and not side_ready_followup_pending:
             expression_handled = self.apply_expression_idle_behavior(expression_context)
         current_visual_frames = None
+        preserve_forbidden_moods = ()
         preserve_visual_mood_score = self.mood_score
         preserve_context = expression_context if expression_handled else random_context
         should_apply_negative_afterglow = getattr(self, "should_apply_negative_afterglow_to_candidates", None)
@@ -737,7 +868,14 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             [(visual_purpose, self.current_action_tag)]
         ):
             preserve_visual_mood_score = None
-        if self.current_purpose == visual_purpose and self.current_action_tag and self.current_mood_tag:
+            preferences = getattr(self, "get_negative_afterglow_preferences", None)
+            if callable(preferences):
+                _preferred_moods, preserve_forbidden_moods = preferences()
+        if (
+            self.current_purpose == visual_purpose
+            and self.current_action_tag and self.current_mood_tag
+            and self.current_mood_tag not in preserve_forbidden_moods
+        ):
             current_visual_frames = self.asset_manager.get_specific_frames(
                 self.current_purpose,
                 self.current_action_tag,
@@ -824,6 +962,17 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         profiler = getattr(self, "runtime_profiler", None)
         profiler_started_at = time.perf_counter() if profiler is not None else 0.0
         now = app_now()
+        if TanukiPet.is_side_ready_followup_locked(self, now):
+            self.state = "idle"
+            self.state_timer = max(int(self.state_timer), 1)
+            self.reset_stationary_move_mode()
+            self.refresh_movement_state()
+            if profiler is not None:
+                profiler.record_section(
+                    "pet.ai",
+                    (time.perf_counter() - profiler_started_at) * 1000.0,
+                )
+            return
         initial_ai_plan = self.tick_coordinator.resolve_initial_ai_plan(
             is_angry_locked=self.is_angry_locked,
             is_recovering=self.is_recovering,
@@ -865,11 +1014,6 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             return
 
         care_lock_maintained = self.maintain_care_lock(now)
-        care_behavior_handled = False
-        social_behavior_handled = False
-        post_observe_interaction_handled = False
-        observe_behavior_handled = False
-        ambient_mood_event_handled = False
         active_post_observe_interaction = (
             self.intent_kind == INTENT_POST_OBSERVE_INTERACTION and
             bool(self.intent_target_name)
@@ -878,68 +1022,52 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             self.intent_kind == INTENT_OBSERVE and
             bool(self.intent_target_name)
         )
-        high_level_followup_allowed = active_post_observe_interaction or active_observe
+        refresh_high_level = False
         if (
             initial_ai_plan.should_attempt_followup and
             not care_lock_maintained and
-            not high_level_followup_allowed
+            not active_post_observe_interaction and
+            not active_observe
         ):
-            high_level_followup_allowed = self.should_refresh_high_level_ai()
+            refresh_high_level = self.should_refresh_high_level_ai()
 
-        if initial_ai_plan.should_attempt_followup and not care_lock_maintained:
-            care_behavior_handled = self.update_care_behavior(now, all_pets)
-        if initial_ai_plan.should_attempt_followup and not care_lock_maintained and not care_behavior_handled:
-            social_behavior_handled = self.update_social_behavior(now, all_pets)
-        if (
-            initial_ai_plan.should_attempt_followup and
-            not care_lock_maintained and
-            not care_behavior_handled and
-            not social_behavior_handled and
-            high_level_followup_allowed
-        ):
-            post_observe_interaction_handled = self.update_post_observe_interaction_behavior(now, all_pets)
-        if (
-            initial_ai_plan.should_attempt_followup and
-            not care_lock_maintained and
-            not care_behavior_handled and
-            not social_behavior_handled and
-            not post_observe_interaction_handled and
-            high_level_followup_allowed
-        ):
-            observe_behavior_handled = self.update_observe_behavior(now, all_pets)
-        if (
-            initial_ai_plan.should_attempt_followup and
-            not care_lock_maintained and
-            not care_behavior_handled and
-            not social_behavior_handled and
-            not post_observe_interaction_handled and
-            not observe_behavior_handled and
-            high_level_followup_allowed
-        ):
-            ambient_mood_event_handled = self.update_ambient_mood_events(now)
+        stage_plan = build_pet_ai_stage_plan(
+            should_attempt_followup=initial_ai_plan.should_attempt_followup,
+            care_lock_maintained=care_lock_maintained,
+            active_post_observe=active_post_observe_interaction,
+            active_observe=active_observe,
+            refresh_high_level=refresh_high_level,
+        )
+        stage_handlers = {
+            AI_STAGE_CARE: lambda: self.update_care_behavior(now, all_pets),
+            AI_STAGE_SOCIAL: lambda: self.update_social_behavior(now, all_pets),
+            AI_STAGE_POST_OBSERVE: lambda: (
+                self.update_post_observe_interaction_behavior(now, all_pets)
+            ),
+            AI_STAGE_OBSERVE: lambda: self.update_observe_behavior(now, all_pets),
+            AI_STAGE_AMBIENT_MOOD: lambda: self.update_ambient_mood_events(now),
+        }
+        handled_stage = next(
+            (
+                stage
+                for stage in stage_plan.stages
+                if stage_handlers[stage]()
+            ),
+            "",
+        )
+        care_behavior_handled = handled_stage == AI_STAGE_CARE
+        social_behavior_handled = handled_stage == AI_STAGE_SOCIAL
 
         followup_ai_plan = self.tick_coordinator.resolve_followup_ai_plan(
             care_lock_maintained=care_lock_maintained,
             care_behavior_handled=care_behavior_handled,
             social_behavior_handled=social_behavior_handled,
         )
-        if observe_behavior_handled:
-            self.refresh_movement_state()
-            if profiler is not None:
-                profiler.record_section(
-                    "pet.ai",
-                    (time.perf_counter() - profiler_started_at) * 1000.0,
-                )
-            return
-        if ambient_mood_event_handled:
-            self.refresh_movement_state()
-            if profiler is not None:
-                profiler.record_section(
-                    "pet.ai",
-                    (time.perf_counter() - profiler_started_at) * 1000.0,
-                )
-            return
-        if post_observe_interaction_handled:
+        if handled_stage in {
+            AI_STAGE_POST_OBSERVE,
+            AI_STAGE_OBSERVE,
+            AI_STAGE_AMBIENT_MOOD,
+        }:
             self.refresh_movement_state()
             if profiler is not None:
                 profiler.record_section(
@@ -1139,6 +1267,32 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         self.fade_anim.setEndValue(0.0)
         self.fade_anim.start()
 
+    def pointer_hits_visible_character(self, local_point):
+        if not self.current_frames:
+            return False
+        frame = self.current_frames[
+            int(self.frame_index) % len(self.current_frames)
+        ]
+        should_flip = (
+            (self.direction == 1)
+            if self.original_face_left
+            else (self.direction == -1)
+        )
+        return visible_frame_pixel_hit(
+            frame,
+            widget_width=self.width(),
+            widget_height=self.height(),
+            local_x=local_point.x(),
+            local_y=local_point.y(),
+            flipped=should_flip,
+        )
+
+    def refresh_pointer_input_region(self, *, force=False):
+        controller = getattr(self, "input_region_controller", None)
+        if controller is None:
+            return False
+        return controller.refresh(self, force=force)
+
     def mousePressEvent(self, event):
         if (
             event.button() != Qt.MouseButton.LeftButton
@@ -1146,6 +1300,19 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             or self.dragging
             or self.drag_press_pending
         ):
+            return
+        global_point = event.globalPosition().toPoint()
+        capabilities = getattr(self, "platform_capabilities", None)
+        if (
+            capabilities is not None
+            and capabilities.precise_pet_pointer_hit_test
+            and not self.pointer_hits_visible_character(
+                global_point - self.pos()
+            )
+        ):
+            ignore = getattr(event, "ignore", None)
+            if callable(ignore):
+                ignore()
             return
         if (
             self.is_activity_locked()
@@ -1162,13 +1329,88 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             return
         self.drag_press_pending = True
         self.drag_start_time = time.time()
-        global_point = event.globalPosition().toPoint()
         self.drag_pos = global_point - self.pos()
+        current_position = self.pos()
+        self.drag_target_x = float(current_position.x())
+        self.drag_target_y = float(current_position.y())
+        self.drag_target_screen_rect = DesktopGeometry.get_drag_target_screen_rect(
+            global_point.x(), global_point.y(),
+        )
+        self.drag_motion_samples = append_drag_motion_sample(
+            (),
+            timestamp=time.perf_counter(),
+            x=global_point.x(),
+            y=global_point.y(),
+        )
         self.drag_hold_timer.start(self.DRAG_HOLD_THRESHOLD_MS)
 
     def _cancel_pending_drag_press(self):
         self.drag_hold_timer.stop()
         self.drag_press_pending = False
+
+    def _start_drag_follow(self):
+        position = self.pos()
+        self.drag_follow_x = float(position.x())
+        self.drag_follow_y = float(position.y())
+        self.drag_follow_velocity_x = 0.0
+        self.drag_follow_velocity_y = 0.0
+        self.drag_follow_last_at = time.perf_counter()
+        self.drag_follow_active = True
+        self.drag_follow_timer.start(DRAG_FOLLOW_TIMER_MS)
+
+    def _stop_drag_follow(self, *, reset_velocity=True):
+        timer = getattr(self, "drag_follow_timer", None)
+        if timer is not None:
+            timer.stop()
+        self.drag_follow_active = False
+        self.drag_follow_last_at = 0.0
+        self.drag_target_screen_rect = None
+        if reset_velocity:
+            self.drag_follow_velocity_x = 0.0
+            self.drag_follow_velocity_y = 0.0
+
+    def _advance_drag_follow(self, now=None):
+        if not self.dragging or not self.drag_follow_active:
+            self._stop_drag_follow()
+            return False
+        now = time.perf_counter() if now is None else float(now)
+        last_at = float(self.drag_follow_last_at or 0.0)
+        elapsed = (
+            DRAG_FOLLOW_TIMER_MS / 1000.0
+            if last_at <= 0.0
+            else now - last_at
+        )
+        if elapsed <= 0.0:
+            return False
+        step = advance_drag_follow(
+            current_x=self.drag_follow_x,
+            current_y=self.drag_follow_y,
+            target_x=self.drag_target_x,
+            target_y=self.drag_target_y,
+            velocity_x=self.drag_follow_velocity_x,
+            velocity_y=self.drag_follow_velocity_y,
+            elapsed_seconds=elapsed,
+        )
+        clamped_x, clamped_y = DesktopGeometry.clamp_drag_follow_position(
+            self,
+            round(step.x),
+            round(step.y),
+            target_screen_rect=getattr(self, "drag_target_screen_rect", None),
+        )
+        if clamped_x != round(step.x):
+            self.drag_follow_velocity_x = 0.0
+        else:
+            self.drag_follow_velocity_x = step.velocity_x
+        if clamped_y != round(step.y):
+            self.drag_follow_velocity_y = 0.0
+        else:
+            self.drag_follow_velocity_y = step.velocity_y
+        self.drag_follow_x = step.x if clamped_x == round(step.x) else float(clamped_x)
+        self.drag_follow_y = step.y if clamped_y == round(step.y) else float(clamped_y)
+        self.drag_follow_last_at = now
+        self.move(clamped_x, clamped_y)
+        self.refresh_movement_state()
+        return True
 
     def _begin_drag_after_hold(self):
         if not self.drag_press_pending:
@@ -1210,9 +1452,13 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         self._cancel_pending_drag_press()
         if self.flight_mode != "none":
             self.stop_window_flight(apply_cooldown=False)
+        self.throw_active = False
+        self.throw_velocity_x = 0.0
+        self.throw_remainder_x = 0.0
         self.dragging = True
         self.vy = 0
         self.fall_origin_y = None
+        self._start_drag_follow()
         self.apply_drag_animation()
         self.refresh_movement_state()
         return True
@@ -1250,22 +1496,41 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         return True
 
     def mouseMoveEvent(self, event):
+        if self.drag_press_pending or self.dragging:
+            global_point = event.globalPosition().toPoint()
+            target_pos = global_point - self.drag_pos
+            self.drag_target_screen_rect = DesktopGeometry.get_drag_target_screen_rect(
+                global_point.x(), global_point.y(),
+                previous_screen_rect=getattr(self, "drag_target_screen_rect", None),
+            )
+            clamped_x, clamped_y = DesktopGeometry.clamp_drag_position(
+                self,
+                target_pos.x(),
+                target_pos.y(),
+                target_screen_rect=self.drag_target_screen_rect,
+            )
+            self.drag_target_x = float(clamped_x)
+            self.drag_target_y = float(clamped_y)
+            self.drag_motion_samples = append_drag_motion_sample(
+                getattr(self, "drag_motion_samples", ()),
+                timestamp=time.perf_counter(),
+                x=global_point.x(),
+                y=global_point.y(),
+            )
         if self.drag_press_pending:
             self._begin_drag_after_hold()
         if self.dragging:
             if self.perched_window_hwnd:
                 self.detach_from_window_surface()
-            target_pos = event.globalPosition().toPoint() - self.drag_pos
-            clamped_x, clamped_y = DesktopGeometry.clamp_drag_position(self, target_pos.x(), target_pos.y())
-            self.move(clamped_x, clamped_y)
-            self.refresh_movement_state()
 
     def mouseReleaseEvent(self, event):
         if event.button() != Qt.MouseButton.LeftButton:
             return
         if pet_is_transforming(self):
             self._cancel_pending_drag_press()
+            self._stop_drag_follow()
             self.dragging = False
+            self.drag_motion_samples = ()
             return
         duration = time.time() - self.drag_start_time
         if self.drag_press_pending:
@@ -1273,6 +1538,7 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
                 self._begin_drag_after_hold()
             if not self.dragging:
                 self._cancel_pending_drag_press()
+                self.drag_motion_samples = ()
                 if (
                     self.is_angry_locked
                     or self.care_mode != "none"
@@ -1286,10 +1552,40 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
         if not self.dragging:
             return
         if self.is_activity_locked() or self.is_angry_locked or self.care_mode != "none" or self.is_under_care(app_now()) or self.is_offer_locked(app_now()):
+            self._stop_drag_follow()
             self.dragging = False
+            self.drag_motion_samples = ()
             self.refresh_movement_state()
             return
+        release_point = event.globalPosition().toPoint()
+        released_at = time.perf_counter()
+        self.drag_motion_samples = append_drag_motion_sample(
+            getattr(self, "drag_motion_samples", ()),
+            timestamp=released_at,
+            x=release_point.x(),
+            y=release_point.y(),
+        )
+        throw_launch = resolve_throw_launch(
+            self.drag_motion_samples,
+            released_at=released_at,
+            carried_velocity=(
+                getattr(self, "drag_follow_velocity_x", 0.0),
+                getattr(self, "drag_follow_velocity_y", 0.0),
+            ) if getattr(self, "drag_follow_active", False) else None,
+        )
+        self._stop_drag_follow()
+        self.drag_motion_samples = ()
         self.dragging = False
+        if throw_launch.active:
+            self.throw_active = True
+            self.throw_velocity_x = throw_launch.velocity_x
+            self.throw_remainder_x = 0.0
+            self.vy = throw_launch.velocity_y
+            self.fall_origin_y = None
+            if abs(throw_launch.velocity_x) > 0.0:
+                self.direction = 1 if throw_launch.velocity_x > 0 else -1
+            self.refresh_movement_state()
+            return
         if self.try_snap_to_window_surface():
             self.refresh_movement_state()
             return
@@ -1320,10 +1616,29 @@ class TanukiPet(PetBehaviorLayersMixin, PetBasicsMixin, PetSocialCareMixin, PetW
             and getattr(activity_state, "active", False)
         )
 
+    def is_side_ready_followup_locked(self, now=None):
+        now = app_now() if now is None else float(now)
+        return is_side_ready_followup_lock_active(
+            getattr(self, "name", ""),
+            lock_until=getattr(
+                self,
+                "side_ready_followup_lock_until",
+                0.0,
+            ),
+            now=now,
+            current_purpose=getattr(self, "current_purpose", ""),
+            current_action_tag=getattr(self, "current_action_tag", ""),
+            current_frames=getattr(self, "current_frames", ()),
+        )
+
     def is_scene_animation_locked(self, now=None):
         now = app_now() if now is None else float(now)
         activity_state = getattr(self, "activity_state", None)
-        if pet_is_transforming(self):
+        if (
+            pet_is_transforming(self)
+            or bool(getattr(self, "throw_active", False))
+            or TanukiPet.is_side_ready_followup_locked(self, now)
+        ):
             return True
         if (
             activity_state is not None

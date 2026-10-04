@@ -20,6 +20,9 @@ if "PyQt6" not in sys.modules:
     class QObject:
         pass
 
+    class QEvent:
+        Type = types.SimpleNamespace(Show=1, WinIdChange=2)
+
     class QPoint:
         def __init__(self, x=0, y=0):
             self._x = x
@@ -78,6 +81,24 @@ if "PyQt6" not in sys.modules:
         def __init__(self, *args, **kwargs):
             pass
 
+    class QBitmap:
+        @staticmethod
+        def fromImage(image):
+            return image
+
+    class QRegion:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __ior__(self, other):
+            _ = other
+            return self
+
+    class QGuiApplication:
+        @staticmethod
+        def instance():
+            return None
+
     class QApplication:
         @staticmethod
         def screens():
@@ -95,6 +116,7 @@ if "PyQt6" not in sys.modules:
         pass
 
     qtcore_module.QObject = QObject
+    qtcore_module.QEvent = QEvent
     qtcore_module.QPoint = QPoint
     qtcore_module.QRect = QRect
     qtcore_module.QTimer = QTimer
@@ -102,6 +124,9 @@ if "PyQt6" not in sys.modules:
     qtcore_module.Qt = Qt
     qtgui_module.QPainter = QPainter
     qtgui_module.QPixmap = QPixmap
+    qtgui_module.QBitmap = QBitmap
+    qtgui_module.QRegion = QRegion
+    qtgui_module.QGuiApplication = QGuiApplication
     qtwidgets_module.QApplication = QApplication
     qtwidgets_module.QWidget = QWidget
     pyqt6_module.QtCore = qtcore_module
@@ -140,6 +165,12 @@ if not hasattr(qtcore_module, "QTimer"):
 
     qtcore_module.QTimer = _QTimer
 
+if not hasattr(qtcore_module, "QEvent"):
+    class _QEvent:
+        Type = types.SimpleNamespace(Show=1, WinIdChange=2)
+
+    qtcore_module.QEvent = _QEvent
+
 if not hasattr(qtcore_module, "QVariantAnimation"):
     class _QVariantAnimation:
         def __init__(self, *args, **kwargs):
@@ -171,6 +202,33 @@ if not hasattr(qtgui_module, "QPixmap"):
             pass
 
     qtgui_module.QPixmap = _QPixmap
+
+if not hasattr(qtgui_module, "QBitmap"):
+    class _QBitmap:
+        @staticmethod
+        def fromImage(image):
+            return image
+
+    qtgui_module.QBitmap = _QBitmap
+
+if not hasattr(qtgui_module, "QRegion"):
+    class _QRegion:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __ior__(self, other):
+            _ = other
+            return self
+
+    qtgui_module.QRegion = _QRegion
+
+if not hasattr(qtgui_module, "QGuiApplication"):
+    class _QGuiApplication:
+        @staticmethod
+        def instance():
+            return None
+
+    qtgui_module.QGuiApplication = _QGuiApplication
 
 if not hasattr(qtwidgets_module, "QWidget"):
     class _QWidget:
@@ -229,6 +287,12 @@ class FakeAiSchedulerPet(PetBehaviorLayersMixin):
         self.recovery_end_time = 0.0
         self.recovery_motion_mode = "stay"
         self.current_purpose = "idle"
+        self.state = "idle"
+        self.state_timer = 0
+        self.name = "Symboli Rudolf"
+        self.current_action_tag = "stand"
+        self.current_frames = ["stand"]
+        self.side_ready_followup_lock_until = 0.0
         self.intent_kind = "ambient_idle"
         self.intent_target_name = ""
         self.intent_locked_until = 0.0
@@ -303,6 +367,24 @@ class FakeAiSchedulerPet(PetBehaviorLayersMixin):
 
 
 class PetAiSchedulerTests(unittest.TestCase):
+    def test_side_ready_followup_lock_suppresses_all_autonomous_ai(self):
+        pet = FakeAiSchedulerPet()
+        pet.name = "Tsurumaru Tsuyoshi"
+        pet.current_action_tag = "side_stand"
+        pet.current_frames = ["side-stand"]
+        pet.side_ready_followup_lock_until = 15.5
+
+        with patch("tanuki_core.pet_widget.app_now", return_value=10.0):
+            TanukiPet.update_ai_behavior(pet, [])
+
+        self.assertEqual(pet.care_calls, 0)
+        self.assertEqual(pet.social_calls, 0)
+        self.assertEqual(pet.post_observe_calls, 0)
+        self.assertEqual(pet.observe_calls, 0)
+        self.assertEqual(pet.ambient_calls, 0)
+        self.assertEqual(pet.random_calls, 0)
+        self.assertEqual(pet.refresh_calls, 1)
+
     def test_update_ai_behavior_throttles_high_level_followups_but_keeps_random_reselect_each_tick(self):
         pet = FakeAiSchedulerPet()
 

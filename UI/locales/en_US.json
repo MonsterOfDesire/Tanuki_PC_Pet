@@ -20,6 +20,7 @@
     "title": "Tanuki Information Center",
     "window_title": "Tanuki Information Center — {page}",
     "loading": "Loading page…",
+    "page_load_failed": "This page is temporarily unavailable. Other features can still be used.",
     "size": "Window size",
     "size_tooltip": "Apply a suggested aspect ratio. You can still resize the window afterward.",
     "detach": "Detach page",
@@ -33,6 +34,7 @@
       "event_log": {"navigation": "Event Log", "title": "Event Log", "placeholder": "Event filters, the event list, and detailed records appear here."},
       "family_status": {"navigation": "Family Summary", "title": "Family Status Summary", "placeholder": "Living fund, household pressure, member cards, and recent events appear here."},
       "achievements": {"navigation": "Trophy Cabinet", "title": "Trophy Cabinet", "placeholder": "Sandbox and Golden Legend achievement trophies appear here."},
+      "memory_album": {"navigation": "Memory Album", "title": "Memory Album", "placeholder": "Browse photographs from interactions and everyday life."},
       "status_settings": {"navigation": "Status Settings", "title": "Status Settings", "placeholder": "General settings, social cooldowns, and advanced developer tools appear here."}
     },
     "sizes": {
@@ -46,11 +48,14 @@
     "title": "Tanuki Control Center", "subtitle": "Desktop life shortcuts",
     "main_actions": "Main actions", "information_center": "Information Center",
     "open_information_center": "Open Information Center", "offer_tray": "Food Tray",
-    "open_offer_tray": "Open Food Tray", "current_status": "Current status",
+    "open_offer_tray": "Open Food Tray", "manual_camera": "Take Photo",
+    "open_manual_camera": "Open manual camera", "manual_camera_unavailable": "The manual camera is currently unavailable",
+    "manual_camera_controls": "Manual camera: left-click to take a photo; Tab switches 4:3/16:9, Esc cancels", "manual_camera_1x_only": "Switch to 1x before using the manual camera.", "manual_camera_full": "Manual camera unavailable: the Memory Album is full.", "manual_camera_saved": "Photo saved to the Memory Album.", "manual_camera_failed": "The screen could not be captured; check Screen Recording permission.",
+    "current_status": "Current status", "play_day": "Day {day}", "play_day_tooltip": "Counts local calendar days starting on {date}.",
     "status_settings": "Status Settings", "open_status_settings": "Open Status Settings", "shutdown": "Exit",
     "disconnected": "Disconnected", "care_on": "Care on", "care_off": "Care off",
     "world_golden_legend": "Golden Legend", "world_sandbox": "Sandbox",
-    "pin_sidebar": "Pin sidebar", "collapse_sidebar": "Collapse sidebar", "pinned_tooltip": "Pinned; click to allow automatic collapse", "unpinned_tooltip": "Not pinned; click to keep the sidebar open"
+    "pin_sidebar": "Pin sidebar", "collapse_sidebar": "Collapse sidebar", "expand_sidebar": "Expand sidebar", "pinned_tooltip": "Pinned; click to allow automatic collapse", "unpinned_tooltip": "Not pinned; click to keep the sidebar open"
   },
   "updates": {
     "checking": "Checking for updates…",
@@ -62,6 +67,7 @@
     "view_release": "View release",
     "download_updater": "Download updater",
     "updater_ready": "Download and run TanukiUpdater.exe from the Release page.",
+    "manual_platform": "This platform currently uses manual updates. Download the matching package from the Release page.",
     "manual_only": "This release does not include an automatic update package. You can view the Release instead."
   },
   "common": {
@@ -116,7 +122,7 @@
   },
   "achievements": {
     "modes": {"sandbox": "Sandbox", "golden_legend": "Golden Legend"}, "mode_tabs": {"sandbox": "Sandbox Achievements", "golden_legend": "Golden Legend Achievements"},
-    "progress": "Unlocked {unlocked} / {total}", "summary_recent": "{progress} | Latest: {title}", "summary_empty": "{progress} | No achievements yet", "acquisition_record": "Unlock Record", "hover_unlocked": "Hover over an unlocked trophy to see how it was earned.", "unlocked_at": "Unlocked: {time}",
+    "progress": "Unlocked {unlocked} / {total}", "summary_recent": "{progress} | Latest: {title}", "summary_empty": "{progress} | No achievements yet", "acquisition_record": "Unlock Record", "hover_unlocked": "Hover over an unlocked trophy to see how it was earned.", "unlocked_at": "Unlocked: {time}", "memory_capture": "Auto-save achievement screenshots", "memory_capture_tooltip": "Screenshots are captured only at 1x. No screen is captured while off. macOS may request Screen Recording permission the first time.", "memory_saved": "The unlock screenshot was saved.", "memory_missing": "No screenshot was saved for this achievement.", "memory_open": "Open full image", "reset": "Reset achievement", "reset_confirm": "Click again to confirm", "reset_tooltip": "The first click only arms confirmation; click again to clear this achievement and its saved screenshot.",
     "locked_accessible": "Locked {tier} trophy", "unlocked_accessible": "Unlocked {tier} achievement: {title}", "notification": {"single": "New achievement unlocked", "multiple": "{count} achievements unlocked", "more": " and {count} total"},
     "definitions": {
       "race": {
@@ -161,6 +167,11 @@
       },
       "ambient": {"tsuyoshi_rare_stand": {"title": "Tsuyoshi Stood Up!", "description": "In a 1x Sandbox session, witness Tsurumaru Tsuyoshi rarely follow side-ready by standing up."}}
     }
+  },
+  "memory_album": {
+    "mode": {"label": "Photo mode", "off": "Off", "events": "Interactions", "random": "Random photos"},
+    "capacity": "Photo limit", "folder_short": "Photo folder", "open_folder": "Open photo folder", "open_photo": "Open this photo", "empty": "No photos yet. Memories from interactions will appear here.", "settings_note": "Automatic photos are taken only at 1x. Capture stops at the limit and existing photos are never deleted automatically.",
+    "status": {"normal": "Saved {count}/{capacity} photos. Photos are taken only at 1x and are never deleted automatically.", "near_full": "The album is nearly full ({count}/{capacity}). Capture stops at the limit.", "full": "The album is full ({count}/{capacity}). No new photos will be taken and existing photos will not be deleted.", "compact_normal": "Saved {count}/{capacity}", "compact_near_full": "Nearly full {count}/{capacity}", "compact_full": "Album full {count}/{capacity}"}
   },
   "events": {
     "unnamed": "Unnamed event", "types": {"opening_note": "Opening note", "fund_snapshot": "Fund snapshot", "pressure_snapshot": "Pressure snapshot", "player_donate_fund": "Fund donation", "teio_drink_expense": "Drink expense", "rudolf_collectible_expense": "Collectible expense", "rudolf_work_completed": "Work completed", "transformation_started": "Transformation started", "transformation_ended": "Transformation ended", "observe_social_log": "Quiet observation", "post_observe_social_log": "Everyday conversation", "race_completed": "Race completed", "race_declined": "Race declined", "chorus_completed": "Performance completed", "chorus_interrupted": "Performance interrupted", "offer_bottle_success": "Bottle received", "ground_bottle_pickup": "Bottle picked up", "offer_bottle_feed": "Bottle feeding", "ground_bottle_feed": "Bottle feeding", "offer_honey_success": "Honey received", "ground_honey_pickup": "Honey picked up", "offer_honey_guarded": "Honey protected", "offer_honey_denied": "Honey denied", "offer_hover_timeout": "Item interaction timed out", "shared_ramen": "Ramen shared", "shared_tea_chat": "Tea shared", "shared_honey": "Honey shared"}, "deltas": {"living_fund": "Living fund {amount:+,d}", "pressure": "Pressure {amount:+.1f}", "mood": "Mood {amount:+.1f}", "relationship": "Relationship {details}"},
@@ -237,8 +248,26 @@
   },
   "settings": {
     "language_and_updates": "Language and updates", "interface_language": "Interface language", "unavailable": "Status Settings is not connected to a running Dashboard.",
-    "groups": {"runtime": "Runtime Mode", "timing": "Time and Display", "social_cooldown": "Social Cooldown", "life_rhythm": "Life Rhythm", "developer": "Developer Tools"},
-    "world_mode": "World mode", "time_scale": "Time speed", "display_scale": "Display scale", "enable_care": "Enable character care", "enable_care_tooltip": "Allow care for low moods and related family interactions.",
+    "categories": {"title": "Settings", "overview": "Overview"},
+    "tabs": {"mode": "Mode Settings", "developer": "Developer Tools"},
+    "noticeboard": {"basic": "Basics & display", "activity": "Autonomous activities", "memory": "Memories & system", "care": "Character care", "sleep": "Autonomous sleep", "transformation": "Autonomous transformation"},
+    "text_size": "Text size", "text_sizes": {"small": "Small", "medium": "Medium", "large": "Large"},
+    "control_tooltips": {
+      "world_mode": "Choose the world mode. Sandbox has no household economy restrictions.",
+      "time_scale": "Change simulation speed. Achievements and automatic photos are disabled at faster speeds.",
+      "display_scale": "Change character image size without changing interface text size.",
+      "text_size": "Resize text across all interfaces immediately: Small 80%, Medium 100%, Large 150%. First launch defaults to Medium. Character images keep their size.",
+      "imitation": "Set how long Teio and Tsuyoshi wait before imitating Rudolf again. Regular social cooldowns are unaffected.",
+      "photo_capacity": "Photography stops at the limit. Lowering the limit never deletes existing photos.",
+      "language": "Switch the interface language immediately.",
+      "check_updates": "Check GitHub for a newer version manually.",
+      "download_update": "Open the update download link.",
+      "validate": "Validate settings and animation manifests."
+    },
+    "memory_mode_tooltips": {"off": "Stop automatic photography. The manual camera remains available.", "events": "Photograph interaction events at 1x only. Stop when the album is full.", "random": "Photograph interaction events and occasional daily scenes at 1x. Stop when the album is full."},
+    "groups": {"runtime": "Runtime Mode", "timing": "Time and Display", "social_cooldown": "Rudolf Imitation Cooldown", "life_rhythm": "Life Rhythm", "memory_album": "Memory Album", "developer": "Developer Tools"},
+    "imitation_cooldown_tooltip": "Adjust how long Teio and Tsuyoshi wait before imitating Rudolf again. This does not affect ordinary social-interaction cooldowns.",
+    "world_mode": "World mode", "time_scale": "Time speed", "display_scale": "Display scale", "enable_care": "Enable character care", "enable_care_tooltip": "Allow care for low moods and related family interactions.", "enable_autonomous_sleep": "Enable autonomous sleep", "enable_autonomous_sleep_tooltip": "When disabled, no new autonomous sleep starts. Existing sleep finishes normally.", "enable_autonomous_transformation": "Enable autonomous transformation", "enable_autonomous_transformation_tooltip": "When disabled, no new autonomous transformation starts. Active transformation and reversion still finish normally.",
     "race_frequency": "Race frequency", "race_frequency_tooltip": "Adjust autonomous race wait and cooldown times. Eligibility, distance, and acceptance checks still apply.", "chorus_frequency": "Performance frequency", "chorus_frequency_tooltip": "Adjust autonomous performance wait, retry, and cooldown times. Eligibility, distance, and response checks still apply.",
     "mood_climate": "Mood climate", "mood_climate_tooltip": "Natural mood changes follow simulation speed. The climate adjusts frequency, direction, and magnitude without imposing a target mood.",
     "show_debug": "Show character debug data", "show_debug_tooltip": "Show full character and performance diagnostics.", "show_social_status": "Show social status labels", "show_social_status_tooltip": "Show testing labels such as random and relation_watch above characters.",
@@ -246,9 +275,9 @@
     "preview_work_idle": "Play work and rest animations without applying money, pressure, or mood settlement.", "preview_race_idle": "Play Rudolf and Teio's full race without recording an event or changing values.", "preview_chorus_idle": "Start a sandbox performance using autonomous responses, without events or rewards.",
     "preview_work_active": "Rudolf's work preview has started; no settlement will be applied.", "preview_race_active": "The Rudolf vs Teio race preview has started; no formal event or value change will be applied.", "preview_chorus_active": "The performance preview has started; no event, mood reward, or relationship reward will be applied.", "sleep_control_idle": "Put a character to sleep or wake them through the existing waking flow; Sandbox only.",
     "preview_work_tooltip": "Preview activity_work_stationary and activity_work_rest from the manifest without settlement.", "preview_work_sandbox_only": "Work preview is only available in Sandbox mode.", "preview_race_tooltip": "Play the full race flow from manifest contexts without events or value changes.", "preview_race_sandbox_only": "Race preview is only available in Sandbox mode.", "preview_chorus_tooltip": "Start a performance using autonomous join/watch responses, without events or rewards.", "preview_chorus_sandbox_only": "Performance preview is only available in Sandbox mode.",
-    "world_modes": {"golden_legend": "Golden Legend", "sandbox": "Sandbox"}, "frequencies": {"frequent": "Frequent", "normal": "Normal", "occasional": "Occasional"}, "mood_climates": {"cheerful": "Cheerful", "balanced": "Balanced", "expressive": "Expressive"},
-    "race_frequency_tooltips": {"frequent": "Autonomous race waits and cooldowns are about half the Normal duration.", "normal": "Use the standard race schedule for the selected world mode.", "occasional": "Autonomous race waits and cooldowns are about twice the Normal duration."},
-    "chorus_frequency_tooltips": {"frequent": "Autonomous performance waits, retries, and cooldowns are about half the Normal duration.", "normal": "Use the standard autonomous performance schedule.", "occasional": "Autonomous performance waits, retries, and cooldowns are about twice the Normal duration."},
+    "world_modes": {"golden_legend": "Golden Legend", "sandbox": "Sandbox"}, "frequencies": {"disabled": "Disabled", "frequent": "Frequent", "normal": "Normal", "occasional": "Occasional"}, "mood_climates": {"cheerful": "Cheerful", "balanced": "Balanced", "expressive": "Expressive"},
+    "race_frequency_tooltips": {"disabled": "Do not start new autonomous races. A race already in progress finishes normally.", "frequent": "Autonomous race waits and cooldowns are about half the Normal duration.", "normal": "Use the standard race schedule for the selected world mode.", "occasional": "Autonomous race waits and cooldowns are about twice the Normal duration."},
+    "chorus_frequency_tooltips": {"disabled": "Do not start new autonomous performances. A performance already in progress finishes normally.", "frequent": "Autonomous performance waits, retries, and cooldowns are about half the Normal duration.", "normal": "Use the standard autonomous performance schedule.", "occasional": "Autonomous performance waits, retries, and cooldowns are about twice the Normal duration."},
     "mood_climate_tooltips": {"cheerful": "Each natural mood tick changes 50% of the time, with small changes strongly biased positive.", "balanced": "Each natural mood tick changes 60% of the time. Normal mood drifts slightly downward; nearby adults only add recovery protection after a child enters Low.", "expressive": "Each natural mood tick changes 90% of the time, with frequent and larger negative changes; adults decline more slowly and self-regulate at low moods."}
   },
   "transformation": {

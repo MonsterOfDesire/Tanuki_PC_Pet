@@ -7,7 +7,6 @@ from PyQt6.QtWidgets import (
     QLabel,
     QMessageBox,
     QPlainTextEdit,
-    QProgressBar,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -15,15 +14,22 @@ from PyQt6.QtWidgets import (
 
 from .dashboard_actions import DashboardActions
 from .dashboard_controller import DashboardController
+from .dashboard_legacy_adapter import DashboardControlState
 from .dashboard_launcher_binding import DashboardLauncherBinding
 from .dashboard_launcher_ui import (
     COLLAPSED_LAUNCHER_WIDTH,
-    EXPANDED_LAUNCHER_WIDTH,
     LAUNCHER_MINIMUM_HEIGHT,
     DashboardLauncherPanel,
 )
 from .dashboard_presenter import DashboardPresenter
-from .dashboard_shell import build_overlay_window_flags
+from .overlay_window import (
+    WINDOW_ROLE_PERSISTENT_TOOL,
+    WINDOW_ROLE_UTILITY,
+    apply_platform_tool_window_attributes,
+    build_overlay_window_flags,
+    build_utility_window_flags,
+)
+from .platform_capabilities import get_platform_capabilities
 from .dashboard_state_mapper import (
     DashboardConfigState,
     DashboardOptionBounds,
@@ -33,13 +39,30 @@ from .dashboard_state_mapper import (
 from .dashboard_tools_actions import DashboardToolsActions
 from .achievement_cabinet_ui import AchievementUnlockToast
 from .achievement_binding import DashboardAchievementBinding
+from .achievement_memory_capture import (
+    AchievementMemoryCaptureService,
+    capture_pet_scene_image,
+)
+from .memory_album import (
+    MemoryAlbumService,
+    normalize_memory_album_capacity,
+    normalize_memory_album_mode,
+)
+from .memory_album_binding import DashboardMemoryAlbumBinding
+from .memory_capture_runtime import MemoryCaptureRuntime
+from .manual_camera import ManualCameraController
+from .play_calendar import normalize_local_date, play_day_number
+from .pet_window_layer import restore_pet_group_topmost
+from .windows_foreground_watcher import WindowsForegroundWatcher
 from .achievement_presenter import build_achievement_unlock_notification
+from .app_paths import get_user_data_directory
 from .information_center_ui import InformationCenterWindow
 from .information_center_state import InformationCenterConfigState
 from .information_center_spec import (
     PAGE_ACHIEVEMENTS,
     PAGE_EVENT_LOG,
     PAGE_FAMILY_STATUS,
+    PAGE_MEMORY_ALBUM,
     PAGE_RELATION_SUMMON,
 )
 from .family_summary_binding import DashboardFamilySummaryBinding
@@ -47,21 +70,35 @@ from .event_log_binding import DashboardEventLogBinding
 from .relation_summon_binding import DashboardRelationSummonBinding
 from .offer_tray_ui import OfferTrayWindow
 from .runtime import SIM_CLOCK, app_now
+from .runtime_debug_log import log_suppressed_exception
 from .settings_provider import RuntimeSettings
+from .ui_typography import normalize_ui_text_size, set_ui_text_size
 from .shutdown_controller import DashboardShutdownController
 from .status_settings_binding import DashboardStatusSettingsBinding
 from .ui_localization import (
     character_display_name,
     localize_character_names_in_text,
     set_ui_locale,
+    translate_ui,
 )
 from .update_runtime_controller import UpdateCheckCoordinator
 from .app_version import GITHUB_RELEASES_URL
 
 
 class HouseholdSummaryWindow(QWidget):
-    def __init__(self):
-        super().__init__(None, Qt.WindowType.Tool)
+    def __init__(self, platform_capabilities=None):
+        self.platform_capabilities = (
+            platform_capabilities or get_platform_capabilities()
+        )
+        super().__init__(
+            None,
+            build_utility_window_flags(self.platform_capabilities),
+        )
+        apply_platform_tool_window_attributes(
+            self,
+            self.platform_capabilities,
+            role=WINDOW_ROLE_UTILITY,
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_QuitOnClose, False)
         self.setWindowTitle("家庭摘要")
         self.resize(420, 520)
@@ -123,8 +160,19 @@ class SocialLogWindow(QWidget):
         ("item", "道具"),
     )
 
-    def __init__(self, refresh_handler=None):
-        super().__init__(None, Qt.WindowType.Tool)
+    def __init__(self, refresh_handler=None, platform_capabilities=None):
+        self.platform_capabilities = (
+            platform_capabilities or get_platform_capabilities()
+        )
+        super().__init__(
+            None,
+            build_utility_window_flags(self.platform_capabilities),
+        )
+        apply_platform_tool_window_attributes(
+            self,
+            self.platform_capabilities,
+            role=WINDOW_ROLE_UTILITY,
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_QuitOnClose, False)
         self.setWindowTitle("社交紀錄")
         self.resize(520, 560)
@@ -258,8 +306,19 @@ class SocialLogWindow(QWidget):
 
 
 class RelationshipTableWindow(QWidget):
-    def __init__(self):
-        super().__init__(None, Qt.WindowType.Tool)
+    def __init__(self, platform_capabilities=None):
+        self.platform_capabilities = (
+            platform_capabilities or get_platform_capabilities()
+        )
+        super().__init__(
+            None,
+            build_utility_window_flags(self.platform_capabilities),
+        )
+        apply_platform_tool_window_attributes(
+            self,
+            self.platform_capabilities,
+            role=WINDOW_ROLE_UTILITY,
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_QuitOnClose, False)
         self.setWindowTitle("關係表")
         self.resize(560, 560)
@@ -309,11 +368,6 @@ class Dashboard(QWidget):
         "QPushButton:checked { background: #91e08f; border: 1px solid #4a8f48; font-weight: bold; }"
     )
     SECTION_LABEL_STYLE = "color: white; background: rgba(0,0,0,150); padding: 6px 8px; border-radius: 6px;"
-    WORLD_MODE_LABELS = {
-        "golden_legend": "黃金傳說",
-        "sandbox": "沙盒",
-    }
-
     def __init__(
         self,
         target_rect,
@@ -329,8 +383,12 @@ class Dashboard(QWidget):
         household_state_provider=None,
         household_events_provider=None,
         household_donate_provider=None,
+        platform_capabilities=None,
     ):
         super().__init__()
+        self.platform_capabilities = (
+            platform_capabilities or get_platform_capabilities()
+        )
         self.settings_provider = settings_provider or RuntimeSettings()
         actions = actions or DashboardActions(sim_clock=SIM_CLOCK, now_provider=app_now)
         tools_actions = tools_actions or DashboardToolsActions()
@@ -385,6 +443,20 @@ class Dashboard(QWidget):
         self.chorus_frequency = str(
             getattr(self.settings_provider, "chorus_frequency", "normal")
         )
+        self.autonomous_sleep_enabled = bool(
+            getattr(
+                self.settings_provider,
+                "autonomous_sleep_enabled",
+                True,
+            )
+        )
+        self.autonomous_transformation_enabled = bool(
+            getattr(
+                self.settings_provider,
+                "autonomous_transformation_enabled",
+                True,
+            )
+        )
         self.mood_climate_options = list(
             RuntimeSettings.MOOD_CLIMATE_OPTIONS
         )
@@ -395,6 +467,30 @@ class Dashboard(QWidget):
         self.ui_locale = str(
             getattr(self.settings_provider, "ui_locale", "zh_TW")
         )
+        self.ui_text_size = normalize_ui_text_size(
+            getattr(self.settings_provider, "ui_text_size", "medium")
+        )
+        set_ui_text_size(self.ui_text_size)
+        self.achievement_capture_enabled = bool(
+            getattr(
+                self.settings_provider,
+                "achievement_capture_enabled",
+                False,
+            )
+        )
+        self.memory_album_mode = normalize_memory_album_mode(
+            getattr(self.settings_provider, "memory_album_mode", "off")
+        )
+        self.memory_album_capacity = normalize_memory_album_capacity(
+            getattr(self.settings_provider, "memory_album_capacity", 20)
+        )
+        self.play_calendar_started_on = normalize_local_date(
+            getattr(self.settings_provider, "play_calendar_started_on", "")
+        )
+        self.launcher_play_day_number = play_day_number(
+            self.play_calendar_started_on
+        )
+        self.launcher_play_started_on = self.play_calendar_started_on
         set_ui_locale(self.ui_locale)
         self.update_check_coordinator = UpdateCheckCoordinator(parent=self)
         self.update_check_coordinator.status_changed.connect(
@@ -424,6 +520,7 @@ class Dashboard(QWidget):
         self.world_mode_change_provider = None
         self.achievement_time_scale_provider = None
         self.achievement_snapshot_provider = None
+        self.achievement_reset_provider = None
         self.offer_drop_provider = None
         self.offer_hover_provider = None
         self.offer_hover_clear_provider = None
@@ -434,6 +531,39 @@ class Dashboard(QWidget):
         self.offer_tray_window = None
         self.information_center_window = None
         self.achievement_unlock_toast = None
+        self.achievement_memory_capture = AchievementMemoryCaptureService(
+            get_user_data_directory(
+                platform=self.platform_capabilities.platform_key
+            )
+        )
+        self.memory_album = MemoryAlbumService(
+            get_user_data_directory(
+                platform=self.platform_capabilities.platform_key
+            )
+        )
+        self.manual_camera_active = False
+        self.manual_camera_controller = ManualCameraController(
+            album_service=self.memory_album,
+            capacity_provider=lambda: self.memory_album_capacity,
+            time_scale_provider=self.get_time_scale,
+            hint_provider=self._manual_camera_hint_text,
+            parent=self,
+        )
+        self.manual_camera_controller.active_changed.connect(
+            self._handle_manual_camera_active_changed
+        )
+        self.manual_camera_controller.capture_finished.connect(
+            self._handle_manual_camera_capture_finished
+        )
+        self.manual_camera_controller.status_changed.connect(
+            self._handle_manual_camera_status
+        )
+        self.manual_camera_status_timer = QTimer(self)
+        self.manual_camera_status_timer.setSingleShot(True)
+        self.manual_camera_status_timer.setInterval(4500)
+        self.manual_camera_status_timer.timeout.connect(
+            self._clear_manual_camera_status
+        )
         self.launcher_shutdown_text = "關閉系統"
         self.launcher_shutdown_enabled = True
         self.launcher_status_text = ""
@@ -442,148 +572,41 @@ class Dashboard(QWidget):
         self.status_settings_binding = DashboardStatusSettingsBinding(self)
         self.family_summary_binding = DashboardFamilySummaryBinding(self)
         self.achievement_binding = DashboardAchievementBinding(self)
+        self.memory_album_binding = DashboardMemoryAlbumBinding(self)
         self.event_log_binding = DashboardEventLogBinding(self)
         self.relation_summon_binding = DashboardRelationSummonBinding(self)
-        self.setWindowFlags(build_overlay_window_flags())
+        self.memory_capture_runtime = MemoryCaptureRuntime(
+            achievement_service=self.achievement_memory_capture,
+            album_service=self.memory_album,
+            album_settings_provider=self._memory_album_runtime_settings,
+            album_changed=self.refresh_memory_album_if_open,
+        )
+        self.setWindowFlags(
+            build_overlay_window_flags(self.platform_capabilities)
+        )
+        apply_platform_tool_window_attributes(
+            self,
+            self.platform_capabilities,
+            role=WINDOW_ROLE_PERSISTENT_TOOL,
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self._initialize_legacy_control_adapters()
         self.layout = QVBoxLayout()
-        self.layout.setSpacing(10)
-        self.layout.setContentsMargins(15, 15, 15, 15)
-        title_row = QHBoxLayout()
-        title_row.setSpacing(6)
-        self.title_label = QLabel("狸貓控制中心")
-        self.title_label.setStyleSheet("color: white; background: rgba(0,0,0,150); padding: 5px; border-radius: 5px;")
-        title_row.addWidget(self.title_label, stretch=1)
-        self.btn_information_center = QPushButton("資訊中心")
-        self.btn_information_center.setToolTip("開啟分頁式資訊中心")
-        self.btn_information_center.clicked.connect(lambda checked=False: self.open_information_center())
-        title_row.addWidget(self.btn_information_center)
-        self.layout.addLayout(title_row)
-        self.status_label = QLabel("")
-        self.status_label.setStyleSheet("color: white; background: rgba(70,90,120,190); padding: 6px 8px; border-radius: 6px;")
-        self.status_label.hide()
-        self.layout.addWidget(self.status_label)
-        self.layout.addWidget(self.make_section_label("全域設定"))
-
-        self.layout.addWidget(self.make_section_label("世界模式"))
-        world_mode_row = self.create_option_selector(
-            self.world_mode_options,
-            self.world_mode_buttons,
-            lambda value: self.WORLD_MODE_LABELS.get(value, str(value)),
-            lambda index: self.set_world_mode(self.world_mode_options[index]),
-        )
-        self.layout.addLayout(world_mode_row)
-
-        self.layout.addWidget(self.make_section_label("時間流速"))
-        speed_row = self.create_option_selector(
-            self.time_scale_options,
-            self.time_scale_buttons,
-            lambda value: f"{value}x",
-            self.set_time_scale_index,
-        )
-        self.layout.addLayout(speed_row)
-
-        self.layout.addWidget(self.make_section_label("顯示比例"))
-        scale_row = self.create_option_selector(
-            self.display_scale_options,
-            self.display_scale_buttons,
-            lambda value: f"{value:g}x",
-            self.set_display_scale_index,
-        )
-        self.layout.addLayout(scale_row)
-
-        self.layout.addWidget(self.make_section_label("開發工具"))
-        self.btn_debug = QPushButton("Debug: 關閉")
-        self.btn_debug.clicked.connect(self.toggle_debug)
-        self.layout.addWidget(self.btn_debug)
-
-        self.btn_validate = QPushButton("檢查 Config / Manifest")
-        self.btn_validate.clicked.connect(self.run_validation_checks)
-        self.layout.addWidget(self.btn_validate)
-
-        self.btn_care = QPushButton("照護功能: 開啟")
-        self.btn_care.clicked.connect(self.toggle_care)
-        self.layout.addWidget(self.btn_care)
-
-        record_row = QHBoxLayout()
-        record_row.setSpacing(6)
-        self.btn_household_summary = QPushButton("家庭摘要")
-        self.btn_household_summary.clicked.connect(self.open_household_summary)
-        record_row.addWidget(self.btn_household_summary)
-        self.btn_social_log = QPushButton("社交紀錄")
-        self.btn_social_log.clicked.connect(self.open_social_log)
-        record_row.addWidget(self.btn_social_log)
-        self.btn_relationship_table = QPushButton("關係表")
-        self.btn_relationship_table.clicked.connect(self.open_relationship_table)
-        record_row.addWidget(self.btn_relationship_table)
-        self.layout.addLayout(record_row)
-
-        household_action_row = QHBoxLayout()
-        household_action_row.setSpacing(6)
-        self.btn_household_donate = QPushButton("捐生活費 +100")
-        self.btn_household_donate.clicked.connect(lambda: self.donate_household_fund(100))
-        household_action_row.addWidget(self.btn_household_donate)
-        self.btn_offer_tray = QPushButton("飲食托盤")
-        self.btn_offer_tray.clicked.connect(self.open_offer_tray)
-        household_action_row.addWidget(self.btn_offer_tray)
-        self.layout.addLayout(household_action_row)
-
-        self.layout.addWidget(
-            self.make_section_label(
-                f"{character_display_name('Tokai Teio')}社交冷卻"
-            )
-        )
-        teio_row = self.create_duration_selector("teio", self.teio_dur_list)
-        self.layout.addLayout(teio_row)
-
-        self.layout.addWidget(
-            self.make_section_label(
-                f"{character_display_name('Tsurumaru Tsuyoshi')}社交冷卻"
-            )
-        )
-        tsuyoshi_row = self.create_duration_selector("tsuyoshi", self.tsuyoshi_dur_list)
-        self.layout.addLayout(tsuyoshi_row)
-
-        for folder_name, info in self.pets_dict.items():
-            container = QWidget()
-            v_box = QVBoxLayout(container)
-            v_box.setSpacing(4)
-            v_box.setContentsMargins(0, 0, 0, 0)
-
-            btn = QPushButton(
-                f"召喚 {character_display_name(info['name'])}"
-            )
-            btn.setFixedHeight(35)
-            btn.setCheckable(True)
-            btn.setChecked(info["pet"].user_visible)
-            btn.toggled.connect(lambda checked, p=info["pet"]: self.handle_pet_toggle(p, checked))
-            btn.setStyleSheet(
-                "QPushButton { background: white; border-radius: 8px; padding: 8px; } QPushButton:checked { background: #aaffaa; }"
-            )
-
-            mood_bar = QProgressBar()
-            mood_bar.setRange(0, 100)
-            mood_bar.setTextVisible(False)
-            mood_bar.setFixedHeight(6)
-            mood_bar.setStyleSheet(
-                "QProgressBar::chunk { background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ff4444, stop:1 #44ff44); } "
-                "QProgressBar { background-color: #333; border-radius: 3px; }"
-            )
-
-            info["mood_bar"] = mood_bar
-            info["toggle_button"] = btn
-
-            v_box.addWidget(btn)
-            v_box.addWidget(mood_bar)
-            self.layout.addWidget(container)
-
         self.update_timer = QTimer(self)
         self.update_timer.timeout.connect(self.refresh_mood_bars)
-        self.update_timer.start(500)
+        # Compatibility-only mood bars are state adapters, not visible widgets.
+        # Keep the timer stopped; live UI pages obtain current pet snapshots.
+        self.memory_capture_timer = QTimer(self)
+        self.memory_capture_timer.setInterval(500)
+        self.memory_capture_timer.timeout.connect(
+            self.update_memory_capture_runtime
+        )
+        self.memory_capture_timer.start()
+        self.play_calendar_timer = QTimer(self)
+        self.play_calendar_timer.setInterval(60_000)
+        self.play_calendar_timer.timeout.connect(self.refresh_play_calendar)
+        self.play_calendar_timer.start()
 
-        self.btn_exit = QPushButton("關閉系統")
-        self.btn_exit.clicked.connect(self.begin_shutdown)
-        self.layout.addWidget(self.btn_exit)
         self.setLayout(self.layout)
         self.launcher_binding = DashboardLauncherBinding(self)
         self.launcher_panel = DashboardLauncherPanel(
@@ -596,6 +619,9 @@ class Dashboard(QWidget):
         )
         self.launcher_panel.pinned_changed.connect(
             self._handle_launcher_pinned_changed
+        )
+        self.launcher_panel.preferred_width_changed.connect(
+            self._handle_launcher_preferred_width_changed
         )
         self._activate_launcher_shell(target_rect)
         self.update_positions(target_rect)
@@ -610,10 +636,85 @@ class Dashboard(QWidget):
         self.update_care_button_text()
         self.update_debug_button_text()
         self.update_household_control_states()
+        app = QApplication.instance()
+        if app is not None:
+            app.applicationStateChanged.connect(
+                self._handle_application_state_changed
+            )
+        self.foreground_window_watcher = WindowsForegroundWatcher(
+            platform_key=self.platform_capabilities.platform_key,
+            parent=self,
+        )
+        self.foreground_window_watcher.foreground_changed.connect(
+            self._handle_external_foreground_changed
+        )
+        # Offscreen tests do not install a process-global WinEvent hook. The
+        # real Windows Qt backend starts one watcher owned by this Dashboard.
+        if QApplication.platformName().lower() == "windows":
+            self.foreground_window_watcher.start()
+        if app is not None:
+            app.aboutToQuit.connect(self.foreground_window_watcher.stop)
+
+    def _initialize_legacy_control_adapters(self):
+        self.title_label = DashboardControlState("狸貓控制中心", parent=self)
+        self.status_label = DashboardControlState(parent=self)
+        self.btn_information_center = DashboardControlState(
+            "資訊中心",
+            parent=self,
+        )
+        self.btn_debug = DashboardControlState("Debug: 關閉", parent=self)
+        self.btn_validate = DashboardControlState(
+            "檢查 Config / Manifest",
+            parent=self,
+        )
+        self.btn_care = DashboardControlState("照護功能: 開啟", parent=self)
+        self.btn_household_summary = DashboardControlState(
+            "家庭摘要",
+            parent=self,
+        )
+        self.btn_social_log = DashboardControlState("社交紀錄", parent=self)
+        self.btn_relationship_table = DashboardControlState(
+            "關係表",
+            parent=self,
+        )
+        self.btn_household_donate = DashboardControlState(
+            "捐生活費 +100",
+            parent=self,
+        )
+        self.btn_offer_tray = DashboardControlState("飲食托盤", parent=self)
+        self.btn_exit = DashboardControlState("關閉系統", parent=self)
+        self.world_mode_buttons = [
+            DashboardControlState(parent=self)
+            for _value in self.world_mode_options
+        ]
+        self.time_scale_buttons = [
+            DashboardControlState(parent=self)
+            for _value in self.time_scale_options
+        ]
+        self.display_scale_buttons = [
+            DashboardControlState(parent=self)
+            for _value in self.display_scale_options
+        ]
+        self.teio_duration_buttons = [
+            DashboardControlState(parent=self)
+            for _value in self.teio_dur_list
+        ]
+        self.tsuyoshi_duration_buttons = [
+            DashboardControlState(parent=self)
+            for _value in self.tsuyoshi_dur_list
+        ]
+        for info in self.pets_dict.values():
+            pet = info.get("pet")
+            info["mood_bar"] = DashboardControlState(
+                value=int(getattr(pet, "mood_score", 0) or 0),
+                parent=self,
+            )
+            info["toggle_button"] = DashboardControlState(
+                checked=bool(getattr(pet, "user_visible", False)),
+                parent=self,
+            )
 
     def _activate_launcher_shell(self, target_rect):
-        self._legacy_widgets = []
-        self._remove_legacy_layout_items(self.layout)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
         self.layout.addWidget(self.launcher_panel)
@@ -625,36 +726,28 @@ class Dashboard(QWidget):
         )
         self.launcher_shell_height = min(520, available_height)
         self.setFixedSize(
-            EXPANDED_LAUNCHER_WIDTH,
+            self.launcher_panel.expanded_width,
             self.launcher_shell_height,
         )
         self.launcher_panel.show()
-        # Legacy mood bars no longer form part of the visible shell.
+        # Compatibility state is non-visual, so no legacy widgets are retained.
         self.update_timer.stop()
-
-    def _remove_legacy_layout_items(self, layout):
-        while layout.count():
-            item = layout.takeAt(0)
-            widget = item.widget()
-            if widget is not None:
-                widget.hide()
-                self._legacy_widgets.append(widget)
-                continue
-            child_layout = item.layout()
-            if child_layout is not None:
-                self._remove_legacy_layout_items(child_layout)
 
     def set_sensor_zone(self, sensor):
         self.sensor_zone = sensor
 
     def _set_launcher_window_width(self, expanded):
         width = (
-            EXPANDED_LAUNCHER_WIDTH
+            self.launcher_panel.expanded_width
             if expanded
             else COLLAPSED_LAUNCHER_WIDTH
         )
         self.setFixedSize(width, self.launcher_shell_height)
         self.update_positions(self.target_rect)
+
+    def _handle_launcher_preferred_width_changed(self, _width):
+        if self.launcher_panel.is_expanded:
+            self._set_launcher_window_width(True)
 
     def _handle_launcher_expanded_changed(self, expanded):
         self._set_launcher_window_width(expanded)
@@ -693,6 +786,18 @@ class Dashboard(QWidget):
 
     def _hide_launcher_fully(self):
         self.is_expanded = False
+        if self.sensor_zone is None:
+            self.setAttribute(
+                Qt.WidgetAttribute.WA_TransparentForMouseEvents,
+                False,
+            )
+            self.update_positions(self.target_rect)
+            animation = getattr(self, "anim", None)
+            if animation is not None:
+                animation.stop()
+            self.move(self.show_pos)
+            self.show()
+            return
         self.setAttribute(
             Qt.WidgetAttribute.WA_TransparentForMouseEvents,
             True,
@@ -724,8 +829,17 @@ class Dashboard(QWidget):
             social_status_enabled=self.social_status_enabled,
             race_frequency=self.race_frequency,
             chorus_frequency=self.chorus_frequency,
+            autonomous_sleep_enabled=self.autonomous_sleep_enabled,
+            autonomous_transformation_enabled=(
+                self.autonomous_transformation_enabled
+            ),
             mood_climate=self.mood_climate,
             ui_locale=self.ui_locale,
+            ui_text_size=self.ui_text_size,
+            achievement_capture_enabled=self.achievement_capture_enabled,
+            memory_album_mode=self.memory_album_mode,
+            memory_album_capacity=self.memory_album_capacity,
+            play_calendar_started_on=self.play_calendar_started_on,
             information_center=(
                 self.information_center_window.capture_config_state()
                 if self.information_center_window is not None
@@ -752,8 +866,29 @@ class Dashboard(QWidget):
         self.display_scale_idx = int(state.display_scale_idx)
         self.race_frequency = str(state.race_frequency)
         self.chorus_frequency = str(state.chorus_frequency)
+        self.autonomous_sleep_enabled = bool(
+            state.autonomous_sleep_enabled
+        )
+        self.autonomous_transformation_enabled = bool(
+            state.autonomous_transformation_enabled
+        )
         self.mood_climate = str(state.mood_climate)
         self.ui_locale = str(state.ui_locale)
+        self.ui_text_size = normalize_ui_text_size(state.ui_text_size)
+        set_ui_text_size(self.ui_text_size)
+        self.achievement_capture_enabled = bool(
+            state.achievement_capture_enabled
+        )
+        self.memory_album_mode = normalize_memory_album_mode(
+            state.memory_album_mode
+        )
+        self.memory_album_capacity = normalize_memory_album_capacity(
+            state.memory_album_capacity
+        )
+        self.play_calendar_started_on = normalize_local_date(
+            state.play_calendar_started_on
+        )
+        self.refresh_play_calendar()
         set_ui_locale(self.ui_locale)
         self.information_center_config_state = state.information_center
         if self.information_center_window is not None:
@@ -777,10 +912,10 @@ class Dashboard(QWidget):
         for info in self.pets_dict.values():
             info["mood_bar"].setValue(int(info["pet"].mood_score))
 
-    def make_section_label(self, text):
-        label = QLabel(text)
-        label.setStyleSheet(self.SECTION_LABEL_STYLE)
-        return label
+    def update_memory_capture_runtime(self):
+        self.memory_capture_runtime.tick(
+            tuple(info.get("pet") for info in self.pets_dict.values())
+        )
 
     def update_care_button_text(self):
         self.btn_care.setText(f"照護功能: {'開啟' if self.care_feature_enabled else '關閉'}")
@@ -886,33 +1021,6 @@ class Dashboard(QWidget):
     def handle_pet_toggle(self, pet, checked):
         self.controller.handle_pet_toggle(self, pet, checked)
 
-    def create_duration_selector(self, char, durations):
-        row = QHBoxLayout()
-        row.setSpacing(6)
-        button_bucket = self.teio_duration_buttons if char == "teio" else self.tsuyoshi_duration_buttons
-        for idx, seconds in enumerate(durations):
-            btn = QPushButton(f"{seconds}s")
-            btn.setCheckable(True)
-            btn.setMinimumWidth(48)
-            btn.setStyleSheet(self.DURATION_BTN_STYLE)
-            btn.clicked.connect(lambda checked=False, c=char, i=idx: self.set_duration(c, i))
-            button_bucket.append(btn)
-            row.addWidget(btn)
-        return row
-
-    def create_option_selector(self, values, button_bucket, formatter, handler):
-        row = QHBoxLayout()
-        row.setSpacing(6)
-        for idx, value in enumerate(values):
-            btn = QPushButton(formatter(value))
-            btn.setCheckable(True)
-            btn.setMinimumWidth(48)
-            btn.setStyleSheet(self.DURATION_BTN_STYLE)
-            btn.clicked.connect(lambda checked=False, i=idx: handler(i))
-            button_bucket.append(btn)
-            row.addWidget(btn)
-        return row
-
     def set_duration(self, char, index, save=True):
         self.controller.set_duration(self, char, index, save=save)
 
@@ -928,6 +1036,12 @@ class Dashboard(QWidget):
             btn.setChecked(idx == self.time_scale_idx)
         self.refresh_information_center_settings()
         self.refresh_launcher_panel()
+        if (
+            self.get_time_scale() != 1.0
+            and getattr(self, "manual_camera_controller", None) is not None
+            and self.manual_camera_controller.active
+        ):
+            self.manual_camera_controller.cancel()
 
     def update_display_scale_buttons(self):
         for idx, btn in enumerate(self.display_scale_buttons):
@@ -952,11 +1066,28 @@ class Dashboard(QWidget):
     def set_chorus_frequency(self, value, save=True):
         self.controller.set_chorus_frequency(self, value, save=save)
 
+    def set_autonomous_sleep_enabled(self, enabled, save=True):
+        self.controller.set_autonomous_sleep_enabled(
+            self,
+            enabled,
+            save=save,
+        )
+
+    def set_autonomous_transformation_enabled(self, enabled, save=True):
+        self.controller.set_autonomous_transformation_enabled(
+            self,
+            enabled,
+            save=save,
+        )
+
     def set_mood_climate(self, value, save=True):
         self.controller.set_mood_climate(self, value, save=save)
 
     def set_ui_locale(self, value, save=True):
         self.controller.set_ui_locale(self, value, save=save)
+
+    def set_ui_text_size(self, value, save=True):
+        self.controller.set_ui_text_size(self, value, save=save)
 
     def get_update_status_snapshot(self):
         return self.update_check_coordinator.snapshot()
@@ -1024,13 +1155,29 @@ class Dashboard(QWidget):
     def set_achievement_data_provider(
         self,
         achievement_snapshot_provider=None,
+        achievement_reset_provider=None,
     ):
         self.achievement_snapshot_provider = achievement_snapshot_provider
+        self.achievement_reset_provider = achievement_reset_provider
 
     def get_achievement_cabinet_snapshot(self):
         if callable(self.achievement_snapshot_provider):
             return self.achievement_snapshot_provider()
         return None
+
+    def reset_achievement(self, world_mode, achievement_id):
+        if not callable(self.achievement_reset_provider):
+            return False
+        reset = bool(
+            self.achievement_reset_provider(world_mode, achievement_id)
+        )
+        if reset:
+            self.achievement_memory_capture.clear_capture(
+                world_mode,
+                achievement_id,
+            )
+            self.refresh_household_summary_if_open()
+        return reset
 
     def set_household_action_providers(self, household_donate_provider=None):
         self.household_donate_provider = household_donate_provider
@@ -1215,6 +1362,16 @@ class Dashboard(QWidget):
         return False
 
     def apply_achievement_time_scale_transition(self, time_scale):
+        capture_runtime = getattr(self, "memory_capture_runtime", None)
+        if capture_runtime is not None:
+            capture_runtime.observe_time_scale(
+                float(time_scale),
+                (
+                    info.get("pet")
+                    for info in self.pets_dict.values()
+                    if info.get("pet") is not None
+                ),
+            )
         if callable(self.achievement_time_scale_provider):
             return self.achievement_time_scale_provider(float(time_scale))
         return ()
@@ -1238,7 +1395,11 @@ class Dashboard(QWidget):
             )
         return True
 
-    def handle_achievement_unlocks(self, achievement_ids):
+    def handle_achievement_unlocks(
+        self,
+        achievement_ids,
+        capture_context=None,
+    ):
         achievement_ids = tuple(achievement_ids or ())
         snapshot = self.get_achievement_cabinet_snapshot()
         if snapshot is None:
@@ -1256,10 +1417,223 @@ class Dashboard(QWidget):
             self.achievement_unlock_toast = AchievementUnlockToast(
                 self.resource_resolver
             )
-        return self.achievement_unlock_toast.show_notification(
+        shown = self.achievement_unlock_toast.show_notification(
             notification,
             anchor_rect=self.target_rect,
         )
+        if shown and self.achievement_capture_enabled:
+            self.capture_achievement_memories(
+                achievement_ids,
+                self.world_mode,
+                capture_context=capture_context,
+            )
+        return shown
+
+    def capture_achievement_memories(
+        self,
+        achievement_ids,
+        world_mode,
+        *,
+        capture_context=None,
+    ):
+        if abs(float(self.get_time_scale()) - 1.0) > 1e-6:
+            return ()
+        target_names = set(
+            self.achievement_memory_capture.capture_target_names(
+                capture_context
+            )
+        )
+        joined_ids = " ".join(str(item or "") for item in achievement_ids)
+        if "transformation.teio" in joined_ids:
+            target_names.add("Tokai Teio")
+        if "transformation.rudolf" in joined_ids:
+            target_names.add("Symboli Rudolf")
+        if "transformation.both" in joined_ids:
+            target_names.update(("Tokai Teio", "Symboli Rudolf"))
+        if "ambient.tsuyoshi" in joined_ids:
+            target_names.add("Tsurumaru Tsuyoshi")
+        target_pets = tuple(
+            info.get("pet")
+            for info in self.pets_dict.values()
+            if info.get("pet") is not None
+            and (
+                not target_names
+                or str(getattr(info.get("pet"), "name", "") or "")
+                in target_names
+            )
+        )
+        fallback_image = capture_pet_scene_image(target_pets)
+        saved = self.achievement_memory_capture.capture(
+            achievement_ids,
+            world_mode=world_mode,
+            fallback_image=fallback_image,
+            capture_context=capture_context,
+        )
+        if saved and self.information_center_window is not None:
+            self.information_center_window.refresh_achievement_cabinet()
+        return saved
+
+    def get_achievement_memory_path(self, world_mode, achievement_id):
+        return self.achievement_memory_capture.latest_capture_path(
+            world_mode,
+            achievement_id,
+        )
+
+    def _memory_album_runtime_settings(self):
+        return {
+            "mode": self.memory_album_mode,
+            "capacity": self.memory_album_capacity,
+            "achievement_enabled": self.achievement_capture_enabled,
+            "time_scale": self.get_time_scale(),
+        }
+
+    def get_memory_album_snapshot(self):
+        return self.memory_album.snapshot(
+            mode=self.memory_album_mode,
+            capacity=self.memory_album_capacity,
+        )
+
+    def set_memory_album_mode(self, mode, save=True):
+        normalized = normalize_memory_album_mode(mode)
+        changed = self.memory_album_mode != normalized
+        self.memory_album_mode = normalized
+        if changed and normalized == "random":
+            self.memory_capture_runtime.reset_random_schedule()
+        self.sync_settings_provider()
+        if save and changed:
+            self.schedule_save()
+        self.refresh_memory_album_if_open()
+        return True
+
+    def set_memory_album_capacity(self, capacity, save=True):
+        normalized = normalize_memory_album_capacity(capacity)
+        changed = self.memory_album_capacity != normalized
+        self.memory_album_capacity = normalized
+        self.sync_settings_provider()
+        if save and changed:
+            self.schedule_save()
+        self.refresh_memory_album_if_open()
+        return True
+
+    def open_memory_album_folder(self):
+        try:
+            self.memory_album.root.mkdir(parents=True, exist_ok=True)
+            return bool(
+                QDesktopServices.openUrl(
+                    QUrl.fromLocalFile(str(self.memory_album.root))
+                )
+            )
+        except Exception as error:
+            log_suppressed_exception("dashboard.open_memory_album_folder", error)
+            return False
+
+    def get_manual_camera_availability(self):
+        controller = getattr(self, "manual_camera_controller", None)
+        if controller is None:
+            return False, "unavailable"
+        reason = controller.availability_reason()
+        return not bool(reason), reason
+
+    def toggle_manual_camera(self):
+        return self.manual_camera_controller.toggle()
+
+    def _manual_camera_hint_text(self):
+        return translate_ui(
+            "launcher.manual_camera_controls",
+            default="左鍵拍照 · Tab 切換比例 · Esc 取消",
+        )
+
+    def _handle_manual_camera_active_changed(self, active):
+        self.manual_camera_active = bool(active)
+        self.refresh_launcher_panel()
+
+    def _handle_manual_camera_capture_finished(self, path):
+        if path is not None:
+            self.refresh_memory_album_if_open()
+        self.refresh_launcher_panel()
+
+    def _handle_manual_camera_status(self, status):
+        messages = {
+            "speed": (
+                "launcher.manual_camera_1x_only",
+                "請切換至 1x 後再使用手動相機。",
+            ),
+            "full": (
+                "launcher.manual_camera_full",
+                "回憶相簿已滿，無法拍攝新照片。",
+            ),
+            "saved": (
+                "launcher.manual_camera_saved",
+                "照片已保存到回憶相簿。",
+            ),
+            "failed": (
+                "launcher.manual_camera_failed",
+                "無法擷取畫面；請確認螢幕錄製權限。",
+            ),
+        }
+        key, default = messages.get(str(status or ""), ("", ""))
+        if not key:
+            return
+        self.launcher_status_text = translate_ui(key, default=default)
+        self.launcher_show_status = True
+        self.manual_camera_status_timer.start()
+        self.refresh_launcher_panel()
+
+    def _clear_manual_camera_status(self):
+        self.launcher_status_text = ""
+        self.launcher_show_status = False
+        self.refresh_launcher_panel()
+
+    def refresh_play_calendar(self):
+        self.launcher_play_started_on = self.play_calendar_started_on
+        self.launcher_play_day_number = play_day_number(
+            self.play_calendar_started_on
+        )
+        self.refresh_launcher_panel()
+        return self.launcher_play_day_number
+
+    def _handle_application_state_changed(self, state):
+        if (
+            self.platform_capabilities.platform_key != "windows"
+            or state == Qt.ApplicationState.ApplicationActive
+        ):
+            return
+        # External media viewers can enter above the existing topmost band.
+        # Recover once after activation settles instead of polling every pet.
+        QTimer.singleShot(180, self.restore_pet_window_layers)
+        QTimer.singleShot(700, self.restore_pet_window_layers)
+
+    def _handle_external_foreground_changed(self, _hwnd):
+        # Unlike applicationStateChanged, this also fires when Tanuki is
+        # already inactive and the user opens a photo from File Explorer.
+        QTimer.singleShot(90, self.restore_pet_window_layers)
+        QTimer.singleShot(360, self.restore_pet_window_layers)
+
+    def restore_pet_window_layers(self):
+        return restore_pet_group_topmost(
+            (
+                self,
+                *(
+                    info.get("pet")
+                    for info in self.pets_dict.values()
+                    if info.get("pet") is not None
+                ),
+            ),
+            platform_key=self.platform_capabilities.platform_key,
+        )
+
+    def refresh_memory_album_if_open(self):
+        window = self.information_center_window
+        if window is not None and window.is_page_visible(PAGE_MEMORY_ALBUM):
+            window.refresh_memory_album()
+
+    def set_achievement_capture_enabled(self, enabled, save=True):
+        self.controller.set_achievement_capture_enabled(
+            self,
+            enabled,
+            save=save,
+        )
+        return self.achievement_capture_enabled
 
     def get_social_log_filter_mode(self):
         if self.social_log_window is not None:
@@ -1368,7 +1742,9 @@ class Dashboard(QWidget):
 
     def show_household_summary(self, presentation):
         if self.household_summary_window is None:
-            self.household_summary_window = HouseholdSummaryWindow()
+            self.household_summary_window = HouseholdSummaryWindow(
+                getattr(self, "platform_capabilities", None)
+            )
         self.household_summary_window.apply_presentation(presentation)
         if not self.household_summary_window.user_position_locked:
             self.household_summary_window.move_near_anchor(self.x() + self.width() + 16, max(40, self.y()))
@@ -1378,7 +1754,14 @@ class Dashboard(QWidget):
 
     def show_social_log(self, presentation):
         if self.social_log_window is None:
-            self.social_log_window = SocialLogWindow(refresh_handler=self.open_social_log)
+            self.social_log_window = SocialLogWindow(
+                refresh_handler=self.open_social_log,
+                platform_capabilities=getattr(
+                    self,
+                    "platform_capabilities",
+                    None,
+                ),
+            )
         self.social_log_window.apply_presentation(presentation)
         if not self.social_log_window.user_position_locked:
             self.social_log_window.move_near_anchor(self.x() + self.width() + 16, max(40, self.y() + 80))
@@ -1388,7 +1771,9 @@ class Dashboard(QWidget):
 
     def show_relationship_table(self, presentation):
         if self.relationship_table_window is None:
-            self.relationship_table_window = RelationshipTableWindow()
+            self.relationship_table_window = RelationshipTableWindow(
+                getattr(self, "platform_capabilities", None)
+            )
         self.relationship_table_window.apply_presentation(presentation)
         if not self.relationship_table_window.user_position_locked:
             self.relationship_table_window.move_near_anchor(self.x() + self.width() + 16, max(40, self.y() + 120))
@@ -1402,7 +1787,21 @@ class Dashboard(QWidget):
                 drop_handler=self.apply_offer_item_drop,
                 hover_handler=self.apply_offer_item_hover,
                 clear_hover_handler=self.clear_offer_item_hover,
+                platform_capabilities=getattr(
+                    self,
+                    "platform_capabilities",
+                    None,
+                ),
             )
+            visibility_changed = getattr(
+                self.offer_tray_window,
+                "visibility_changed",
+                None,
+            )
+            if visibility_changed is not None:
+                visibility_changed.connect(
+                    lambda _visible: self.refresh_launcher_panel()
+                )
         if not self.offer_tray_window.user_position_locked:
             self.offer_tray_window.move_near_anchor(self.x() + self.width() + 16, max(40, self.y() + 160))
         self.offer_tray_window.show()
@@ -1418,10 +1817,29 @@ class Dashboard(QWidget):
                 event_log_binding=self.event_log_binding,
                 relation_summon_binding=self.relation_summon_binding,
                 achievement_binding=self.achievement_binding,
+                memory_album_binding=getattr(
+                    self,
+                    "memory_album_binding",
+                    None,
+                ),
+                platform_capabilities=getattr(
+                    self,
+                    "platform_capabilities",
+                    None,
+                ),
             )
             self.information_center_window.state_changed.connect(
                 self._handle_information_center_state_changed
             )
+            visibility_changed = getattr(
+                self.information_center_window,
+                "visibility_changed",
+                None,
+            )
+            if visibility_changed is not None:
+                visibility_changed.connect(
+                    lambda _visible: self.refresh_launcher_panel()
+                )
             self.information_center_window.restore_config_state(
                 self.information_center_config_state
             )
@@ -1486,6 +1904,41 @@ class Dashboard(QWidget):
         h = self.height()
         self.show_pos = QPoint(rect.left(), rect.bottom() - h)
         self.hide_pos = QPoint(rect.left() - w - 10, rect.bottom() - h)
+
+    def reconcile_screen_geometry(self, rect):
+        self.target_rect = rect
+        available_height = max(
+            LAUNCHER_MINIMUM_HEIGHT,
+            rect.height() - 20,
+        )
+        self.launcher_shell_height = min(520, available_height)
+        expanded = bool(
+            self.launcher_panel.is_expanded
+            or self.launcher_panel.is_pinned
+        )
+        self.setFixedSize(
+            self.launcher_panel.expanded_width
+            if expanded
+            else COLLAPSED_LAUNCHER_WIDTH,
+            self.launcher_shell_height,
+        )
+        self.update_positions(rect)
+        animation = getattr(self, "anim", None)
+        if animation is not None:
+            animation.stop()
+        stays_visible_when_collapsed = self.sensor_zone is None
+        self.move(
+            self.show_pos
+            if expanded or stays_visible_when_collapsed
+            else self.hide_pos
+        )
+        information_center = getattr(
+            self,
+            "information_center_window",
+            None,
+        )
+        if information_center is not None:
+            information_center.ensure_reachable_on_screen()
 
     def slide_in(self, pets, sensor):
         if sensor is not None:

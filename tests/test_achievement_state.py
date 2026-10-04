@@ -2,6 +2,7 @@ import unittest
 
 from tanuki_core.achievement_state import (
     ACHIEVEMENT_PERSISTENCE_SCHEMA_VERSION,
+    MAX_PROCESSED_ACHIEVEMENT_EVENTS,
     AchievementState,
     apply_achievement_persistence_state,
     capture_achievement_persistence_state,
@@ -63,6 +64,32 @@ class AchievementStateTests(unittest.TestCase):
         self.assertFalse(applied)
         self.assertEqual(state.progress_for("sandbox", "keep").count, 2)
 
+    def test_reset_achievement_clears_only_unlocked_target_progress(self):
+        state = AchievementState()
+        target = state.progress_for("sandbox", "race.first")
+        target.count = 4
+        target.observed_keys.add("practice_400m")
+        target.unlock(45.0)
+        untouched = state.progress_for("sandbox", "chorus.first")
+        untouched.unlock(60.0)
+        state.mark_event_processed("sandbox", "race-event-1")
+
+        self.assertTrue(
+            state.reset_achievement("sandbox", "race.first")
+        )
+
+        reset = state.progress_for("sandbox", "race.first")
+        self.assertEqual(reset.count, 0)
+        self.assertEqual(reset.observed_keys, set())
+        self.assertFalse(reset.unlocked)
+        self.assertTrue(state.is_unlocked("sandbox", "chorus.first"))
+        self.assertTrue(
+            state.has_processed_event("sandbox", "race-event-1")
+        )
+        self.assertFalse(
+            state.reset_achievement("sandbox", "race.first")
+        )
+
     def test_restore_sanitizes_negative_and_malformed_values(self):
         state = AchievementState()
 
@@ -98,6 +125,24 @@ class AchievementStateTests(unittest.TestCase):
         self.assertEqual(progress.completion_count, 0)
         self.assertEqual(progress.updated_at, 0.0)
         self.assertEqual(state.processed_event_ids["sandbox"], {"event-1"})
+
+    def test_processed_event_ids_keep_only_the_most_recent_bound(self):
+        state = AchievementState()
+
+        for index in range(MAX_PROCESSED_ACHIEVEMENT_EVENTS + 3):
+            state.mark_event_processed("sandbox", f"event-{index}")
+
+        self.assertEqual(
+            len(state.processed_event_ids["sandbox"]),
+            MAX_PROCESSED_ACHIEVEMENT_EVENTS,
+        )
+        self.assertFalse(state.has_processed_event("sandbox", "event-0"))
+        self.assertTrue(
+            state.has_processed_event(
+                "sandbox",
+                f"event-{MAX_PROCESSED_ACHIEVEMENT_EVENTS + 2}",
+            )
+        )
 
 
 if __name__ == "__main__":

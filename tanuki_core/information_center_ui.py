@@ -1,5 +1,5 @@
 from PyQt6.QtCore import QRect, QSize, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QGuiApplication
+from PyQt6.QtGui import QFont, QFontMetrics, QGuiApplication
 from PyQt6.QtWidgets import (
     QButtonGroup,
     QFrame,
@@ -21,6 +21,7 @@ from .information_center_spec import (
     PAGE_FAMILY_STATUS,
     PAGE_EVENT_LOG,
     PAGE_ACHIEVEMENTS,
+    PAGE_MEMORY_ALBUM,
     get_information_center_page_spec,
 )
 from .skinned_window_frame import SkinnedWindowFrame
@@ -35,17 +36,26 @@ from .information_center_state import (
     clamp_information_center_geometry,
     normalize_information_center_config_state,
 )
+from .overlay_window import (
+    WINDOW_ROLE_UTILITY,
+    apply_platform_tool_window_attributes,
+    build_utility_window_flags,
+)
+from .platform_capabilities import get_platform_capabilities
 from .information_center_detached_ui import DetachedInformationPageWindow
 from .ui_skin_assets import UiSkinAssets
 from .ui_icons import create_ui_icon
-from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
+from .ui_theme import DEFAULT_UI_THEME, apply_ui_theme
+from .ui_typography import ui_text_scale
 from .ui_localization import translate_ui
-from .window_chrome import SkinnedToolWindowChrome
+from .window_chrome import create_platform_window_chrome
 from .status_settings_ui import StatusSettingsPanel
 from .family_summary_ui import FamilySummaryPanel
 from .event_log_ui import EventLogPanel
 from .relation_summon_ui import RelationSummonPanel
 from .achievement_cabinet_ui import AchievementCabinetPanel
+from .memory_album_ui import MemoryAlbumPanel
+from .runtime_debug_log import log_suppressed_exception
 
 
 COMPACT_NAVIGATION_WIDTH = 900
@@ -57,6 +67,7 @@ NAVIGATION_ICON_NAMES = {
     PAGE_FAMILY_STATUS: "participants",
     PAGE_STATUS_SETTINGS: "system",
     PAGE_ACHIEVEMENTS: "achievement",
+    PAGE_MEMORY_ALBUM: "memory",
 }
 
 
@@ -118,6 +129,16 @@ class InformationCenterPage(SkinnedWindowFrame):
             )
         )
 
+    def show_load_error(self):
+        if not self._placeholder_active:
+            return
+        self.loading_label.setText(
+            translate_ui(
+                "information_center.page_load_failed",
+                default="此頁面暫時無法載入；其他功能仍可繼續使用。",
+            )
+        )
+
     def set_content_widget(self, widget):
         if hasattr(self, "placeholder") and widget is not self.placeholder:
             self._placeholder_active = False
@@ -128,6 +149,7 @@ class InformationCenterWindow(QWidget):
     page_changed = pyqtSignal(str)
     size_preset_applied = pyqtSignal(str)
     state_changed = pyqtSignal()
+    visibility_changed = pyqtSignal(bool)
 
     def __init__(
         self,
@@ -140,8 +162,21 @@ class InformationCenterWindow(QWidget):
         event_log_binding=None,
         relation_summon_binding=None,
         achievement_binding=None,
+        memory_album_binding=None,
+        platform_capabilities=None,
     ):
-        super().__init__(parent, Qt.WindowType.Tool)
+        self.platform_capabilities = (
+            platform_capabilities or get_platform_capabilities()
+        )
+        super().__init__(
+            parent,
+            build_utility_window_flags(self.platform_capabilities),
+        )
+        apply_platform_tool_window_attributes(
+            self,
+            self.platform_capabilities,
+            role=WINDOW_ROLE_UTILITY,
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_QuitOnClose, False)
         self.setObjectName("tanukiInformationCenter")
         self.setWindowTitle("狸貓資訊中心")
@@ -166,6 +201,7 @@ class InformationCenterWindow(QWidget):
         self.event_log_panel = None
         self.relation_summon_panel = None
         self.achievement_cabinet_panel = None
+        self.memory_album_panel = None
         self._navigation_compact = None
         self._page_bindings = {
             PAGE_STATUS_SETTINGS: status_settings_binding,
@@ -173,6 +209,7 @@ class InformationCenterWindow(QWidget):
             PAGE_EVENT_LOG: event_log_binding,
             PAGE_RELATION_SUMMON: relation_summon_binding,
             PAGE_ACHIEVEMENTS: achievement_binding,
+            PAGE_MEMORY_ALBUM: memory_album_binding,
         }
         self._pending_page_id = ""
         self._page_load_timer = QTimer(self)
@@ -251,10 +288,11 @@ class InformationCenterWindow(QWidget):
             self.navigation_layout.addWidget(button)
         self.navigation_layout.addWidget(self.detach_button)
         self.navigation_layout.addWidget(self.size_button)
-        self.window_chrome = SkinnedToolWindowChrome(
+        self.window_chrome = create_platform_window_chrome(
             self,
             drag_widgets=(self.navigation_frame, self.navigation_title),
             controls_variant="dark",
+            capabilities=self.platform_capabilities,
         )
         self.navigation_layout.addWidget(self.window_chrome.controls)
         root_layout.addWidget(self.navigation_frame)
@@ -270,7 +308,7 @@ class InformationCenterWindow(QWidget):
                     theme.spacing_sm,
                     theme.spacing_sm,
                 )
-            elif page_spec.page_id == PAGE_ACHIEVEMENTS:
+            elif page_spec.page_id in {PAGE_ACHIEVEMENTS, PAGE_MEMORY_ALBUM}:
                 page.set_content_margins(
                     theme.spacing_sm,
                     theme.spacing_sm,
@@ -318,7 +356,7 @@ class InformationCenterWindow(QWidget):
             compact_page_height + navigation_height,
         )
         self.setMinimumSize(self._compact_minimum_size)
-        self.setStyleSheet(build_ui_stylesheet(theme))
+        apply_ui_theme(self, theme)
         self.select_page(
             DEFAULT_INFORMATION_CENTER_PAGE,
             defer_content=True,
@@ -440,6 +478,7 @@ class InformationCenterWindow(QWidget):
             PAGE_EVENT_LOG,
             PAGE_FAMILY_STATUS,
             PAGE_ACHIEVEMENTS,
+            PAGE_MEMORY_ALBUM,
             PAGE_STATUS_SETTINGS,
         ):
             panel = self._page_panel(page_id)
@@ -459,6 +498,9 @@ class InformationCenterWindow(QWidget):
                     page=localized_page_text(page_spec, "navigation"),
                 )
             )
+        # Retranslation restores full button text; reapply icon-only density
+        # even when the compact/full decision itself did not change.
+        self._navigation_compact = None
         self._update_navigation_density()
 
     def open_page(self, page_id=None):
@@ -478,6 +520,14 @@ class InformationCenterWindow(QWidget):
             return
         self._activate_visible_window()
         QTimer.singleShot(0, self._activate_visible_window)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.visibility_changed.emit(True)
+
+    def hideEvent(self, event):
+        super().hideEvent(event)
+        self.visibility_changed.emit(False)
 
     def ensure_reachable_on_screen(self):
         screens = tuple(QGuiApplication.screens())
@@ -536,7 +586,7 @@ class InformationCenterWindow(QWidget):
     def detach_page(self, page_id):
         page_spec = get_information_center_page_spec(page_id)
         page_id = page_spec.page_id
-        if page_id == PAGE_ACHIEVEMENTS:
+        if page_id in {PAGE_ACHIEVEMENTS, PAGE_MEMORY_ALBUM}:
             return None
         if page_id in self.detached_page_windows:
             self._activate_detached_page(page_id)
@@ -553,6 +603,7 @@ class InformationCenterWindow(QWidget):
             self.navigation_buttons[page_id].icon(),
             initial_size=self.size(),
             theme=self.theme,
+            platform_capabilities=self.platform_capabilities,
         )
         detached_window.dock_requested.connect(
             self._handle_detached_page_close
@@ -733,8 +784,16 @@ class InformationCenterWindow(QWidget):
         )
         if not page_is_requested:
             return
-        page_created = self._ensure_page_ready(page_id)
         page = self.pages[page_id]
+        try:
+            page_created = self._ensure_page_ready(page_id)
+        except Exception as error:
+            log_suppressed_exception(
+                f"information_center.load_page.{page_id}",
+                error,
+            )
+            page.show_load_error()
+            return
         page.set_animation_active(self.is_page_visible(page_id))
         if not page_created:
             self._refresh_page(page_id)
@@ -755,7 +814,13 @@ class InformationCenterWindow(QWidget):
             )
             self.relation_summon_panel = panel
         elif page_id == PAGE_STATUS_SETTINGS:
-            panel = StatusSettingsPanel(binding, theme=self.theme)
+            panel = StatusSettingsPanel(
+                binding,
+                parent=page.content_surface,
+                theme=self.theme,
+                assets=self.assets,
+            )
+            page.set_content_margins(0, 0, 0, 0)
             self.status_settings_panel = panel
         elif page_id == PAGE_FAMILY_STATUS:
             panel = FamilySummaryPanel(
@@ -774,10 +839,16 @@ class InformationCenterWindow(QWidget):
                 theme=self.theme,
             )
             self.achievement_cabinet_panel = panel
+        elif page_id == PAGE_MEMORY_ALBUM:
+            panel = MemoryAlbumPanel(binding)
+            self.memory_album_panel = panel
+            page.set_content_margins(4, 4, 4, 4)
         else:
             return False
         page.set_content_widget(panel)
         if page_id == PAGE_ACHIEVEMENTS:
+            panel.refresh_from_binding()
+        elif page_id == PAGE_MEMORY_ALBUM:
             panel.refresh_from_binding()
         return True
 
@@ -788,6 +859,7 @@ class InformationCenterWindow(QWidget):
             PAGE_FAMILY_STATUS: self.family_summary_panel,
             PAGE_EVENT_LOG: self.event_log_panel,
             PAGE_ACHIEVEMENTS: self.achievement_cabinet_panel,
+            PAGE_MEMORY_ALBUM: self.memory_album_panel,
         }.get(page_id)
 
     def _refresh_page(self, page_id):
@@ -801,6 +873,8 @@ class InformationCenterWindow(QWidget):
             self.refresh_event_log()
         elif page_id == PAGE_ACHIEVEMENTS:
             self.refresh_achievement_cabinet()
+        elif page_id == PAGE_MEMORY_ALBUM:
+            self.refresh_memory_album()
 
     def apply_size_preset(self, preset_id):
         preset = get_information_center_size_preset(preset_id)
@@ -973,6 +1047,19 @@ class InformationCenterWindow(QWidget):
             )
         return False
 
+    def set_memory_album_binding(self, binding):
+        self._page_bindings[PAGE_MEMORY_ALBUM] = binding
+        if (
+            self.memory_album_panel is not None
+            and self.memory_album_panel.binding is not binding
+        ):
+            self.memory_album_panel.set_binding(binding)
+
+    def refresh_memory_album(self):
+        if self.memory_album_panel is not None:
+            return self.memory_album_panel.refresh_from_binding()
+        return False
+
     def move_near_anchor(self, x, y):
         self._moving_programmatically = True
         try:
@@ -1001,8 +1088,42 @@ class InformationCenterWindow(QWidget):
         if not self._state_change_suppressed:
             self.state_changed.emit()
 
+    def refresh_ui_text_size(self):
+        self._navigation_compact = None
+        self._update_navigation_density()
+
+    def _navigation_compact_for_width(self):
+        # The same window width can fit Chinese but not longer translations.
+        # Measure full labels even while currently showing icon-only buttons.
+        required_width = (
+            2 * self.theme.spacing_lg
+            + 10 * self.theme.spacing_sm
+            + self.navigation_title.fontMetrics().horizontalAdvance(
+                translate_ui("information_center.title", default="狸貓資訊中心")
+            )
+            + self.window_chrome.controls.sizeHint().width()
+            + self.detach_button.sizeHint().width()
+            + self.size_button.sizeHint().width()
+        )
+        for page_spec in INFORMATION_CENTER_PAGE_SPECS:
+            button = self.navigation_buttons[page_spec.page_id]
+            font = QFont(button.font())
+            font.setBold(True)  # Reserve the checked state too.
+            required_width += (
+                QFontMetrics(font).horizontalAdvance(
+                    localized_page_text(page_spec, "navigation")
+                )
+                + button.iconSize().width()
+                + 2 * self.theme.spacing_md
+                + 10  # Icon/text gap and borders.
+            )
+        return self.width() < max(
+            round(COMPACT_NAVIGATION_WIDTH * ui_text_scale()),
+            required_width,
+        )
+
     def _update_navigation_density(self):
-        compact = self.width() < COMPACT_NAVIGATION_WIDTH
+        compact = self._navigation_compact_for_width()
         if compact == self._navigation_compact:
             self._update_detach_button(compact)
             return
@@ -1049,7 +1170,7 @@ class InformationCenterWindow(QWidget):
         if not hasattr(self, "detach_button"):
             return
         compact = (
-            self.width() < COMPACT_NAVIGATION_WIDTH
+            self._navigation_compact_for_width()
             if compact is None
             else bool(compact)
         )
@@ -1059,7 +1180,7 @@ class InformationCenterWindow(QWidget):
         self.detach_button.setEnabled(
             bool(self.current_page_id)
             and not current_is_detached
-            and self.current_page_id != PAGE_ACHIEVEMENTS
+            and self.current_page_id not in {PAGE_ACHIEVEMENTS, PAGE_MEMORY_ALBUM}
         )
         self.detach_button.setText(
             ""

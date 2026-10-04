@@ -4,6 +4,11 @@
 *.md text eol=lf
 *.json text eol=lf
 *.xml text eol=lf
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.spec text eol=lf
+*.plist text eol=lf
 .gitignore text eol=lf
 .gitattributes text eol=lf
 .githooks/* text eol=lf

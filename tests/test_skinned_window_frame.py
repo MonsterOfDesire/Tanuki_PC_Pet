@@ -12,10 +12,12 @@ from tanuki_core.ui_skin_assets import UiSkinAssets
 from tanuki_core.ui_skin_spec import (
     SKIN_EVENT_LOG,
     SKIN_FAMILY_STATUS,
+    SKIN_MEMORY_ALBUM,
     SKIN_RELATION_SUMMON,
     SKIN_STATUS_SETTINGS,
 )
 from tanuki_core.ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
+from tanuki_core.ui_typography import ui_text_scale
 
 
 class SkinnedWindowFrameTests(unittest.TestCase):
@@ -80,6 +82,7 @@ class SkinnedWindowFrameTests(unittest.TestCase):
             SKIN_EVENT_LOG,
             SKIN_FAMILY_STATUS,
             SKIN_STATUS_SETTINGS,
+            SKIN_MEMORY_ALBUM,
         ):
             with self.subTest(skin_key=skin_key):
                 frame = SkinnedWindowFrame(self.assets, skin_key)
@@ -144,6 +147,29 @@ class SkinnedWindowFrameTests(unittest.TestCase):
         self.assertEqual(frame.skin_spec.key, SKIN_STATUS_SETTINGS)
         frame.close()
 
+    def test_memory_album_builds_two_mirrored_additional_foregrounds(self):
+        frame = SkinnedWindowFrame(self.assets, SKIN_MEMORY_ALBUM)
+        frame.resize(1066, 600)
+        self.app.processEvents()
+
+        self.assertEqual(len(frame.additional_foreground_layers), 2)
+        self.assertEqual(frame.foreground_layer.movie.speed(), 300)
+        for layer_spec, layer in frame.additional_foreground_layers:
+            self.assertTrue(layer_spec.mirrored)
+            self.assertTrue(layer.mirrored)
+            self.assertIsNotNone(layer.movie)
+            self.assertGreater(layer.width(), 0)
+            self.assertGreater(layer.height(), 0)
+        frame.close()
+
+    def test_switching_skin_clears_memory_album_additional_foregrounds(self):
+        frame = SkinnedWindowFrame(self.assets, SKIN_MEMORY_ALBUM)
+
+        frame.set_skin(SKIN_STATUS_SETTINGS)
+
+        self.assertEqual(frame.additional_foreground_layers, [])
+        frame.close()
+
     def test_avatar_first_frame_loader_preserves_declared_source_size(self):
         pixmap = self.assets.load_first_frame("avatar_tokai_teio")
 
@@ -164,10 +190,10 @@ class SkinnedWindowFrameTests(unittest.TestCase):
         self.assertIn('pageAccent="family_status"', stylesheet)
         self.assertIn('pageAccent="status_settings"', stylesheet)
         self.assertIn('QLabel[tanukiRole="relationLegend"]', stylesheet)
-        self.assertIn("font-size: 17px;", stylesheet)
+        self.assertIn(f"font-size: {17 * ui_text_scale():g}px;", stylesheet)
         self.assertIn('QLabel[tanukiRole="relationFormula"]', stylesheet)
         self.assertIn("color: #17120f;", stylesheet)
-        self.assertIn("font-size: 12px;", stylesheet)
+        self.assertIn(f"font-size: {12 * ui_text_scale():g}px;", stylesheet)
         self.assertIn("font-weight: 800;", stylesheet)
         self.assertIn('surfaceRole="chalkboard"', stylesheet)
 

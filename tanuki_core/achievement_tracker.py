@@ -72,6 +72,7 @@ class AchievementConsumeResult:
     accepted: bool
     reason: str = ""
     updates: tuple[AchievementUpdate, ...] = ()
+    source_event: AchievementGameplayEvent | None = None
 
     @property
     def unlocked_achievement_ids(self) -> tuple[str, ...]:
@@ -122,6 +123,7 @@ class AchievementTracker:
         return AchievementConsumeResult(
             True,
             updates=tuple(_deduplicate_updates(updates)),
+            source_event=event,
         )
 
     def consume_state_snapshot(
@@ -168,6 +170,7 @@ class AchievementTracker:
         return AchievementConsumeResult(
             True,
             updates=tuple(_deduplicate_updates(updates)),
+            source_event=event,
         )
 
     def _event_rejection_reason(

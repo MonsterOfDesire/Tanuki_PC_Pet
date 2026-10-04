@@ -6,6 +6,9 @@ from dataclasses import dataclass
 
 from PyQt6.QtCore import QRect
 
+from .platform_capabilities import get_platform_capabilities
+from .runtime_debug_log import log_suppressed_exception
+
 
 @dataclass(frozen=True)
 class WindowSnapshot:
@@ -20,6 +23,17 @@ class WindowSnapshot:
     is_visible: bool
     is_iconic: bool
     is_cloaked: bool
+
+
+class UnavailableWindowTrackerBackend:
+    available = False
+
+    def __init__(self):
+        self.own_pid = os.getpid()
+
+    @staticmethod
+    def enumerate_window_snapshots():
+        return []
 
 
 class Win32WindowTrackerBackend:
@@ -74,8 +88,11 @@ class Win32WindowTrackerBackend:
                 )
                 if hr == 0:
                     return rect
-            except Exception:
-                pass
+            except Exception as error:
+                log_suppressed_exception(
+                    "window_tracker.extended_frame_bounds",
+                    error,
+                )
         self.user32.GetWindowRect(hwnd, ctypes.byref(rect))
         return rect
 
@@ -104,7 +121,8 @@ class Win32WindowTrackerBackend:
                 ctypes.sizeof(cloaked),
             )
             return hr == 0 and bool(cloaked.value)
-        except Exception:
+        except Exception as error:
+            log_suppressed_exception("window_tracker.is_cloaked", error)
             return False
 
     def read_window_snapshot(self, hwnd):
@@ -131,3 +149,10 @@ class Win32WindowTrackerBackend:
             is_iconic=bool(self.user32.IsIconic(hwnd)),
             is_cloaked=self.is_window_cloaked(hwnd),
         )
+
+
+def create_window_tracker_backend(platform=None):
+    capabilities = get_platform_capabilities(platform)
+    if capabilities.window_tracking:
+        return Win32WindowTrackerBackend()
+    return UnavailableWindowTrackerBackend()

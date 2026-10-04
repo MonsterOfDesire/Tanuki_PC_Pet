@@ -121,10 +121,6 @@ def apply_ambient_low_mood_tendency(
     if context != "random":
         return apply_legacy_selection()
 
-    if get_mood_band(getattr(pet, "mood_score", 60.0)) != "low":
-        reset_ambient_low_mood_tendency_if_inactive(pet)
-        return apply_weighted_contextual_selection()
-
     should_apply_afterglow = getattr(
         pet,
         "should_apply_negative_afterglow_to_candidates",
@@ -132,6 +128,10 @@ def apply_ambient_low_mood_tendency(
     )
     if callable(should_apply_afterglow) and should_apply_afterglow(candidates):
         return apply_legacy_selection()
+
+    if get_mood_band(getattr(pet, "mood_score", 60.0)) != "low":
+        reset_ambient_low_mood_tendency_if_inactive(pet)
+        return apply_weighted_contextual_selection()
 
     asset_manager = getattr(pet, "asset_manager", None)
     get_specific_frames = getattr(asset_manager, "get_specific_frames", None)

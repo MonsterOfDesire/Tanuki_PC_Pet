@@ -15,11 +15,15 @@ from PyQt6.QtWidgets import (
 from .ui_icons import create_ui_icon
 from .ui_skin_assets import UiSkinAssets
 from .ui_skin_spec import ASSET_DASHBOARD_SIDE_ICON
-from .ui_theme import DEFAULT_UI_THEME, build_ui_stylesheet
+from .ui_theme import DEFAULT_UI_THEME, apply_ui_theme
 from .ui_localization import translate_ui
 
 
-EXPANDED_LAUNCHER_WIDTH = 310
+EXPANDED_LAUNCHER_MIN_WIDTH = 310
+EXPANDED_LAUNCHER_MAX_WIDTH = 600
+# Compatibility alias used by existing callers and geometry tests.  The
+# launcher may grow beyond this value after translated labels are measured.
+EXPANDED_LAUNCHER_WIDTH = EXPANDED_LAUNCHER_MIN_WIDTH
 COLLAPSED_LAUNCHER_WIDTH = 72
 LAUNCHER_MINIMUM_HEIGHT = 460
 
@@ -29,6 +33,7 @@ class DashboardLauncherPanel(QWidget):
 
     expanded_changed = pyqtSignal(bool)
     pinned_changed = pyqtSignal(bool)
+    preferred_width_changed = pyqtSignal(int)
 
     def __init__(
         self,
@@ -46,13 +51,14 @@ class DashboardLauncherPanel(QWidget):
             self.assets = UiSkinAssets(resource_resolver)
         self._expanded = True
         self._pinned = False
+        self._expanded_width = EXPANDED_LAUNCHER_MIN_WIDTH
         self.setObjectName("tanukiDashboardLauncher")
         self.setMinimumHeight(LAUNCHER_MINIMUM_HEIGHT)
         self.setSizePolicy(
             QSizePolicy.Policy.Fixed,
             QSizePolicy.Policy.Expanding,
         )
-        self.setStyleSheet(build_ui_stylesheet(theme))
+        apply_ui_theme(self, theme)
 
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
@@ -81,6 +87,10 @@ class DashboardLauncherPanel(QWidget):
     def is_pinned(self):
         return self._pinned
 
+    @property
+    def expanded_width(self):
+        return self._expanded_width
+
     def set_binding(self, binding):
         self.binding = binding
         self.refresh_from_binding()
@@ -99,6 +109,9 @@ class DashboardLauncherPanel(QWidget):
             self.time_status_button.setText("● --")
             self.care_status_button.setText("● --")
             self.notice_label.hide()
+            self.play_day_label.hide()
+            self._set_camera_state("blocked")
+            self._update_camera_tooltips(False, "unavailable")
             return
 
         snapshot = self.binding.snapshot()
@@ -152,6 +165,74 @@ class DashboardLauncherPanel(QWidget):
         self.notice_label.setVisible(
             snapshot.show_status and bool(snapshot.status_text)
         )
+        play_day_number = snapshot.play_day_number
+        self.play_day_label.setText(
+            translate_ui(
+                "launcher.play_day",
+                default="第 {day} 天",
+                day=play_day_number,
+            )
+            if play_day_number is not None
+            else ""
+        )
+        self.play_day_label.setVisible(play_day_number is not None)
+        self.play_day_label.setToolTip(
+            translate_ui(
+                "launcher.play_day_tooltip",
+                default="從 {date} 起計算本地曆日。",
+                date=snapshot.play_started_on,
+            )
+            if play_day_number is not None
+            else ""
+        )
+        self._set_action_active(
+            (
+                self.information_center_button,
+                self.collapsed_information_button,
+            ),
+            snapshot.information_center_open,
+        )
+        self._set_action_active(
+            (
+                self.offer_tray_button,
+                self.collapsed_offer_button,
+            ),
+            snapshot.offer_tray_open,
+        )
+        camera_available = bool(snapshot.manual_camera_available)
+        camera_reason = str(snapshot.manual_camera_reason or "")
+        # Speed and capacity are explainable runtime blocks, not missing
+        # functionality. Keep the action clickable so the controller can show
+        # the localized reason instead of making the camera appear broken.
+        camera_actionable = camera_available or camera_reason in {
+            "speed",
+            "full",
+        }
+        for button in (
+            self.manual_camera_button,
+            self.collapsed_manual_camera_button,
+        ):
+            button.setEnabled(camera_actionable)
+        self._set_action_active(
+            (
+                self.manual_camera_button,
+                self.collapsed_manual_camera_button,
+            ),
+            camera_available and snapshot.manual_camera_active,
+        )
+        self._set_camera_state(
+            "full"
+            if camera_reason == "full"
+            else (
+                "active"
+                if camera_available and snapshot.manual_camera_active
+                else ("ready" if camera_available else "blocked")
+            )
+        )
+        self._update_camera_tooltips(
+            camera_available,
+            camera_reason,
+        )
 
     def set_expanded(self, expanded, emit_signal=True):
         expanded = bool(expanded)
@@ -161,7 +242,7 @@ class DashboardLauncherPanel(QWidget):
             self.expanded_page if expanded else self.collapsed_page
         )
         self.setFixedWidth(
-            EXPANDED_LAUNCHER_WIDTH
+            self._expanded_width
             if expanded
             else COLLAPSED_LAUNCHER_WIDTH
         )
@@ -263,7 +344,6 @@ class DashboardLauncherPanel(QWidget):
         self.information_center_button = self._create_tile_button(
             "資訊中心",
             "all",
-            primary=True,
         )
         self.information_center_button.clicked.connect(
             lambda checked=False: self._invoke("open_information_center")
@@ -279,9 +359,32 @@ class DashboardLauncherPanel(QWidget):
         tile_row.addWidget(self.offer_tray_button, stretch=1)
         layout.addLayout(tile_row)
 
+        self.manual_camera_button = QPushButton("手動拍照")
+        self.manual_camera_button.setIcon(
+            create_ui_icon("camera", color="#fffaf2", size=22)
+        )
+        self.manual_camera_button.setIconSize(QSize(22, 22))
+        self.manual_camera_button.setProperty("tanukiRole", "launcherAction")
+        self.manual_camera_button.clicked.connect(
+            lambda checked=False: self._invoke("toggle_manual_camera")
+        )
+        layout.addWidget(self.manual_camera_button)
+
+        status_header = QHBoxLayout()
+        status_header.setContentsMargins(0, 0, 0, 0)
+        status_header.setSpacing(self.theme.spacing_sm)
         self.status_caption = QLabel("目前狀態")
         self.status_caption.setProperty("tanukiRole", "launcherSection")
-        layout.addWidget(self.status_caption)
+        status_header.addWidget(self.status_caption)
+        status_header.addStretch(1)
+        self.play_day_label = QLabel("")
+        self.play_day_label.setProperty("tanukiRole", "launcherDayChip")
+        self.play_day_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+        self.play_day_label.hide()
+        status_header.addWidget(self.play_day_label)
+        layout.addLayout(status_header)
         status_frame = QFrame()
         status_frame.setProperty("tanukiRole", "launcherStatusPanel")
         status_layout = QHBoxLayout(status_frame)
@@ -309,20 +412,6 @@ class DashboardLauncherPanel(QWidget):
         self.notice_label.hide()
         layout.addWidget(self.notice_label)
 
-        self.settings_button = QPushButton("狀態設定")
-        self.settings_button.setIcon(
-            create_ui_icon("system", color="#fffaf2", size=22)
-        )
-        self.settings_button.setIconSize(QSize(22, 22))
-        self.settings_button.setProperty(
-            "tanukiRole",
-            "launcherAction",
-        )
-        self.settings_button.clicked.connect(
-            lambda checked=False: self._invoke("open_status_settings")
-        )
-        layout.addWidget(self.settings_button)
-
         layout.addStretch(1)
 
         self.shutdown_button = QPushButton("關閉系統")
@@ -342,7 +431,7 @@ class DashboardLauncherPanel(QWidget):
         self._action_buttons = [
             self.information_center_button,
             self.offer_tray_button,
-            self.settings_button,
+            self.manual_camera_button,
             self.shutdown_button,
         ]
         return page
@@ -386,7 +475,6 @@ class DashboardLauncherPanel(QWidget):
         self.collapsed_information_button = self._create_rail_button(
             "all",
             "開啟資訊中心",
-            primary=True,
         )
         self.collapsed_information_button.clicked.connect(
             lambda checked=False: self._invoke("open_information_center")
@@ -400,6 +488,14 @@ class DashboardLauncherPanel(QWidget):
             lambda checked=False: self._invoke("open_offer_tray")
         )
         layout.addWidget(self.collapsed_offer_button)
+        self.collapsed_manual_camera_button = self._create_rail_button(
+            "camera",
+            "開啟手動相機",
+        )
+        self.collapsed_manual_camera_button.clicked.connect(
+            lambda checked=False: self._invoke("toggle_manual_camera")
+        )
+        layout.addWidget(self.collapsed_manual_camera_button)
 
         self.collapsed_status_dots = QLabel("● ● ●")
         self.collapsed_status_dots.setAlignment(
@@ -411,14 +507,6 @@ class DashboardLauncherPanel(QWidget):
         )
         layout.addWidget(self.collapsed_status_dots)
 
-        self.collapsed_settings_button = self._create_rail_button(
-            "system",
-            "開啟狀態設定",
-        )
-        self.collapsed_settings_button.clicked.connect(
-            lambda checked=False: self._invoke("open_status_settings")
-        )
-        layout.addWidget(self.collapsed_settings_button)
         layout.addStretch(1)
 
         self.collapsed_shutdown_button = self._create_rail_button(
@@ -434,7 +522,7 @@ class DashboardLauncherPanel(QWidget):
             [
                 self.collapsed_information_button,
                 self.collapsed_offer_button,
-                self.collapsed_settings_button,
+                self.collapsed_manual_camera_button,
                 self.collapsed_shutdown_button,
             ]
         )
@@ -511,6 +599,99 @@ class DashboardLauncherPanel(QWidget):
         getattr(self.binding, method_name)()
         self.refresh_from_binding()
 
+    def _update_camera_tooltips(self, available, reason=""):
+        tooltip = translate_ui(
+            "launcher.manual_camera_controls",
+            default="手動相機：左鍵拍照；Tab 切換比例、Esc 取消",
+        )
+        if not available:
+            if reason == "speed":
+                tooltip = translate_ui(
+                    "launcher.manual_camera_1x_only",
+                    default="請切換至 1x 後再使用手動相機。",
+                )
+            elif reason == "full":
+                tooltip = translate_ui(
+                    "launcher.manual_camera_full",
+                    default="回憶相簿已滿，無法拍攝新照片。",
+                )
+            else:
+                tooltip = translate_ui(
+                    "launcher.manual_camera_unavailable",
+                    default="手動相機目前無法使用",
+                )
+        for button in (
+            self.manual_camera_button,
+            self.collapsed_manual_camera_button,
+        ):
+            button.setToolTip(tooltip)
+            button.setAccessibleName(tooltip)
+
+    @staticmethod
+    def _set_action_active(buttons, active):
+        for button in buttons:
+            button.setProperty("primary", bool(active))
+            button.style().unpolish(button)
+            button.style().polish(button)
+
+    def _set_camera_state(self, state):
+        for button in (
+            self.manual_camera_button,
+            self.collapsed_manual_camera_button,
+        ):
+            button.setProperty("cameraState", str(state or ""))
+            button.style().unpolish(button)
+            button.style().polish(button)
+
+    @staticmethod
+    def _text_width(widget):
+        return widget.fontMetrics().horizontalAdvance(widget.text())
+
+    def _update_preferred_width(self):
+        margins = 2 * self.theme.spacing_lg
+        header_controls = (
+            self.expanded_brand_label.width()
+            # The styled chrome buttons intentionally compress below the
+            # textual sizeHint (the collapse glyph reports an overly wide
+            # hint).  Reserve their real layout footprint instead.
+            + 68
+            + (4 * self.theme.spacing_sm)
+        )
+        title_width = max(
+            self._text_width(self.title_label),
+            self._text_width(self.subtitle_label),
+        )
+        header_width = margins + header_controls + title_width
+        self.title_label.setWordWrap(header_width > EXPANDED_LAUNCHER_MAX_WIDTH)
+
+        tile_text_width = max(
+            self._text_width(self.information_center_button),
+            self._text_width(self.offer_tray_button),
+        )
+        tile_width = (
+            margins
+            + self.theme.spacing_sm
+            + (2 * max(112, tile_text_width + (2 * self.theme.spacing_sm)))
+        )
+        single_action_width = margins + max(
+            self._text_width(self.manual_camera_button) + 70,
+            self._text_width(self.shutdown_button) + 70,
+        )
+        preferred = max(
+            EXPANDED_LAUNCHER_MIN_WIDTH,
+            min(
+                EXPANDED_LAUNCHER_MAX_WIDTH,
+                max(header_width, tile_width, single_action_width),
+            ),
+        )
+        preferred = int(preferred)
+        if preferred == self._expanded_width:
+            return
+        self._expanded_width = preferred
+        if self._expanded:
+            self.setFixedWidth(preferred)
+        self.preferred_width_changed.emit(preferred)
+
     def retranslate_ui(self):
         self.title_label.setText(
             translate_ui("launcher.title", default="狸貓控制中心")
@@ -530,11 +711,11 @@ class DashboardLauncherPanel(QWidget):
         self.offer_tray_button.setText(
             translate_ui("launcher.offer_tray", default="飲食餐盤")
         )
+        self.manual_camera_button.setText(
+            translate_ui("launcher.manual_camera", default="手動拍照")
+        )
         self.status_caption.setText(
             translate_ui("launcher.current_status", default="目前狀態")
-        )
-        self.settings_button.setText(
-            translate_ui("launcher.status_settings", default="狀態設定")
         )
         self.shutdown_button.setText(
             translate_ui("launcher.shutdown", default="關閉系統")
@@ -550,7 +731,28 @@ class DashboardLauncherPanel(QWidget):
         )
         self.collapse_button.setAccessibleName(collapse_accessible)
         self.collapse_button.setToolTip(collapse_accessible)
+        expand_accessible = translate_ui(
+            "launcher.expand_sidebar",
+            default="展開側邊欄",
+        )
+        self.expand_button.setToolTip(expand_accessible)
+        self.expand_button.setAccessibleName(expand_accessible)
         self.set_pinned(self._pinned, emit_signal=False)
+        self.information_center_button.setToolTip(
+            translate_ui(
+                "launcher.open_information_center",
+                default="開啟資訊中心",
+            )
+        )
+        self.offer_tray_button.setToolTip(
+            translate_ui(
+                "launcher.open_offer_tray",
+                default="開啟飲食餐盤",
+            )
+        )
+        self.shutdown_button.setToolTip(
+            translate_ui("launcher.shutdown", default="關閉系統")
+        )
         tooltips = (
             (
                 self.collapsed_information_button,
@@ -567,10 +769,10 @@ class DashboardLauncherPanel(QWidget):
                 ),
             ),
             (
-                self.collapsed_settings_button,
+                self.collapsed_manual_camera_button,
                 translate_ui(
-                    "launcher.open_status_settings",
-                    default="開啟狀態設定",
+                    "launcher.open_manual_camera",
+                    default="開啟手動相機",
                 ),
             ),
             (
@@ -581,4 +783,8 @@ class DashboardLauncherPanel(QWidget):
         for button, tooltip in tooltips:
             button.setToolTip(tooltip)
             button.setAccessibleName(tooltip)
+        self._update_preferred_width()
+
+    def refresh_ui_text_size(self):
+        self._update_preferred_width()
         self.refresh_from_binding()

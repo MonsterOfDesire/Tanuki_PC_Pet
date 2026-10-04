@@ -29,8 +29,14 @@ class FakeAssetManager:
         forbidden=None,
         mood_score=None,
         ordered_preferences=False,
+        excluded_variants=(),
     ):
-        self.calls.append((context, mood_score))
+        exclusion_tuple = tuple(excluded_variants)
+        self.calls.append(
+            (context, mood_score, exclusion_tuple)
+            if exclusion_tuple
+            else (context, mood_score)
+        )
         return ([f"{context}-frame"], "move", "manifest-action", "manifest-mood")
 
 
@@ -175,6 +181,31 @@ class RaceExecutorTests(unittest.TestCase):
         self.pets = (self.rudolf, self.teio)
         self.events = []
 
+    def test_disabled_frequency_blocks_new_race_and_reenable_gets_fresh_delay(self):
+        selected = ["disabled"]
+        self.executor.frequency_provider = lambda: selected[0]
+
+        disabled = self.executor.update(
+            now=10.0,
+            world_mode="sandbox",
+            pets=(self.rudolf, self.teio),
+        )
+
+        self.assertFalse(disabled.started)
+        self.assertEqual(disabled.reason, "autonomous_disabled")
+        self.assertEqual(self.executor.schedule.next_proposal_at, 0.0)
+
+        selected[0] = "normal"
+        enabled = self.executor.update(
+            now=20.0,
+            world_mode="sandbox",
+            pets=(self.rudolf, self.teio),
+        )
+
+        self.assertFalse(enabled.started)
+        self.assertEqual(enabled.reason, "schedule_initialized")
+        self.assertGreater(self.executor.schedule.next_proposal_at, 20.0)
+
     def update(self, now, **overrides):
         arguments = {
             "now": now,
@@ -196,6 +227,86 @@ class RaceExecutorTests(unittest.TestCase):
         self.assertEqual(self.rudolf.activity_state.phase, RACE_READY_PHASE)
         self.update(16.1)
         self.assertEqual(self.rudolf.activity_state.phase, RACE_RUNNING_PHASE)
+
+    def test_rudolf_lie_recovery_is_excluded_only_when_left_of_opponent(self):
+        activity = SimpleNamespace(
+            phase=SimpleNamespace(name=RACE_RECOVERY_PHASE),
+            metadata={
+                "challenger_name": self.rudolf.name,
+                "opponent_name": self.teio.name,
+                "challenger_form": "base",
+                "opponent_form": "base",
+            },
+        )
+
+        self.rudolf._x = 100.0
+        self.teio._x = 350.0
+        self.assertEqual(
+            self.executor._apply_phase_animations(
+                activity,
+                {pet.name: pet for pet in self.pets},
+            ),
+            "",
+        )
+        self.assertEqual(
+            self.rudolf.asset_manager.calls[-1][2],
+            (
+                ("idle", "lie", "happy"),
+                ("idle", "lie", "sad"),
+            ),
+        )
+
+        self.rudolf._x = 500.0
+        self.teio._x = 200.0
+        self.assertEqual(
+            self.executor._apply_phase_animations(
+                activity,
+                {pet.name: pet for pet in self.pets},
+            ),
+            "",
+        )
+        self.assertEqual(
+            self.rudolf.asset_manager.calls[-1],
+            ("activity_race_recovery", 60.0),
+        )
+
+    def test_rudolf_left_recovery_uses_fixed_finish_lane_not_current_positions(self):
+        sirius = FakePet("Sirius Symboli")
+        rudolf = FakePet("Symboli Rudolf", mood_score=30.0)
+        activity = SimpleNamespace(
+            phase=SimpleNamespace(name=RACE_RECOVERY_PHASE),
+            metadata={
+                "challenger_name": sirius.name,
+                "opponent_name": rudolf.name,
+                "challenger_form": "base",
+                "opponent_form": "base",
+                "challenger_finish_x": 320.0,
+                "opponent_finish_x": 80.0,
+            },
+        )
+        # A transient collision correction has visually swapped their current
+        # positions, but the lane targets still put Rudolf on the left.
+        sirius._x = 100.0
+        rudolf._x = 500.0
+
+        self.assertEqual(
+            self.executor._apply_phase_animations(
+                activity,
+                {sirius.name: sirius, rudolf.name: rudolf},
+            ),
+            "",
+        )
+        self.assertEqual(
+            rudolf.asset_manager.calls[-1],
+            (
+                "activity_race_recovery",
+                30.0,
+                (
+                    ("idle", "lie", "happy"),
+                    ("idle", "lie", "sad"),
+                ),
+            ),
+        )
 
     def test_complete_race_uses_manifest_phases_and_records_one_event(self):
         self.advance_to_running()
@@ -233,6 +344,18 @@ class RaceExecutorTests(unittest.TestCase):
             self.teio.post_race_interactions,
             [("Symboli Rudolf", 23.2, "relation_watch", 1.6)],
         )
+
+    def test_disabling_frequency_does_not_interrupt_active_race(self):
+        self.advance_to_running()
+        self.executor.frequency_provider = lambda: "disabled"
+
+        self.update(16.2)
+        self.update(19.2)
+        finished = self.update(23.2)
+
+        self.assertTrue(finished.finished)
+        self.assertEqual(self.events[-1].event_type, "race_completed")
+        self.assertEqual(self.executor.schedule.next_proposal_at, 0.0)
         self.assertEqual(self.rudolf.social_cooldown_end, 23.2)
         self.assertEqual(self.teio.intent_reconsider_after, 23.2)
 

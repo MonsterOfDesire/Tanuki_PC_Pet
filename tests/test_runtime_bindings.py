@@ -53,6 +53,11 @@ class RuntimeBindingsTests(unittest.TestCase):
             ),
             achievement_runtime_coordinator=SimpleNamespace(
                 build_cabinet_snapshot=lambda: "achievements",
+                reset_achievement=(
+                    lambda world_mode, achievement_id: calls.append(
+                        ("reset_achievement", world_mode, achievement_id)
+                    ) or True
+                ),
                 observe_time_scale=lambda value: calls.append(
                     ("time_scale", value)
                 ),
@@ -129,6 +134,15 @@ class RuntimeBindingsTests(unittest.TestCase):
                 "achievement_snapshot_provider"
             ](),
             "achievements",
+        )
+        self.assertTrue(
+            dashboard.bound["achievement"][
+                "achievement_reset_provider"
+            ]("sandbox", "race.first")
+        )
+        self.assertIn(
+            ("reset_achievement", "sandbox", "race.first"),
+            calls,
         )
         self.assertEqual(
             dashboard.bound["activity_actions"]["race_preview_provider"](),

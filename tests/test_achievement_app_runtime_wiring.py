@@ -62,7 +62,9 @@ class AchievementAppRuntimeWiringTests(unittest.TestCase):
             "sandbox",
             save_callback=lambda: calls.append("save"),
             unlock_callback=(
-                lambda achievement_ids: calls.append(tuple(achievement_ids))
+                lambda achievement_ids, _context=None: calls.append(
+                    tuple(achievement_ids)
+                )
             ),
         )
         result = SimpleNamespace(
@@ -110,7 +112,9 @@ class AchievementAppRuntimeWiringTests(unittest.TestCase):
             "sandbox",
             save_callback=lambda: calls.append("save"),
             unlock_callback=(
-                lambda achievement_ids: calls.append(tuple(achievement_ids))
+                lambda achievement_ids, _context=None: calls.append(
+                    tuple(achievement_ids)
+                )
             ),
         )
 

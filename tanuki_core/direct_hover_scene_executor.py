@@ -11,6 +11,7 @@ from .offer_interaction_rules import (
     get_denied_offer_reaction_candidates,
     get_direct_offer_accept_candidates,
     get_direct_offer_accept_context,
+    get_direct_offer_accept_duration_seconds,
     get_direct_offer_accept_purpose_order,
     get_direct_offer_preferred_moods,
     get_direct_offer_preview_candidates,
@@ -258,7 +259,7 @@ class DirectHoverSceneExecutor:
             now = app_now()
         if roll is None:
             roll = random.random()
-        end_at = now + 1.8
+        end_at = now + get_direct_offer_accept_duration_seconds(item_kind)
         purpose_order = get_direct_offer_accept_purpose_order(
             item_kind,
             target_pet.name,

@@ -69,6 +69,7 @@ class OfferAnimationSupport:
             or pet_has_sleep_join_intent(pet)
             or getattr(pet, "dragging", False)
             or getattr(pet, "drag_press_pending", False)
+            or getattr(pet, "throw_active", False)
             or getattr(pet, "flight_mode", "none") != "none"
             or getattr(pet, "care_mode", "none") != "none"
             or getattr(pet, "care_partner", None) is not None
@@ -82,6 +83,34 @@ class OfferAnimationSupport:
             and pet_form_allows_offer_item(pet, item_kind)
             and can_pet_interact_with_offer_item(item_kind, pet.name)
         )
+
+    def direct_offer_context_available(self, pet, item_kind):
+        if pet is None:
+            return False
+        context = get_direct_offer_accept_context(item_kind, pet.name)
+        asset_manager = getattr(pet, "asset_manager", None)
+        manifest_data = getattr(asset_manager, "manifest_data", None)
+        checker = getattr(
+            asset_manager,
+            "has_explicit_contextual_result_for_purposes",
+            None,
+        )
+        if callable(checker):
+            available = bool(
+                checker(
+                    ("move", "idle"),
+                    context=context,
+                    mood_score=getattr(pet, "mood_score", None),
+                )
+            )
+            # A real manifest is authoritative.  Managers without manifest
+            # metadata are treated as legacy adapters and may still use the
+            # old action table below.
+            if manifest_data:
+                return available
+            if available:
+                return True
+        return bool(get_direct_offer_accept_candidates(item_kind, pet.name))
 
     def find_offer_drop_target(self, item_kind, global_pos):
         global_x = float(global_pos.x())
@@ -413,6 +442,7 @@ class OfferAnimationSupport:
             return None
         if (
             child_pet.dragging
+            or bool(getattr(child_pet, "throw_active", False))
             or child_pet.is_offer_locked(now)
             or self.pet_is_busy_for_offer_interaction(child_pet, now)
         ):

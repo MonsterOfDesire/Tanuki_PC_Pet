@@ -16,6 +16,7 @@ class OfferPetExecutionPort:
     find_by_name: object
     is_busy: object
     can_interact_with_item: object
+    has_direct_offer_context: object
     find_drop_target: object
     find_hover_target: object
     choose_bottle_feed_child: object
@@ -123,6 +124,11 @@ class OfferSceneStatePort:
             until,
         )
 
+    def unlock_pet(self, pet, *, expected_scene_kind=None):
+        return self._host.unlock_pet_offer_scene(
+            pet, expected_scene_kind=expected_scene_kind,
+        )
+
     def get_scene_id(self, scene):
         return self._host.item_scene_coordinator.get_scene_id(scene)
 
@@ -197,6 +203,10 @@ class OfferSceneExecutionPort:
                 can_interact_with_item=_dynamic(
                     host,
                     "pet_can_interact_with_offer_item",
+                ),
+                has_direct_offer_context=_dynamic(
+                    host,
+                    "direct_offer_context_available",
                 ),
                 find_drop_target=_dynamic(host, "find_offer_drop_target"),
                 find_hover_target=_dynamic(host, "find_offer_hover_target"),

@@ -6,6 +6,7 @@ from .ui_skin_spec import (
     SKIN_RELATION_SUMMON,
     SKIN_STATUS_SETTINGS,
     SKIN_ACHIEVEMENT_CABINET,
+    SKIN_MEMORY_ALBUM,
 )
 
 
@@ -14,6 +15,7 @@ PAGE_EVENT_LOG = "event_log"
 PAGE_FAMILY_STATUS = "family_status"
 PAGE_STATUS_SETTINGS = "status_settings"
 PAGE_ACHIEVEMENTS = "achievements"
+PAGE_MEMORY_ALBUM = "memory_album"
 DEFAULT_INFORMATION_CENTER_PAGE = PAGE_FAMILY_STATUS
 
 
@@ -54,6 +56,13 @@ INFORMATION_CENTER_PAGE_SPECS = (
         title="獎盃蒐集櫃",
         placeholder_text="沙盒與黃金傳說的成就獎盃將在此頁顯示。",
         skin_key=SKIN_ACHIEVEMENT_CABINET,
+    ),
+    InformationCenterPageSpec(
+        page_id=PAGE_MEMORY_ALBUM,
+        navigation_label="回憶相簿",
+        title="回憶相簿",
+        placeholder_text="瀏覽互動事件與日常生活留下的照片。",
+        skin_key=SKIN_MEMORY_ALBUM,
     ),
     InformationCenterPageSpec(
         page_id=PAGE_STATUS_SETTINGS,

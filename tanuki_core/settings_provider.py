@@ -1,11 +1,14 @@
 from dataclasses import dataclass
 
 from .ui_localization import DEFAULT_UI_LOCALE, SUPPORTED_UI_LOCALES
+from .ui_typography import UI_TEXT_SIZE_OPTIONS
 
 
 @dataclass
 class RuntimeSettings:
-    world_mode: str = "golden_legend"
+    DEFAULT_WORLD_MODE = "sandbox"
+
+    world_mode: str = DEFAULT_WORLD_MODE
     care_feature_enabled: bool = True
     debug_enabled: bool = False
     social_status_enabled: bool = False
@@ -15,18 +18,28 @@ class RuntimeSettings:
     display_scale_idx: int = 0
     race_frequency: str = "normal"
     chorus_frequency: str = "normal"
+    autonomous_sleep_enabled: bool = True
+    autonomous_transformation_enabled: bool = True
     mood_climate: str = "cheerful"
     ui_locale: str = DEFAULT_UI_LOCALE
+    ui_text_size: str = "medium"
+    achievement_capture_enabled: bool = False
+    memory_album_mode: str = "off"
+    memory_album_capacity: int = 20
+    play_calendar_started_on: str = ""
 
     WORLD_MODE_OPTIONS = ("golden_legend", "sandbox")
     TIME_SCALE_OPTIONS = (1, 2, 4, 8)
     DISPLAY_SCALE_OPTIONS = (1.0, 1.5, 2.0, 3.0)
     TEIO_DURATIONS = (2, 5, 10, 20, 30)
     TSUYOSHI_DURATIONS = (2, 10, 20, 40, 60)
-    RACE_FREQUENCY_OPTIONS = ("frequent", "normal", "occasional")
-    CHORUS_FREQUENCY_OPTIONS = ("frequent", "normal", "occasional")
+    RACE_FREQUENCY_OPTIONS = ("disabled", "frequent", "normal", "occasional")
+    CHORUS_FREQUENCY_OPTIONS = ("disabled", "frequent", "normal", "occasional")
     MOOD_CLIMATE_OPTIONS = ("cheerful", "balanced", "expressive")
     UI_LOCALE_OPTIONS = SUPPORTED_UI_LOCALES
+    UI_TEXT_SIZE_OPTIONS = UI_TEXT_SIZE_OPTIONS
+    MEMORY_ALBUM_MODE_OPTIONS = ("off", "events", "random")
+    MEMORY_ALBUM_CAPACITY_OPTIONS = (20, 50, 100)
 
     def get_time_scale(self):
         return float(self.TIME_SCALE_OPTIONS[int(self.time_scale_idx)])

@@ -4,7 +4,7 @@
 
 ## 目前狀態
 
-- 目前 config schema：`8`
+- 目前 config schema：`12`
 - manifest schema：`1`
 - migration 實作：`tanuki_core/config_rules.py`
 - config 載入與保存：`tanuki_core/config_store.py`
@@ -19,6 +19,10 @@
 - schema 5 → 6：補入 `race_frequency=normal` 與 `mood_climate=cheerful`。
 - schema 6 → 7：補入 `chorus_frequency=normal`。
 - schema 7 → 8：補入 `ui_locale=zh_TW`。
+- schema 8 → 9：補入成就截圖開關，預設關閉。
+- schema 9 → 10：補入回憶相簿模式與容量，預設關閉／20 張。
+- schema 10 → 11：補入遊玩日期起算欄位；首次使用才建立，不回推安裝日期。
+- schema 11 → 12：補入自主睡眠與自主變身開關，預設啟用。
 
 所有既有 schema 都會依序 migration 後再 normalize；無法識別、低於 1 或高於目前支援版本的值會採保守預設並保留 warning。
 
@@ -38,15 +42,38 @@
 - `TanukiUpdater.exe` 會保留舊版 `config.json`，並以 staging、SHA-256 驗證、同磁碟替換與失敗 rollback 更新，不需要解除安裝。
 - manifest schema 維持 1；新增 Activity contexts 與權重仍由 `manifest_edit.xlsx` 及正式 converter 管理。
 
+## `v0.8.0-beta` → `v0.9.0-beta`
+
+- config schema 維持 8，不需要進行資料 migration。
+- 已存在且合法的 `world_mode` 完整保留；只有新安裝、缺值或無效值使用新的 `sandbox` 預設。
+- Windows 更新包沿用既有 updater／manifest／ZIP 流程；macOS 首版採 Release 手動下載，不共用 Windows 安裝登記或更新器。
+- macOS 將同一份 config persistence 放在 Application Support；家庭事件、角色狀態與成就仍隨 config 保存。
+
+## `v0.8.0-beta`／跨平台測試版 → `v0.11.0-beta`
+
+- config schema 8–11 會自動升級至 12；既有世界模式、語系、家庭資料與成就保留，不需要清除設定。
+- 介面文字尺寸缺值或無效時使用「中」100%；已保存的小／中／大選擇保留，比例統一為 80%／100%／150%。
+- 競賽與合奏頻率新增 `disabled`；自主睡眠及自主變身可以獨立停用。停用只阻止新自主活動，已開始的活動正常結束，沙盒手動測試不受影響。
+- 回憶相簿與成就照片位於使用者資料目錄，不放入發行 ZIP。升級不清除照片；達到容量只停止新增，不淘汰既有照片。
+- Windows 主程式與獨立更新器需完成簽章後再產生更新 ZIP、manifest 與最終雜湊。macOS 仍以相同版本的 `.app` ZIP 手動替換，設定保存在 bundle 外。
+
 ## 使用者設定與版本庫設定
 
 - `config.example.json` 是版本化的預設範例。
 - `config.json` 是本機執行狀態並由 `.gitignore` 排除，不應加入 release commit。
 - migration 應優先自動完成；若未來出現無法安全推導的設定，必須在 release note 記錄手動處理方式。
 
+## 平台相容性
+
+- 沒有既有設定或 `world_mode` 無效時，新安裝預設使用 `sandbox`；既有明確的 `golden_legend` 設定不會被覆寫。
+- Windows 可攜版仍將 `config.json` 放在主程式資料夾並由 `TanukiUpdater.exe` 保留。
+- macOS 功能受限版使用 `~/Library/Application Support/Tanuki_PC_Pet/config.json`，不寫入 `.app` bundle。
+- macOS 不啟動 Win32 WindowTracker、全域滑鼠監聽器或 Windows 獨立更新器；完整能力差異見 [MACOS_LIMITED_VERSION.md](MACOS_LIMITED_VERSION.md)。
+- macOS 角色 overlay 使用逐幀 alpha 原生輸入遮罩、AppKit non-activating panel 與 all-Spaces 視窗政策；工具介面使用原生標題列，收合入口不建立 Windows `SensorZone`。這些能力由 `PlatformCapabilities` 隔離，Windows 保持既有矩形 widget 命中、自繪 chrome、邊緣感應區與工具視窗行為；跨平台只在實際螢幕拓撲改變時共用安全重算。
+
 ## 發版前相容性檢查
 
-- [ ] schema 1–7 均可載入並升級至 schema 8。
+- [ ] schema 1–11 均可載入並升級至 schema 12。
 - [ ] 無效設定值會回到已記錄的預設值並產生 warning。
 - [ ] 舊 household 資料可在沒有競賽戰績時載入。
 - [ ] `config.json` 未進入 staged changes。

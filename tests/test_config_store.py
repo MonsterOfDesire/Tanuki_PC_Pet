@@ -100,6 +100,57 @@ class ConfigStoreTests(unittest.TestCase):
             self.assertEqual(store.loaded_state["dashboard"]["time_scale_idx"], 2)
             self.assertTrue(any("root-level dashboard" in warning for warning in store.validation_warnings))
 
+    def test_save_preserves_last_valid_payload_as_backup(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config_path = Path(tmp_dir) / "config.json"
+            store = ConfigStore(
+                str(config_path),
+                clamp_pet_position=lambda pet, x, y: (x, y),
+            )
+            dashboard = FakeDashboard()
+            store.dashboard = dashboard
+            store.pets_dict = {"Tokai Teio": {"pet": FakePet()}}
+
+            dashboard.world_mode = "golden_legend"
+            store.save_now(force=True)
+            dashboard.world_mode = "sandbox"
+            store.save_now(force=True)
+
+            backup = json.loads(
+                Path(f"{config_path}.bak").read_text(encoding="utf-8")
+            )
+            current = json.loads(config_path.read_text(encoding="utf-8"))
+            self.assertEqual(backup["dashboard"]["world_mode"], "golden_legend")
+            self.assertEqual(current["dashboard"]["world_mode"], "sandbox")
+            self.assertEqual(list(Path(tmp_dir).glob("*.tmp")), [])
+
+    def test_load_recovers_from_backup_when_primary_is_invalid(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config_path = Path(tmp_dir) / "config.json"
+            backup_path = Path(f"{config_path}.bak")
+            config_path.write_text("{broken", encoding="utf-8")
+            backup_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 11,
+                        "dashboard": {"world_mode": "sandbox"},
+                        "pets": {},
+                        "household": {},
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            store = ConfigStore(
+                str(config_path),
+                clamp_pet_position=lambda pet, x, y: (x, y),
+            )
+
+            self.assertEqual(store.loaded_state["dashboard"]["world_mode"], "sandbox")
+            self.assertTrue(
+                any("上一份備份" in warning for warning in store.validation_warnings)
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

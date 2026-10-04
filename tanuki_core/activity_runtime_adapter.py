@@ -58,6 +58,8 @@ class ActivityRuntimeAdapter:
             or getattr(pet, "drag_press_pending", False)
         ):
             busy_reasons.append("drag")
+        if bool(getattr(pet, "throw_active", False)):
+            busy_reasons.append("airborne")
         if bool(getattr(pet, "is_angry_locked", False)):
             busy_reasons.append("angry")
         if bool(getattr(pet, "is_recovering", False)):
@@ -82,7 +84,10 @@ class ActivityRuntimeAdapter:
             busy_reasons.append("flight")
         if bool(getattr(pet, "perched_window_hwnd", 0)):
             busy_reasons.append("window_perch")
-        if float(getattr(pet, "vy", 0.0) or 0.0) != 0.0:
+        if (
+            float(getattr(pet, "vy", 0.0) or 0.0) != 0.0
+            and "airborne" not in busy_reasons
+        ):
             busy_reasons.append("airborne")
         is_offer_locked = getattr(pet, "is_offer_locked", None)
         if (
@@ -93,6 +98,16 @@ class ActivityRuntimeAdapter:
             busy_reasons.append("offer")
         if str(getattr(pet, "held_item_kind", "") or ""):
             busy_reasons.append("held_item")
+        is_side_ready_followup_locked = getattr(
+            pet,
+            "is_side_ready_followup_locked",
+            None,
+        )
+        if (
+            callable(is_side_ready_followup_locked)
+            and bool(is_side_ready_followup_locked(now))
+        ):
+            busy_reasons.append("rare_pose")
 
         state = getattr(pet, "activity_state", None)
         active_activity_id = (
@@ -162,12 +177,14 @@ class ActivityRuntimeAdapter:
         binding: ActivityAnimationBinding,
         *,
         band_override: str = "",
+        excluded_variants=(),
     ) -> ManifestAnimationApplyResult:
         result = self.animation_resolver.apply(
             pet,
             binding.build_request(
                 float(getattr(pet, "mood_score", 60.0)),
                 band_override=band_override,
+                excluded_variants=excluded_variants,
             ),
         )
         if result.applied and result.selection is not None:

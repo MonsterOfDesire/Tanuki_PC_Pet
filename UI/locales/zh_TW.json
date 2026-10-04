@@ -20,6 +20,7 @@
     "title": "狸貓資訊中心",
     "window_title": "狸貓資訊中心 — {page}",
     "loading": "正在載入頁面…",
+    "page_load_failed": "此頁面暫時無法載入；其他功能仍可繼續使用。",
     "size": "視窗尺寸",
     "size_tooltip": "套用建議比例；套用後仍可拖曳視窗邊框自由調整。",
     "detach": "分離頁面",
@@ -33,6 +34,7 @@
       "event_log": {"navigation": "事件日誌", "title": "事件日誌"},
       "family_status": {"navigation": "家庭摘要", "title": "家庭狀態摘要"},
       "achievements": {"navigation": "獎盃蒐集櫃", "title": "獎盃蒐集櫃"},
+      "memory_album": {"navigation": "回憶相簿", "title": "回憶相簿", "placeholder": "瀏覽互動事件與日常生活留下的照片。"},
       "status_settings": {"navigation": "狀態設定", "title": "狀態設定"}
     },
     "sizes": {
@@ -46,11 +48,14 @@
     "title": "狸貓控制中心", "subtitle": "桌面生活捷徑",
     "main_actions": "主要功能", "information_center": "資訊中心",
     "open_information_center": "開啟資訊中心", "offer_tray": "飲食餐盤",
-    "open_offer_tray": "開啟飲食餐盤", "current_status": "目前狀態",
+    "open_offer_tray": "開啟飲食餐盤", "manual_camera": "手動拍照",
+    "open_manual_camera": "開啟手動相機", "manual_camera_unavailable": "手動相機目前無法使用",
+    "manual_camera_controls": "手動相機：左鍵拍照；Tab 切換 4:3／16:9、Esc 取消", "manual_camera_1x_only": "請切換至 1x 後再使用手動相機。", "manual_camera_full": "手動相機暫停：回憶相簿已滿，無法拍攝新照片。", "manual_camera_saved": "照片已保存到回憶相簿。", "manual_camera_failed": "無法擷取畫面；請確認螢幕錄製權限。",
+    "current_status": "目前狀態", "play_day": "第 {day} 天", "play_day_tooltip": "從 {date} 起計算本地曆日。",
     "status_settings": "狀態設定", "open_status_settings": "開啟狀態設定", "shutdown": "關閉系統",
     "disconnected": "未連接", "care_on": "照護中", "care_off": "照護關閉",
     "world_golden_legend": "黃金傳說", "world_sandbox": "沙盒",
-    "pin_sidebar": "釘選側邊欄", "collapse_sidebar": "收合側邊欄", "pinned_tooltip": "已釘選；點擊後允許自動收合", "unpinned_tooltip": "未釘選；點擊後保持展開"
+    "pin_sidebar": "釘選側邊欄", "collapse_sidebar": "收合側邊欄", "expand_sidebar": "展開側邊欄", "pinned_tooltip": "已釘選；點擊後允許自動收合", "unpinned_tooltip": "未釘選；點擊後保持展開"
   },
   "updates": {
     "checking": "正在檢查更新…",
@@ -62,6 +67,7 @@
     "view_release": "查看新版",
     "download_updater": "下載更新器",
     "updater_ready": "請到 Release 下載 TanukiUpdater.exe 後執行。",
+    "manual_platform": "此平台目前採手動更新，請查看 Release 下載對應版本。",
     "manual_only": "本版本尚未提供自動更新包，可先查看 Release。"
   },
   "common": {
@@ -127,20 +133,44 @@
     "modes": {"sandbox": "沙盒", "golden_legend": "黃金傳說"}, "mode_tabs": {"sandbox": "沙盒成就", "golden_legend": "黃金傳說成就"},
     "progress": "已取得 {unlocked} / {total}", "summary_recent": "{progress}｜最近：{title}", "summary_empty": "{progress}｜尚無完成成就",
     "acquisition_record": "取得紀錄", "hover_unlocked": "將游標移到已取得的獎盃上，即可查看取得方式。", "unlocked_at": "取得時間：{time}",
+    "memory_capture": "自動保存成就截圖", "memory_capture_tooltip": "只在 1x 擷取；關閉時不會擷取畫面。macOS 首次使用可能要求螢幕錄製權限。", "memory_saved": "已保存解鎖時的畫面。", "memory_missing": "此成就沒有保存截圖。", "memory_open": "開啟原圖", "reset": "重置成就", "reset_confirm": "再次點擊確認重置", "reset_tooltip": "第一次點擊只會進入確認狀態；再次點擊才會清除此成就及其成就截圖。",
     "locked_accessible": "未取得的 {tier} 獎盃", "unlocked_accessible": "已取得 {tier} 成就：{title}",
     "notification": {"single": "獲得新成就", "multiple": "一次獲得 {count} 項成就", "more": " 等 {count} 項"}
   },
+  "memory_album": {
+    "mode": {"label": "拍照模式", "off": "不開啟", "events": "互動事件", "random": "隨機拍照"},
+    "capacity": "照片上限", "folder_short": "照片資料夾", "open_folder": "開啟照片資料夾", "open_photo": "開啟這張照片", "empty": "還沒有照片。互動留下的回憶會出現在這裡。", "settings_note": "只在 1x 自動拍攝；達到上限後停止拍攝，既有照片不會自動刪除。",
+    "status": {"normal": "已保存 {count}/{capacity} 張；只在 1x 拍攝，系統不會自動刪除照片。", "near_full": "相簿即將滿載（{count}/{capacity}）；抵達上限後將停止拍攝。", "full": "相簿已滿（{count}/{capacity}）；將不再拍攝新照片，既有照片不會自動刪除。", "compact_normal": "已保存 {count}/{capacity} 張", "compact_near_full": "即將滿載 {count}/{capacity}", "compact_full": "相簿已滿 {count}/{capacity}"}
+  },
   "settings": {
     "language_and_updates": "語言與更新", "interface_language": "介面語言", "unavailable": "狀態設定尚未連接執行中的 Dashboard。",
-    "groups": {"runtime": "執行模式", "timing": "時間與畫面", "social_cooldown": "社交冷卻", "life_rhythm": "生活節奏", "developer": "開發工具"},
-    "world_mode": "世界模式", "time_scale": "時間流速", "display_scale": "顯示比例", "enable_care": "啟用角色照護功能", "enable_care_tooltip": "允許低心情照護與相關家庭互動。",
+    "categories": {"title": "設定分類", "overview": "總覽"},
+    "tabs": {"mode": "模式設定", "developer": "開發工具"},
+    "noticeboard": {"basic": "基本與畫面", "activity": "自主活動", "memory": "回憶與系統", "care": "角色照護", "sleep": "自主睡眠", "transformation": "自主變身"},
+    "text_size": "文字尺寸", "text_sizes": {"small": "小", "medium": "中", "large": "大"},
+    "control_tooltips": {
+      "world_mode": "選擇世界模式；沙盒不受家庭經濟規則限制。",
+      "time_scale": "調整模擬時間流速；倍速期間不計成就，也不自動拍照。",
+      "display_scale": "調整角色顯示大小，不改變介面文字尺寸。",
+      "text_size": "立即調整所有介面文字尺寸：小 80%、中 100%、大 150%；初次使用預設為中，角色圖片大小不變。",
+      "imitation": "調整帝寶與鶴寶再次模仿魯道夫前的等待時間；不影響一般社交互動冷卻。",
+      "photo_capacity": "達到照片上限後停止拍攝；調低上限不會刪除已有照片。",
+      "language": "立即切換介面語言。",
+      "check_updates": "手動檢查 GitHub 上是否有新版本。",
+      "download_update": "開啟更新下載連結。",
+      "validate": "檢查設定與動畫 manifest 的有效性。"
+    },
+    "memory_mode_tooltips": {"off": "停止自動拍照；仍可使用手動相機。", "events": "只在 1x 記錄互動事件；相簿滿載後停止拍攝。", "random": "在 1x 記錄互動事件，並不定時拍攝日常畫面；相簿滿載後停止拍攝。"},
+    "groups": {"runtime": "執行模式", "timing": "時間與畫面", "social_cooldown": "模仿魯道夫冷卻", "life_rhythm": "生活節奏", "memory_album": "回憶相簿", "developer": "開發工具"},
+    "imitation_cooldown_tooltip": "調整帝寶與鶴寶再次模仿魯道夫前的等待時間；不影響一般社交互動冷卻。",
+    "world_mode": "世界模式", "time_scale": "時間流速", "display_scale": "顯示比例", "enable_care": "啟用角色照護功能", "enable_care_tooltip": "允許低心情照護與相關家庭互動。", "enable_autonomous_sleep": "啟用自主睡眠", "enable_autonomous_sleep_tooltip": "關閉後不再開始新的自主睡眠；既有睡眠會正常結束。", "enable_autonomous_transformation": "啟用自主變身", "enable_autonomous_transformation_tooltip": "關閉後不再開始新的自主變身；既有變身與解除流程會正常完成。",
     "race_frequency": "競賽頻率", "race_frequency_tooltip": "調整自主競賽的等待與冷卻時間；不略過資格、距離或接受判定。", "chorus_frequency": "合奏頻率", "chorus_frequency_tooltip": "調整自主合奏的等待、重試與冷卻時間；不略過資格、距離或反應判定。",
     "mood_climate": "情緒氣候", "mood_climate_tooltip": "自然心情會隨模擬倍速更新；三種氣候只調整發生率、正負傾向與幅度，不設定目標心情。",
     "show_debug": "顯示角色 Debug 資訊", "show_debug_tooltip": "顯示完整角色與效能偵錯資訊。", "show_social_status": "顯示角色社交狀態標籤", "show_social_status_tooltip": "在角色頭上顯示 random、relation_watch 等行為測試標籤。",
     "preview_work": "預覽魯道夫工作", "preview_race": "預覽魯道夫 vs 帝寶競賽", "preview_chorus": "立即預覽合奏", "transformation_control": "沙盒形態控制", "sleep_control": "沙盒睡眠控制", "validate_config_manifest": "檢查 Config / Manifest",
     "preview_work_idle": "只播放工作與休息動畫，不套用金錢、家庭壓力或心情結算。", "preview_race_idle": "播放魯道夫與帝寶的完整競賽；不寫入事件，也不套用數值變動。", "preview_chorus_idle": "立即開始一場沙盒合奏；沿用自主反應，不寫事件或套用收益。", "preview_work_active": "魯道夫工作預覽已開始；本次不會套用任何結算。", "preview_race_active": "魯道夫 vs 帝寶競賽預覽已開始；本次不寫入正式事件或數值。", "preview_chorus_active": "合奏預覽已開始；本次不寫入事件，也不套用心情或關係收益。", "sleep_control_idle": "指定角色睡覺或用既有 waking 流程喚醒；僅限沙盒。",
     "preview_work_tooltip": "使用 manifest 的 activity_work_stationary 與 activity_work_rest 預覽；不套用正式結算。", "preview_work_sandbox_only": "只可在沙盒模式使用工作預覽。", "preview_race_tooltip": "使用競賽 manifest contexts 播放完整流程；不寫入正式事件或數值。", "preview_race_sandbox_only": "只可在沙盒模式使用競賽預覽。", "preview_chorus_tooltip": "立即開始合奏並沿用自主加入／觀看反應；不寫入事件或套用收益。", "preview_chorus_sandbox_only": "只可在沙盒模式使用合奏預覽。",
-    "world_modes": {"golden_legend": "黃金傳說", "sandbox": "沙盒"}, "frequencies": {"frequent": "經常", "normal": "普通", "occasional": "偶爾"}, "mood_climates": {"cheerful": "明朗", "balanced": "均衡", "expressive": "多彩"}
+    "world_modes": {"golden_legend": "黃金傳說", "sandbox": "沙盒"}, "frequencies": {"disabled": "不啟用", "frequent": "經常", "normal": "普通", "occasional": "偶爾"}, "mood_climates": {"cheerful": "明朗", "balanced": "均衡", "expressive": "多彩"}
   },
   "transformation": {"action_revert_label": "解除變身", "action_transform_label": "變身"},
   "preview_messages": {

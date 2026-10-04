@@ -1,5 +1,6 @@
 from .activity_runtime_adapter import pet_has_active_activity
 from .offer_interaction_rules import (
+    BOTTLE_DRINK_SECONDS,
     ITEM_BOTTLE,
     ITEM_HONEY,
     get_bottle_feed_child_approach_candidates,
@@ -39,6 +40,8 @@ HONEY_GUARD_APPROACH_MIN_SPEED_SCALE = 1.0
 HONEY_GUARD_APPROACH_MIN_SPEED_FLOOR = 0.0
 HONEY_GUARD_RESCUE_MIN_SPEED_FLOOR = 5.0
 HONEY_GUARD_NEGATIVE_AFTERGLOW_SECONDS = 5.0
+HONEY_GUARD_POST_TAKE_SECONDS = 5.0
+HONEY_GUARD_CHILD_POST_TAKE_SECONDS = 2.0
 HONEY_GUARD_TAKE_PREFERRED_MOODS = ("sad", "think")
 HONEY_GUARD_TAKE_FORBIDDEN_MOODS = (
     "cool",
@@ -51,7 +54,7 @@ HONEY_GUARD_TAKE_FORBIDDEN_MOODS = (
     "glance",
     "relief",
 )
-BOTTLE_FEED_DRINK_SECONDS = 5.0
+BOTTLE_FEED_DRINK_SECONDS = BOTTLE_DRINK_SECONDS
 BOTTLE_FEED_APPROACH_MIN_SPEED = 2.0
 
 
@@ -74,6 +77,21 @@ def prepare_honey_guardian_activity(guardian_pet) -> bool:
     if not bool(interrupt_provider(guardian_pet, reason="honey_guard")):
         return False
     return not pet_has_active_activity(guardian_pet)
+
+
+def _apply_honey_guard_reaction(port, pet, context, candidates, moods, forbidden, *, preserve):
+    changed = port.animation.apply_context(
+        pet, "idle", context, moods, forbidden=forbidden,
+        preserve=preserve, ignore_mood_band=True, ordered_preferences=True,
+    )
+    if not changed and candidates:
+        changed = port.animation.apply_candidates(
+            pet, candidates, moods, forbidden=forbidden, preserve=preserve,
+        )
+    if not changed:
+        port.animation.apply_reaction(
+            pet, moods, forbidden=forbidden, preserve=preserve,
+        )
 
 
 @adapt_offer_scene_executor
@@ -342,23 +360,45 @@ class BottleHoneySceneExecutor:
         return True
 
     def update_honey_guard_scene(self, port, now):
+        scene = port.scene.current
         guardian_pet = port.pets.find_by_name(port.scene.current.actor_name, visible_only=False)
         child_pet = port.pets.find_by_name(port.scene.current.target_name, visible_only=False)
-        if guardian_pet is None or child_pet is None:
+        if now >= float(scene.scene_ends_at):
+            port.scene.clear()
+            return False
+        if scene.stage == "snatch":
+            child_release_at = float(scene.stage_ends_at or (
+                scene.scene_ends_at - HONEY_GUARD_POST_TAKE_SECONDS
+                + HONEY_GUARD_CHILD_POST_TAKE_SECONDS
+            ))
+            if now >= child_release_at:
+                if child_pet is not None:
+                    port.scene.unlock_pet(child_pet, expected_scene_kind="honey_guard")
+                    child_pet.state_timer = 0
+                    child_pet.refresh_movement_state()
+                scene.stage = "guardian_stay"
+        child_participating = scene.stage != "guardian_stay"
+        if guardian_pet is None or (child_participating and child_pet is None):
             port.scene.clear()
             return False
         if (
-            port.animation.is_window_transitioning(child_pet) or
+            (child_participating and port.animation.is_window_transitioning(child_pet)) or
             port.animation.prepare_window_state(guardian_pet)
         ):
             port.scene.clear()
-            return port.items.apply_held_item_behavior(child_pet, now)
-        port.scene.refresh_locks(guardian_pet, child_pet)
-        child_pet.state = "idle"
-        child_candidates = get_direct_offer_preview_candidates(ITEM_HONEY, child_pet.name)
-        child_moods = get_direct_offer_preferred_moods(ITEM_HONEY)
-        child_preview_context = get_direct_offer_preview_context(ITEM_HONEY, child_pet.name)
+            return (
+                port.items.apply_held_item_behavior(child_pet, now)
+                if child_participating else False
+            )
+        port.scene.refresh_locks(*(
+            (guardian_pet, child_pet) if child_participating else (guardian_pet,)
+        ))
+        if child_participating:
+            child_pet.state = "idle"
         if port.scene.current.stage == "approach":
+            child_candidates = get_direct_offer_preview_candidates(ITEM_HONEY, child_pet.name)
+            child_moods = get_direct_offer_preferred_moods(ITEM_HONEY)
+            child_preview_context = get_direct_offer_preview_context(ITEM_HONEY, child_pet.name)
             if child_moods and not port.animation.apply_context(
                 child_pet,
                 "idle",
@@ -407,8 +447,9 @@ class BottleHoneySceneExecutor:
             if guardian_pet.distance_to(child_pet) <= 150:
                 port.scene.current.stage = "snatch"
                 port.scene.current.stage_initialized = False
-                port.scene.current.scene_ends_at = float(now) + 1.2
-                port.scene.current.stage_ends_at = float(port.scene.current.scene_ends_at)
+                port.scene.current.stage_started_at = float(now)
+                port.scene.current.scene_ends_at = float(now) + HONEY_GUARD_POST_TAKE_SECONDS
+                port.scene.current.stage_ends_at = float(now) + HONEY_GUARD_CHILD_POST_TAKE_SECONDS
                 port.items.clear_held_item(child_pet)
                 if not port.scene.current.event_recorded:
                     port.events.record_offer_event(
@@ -470,116 +511,26 @@ class BottleHoneySceneExecutor:
             return True
 
         port.animation.reset_pet_motion(guardian_pet)
-        port.animation.reset_pet_motion(child_pet)
-        guardian_pet.direction = -1 if child_pet.x() < guardian_pet.x() else 1
-        child_pet.direction = -guardian_pet.direction
+        if child_participating:
+            port.animation.reset_pet_motion(child_pet)
+            guardian_pet.direction = -1 if child_pet.x() < guardian_pet.x() else 1
+            child_pet.direction = -guardian_pet.direction
         guardian_candidates = get_honey_guardian_take_candidates(guardian_pet.name)
-        denied_candidates = get_denied_offer_reaction_candidates(child_pet.name)
-        denied_moods = get_denied_offer_preferred_moods()
-        denied_forbidden = get_denied_offer_forbidden_moods()
         guardian_take_context = get_honey_guardian_take_context(guardian_pet.name)
-        denied_context = get_denied_offer_context(child_pet.name)
-
-        if not port.scene.current.stage_initialized:
-            guardian_changed = port.animation.apply_context(
-                guardian_pet,
-                "idle",
-                guardian_take_context,
-                HONEY_GUARD_TAKE_PREFERRED_MOODS,
-                forbidden=HONEY_GUARD_TAKE_FORBIDDEN_MOODS,
-                ignore_mood_band=True,
-                ordered_preferences=True,
+        preserve = bool(scene.stage_initialized)
+        _apply_honey_guard_reaction(
+            port, guardian_pet, guardian_take_context, guardian_candidates,
+            HONEY_GUARD_TAKE_PREFERRED_MOODS, HONEY_GUARD_TAKE_FORBIDDEN_MOODS,
+            preserve=preserve,
+        )
+        if child_participating:
+            _apply_honey_guard_reaction(
+                port, child_pet, get_denied_offer_context(child_pet.name),
+                get_denied_offer_reaction_candidates(child_pet.name),
+                get_denied_offer_preferred_moods(), get_denied_offer_forbidden_moods(),
+                preserve=preserve,
             )
-            if not guardian_changed and guardian_candidates:
-                guardian_changed = port.animation.apply_candidates(
-                    guardian_pet,
-                    guardian_candidates,
-                    HONEY_GUARD_TAKE_PREFERRED_MOODS,
-                    forbidden=HONEY_GUARD_TAKE_FORBIDDEN_MOODS,
-                )
-            if not guardian_changed:
-                port.animation.apply_reaction(
-                    guardian_pet,
-                    HONEY_GUARD_TAKE_PREFERRED_MOODS,
-                    forbidden=HONEY_GUARD_TAKE_FORBIDDEN_MOODS,
-                )
-            child_changed = port.animation.apply_context(
-                child_pet,
-                "idle",
-                denied_context,
-                denied_moods,
-                forbidden=denied_forbidden,
-                ignore_mood_band=True,
-                ordered_preferences=True,
-            )
-            if not child_changed and denied_candidates:
-                child_changed = port.animation.apply_candidates(
-                    child_pet,
-                    denied_candidates,
-                    denied_moods,
-                    forbidden=denied_forbidden,
-                )
-            if not child_changed:
-                port.animation.apply_reaction(
-                    child_pet,
-                    denied_moods,
-                    forbidden=denied_forbidden,
-                )
-            port.scene.current.stage_initialized = True
-        else:
-            guardian_changed = port.animation.apply_context(
-                guardian_pet,
-                "idle",
-                guardian_take_context,
-                HONEY_GUARD_TAKE_PREFERRED_MOODS,
-                forbidden=HONEY_GUARD_TAKE_FORBIDDEN_MOODS,
-                preserve=True,
-                ignore_mood_band=True,
-                ordered_preferences=True,
-            )
-            if not guardian_changed and guardian_candidates:
-                guardian_changed = port.animation.apply_candidates(
-                    guardian_pet,
-                    guardian_candidates,
-                    HONEY_GUARD_TAKE_PREFERRED_MOODS,
-                    forbidden=HONEY_GUARD_TAKE_FORBIDDEN_MOODS,
-                    preserve=True,
-                )
-            if not guardian_changed:
-                port.animation.apply_reaction(
-                    guardian_pet,
-                    HONEY_GUARD_TAKE_PREFERRED_MOODS,
-                    forbidden=HONEY_GUARD_TAKE_FORBIDDEN_MOODS,
-                    preserve=True,
-                )
-            child_changed = port.animation.apply_context(
-                child_pet,
-                "idle",
-                denied_context,
-                denied_moods,
-                forbidden=denied_forbidden,
-                preserve=True,
-                ignore_mood_band=True,
-                ordered_preferences=True,
-            )
-            if not child_changed and denied_candidates:
-                child_changed = port.animation.apply_candidates(
-                    child_pet,
-                    denied_candidates,
-                    denied_moods,
-                    forbidden=denied_forbidden,
-                    preserve=True,
-                )
-            if not child_changed:
-                port.animation.apply_reaction(
-                    child_pet,
-                    denied_moods,
-                    forbidden=denied_forbidden,
-                    preserve=True,
-                )
+            child_pet.refresh_movement_state()
+        scene.stage_initialized = True
         guardian_pet.refresh_movement_state()
-        child_pet.refresh_movement_state()
-        if now >= float(port.scene.current.scene_ends_at):
-            port.scene.clear()
-            return False
         return True

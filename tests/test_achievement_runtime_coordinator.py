@@ -5,6 +5,7 @@ from tanuki_core.achievement_gameplay_bridge import AchievementGameplayBridge
 from tanuki_core.achievement_runtime_coordinator import (
     AchievementRuntimeCoordinator,
 )
+from tanuki_core.achievement_state import AchievementState
 
 
 class FakeAchievementService:
@@ -12,6 +13,13 @@ class FakeAchievementService:
         self.started = []
         self.cancelled = []
         self.consumed = []
+        self.catalog = SimpleNamespace(
+            get=lambda achievement_id: (
+                SimpleNamespace(world_mode="sandbox")
+                if achievement_id == "race.first"
+                else None
+            )
+        )
 
     def begin_activity_session(self, **fields):
         self.started.append(fields)
@@ -36,16 +44,47 @@ class AchievementRuntimeCoordinatorTests(unittest.TestCase):
             world_mode_provider=lambda: "sandbox",
         )
         coordinator = AchievementRuntimeCoordinator(
-            state=None,
+            state=AchievementState(),
             eligibility_guard=SimpleNamespace(),
             time_scale_provider=lambda: 1.0,
             world_mode_provider=lambda: "sandbox",
             service=service,
             gameplay_bridge=bridge,
             save_callback=lambda: callbacks.append("save"),
-            unlock_callback=lambda ids: callbacks.append(tuple(ids)),
+            unlock_callback=(
+                lambda ids, context: callbacks.append(
+                    (tuple(ids), context)
+                )
+            ),
         )
         return coordinator, service
+
+    def test_reset_achievement_validates_catalog_and_saves(self):
+        callbacks = []
+        coordinator, _service = self.build_coordinator(
+            callbacks=callbacks
+        )
+        coordinator.state.progress_for(
+            "sandbox",
+            "race.first",
+        ).unlock(12.0)
+
+        self.assertFalse(
+            coordinator.reset_achievement(
+                "golden_legend",
+                "race.first",
+            )
+        )
+        self.assertFalse(
+            coordinator.reset_achievement("sandbox", "unknown")
+        )
+        self.assertTrue(
+            coordinator.reset_achievement("sandbox", "race.first")
+        )
+        self.assertFalse(
+            coordinator.state.is_unlocked("sandbox", "race.first")
+        )
+        self.assertEqual(callbacks, ["save"])
 
     def test_state_change_saves_and_only_notifies_real_unlocks(self):
         callbacks = []
@@ -56,11 +95,18 @@ class AchievementRuntimeCoordinatorTests(unittest.TestCase):
         coordinator.handle_state_changed(
             SimpleNamespace(unlocked_achievement_ids=())
         )
+        source_event = object()
         coordinator.handle_state_changed(
-            SimpleNamespace(unlocked_achievement_ids=("race.first",))
+            SimpleNamespace(
+                unlocked_achievement_ids=("race.first",),
+                source_event=source_event,
+            )
         )
 
-        self.assertEqual(callbacks, ["save", "save", ("race.first",)])
+        self.assertEqual(
+            callbacks,
+            ["save", "save", (("race.first",), source_event)],
+        )
 
     def test_activity_session_is_resolved_from_activity_coordinator(self):
         coordinator, service = self.build_coordinator()

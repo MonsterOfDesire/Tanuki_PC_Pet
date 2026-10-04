@@ -15,6 +15,7 @@ class FakeAssetManager:
     def __init__(self, path, *, result=None, **_kwargs):
         self.character_path = path
         self.result = result
+        self.scale_factor = float(_kwargs.get("scale_factor", 1.0))
         self.frame_cache = object()
         self.store_cache = object()
 
@@ -87,6 +88,34 @@ class FakePet:
 
 
 class TransformationExecutorTests(unittest.TestCase):
+    def test_rudolf_transformed_assets_use_profile_visual_scale(self):
+        manager = FakeAssetManager(
+            "base",
+            result=(["frame"], "idle", "stand", "happy"),
+        )
+        pet = FakePet("Symboli Rudolf", "base", manager)
+        executor = TransformationExecutor(
+            asset_manager_factory=lambda path, **kwargs: FakeAssetManager(
+                path,
+                result=(["frame"], "idle", "stand", "happy"),
+                **kwargs,
+            )
+        )
+
+        transformed_manager = executor._build_asset_manager(
+            pet,
+            "transformed",
+            FORM_TRANSFORMED,
+        )
+        base_manager = executor._build_asset_manager(
+            pet,
+            "base",
+            FORM_BASE,
+        )
+
+        self.assertAlmostEqual(transformed_manager.scale_factor, 0.89)
+        self.assertAlmostEqual(base_manager.scale_factor, 1.0)
+
     def test_pending_drag_hold_blocks_transformation_start(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             os.mkdir(os.path.join(temp_dir, "transformed"))
@@ -193,6 +222,48 @@ class TransformationExecutorTests(unittest.TestCase):
             self.assertEqual(pet.transformation_state.auto_form_expires_at, 580.0)
             self.assertTrue(started[0].started)
             self.assertEqual(started[0].source, "autonomous_start")
+
+    def test_disabled_autonomous_transformation_clears_tendency_and_reenable_reschedules(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            os.mkdir(os.path.join(temp_dir, "transformed"))
+            result = (["frame"], "idle", "stand", "happy")
+            manager = FakeAssetManager(temp_dir, result=result)
+            pet = FakePet("Tokai Teio", temp_dir, manager)
+            pet.mood_score = 60.0
+            pet.transformation_state.auto_tendency_score = 25.0
+            pet.transformation_state.auto_pending_tendency_advance_seconds = 30.0
+            executor = TransformationExecutor(
+                asset_manager_factory=lambda path, **kwargs: FakeAssetManager(
+                    path,
+                    result=result,
+                    **kwargs,
+                ),
+                random_source=FixedRandom(),
+            )
+
+            disabled = executor.update_auto(
+                [pet],
+                world_mode="golden_legend",
+                sim_now=500.0,
+                transition_now=100.0,
+                autonomous_enabled=False,
+            )
+
+            self.assertEqual(disabled, ())
+            self.assertEqual(pet.transformation_state.auto_next_attempt_at, 0.0)
+            self.assertEqual(pet.transformation_state.auto_tendency_score, 0.0)
+
+            executor.update_auto(
+                [pet],
+                world_mode="golden_legend",
+                sim_now=510.0,
+                transition_now=101.0,
+                autonomous_enabled=True,
+            )
+            self.assertGreater(
+                pet.transformation_state.auto_next_attempt_at,
+                510.0,
+            )
 
     def test_auto_update_schedules_and_starts_without_formal_source_in_sandbox(self):
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -275,6 +275,23 @@ class PetAmbientExpressionRulesTests(unittest.TestCase):
         self.assertEqual(pet.ambient_low_mood_tag, "sad")
         self.assertEqual(pet.ambient_low_mood_streak, 4)
 
+    def test_normal_band_afterglow_precedes_weighted_happy_selection(self):
+        pet = FakePet({
+            ("move", "fly", "happy"): build_record(
+                "happy-fly", weight=100.0, bands=("normal",),
+            ),
+        }, mood_score=80.0)
+        pet.afterglow = True
+        rng = StubRng()
+
+        self.assertTrue(apply_ambient_low_mood_tendency(
+            pet, (("move", "fly"),), rng=rng,
+        ))
+
+        self.assertEqual(pet.default_calls, [((("move", "fly"),), "random")])
+        self.assertEqual(pet.current_mood_tag, "angry")
+        self.assertIsNone(rng.seen_weights)
+
     def test_leaving_low_band_resets_runtime_tendency(self):
         pet = FakePet({}, mood_score=60.0)
         pet.ambient_low_mood_tag = "sad"

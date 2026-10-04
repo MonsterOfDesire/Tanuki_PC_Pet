@@ -26,6 +26,7 @@ from .ui_icons import (
     create_ui_icon,
     create_ui_pixmap,
 )
+from .ui_typography import ui_font_pixels
 from .ui_localization import (
     character_display_name,
     localize_character_names_in_text,
@@ -534,7 +535,11 @@ class EventLogPanel(QWidget):
                     )
                 )
             self.event_table.setItem(row, column, item)
-        self.event_table.setRowHeight(row, 48)
+        self.event_table.setRowHeight(row, ui_font_pixels(48))
+
+    def refresh_ui_text_size(self):
+        for row in range(self.event_table.rowCount()):
+            self.event_table.setRowHeight(row, ui_font_pixels(48))
 
     def _on_current_cell_changed(self, row, _column, _previous_row, _previous_column):
         if self._applying_presentation or not 0 <= row < len(self.entries):

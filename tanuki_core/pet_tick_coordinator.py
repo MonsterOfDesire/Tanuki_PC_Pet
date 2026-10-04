@@ -8,6 +8,7 @@ from .pet_logic import (
     AI_PHASE_ANGRY_LOCKED,
     AI_PHASE_RECOVERY_ACTIVE,
     AI_PHASE_RECOVERY_FINISHED,
+    TICK_PHASE_AIRBORNE,
     TICK_PHASE_DRAGGING,
     TICK_PHASE_RUN_AI,
     TICK_PHASE_WINDOW_FLIGHT,
@@ -75,13 +76,17 @@ class PetTickCoordinator:
         window_perch_handled,
         window_flight_handled,
         vertical_velocity,
+        throw_active=False,
     ):
-        phase = decide_tick_phase(
-            dragging=dragging,
-            window_perch_handled=window_perch_handled,
-            window_flight_handled=window_flight_handled,
-            vertical_velocity=vertical_velocity,
-        )
+        if bool(throw_active) and not bool(dragging):
+            phase = TICK_PHASE_AIRBORNE
+        else:
+            phase = decide_tick_phase(
+                dragging=dragging,
+                window_perch_handled=window_perch_handled,
+                window_flight_handled=window_flight_handled,
+                vertical_velocity=vertical_velocity,
+            )
         should_refresh_and_return = phase in {
             TICK_PHASE_DRAGGING,
             TICK_PHASE_WINDOW_PERCH,

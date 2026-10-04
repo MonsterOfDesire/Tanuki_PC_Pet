@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "analysis_version": "2026-08-25.2b",
+  "generated_at": "2026-08-25T21:10:50.759525+08:00",
+  "access_context": "Authenticated, read-only X session. No likes, reposts, follows, replies, direct messages, or account-setting changes were made.",
+  "search_count": 6,
+  "searches": [
+    {
+      "search_id": "x-search-001",
+      "query": "from:amami64toshihi シリウスシンボリ filter:media until:2023-01-01 since:2022-01-01",
+      "purpose": "find an early first-party Sirius Symboli asset post",
+      "result_urls": [
+        "https://x.com/amami64toshihi/status/1570424123989569538",
+        "https://x.com/amami64toshihi/status/1570435591627739137"
+      ],
+      "classification": "first_party_base_drawing_author",
+      "local_link_result": "high_confidence_composition_match_to_guitar_group"
+    },
+    {
+      "search_id": "x-search-002",
+      "query": "from:amami64toshihi エアグルーヴ filter:media",
+      "purpose": "test whether the same artist's Air Groove post matches the local lying template",
+      "result_urls": [
+        "https://x.com/amami64toshihi/status/1580973620968689664",
+        "https://x.com/amami64toshihi/status/1580977650876964865"
+      ],
+      "classification": "first_party_drawing_but_different_pose",
+      "local_link_result": "rejected_for_local_lying_group"
+    },
+    {
+      "search_id": "x-search-003",
+      "query": "from:gnkk__ata_1240 たぬき filter:media",
+      "purpose": "screen a known no-unauthorized-reposting author against the current local scope",
+      "result_urls": [
+        "https://x.com/gnkk__ata_1240/status/1973253222916857987",
+        "https://x.com/gnkk__ata_1240/status/1781475210140729552"
+      ],
+      "classification": "first_party_media_screen",
+      "local_link_result": "no_verified_match_in_current_five_character_scope_not_an_exclusion"
+    },
+    {
+      "search_id": "x-search-004",
+      "query": "from:kanzaki_ryuto たぬき filter:media",
+      "purpose": "screen a known no-unauthorized-reposting author against the current local scope",
+      "result_urls": [
+        "https://x.com/kanzaki_ryuto/status/1848020341781835918",
+        "https://x.com/kanzaki_ryuto/status/2047139936865079353"
+      ],
+      "classification": "first_party_authorship_claims_for_other_tanuki_media",
+      "local_link_result": "no_verified_match_in_current_five_character_scope_not_an_exclusion"
+    },
+    {
+      "search_id": "x-search-005",
+      "query": "シンボリルドルフ たぬき filter:media until:2023-01-01 since:2021-01-01",
+      "purpose": "find early source posts rather than recent reusers",
+      "result_urls": [
+        "https://x.com/BOOK_LIBRARYs/status/1586674274810691591",
+        "https://x.com/amami64toshihi/status/1570395486707937281"
+      ],
+      "classification": "mixed_downstream_video_and_first_party_drawing_candidates",
+      "local_link_result": "no_match_to_local_lying_group; Rudolf guitar derivative still lacks editor attribution"
+    },
+    {
+      "search_id": "x-search-006",
+      "query": "シリウスシンボリ たぬき filter:media until:2023-01-01 since:2021-01-01",
+      "purpose": "find early source posts rather than recent reusers",
+      "result_urls": [
+        "https://x.com/BOOK_LIBRARYs/status/1589203438113419264",
+        "https://x.com/amami64toshihi/status/1570435591627739137",
+        "https://x.com/amami64toshihi/status/1570424123989569538"
+      ],
+      "classification": "first_party_base_drawing_and_downstream_video_trail",
+      "local_link_result": "base_composition_author_found; animation_author_unresolved"
+    }
+  ]
+}

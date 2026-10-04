@@ -1,6 +1,8 @@
 import os
+import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -16,6 +18,7 @@ from tanuki_core.achievement_cabinet_ui import (
 )
 from tanuki_core.achievement_catalog import load_achievement_catalog
 from tanuki_core.achievement_presenter import (
+    AchievementCardSnapshot,
     build_achievement_cabinet_snapshot,
     build_achievement_unlock_notification,
 )
@@ -54,6 +57,282 @@ class AchievementCabinetUiTests(unittest.TestCase):
         self.assertEqual(panel.current_world_mode, "golden_legend")
         self.assertEqual(panel.progress_label.text(), "已取得 0 / 2")
         self.assertEqual(panel.current_tier, "G3")
+        panel.deleteLater()
+
+    def test_capture_toggle_uses_binding_and_defaults_off(self):
+        class Binding:
+            def __init__(self, snapshot):
+                self._snapshot = snapshot
+                self.enabled = False
+
+            def snapshot(self):
+                return self._snapshot
+
+            def capture_enabled(self):
+                return self.enabled
+
+            def set_capture_enabled(self, enabled):
+                self.enabled = bool(enabled)
+                return self.enabled
+
+        binding = Binding(self.snapshot)
+        panel = AchievementCabinetPanel(
+            AssetManager.get_resource_path,
+            binding=binding,
+        )
+
+        self.assertFalse(panel.capture_toggle.isChecked())
+        panel.capture_toggle.setChecked(True)
+
+        self.assertTrue(binding.enabled)
+        panel.deleteLater()
+
+    def test_memory_open_action_uses_designed_button_presentation(self):
+        panel = AchievementCabinetPanel(AssetManager.get_resource_path)
+
+        self.assertEqual(
+            panel.memory_open_button.property("tanukiRole"),
+            "achievementMemoryOpen",
+        )
+        self.assertFalse(panel.memory_open_button.icon().isNull())
+        self.assertEqual(panel.memory_open_button.iconSize().width(), 17)
+        self.assertEqual(
+            panel.memory_open_button.accessibleName(),
+            panel.memory_open_button.text(),
+        )
+        self.assertEqual(
+            panel.memory_open_button.toolTip(),
+            panel.memory_open_button.text(),
+        )
+        panel.deleteLater()
+
+    def test_memory_action_stays_available_after_leaving_trophy(self):
+        definition = self.catalog.get("race.first_natural_finish")
+        self.state.progress_for(
+            definition.world_mode,
+            definition.achievement_id,
+        ).unlock(1_700_000_000.0)
+        snapshot = build_achievement_cabinet_snapshot(
+            self.catalog,
+            self.state,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_directory:
+            memory_path = Path(temp_directory) / "achievement.png"
+            pixmap = QPixmap(32, 18)
+            pixmap.fill()
+            self.assertTrue(pixmap.save(str(memory_path), "PNG"))
+
+            class Binding:
+                @staticmethod
+                def latest_memory_path(world_mode, achievement_id):
+                    return memory_path
+
+            panel = AchievementCabinetPanel(
+                AssetManager.get_resource_path,
+                binding=Binding(),
+            )
+            panel.set_snapshot(snapshot, definition.world_mode)
+            panel.select_tier(definition.tier)
+            card = next(
+                widget
+                for widget in panel.card_widgets
+                if widget.snapshot.slot_key == definition.achievement_id
+            )
+            panel.show_card_detail(card.snapshot)
+            self.assertFalse(panel.memory_open_button.isHidden())
+
+            # Moving from the trophy to the detail panel must not remove the
+            # action before the user can click it.
+            card.cleared.emit()
+            self.assertFalse(panel.memory_open_button.isHidden())
+
+            with patch(
+                "tanuki_core.achievement_cabinet_ui."
+                "QDesktopServices.openUrl",
+                return_value=True,
+            ) as opener:
+                panel.memory_open_button.click()
+
+            opener.assert_called_once()
+            opened_url = opener.call_args.args[0]
+            self.assertTrue(opened_url.isLocalFile())
+            # Qt may preserve /var or Windows 8.3 aliases while Path.resolve
+            # canonicalizes them. Check the actual file, not its spelling.
+            self.assertTrue(
+                os.path.samefile(opened_url.toLocalFile(), memory_path),
+            )
+            panel.deleteLater()
+
+    def test_missing_memory_clears_previous_achievement_preview(self):
+        with tempfile.TemporaryDirectory() as temp_directory:
+            memory_path = Path(temp_directory) / "achievement.png"
+            pixmap = QPixmap(32, 18)
+            pixmap.fill()
+            self.assertTrue(pixmap.save(str(memory_path), "PNG"))
+
+            class Binding:
+                @staticmethod
+                def latest_memory_path(world_mode, achievement_id):
+                    if achievement_id == "with-memory":
+                        return memory_path
+                    return None
+
+            panel = AchievementCabinetPanel(
+                AssetManager.get_resource_path,
+                binding=Binding(),
+            )
+            with_memory = AchievementCardSnapshot(
+                slot_key="with-memory",
+                tier="G1",
+                unlocked=True,
+                image_relative_path="",
+                title="有截圖",
+            )
+            without_memory = AchievementCardSnapshot(
+                slot_key="without-memory",
+                tier="G1",
+                unlocked=True,
+                image_relative_path="",
+                title="無截圖",
+            )
+
+            panel.show_card_detail(with_memory)
+            self.assertFalse(panel.memory_preview_label.isHidden())
+            self.assertFalse(panel.memory_open_button.isHidden())
+            self.assertEqual(panel._current_memory_path, memory_path)
+
+            panel.show_card_detail(without_memory)
+
+            self.assertTrue(panel.memory_preview_label.isHidden())
+            self.assertTrue(panel.memory_open_button.isHidden())
+            self.assertIsNone(panel._current_memory_path)
+            self.assertFalse(panel.memory_status_label.isHidden())
+            self.assertTrue(panel.memory_status_label.text())
+            self.assertFalse(panel._open_current_memory())
+            panel.deleteLater()
+
+    def test_selected_achievement_detail_ignores_later_hover(self):
+        definitions = [
+            definition
+            for definition in self.catalog.definitions
+            if definition.world_mode == "sandbox"
+            and definition.tier == "G1"
+        ][:2]
+        self.assertEqual(len(definitions), 2)
+        for definition in definitions:
+            self.state.progress_for(
+                definition.world_mode,
+                definition.achievement_id,
+            ).unlock(1_700_000_000.0)
+        snapshot = build_achievement_cabinet_snapshot(
+            self.catalog,
+            self.state,
+        )
+        panel = AchievementCabinetPanel(AssetManager.get_resource_path)
+        panel.set_snapshot(snapshot, "sandbox")
+        panel.select_tier("G1")
+        cards_by_key = {
+            widget.snapshot.slot_key: widget
+            for widget in panel.card_widgets
+        }
+        first = cards_by_key[definitions[0].achievement_id]
+        second = cards_by_key[definitions[1].achievement_id]
+
+        first.highlighted.emit(first.snapshot)
+        self.assertEqual(panel.detail_title_label.text(), first.snapshot.title)
+
+        first.selected.emit(first.snapshot)
+        second.highlighted.emit(second.snapshot)
+
+        self.assertEqual(panel._selected_card_key, first.snapshot.slot_key)
+        self.assertEqual(panel.detail_title_label.text(), first.snapshot.title)
+        self.assertTrue(first.property("selected"))
+        self.assertFalse(second.property("selected"))
+
+        second.selected.emit(second.snapshot)
+
+        self.assertEqual(panel._selected_card_key, second.snapshot.slot_key)
+        self.assertEqual(panel.detail_title_label.text(), second.snapshot.title)
+        self.assertFalse(first.property("selected"))
+        self.assertTrue(second.property("selected"))
+
+        panel.select_mode("golden_legend")
+        self.assertIsNone(panel._selected_card_key)
+        panel.deleteLater()
+
+    def test_unlocked_card_requires_two_stage_reset_confirmation(self):
+        definition = self.catalog.get("race.first_natural_finish")
+        self.state.progress_for(
+            definition.world_mode,
+            definition.achievement_id,
+        ).unlock(1_700_000_000.0)
+
+        class Binding:
+            def __init__(self, catalog, state):
+                self.catalog = catalog
+                self.state = state
+                self.reset_calls = []
+
+            def snapshot(self):
+                return build_achievement_cabinet_snapshot(
+                    self.catalog,
+                    self.state,
+                )
+
+            def capture_enabled(self):
+                return False
+
+            def reset_achievement(self, world_mode, achievement_id):
+                self.reset_calls.append((world_mode, achievement_id))
+                return self.state.reset_achievement(
+                    world_mode,
+                    achievement_id,
+                )
+
+        binding = Binding(self.catalog, self.state)
+        panel = AchievementCabinetPanel(
+            AssetManager.get_resource_path,
+            binding=binding,
+        )
+        panel.select_mode(definition.world_mode)
+        panel.select_tier(definition.tier)
+        card = next(
+            widget
+            for widget in panel.card_widgets
+            if widget.snapshot.slot_key == definition.achievement_id
+        )
+
+        self.assertIsNotNone(card.reset_button)
+        self.assertEqual(
+            card.reset_button.property("tanukiRole"),
+            "achievementReset",
+        )
+        self.assertFalse(card.reset_button.property("confirming"))
+        self.assertFalse(card.reset_button.icon().isNull())
+        self.assertFalse(card._handle_reset_clicked())
+        self.assertEqual(binding.reset_calls, [])
+        self.assertIn("再次", card.reset_button.text())
+        self.assertTrue(card.reset_button.property("confirming"))
+
+        card._reset_armed_at -= 1.0
+        self.assertTrue(card._handle_reset_clicked())
+        self.assertEqual(
+            binding.reset_calls,
+            [(definition.world_mode, definition.achievement_id)],
+        )
+        self.assertFalse(
+            self.state.is_unlocked(
+                definition.world_mode,
+                definition.achievement_id,
+            )
+        )
+        replacement = next(
+            widget
+            for widget in panel.card_widgets
+            if widget.snapshot.slot_key == definition.achievement_id
+        )
+        self.assertIsNone(replacement.reset_button)
         panel.deleteLater()
 
     def test_locked_card_does_not_reveal_title_method_or_progress(self):

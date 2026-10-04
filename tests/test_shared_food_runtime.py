@@ -216,7 +216,9 @@ class SharedFoodRuntimeTests(unittest.TestCase):
             )
 
     def advance_to_request_decision(self, runtime, holder, partner):
-        partner._x = holder.x() + 80.0
+        partner._x = float(
+            runtime.offer_scene.shared_food_state.approach_target_x
+        )
         runtime.update_shared_food_scene(runtime.offer_scene.stage_started_at + 0.1)
         self.assertEqual(runtime.offer_scene.stage, "request_decision")
 

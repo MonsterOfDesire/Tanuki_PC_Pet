@@ -6,9 +6,13 @@ from .information_center_state import (
     normalize_information_center_config_state,
 )
 from .settings_provider import RuntimeSettings
+from .play_calendar import normalize_local_date
+from .ui_typography import normalize_ui_text_size
 
 
 WORLD_MODE_OPTIONS = RuntimeSettings.WORLD_MODE_OPTIONS
+DEFAULT_WORLD_MODE = RuntimeSettings.DEFAULT_WORLD_MODE
+
 
 @dataclass(frozen=True)
 class DashboardConfigState:
@@ -22,8 +26,15 @@ class DashboardConfigState:
     social_status_enabled: bool = False
     race_frequency: str = "normal"
     chorus_frequency: str = "normal"
+    autonomous_sleep_enabled: bool = True
+    autonomous_transformation_enabled: bool = True
     mood_climate: str = "cheerful"
     ui_locale: str = "zh_TW"
+    ui_text_size: str = "medium"
+    achievement_capture_enabled: bool = False
+    memory_album_mode: str = "off"
+    memory_album_capacity: int = 20
+    play_calendar_started_on: str = ""
     information_center: InformationCenterConfigState = field(
         default_factory=InformationCenterConfigState
     )
@@ -81,12 +92,19 @@ def build_dashboard_config_state(
     social_status_enabled=False,
     race_frequency="normal",
     chorus_frequency="normal",
+    autonomous_sleep_enabled=True,
+    autonomous_transformation_enabled=True,
     mood_climate="cheerful",
     ui_locale="zh_TW",
+    ui_text_size="medium",
+    achievement_capture_enabled=False,
+    memory_album_mode="off",
+    memory_album_capacity=20,
+    play_calendar_started_on="",
     information_center=None,
 ):
     return DashboardConfigState(
-        world_mode=safe_world_mode(world_mode, WORLD_MODE_OPTIONS[0]),
+        world_mode=safe_world_mode(world_mode, DEFAULT_WORLD_MODE),
         care_feature_enabled=bool(care_feature_enabled),
         teio_dur_idx=int(teio_dur_idx),
         tsuyoshi_dur_idx=int(tsuyoshi_dur_idx),
@@ -96,13 +114,17 @@ def build_dashboard_config_state(
         social_status_enabled=bool(social_status_enabled),
         race_frequency=safe_option(
             race_frequency,
-            RuntimeSettings.RACE_FREQUENCY_OPTIONS[1],
+            "normal",
             RuntimeSettings.RACE_FREQUENCY_OPTIONS,
         ),
         chorus_frequency=safe_option(
             chorus_frequency,
-            RuntimeSettings.CHORUS_FREQUENCY_OPTIONS[1],
+            "normal",
             RuntimeSettings.CHORUS_FREQUENCY_OPTIONS,
+        ),
+        autonomous_sleep_enabled=bool(autonomous_sleep_enabled),
+        autonomous_transformation_enabled=bool(
+            autonomous_transformation_enabled
         ),
         mood_climate=safe_option(
             mood_climate,
@@ -113,6 +135,21 @@ def build_dashboard_config_state(
             ui_locale,
             RuntimeSettings.UI_LOCALE_OPTIONS[0],
             RuntimeSettings.UI_LOCALE_OPTIONS,
+        ),
+        achievement_capture_enabled=bool(achievement_capture_enabled),
+        ui_text_size=normalize_ui_text_size(ui_text_size),
+        memory_album_mode=safe_option(
+            memory_album_mode,
+            "off",
+            RuntimeSettings.MEMORY_ALBUM_MODE_OPTIONS,
+        ),
+        memory_album_capacity=(
+            int(memory_album_capacity)
+            if memory_album_capacity in RuntimeSettings.MEMORY_ALBUM_CAPACITY_OPTIONS
+            else 20
+        ),
+        play_calendar_started_on=normalize_local_date(
+            play_calendar_started_on
         ),
         information_center=(
             information_center
@@ -174,6 +211,22 @@ def normalize_dashboard_config_state(raw_state, defaults, option_bounds):
             getattr(defaults, "chorus_frequency", "normal"),
             RuntimeSettings.CHORUS_FREQUENCY_OPTIONS,
         ),
+        autonomous_sleep_enabled=bool(
+            raw_state.get(
+                "autonomous_sleep_enabled",
+                getattr(defaults, "autonomous_sleep_enabled", True),
+            )
+        ),
+        autonomous_transformation_enabled=bool(
+            raw_state.get(
+                "autonomous_transformation_enabled",
+                getattr(
+                    defaults,
+                    "autonomous_transformation_enabled",
+                    True,
+                ),
+            )
+        ),
         mood_climate=safe_option(
             raw_state.get(
                 "mood_climate",
@@ -189,6 +242,40 @@ def normalize_dashboard_config_state(raw_state, defaults, option_bounds):
             ),
             getattr(defaults, "ui_locale", "zh_TW"),
             RuntimeSettings.UI_LOCALE_OPTIONS,
+        ),
+        achievement_capture_enabled=bool(
+            raw_state.get(
+                "achievement_capture_enabled",
+                getattr(defaults, "achievement_capture_enabled", False),
+            )
+        ),
+        ui_text_size=normalize_ui_text_size(raw_state.get(
+            "ui_text_size", getattr(defaults, "ui_text_size", "medium")
+        )),
+        memory_album_mode=safe_option(
+            raw_state.get(
+                "memory_album_mode",
+                getattr(defaults, "memory_album_mode", "off"),
+            ),
+            getattr(defaults, "memory_album_mode", "off"),
+            RuntimeSettings.MEMORY_ALBUM_MODE_OPTIONS,
+        ),
+        memory_album_capacity=(
+            int(raw_state.get(
+                "memory_album_capacity",
+                getattr(defaults, "memory_album_capacity", 20),
+            ))
+            if raw_state.get(
+                "memory_album_capacity",
+                getattr(defaults, "memory_album_capacity", 20),
+            ) in RuntimeSettings.MEMORY_ALBUM_CAPACITY_OPTIONS
+            else int(getattr(defaults, "memory_album_capacity", 20))
+        ),
+        play_calendar_started_on=normalize_local_date(
+            raw_state.get(
+                "play_calendar_started_on",
+                getattr(defaults, "play_calendar_started_on", ""),
+            )
         ),
         information_center=normalize_information_center_config_state(
             raw_state.get("information_center", {}),
@@ -213,10 +300,25 @@ def dashboard_config_state_to_payload(state):
         "chorus_frequency": str(
             getattr(state, "chorus_frequency", "normal")
         ),
+        "autonomous_sleep_enabled": bool(
+            getattr(state, "autonomous_sleep_enabled", True)
+        ),
+        "autonomous_transformation_enabled": bool(
+            getattr(state, "autonomous_transformation_enabled", True)
+        ),
         "mood_climate": str(
             getattr(state, "mood_climate", "cheerful")
         ),
         "ui_locale": str(getattr(state, "ui_locale", "zh_TW")),
+        "ui_text_size": normalize_ui_text_size(getattr(state, "ui_text_size", "medium")),
+        "achievement_capture_enabled": bool(
+            getattr(state, "achievement_capture_enabled", False)
+        ),
+        "memory_album_mode": str(getattr(state, "memory_album_mode", "off")),
+        "memory_album_capacity": int(getattr(state, "memory_album_capacity", 20)),
+        "play_calendar_started_on": str(
+            getattr(state, "play_calendar_started_on", "")
+        ),
         "information_center": information_center_config_state_to_payload(
             getattr(
                 state,
@@ -228,7 +330,10 @@ def dashboard_config_state_to_payload(state):
 
 
 def apply_dashboard_config_to_settings(settings_provider, state):
-    settings_provider.world_mode = safe_world_mode(state.world_mode, WORLD_MODE_OPTIONS[0])
+    settings_provider.world_mode = safe_world_mode(
+        state.world_mode,
+        DEFAULT_WORLD_MODE,
+    )
     settings_provider.care_feature_enabled = bool(state.care_feature_enabled)
     settings_provider.debug_enabled = bool(state.debug_enabled)
     settings_provider.social_status_enabled = bool(
@@ -248,6 +353,12 @@ def apply_dashboard_config_to_settings(settings_provider, state):
         "normal",
         RuntimeSettings.CHORUS_FREQUENCY_OPTIONS,
     )
+    settings_provider.autonomous_sleep_enabled = bool(
+        getattr(state, "autonomous_sleep_enabled", True)
+    )
+    settings_provider.autonomous_transformation_enabled = bool(
+        getattr(state, "autonomous_transformation_enabled", True)
+    )
     settings_provider.mood_climate = safe_option(
         getattr(state, "mood_climate", "cheerful"),
         "cheerful",
@@ -257,6 +368,26 @@ def apply_dashboard_config_to_settings(settings_provider, state):
         getattr(state, "ui_locale", "zh_TW"),
         "zh_TW",
         RuntimeSettings.UI_LOCALE_OPTIONS,
+    )
+    settings_provider.achievement_capture_enabled = bool(
+        getattr(state, "achievement_capture_enabled", False)
+    )
+    settings_provider.ui_text_size = normalize_ui_text_size(
+        getattr(state, "ui_text_size", "medium")
+    )
+    settings_provider.memory_album_mode = safe_option(
+        getattr(state, "memory_album_mode", "off"),
+        "off",
+        RuntimeSettings.MEMORY_ALBUM_MODE_OPTIONS,
+    )
+    settings_provider.memory_album_capacity = (
+        int(getattr(state, "memory_album_capacity", 20))
+        if getattr(state, "memory_album_capacity", 20)
+        in RuntimeSettings.MEMORY_ALBUM_CAPACITY_OPTIONS
+        else 20
+    )
+    settings_provider.play_calendar_started_on = normalize_local_date(
+        getattr(state, "play_calendar_started_on", "")
     )
 
 

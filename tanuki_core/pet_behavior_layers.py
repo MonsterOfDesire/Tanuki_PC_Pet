@@ -173,7 +173,11 @@ class PetBehaviorLayersMixin:
 
     def get_behavior_layer_anchor(self):
         surface = self.get_surface_snapshot()
-        if self.vy != 0 or self.flight_mode != "none":
+        if (
+            self.vy != 0
+            or bool(getattr(self, "throw_active", False))
+            or self.flight_mode != "none"
+        ):
             return "air", "air"
         if self.perched_window_hwnd:
             return "window_top", "window_top"
@@ -182,7 +186,12 @@ class PetBehaviorLayersMixin:
         return "air", "screen_space"
 
     def get_perception_window_flags(self):
-        if not self.window_tracker or not self.isVisible() or self.dragging:
+        if (
+            not self.window_tracker
+            or not self.isVisible()
+            or self.dragging
+            or bool(getattr(self, "throw_active", False))
+        ):
             return False, False
         actor_snapshot = self.window_tracker.build_actor_snapshot(self)
         perch_available = bool(
@@ -216,7 +225,10 @@ class PetBehaviorLayersMixin:
             observations,
             anchor=anchor,
             support_surface=support_surface,
-            dragging=self.dragging,
+            dragging=(
+                self.dragging
+                or bool(getattr(self, "throw_active", False))
+            ),
             is_angry_locked=self.is_angry_locked,
             care_mode=self.care_mode,
             social_mode=self.social_mode,

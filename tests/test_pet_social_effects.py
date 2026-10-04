@@ -133,6 +133,18 @@ class SocialCareEffectsTests(unittest.TestCase):
         self.assertEqual(adult.social_timer_frames, 0)
         self.assertEqual(adult.social_cooldown_end, 25.5)
 
+    def test_non_star_social_mode_does_not_start_animation_timer(self):
+        adult = FakeAdult()
+
+        SOCIAL_CARE_EFFECTS.start_social_mode(
+            adult,
+            "observing",
+            object(),
+            12.5,
+        )
+
+        self.assertEqual(adult.star_timer.started_with, [])
+
     def test_transformed_rudolf_social_target_shortens_child_cooldown(self):
         child = FakeAdult()
         child.name = "Tokai Teio"

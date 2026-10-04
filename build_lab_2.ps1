@@ -45,10 +45,14 @@ $uiEventPath = Join-Path $uiDir "event_note.jpg"
 $uiEventCharacterPath = Join-Path $uiDir "event_note_char.gif"
 $uiFamilyPath = Join-Path $uiDir "family_status_abstract.png"
 $uiFamilyCharacterPath = Join-Path $uiDir "family_status_abstract_char.gif"
-$uiSettingsPath = Join-Path $uiDir "status_setting.png"
+$uiSettingsPath = Join-Path $uiDir "status_setting_noticeboard.png"
 $uiSettingsCharacterPath = Join-Path $uiDir "status_setting_char.gif"
 $uiAchievementPath = Join-Path $uiDir "achievement.png"
 $uiAchievementCharacterPath = Join-Path $uiDir "achievement_char.gif"
+$uiMemoryAlbumPath = Join-Path $uiDir "memory_album.png"
+$uiMemoryAlbumCharacterPath = Join-Path $uiDir "memory_album_char.gif"
+$uiMemoryAlbumPartner1Path = Join-Path $uiDir "memory_album_parner1.gif"
+$uiMemoryAlbumPartner2Path = Join-Path $uiDir "memory_album_parner2.gif"
 $uiTrophiesDir = Join-Path $uiDir "trophies"
 $uiLocalesDir = Join-Path $uiDir "locales"
 $uiAchievementCatalogPath = Join-Path $uiTrophiesDir "achievement_catalog_draft.json"
@@ -88,6 +92,10 @@ $requiredPaths = @(
     @{ Label = "settings UI character"; Path = $uiSettingsCharacterPath },
     @{ Label = "achievement UI background"; Path = $uiAchievementPath },
     @{ Label = "achievement UI character"; Path = $uiAchievementCharacterPath },
+    @{ Label = "memory album UI background"; Path = $uiMemoryAlbumPath },
+    @{ Label = "memory album UI character"; Path = $uiMemoryAlbumCharacterPath },
+    @{ Label = "memory album UI partner 1"; Path = $uiMemoryAlbumPartner1Path },
+    @{ Label = "memory album UI partner 2"; Path = $uiMemoryAlbumPartner2Path },
     @{ Label = "achievement trophy directory"; Path = $uiTrophiesDir },
     @{ Label = "UI locale directory"; Path = $uiLocalesDir },
     @{ Label = "Traditional Chinese locale"; Path = (Join-Path $uiLocalesDir "zh_TW.json") },
@@ -128,12 +136,27 @@ if (-not [string]::IsNullOrWhiteSpace($env:PYTHONPATH)) {
 }
 $env:PYTHONPATH = $pythonPathEntries -join [IO.Path]::PathSeparator
 
+# PyInstaller resolves transitive DLLs from PATH while analysing extensions.
+# Codex and other development tools may prepend their own Poppler/libheif
+# runtimes, whose ICU/UCRT DLLs are binary-incompatible with Qt.  Keep the
+# build environment reproducible and limited to Python plus Windows itself.
+$buildPathEntries = @(
+    $selectedPythonRoot,
+    (Join-Path $selectedPythonRoot "Scripts"),
+    (Join-Path $env:SystemRoot "System32"),
+    $env:SystemRoot
+) |
+    Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and (Test-Path -LiteralPath $_) } |
+    Select-Object -Unique
+$env:PATH = $buildPathEntries -join [IO.Path]::PathSeparator
+
 Write-Host "Using Python: $PythonExe"
 Write-Host "Repository root: $repoRoot"
 Write-Host "Output root: $OutputRoot"
 Write-Host "Script file: $scriptPath"
 Write-Host "Work dir: $workDir"
 Write-Host "Dist dir: $distDir"
+Write-Host "Sanitized build PATH: $env:PATH"
 Write-Host ""
 
 & $PythonExe -c "import PyInstaller, PyQt6, pynput, PIL" 2>$null
@@ -166,12 +189,19 @@ if ($CheckOnly) {
   --add-data "${uiSettingsCharacterPath};UI" `
   --add-data "${uiAchievementPath};UI" `
   --add-data "${uiAchievementCharacterPath};UI" `
+  --add-data "${uiMemoryAlbumPath};UI" `
+  --add-data "${uiMemoryAlbumCharacterPath};UI" `
+  --add-data "${uiMemoryAlbumPartner1Path};UI" `
+  --add-data "${uiMemoryAlbumPartner2Path};UI" `
   --add-data "${uiTrophiesDir};UI/trophies" `
   --add-data "${uiLocalesDir};UI/locales" `
   --add-data "${uiDashboardSideIconPath};UI" `
   --add-data "${uiFamilyIconsDir};UI/family_icon" `
   --add-data "${petOverlaysDir};UI/pet_overlays" `
   --collect-all pynput `
+  --exclude-module PyQt6.QtPdf `
+  --exclude-module PyQt6.QtNetwork `
+  --exclude-module PyQt6.QtSvg `
   --clean `
   --specpath $workDir `
   --workpath $workDir `
@@ -180,6 +210,35 @@ if ($CheckOnly) {
 
 if ($LASTEXITCODE -ne 0) {
     throw "Build failed with code $LASTEXITCODE."
+}
+
+$analysisTocPath = Join-Path (Join-Path $workDir $buildName) "Analysis-00.toc"
+if (
+    (Test-Path -LiteralPath $analysisTocPath) -and
+    (Select-String -LiteralPath $analysisTocPath -SimpleMatch "\.cache\codex-runtimes\" -Quiet)
+) {
+    throw "Build captured DLLs from the Codex runtime. Refusing to publish a contaminated package."
+}
+
+$buildDir = Join-Path $distDir $buildName
+$unusedQtRelativePaths = @(
+    "_internal\Qt6Pdf.dll",
+    "_internal\Qt6Network.dll",
+    "_internal\Qt6Svg.dll",
+    "_internal\PyQt6\Qt6\plugins\generic\qtuiotouchplugin.dll",
+    "_internal\PyQt6\Qt6\plugins\iconengines\qsvgicon.dll",
+    "_internal\PyQt6\Qt6\plugins\imageformats\qpdf.dll",
+    "_internal\PyQt6\Qt6\plugins\imageformats\qsvg.dll"
+)
+foreach ($relativePath in $unusedQtRelativePaths) {
+    $unusedPath = Join-Path $buildDir $relativePath
+    if (Test-Path -LiteralPath $unusedPath) {
+        Remove-Item -LiteralPath $unusedPath -Force
+    }
+}
+$softwareOpenGlPath = Join-Path $buildDir "_internal\PyQt6\Qt6\bin\opengl32sw.dll"
+if (-not (Test-Path -LiteralPath $softwareOpenGlPath)) {
+    throw "Required software OpenGL fallback is missing: $softwareOpenGlPath"
 }
 
 & $PythonExe -m PyInstaller `
@@ -199,7 +258,6 @@ if ($LASTEXITCODE -ne 0) {
     throw "Updater build failed with code $LASTEXITCODE."
 }
 
-$buildDir = Join-Path $distDir $buildName
 $updaterPath = Join-Path $distDir "$updaterBuildName.exe"
 Write-Host ""
 Write-Host "Build complete."

@@ -49,7 +49,7 @@ class UpdateRuntimeControllerTests(unittest.TestCase):
         )
 
     def test_complete_bundle_exposes_direct_updater_download(self):
-        coordinator = UpdateCheckCoordinator()
+        coordinator = UpdateCheckCoordinator(platform="win32")
         release = build_release()
 
         coordinator._handle_success(self.result(release))
@@ -63,7 +63,7 @@ class UpdateRuntimeControllerTests(unittest.TestCase):
         )
 
     def test_incomplete_bundle_does_not_offer_download(self):
-        coordinator = UpdateCheckCoordinator()
+        coordinator = UpdateCheckCoordinator(platform="win32")
         release = build_release(include_package=False)
 
         coordinator._handle_success(self.result(release))
@@ -71,6 +71,22 @@ class UpdateRuntimeControllerTests(unittest.TestCase):
 
         self.assertFalse(snapshot.update_bundle_available)
         self.assertEqual(snapshot.updater_download_url, "")
+
+    def test_macos_points_to_release_without_windows_updater(self):
+        coordinator = UpdateCheckCoordinator(platform="darwin")
+        release = build_release()
+
+        coordinator._handle_success(self.result(release))
+        snapshot = coordinator.snapshot()
+
+        self.assertEqual(snapshot.state, "available")
+        self.assertEqual(snapshot.update_method, "manual_release")
+        self.assertFalse(snapshot.update_bundle_available)
+        self.assertEqual(snapshot.updater_download_url, "")
+        self.assertEqual(
+            snapshot.release_page_url,
+            "https://example.test/release",
+        )
 
 
 if __name__ == "__main__":

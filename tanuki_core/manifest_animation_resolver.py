@@ -31,6 +31,7 @@ class ManifestAnimationAssetManager(Protocol):
         forbidden=None,
         mood_score=None,
         ordered_preferences=False,
+        excluded_variants=(),
     ):
         ...
 
@@ -56,6 +57,7 @@ class ManifestAnimationRequest:
     contexts: tuple[str, ...]
     band_order: tuple[str, ...] = ()
     band_policy: str = BAND_POLICY_MATCH
+    excluded_variants: tuple[tuple[str, str, str], ...] = ()
 
     def __post_init__(self):
         contexts = _normalize_unique_strings(self.contexts)
@@ -82,6 +84,18 @@ class ManifestAnimationRequest:
         object.__setattr__(self, "contexts", contexts)
         object.__setattr__(self, "band_order", band_order)
         object.__setattr__(self, "band_policy", band_policy)
+        excluded_variants = tuple(
+            tuple(str(value or "").strip() for value in variant)
+            for variant in self.excluded_variants or ()
+        )
+        if any(
+            len(variant) != 3 or not all(variant)
+            for variant in excluded_variants
+        ):
+            raise ValueError(
+                "excluded animation variants require purpose, action and mood"
+            )
+        object.__setattr__(self, "excluded_variants", excluded_variants)
 
 
 @dataclass(frozen=True)
@@ -146,11 +160,18 @@ class ManifestAnimationResolver:
         )
         for context in request.contexts:
             for band, mood_score in band_queries:
+                selector_kwargs = {
+                    "context": context,
+                    "mood_score": mood_score,
+                    "ordered_preferences": False,
+                }
+                if request.excluded_variants:
+                    selector_kwargs["excluded_variants"] = (
+                        request.excluded_variants
+                    )
                 result = selector(
                     DEFAULT_ANIMATION_PURPOSES,
-                    context=context,
-                    mood_score=mood_score,
-                    ordered_preferences=False,
+                    **selector_kwargs,
                 )
                 if not result:
                     continue

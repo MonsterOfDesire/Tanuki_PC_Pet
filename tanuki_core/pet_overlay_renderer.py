@@ -63,7 +63,10 @@ def compute_log_icon_draw_spec(widget_width, draw_y, overlay_scale, log_icon_y_o
 def compute_chorus_music_draw_spec(widget_width, draw_y, overlay_scale):
     size = int(42 * overlay_scale)
     x = (int(widget_width) - size) // 2
-    y = int(draw_y) - size - int(26 * overlay_scale)
+    # Tall performance frames can already touch the top of the fixed pet
+    # widget. Keep the indicator inside that existing canvas instead of
+    # enlarging the widget (and therefore its input/click surface).
+    y = max(4, int(draw_y) - size - int(26 * overlay_scale))
     return IconSpriteSpec(x=x, y=y, size=size)
 
 

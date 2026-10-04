@@ -4,9 +4,11 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from types import SimpleNamespace
 
 from tanuki_core.installation_registry import (
     InstallationRecord,
+    get_installation_record_path,
     load_installation_record,
     mark_current_installation_stopped,
     record_current_installation,
@@ -15,6 +17,20 @@ from tanuki_core.installation_registry import (
 
 
 class InstallationRegistryTests(unittest.TestCase):
+    def test_macos_registry_path_uses_application_support(self):
+        path = get_installation_record_path(
+            platform="darwin",
+            home="/Users/tester",
+            environ={},
+        )
+
+        self.assertTrue(
+            path.as_posix().endswith(
+                "/Users/tester/Library/Application Support/"
+                "Tanuki_PC_Pet/installation.json"
+            )
+        )
+
     def test_round_trip_normalizes_version_locale_and_path(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "installation.json"
@@ -48,6 +64,9 @@ class InstallationRegistryTests(unittest.TestCase):
             ), patch(
                 "tanuki_core.installation_registry.sys.executable",
                 str(executable),
+            ), patch(
+                "tanuki_core.installation_registry.get_platform_capabilities",
+                return_value=SimpleNamespace(standalone_updater=True),
             ):
                 record = record_current_installation("en_US", path=path)
 
@@ -78,6 +97,19 @@ class InstallationRegistryTests(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "must be absolute"):
                 load_installation_record(path)
+
+    def test_macos_packaged_runtime_does_not_register_windows_updater(self):
+        with patch(
+            "tanuki_core.installation_registry._is_frozen_runtime",
+            return_value=True,
+        ), patch(
+            "tanuki_core.installation_registry.get_platform_capabilities"
+        ) as capability_provider:
+            capability_provider.return_value.standalone_updater = False
+
+            record = record_current_installation("en_US")
+
+        self.assertIsNone(record)
 
 
 if __name__ == "__main__":
